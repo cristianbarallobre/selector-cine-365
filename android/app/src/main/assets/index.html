@@ -418,6 +418,19 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
 #view-help .help-api-actions a{flex:1 1 135px;text-align:center;padding:8px}
 #view-help .help-note{font-size:12px;line-height:1.5;color:#9fb3c7;padding:1px 2px 8px}
 </style>
+
+<style id="android-stats-all-rows">
+/* Todas las filas visibles: solamente se desplaza la vista de Estadísticas. */
+#view-statistics{overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior-y:contain!important}
+#view-statistics .panel{height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;display:block!important}
+#view-statistics .stats-hero{display:grid!important;height:auto!important;margin-bottom:14px!important}
+#view-statistics .stats-sections{display:flex!important;flex-direction:column!important;grid-template-columns:none!important;grid-template-rows:none!important;gap:13px!important;overflow:visible!important;min-height:0!important;height:auto!important}
+#view-statistics .stat-panel{height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;flex:0 0 auto!important;display:block!important;padding:16px!important}
+#view-statistics .stat-panel h3{font-size:15px!important;margin:0 0 12px!important}
+#view-statistics .stat-row{min-height:26px!important;grid-template-columns:minmax(95px,1fr) minmax(40px,1.1fr) 34px!important;margin:8px 0!important;line-height:1.4!important;font-size:13px!important}
+#view-statistics .stat-row-name{overflow-wrap:anywhere!important;overflow:visible!important;text-overflow:clip!important;white-space:normal!important}
+#view-statistics .stat-pager{display:none!important}
+</style>
 </head>
 <body>
 <textarea id="initialState" hidden>SELECTOR CINE 365 — 365 PELÍCULAS 
@@ -1220,7 +1233,7 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
 <section id="view-sort" class="view mobile-page" hidden></section>
 <section id="view-settings" class="view mobile-page" hidden>
  <div class="panel mobile-settings-panel"><h2>Ajustes y sincronización</h2>
-  <p class="mobile-help">Utiliza la misma carpeta de OneDrive configurada en Windows. Selecciónala desde el explorador del móvil y revisa los datos antes de activar la sincronización para reunir las películas vistas y las listas.</p>
+  <p class="mobile-help">Puedes utilizar cualquier servicio de nube que permita seleccionar una carpeta con acceso de lectura y escritura desde Android. Debe ser la misma carpeta sincronizada que utilices en Windows. Revisa los datos antes de combinarlos; la nube es opcional.</p>
   <div id="tmdbSettingsTools" class="mobile-setting-actions"></div>
   <div id="cloudSettingsHome"></div>
   <div class="sync-preview-panel" id="syncPreviewPanel" hidden>
@@ -1231,7 +1244,7 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
    <button id="syncConfirmButton" type="button" class="primary">✓ Importar y activar sincronización</button>
    <button id="syncCancelButton" type="button" class="tool">Cancelar</button>
   </div>
-  <div class="mobile-help mobile-sync-caution">La copia principal del PC está en <code>Selector_Cine_365_Copias/actual</code>. Android primero muestra una vista previa y, al confirmarla, guarda sus cambios en <code>sincronizacion/dispositivos</code>. No borres esas carpetas.</div>
+  <div class="mobile-help mobile-sync-caution">La copia de seguridad principal del PC está en <code>Selector_Cine_365_Copias/actual</code>. Android primero muestra una vista previa y, al confirmarla, guarda sus cambios en <code>sincronizacion/dispositivos</code>. No borres esas carpetas.</div>
   <p id="syncResult" class="mobile-help" aria-live="polite"></p>
  </div>
 </section>
@@ -1261,7 +1274,7 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
   </div>
   <div class="help-card">
    <h3>3 · Sorteo y estadísticas</h3>
-   <p>En <strong>Sorteo</strong> puedes elegir una pendiente al azar y filtrar por plataforma. En <strong>Estadísticas</strong> verás tu progreso; las flechas permiten consultar más resultados.</p>
+   <p>En <strong>Sorteo</strong> puedes elegir una pendiente al azar y filtrar por plataforma. En <strong>Estadísticas</strong> verás todas las cifras, géneros, países y directores. Desliza hacia arriba o abajo para recorrerlos.</p>
   </div>
   <div class="help-card">
    <h3>4 · Listas y copias</h3>
@@ -1269,7 +1282,7 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
   </div>
   <div class="help-card">
    <h3>5 · Nube (opcional)</h3>
-   <p>Tus datos se guardan <strong>en el móvil</strong> sin nube. Para compartirlos, entra en <strong>Nube</strong>, elige una carpeta, revisa la vista previa y confirma la sincronización. Esta beta todavía no sincroniza de vuelta a Windows de forma completa.</p>
+   <p>Tus datos se guardan <strong>en el móvil</strong> sin nube. Para compartirlos, entra en <strong>Nube</strong>, elige una carpeta, revisa la vista previa y confirma la sincronización. La sincronización entre dispositivos necesita una carpeta legible y escribible desde ambos. Android no admite todos los servicios como carpeta.</p>
   </div>
   <p class="help-note">Este producto utiliza la API de TMDB, pero no está respaldado ni certificado por TMDB.</p>
  </div>
@@ -1454,7 +1467,7 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
  if(tools)document.getElementById('tmdbSettingsTools').appendChild(tools);
  const syncBox=document.querySelector('#view-settings .cloud-buttons');
  if(syncBox){const button=document.createElement('button');button.className='tool';button.type='button';button.id='cloudSyncNow';button.textContent='⇄ Revisar sincronización';syncBox.insertBefore(button,syncBox.firstChild)}
- const folder=document.getElementById('cloudFolder');if(folder){folder.readOnly=true;folder.placeholder='Elige una carpeta de OneDrive o almacenamiento compartido'}
+ const folder=document.getElementById('cloudFolder');if(folder){folder.readOnly=true;folder.placeholder='Elige una carpeta de nube compatible o almacenamiento compartido'}
 })();
 </script>
 <script>
@@ -2377,34 +2390,23 @@ function updateChoiceMedia(){
  $('resultDetails').textContent=detail.filter(Boolean).join(' · ');
 }
 
-function changeStatPage(title,entries,maxItems,nextPage,previousPanel){
- // Solo sustituimos la estadística solicitada: no reconstruimos la pantalla.
- const scrollView=$('view-statistics');
- const previousScroll=scrollView.scrollTop;
- statPages.set(title,nextPage);
- previousPanel.replaceWith(statRows(title,entries,maxItems));
- scrollView.scrollTop=previousScroll;
- requestAnimationFrame(()=>{if(activeView==='statistics')scrollView.scrollTop=previousScroll;});
-}
-const statRows=(title,entries,maxItems=8)=>{
- const panel=document.createElement('div');panel.className='stat-panel';const heading=document.createElement('h3');heading.textContent=title;panel.appendChild(heading);
- if(!entries.length){const empty=document.createElement('p');empty.className='stat-none';empty.textContent='Sin datos todavía';panel.appendChild(empty);return panel;}
- const sectionHeight=$('statsSections').clientHeight||400;
- const rowCount=Math.max(2,Math.min(maxItems,Math.floor((sectionHeight/2-67)/25)));
- const pages=Math.max(1,Math.ceil(entries.length/rowCount));
- const page=Math.max(0,Math.min(statPages.get(title)||0,pages-1));statPages.set(title,page);
- const max=Math.max(...entries.map(x=>x[1]),1);
- for(const [label,value] of entries.slice(page*rowCount,(page+1)*rowCount)){
-   const line=document.createElement('div');line.className='stat-row';const name=document.createElement('div');name.className='stat-row-name';name.textContent=label;name.title=label;
-   const bar=document.createElement('div');bar.className='stat-row-bar';const fill=document.createElement('div');fill.className='stat-row-fill';fill.style.width=(100*value/max).toFixed(1)+'%';bar.appendChild(fill);
-   const count=document.createElement('span');count.className='stat-row-count';count.textContent=String(value);line.append(name,bar,count);panel.appendChild(line);
+// Android: estadísticas completas sin paginación, con scroll de la sección.
+const statRows=(title,entries)=>{
+ const panel=document.createElement('div');panel.className='stat-panel';
+ const heading=document.createElement('h3');heading.textContent=title;panel.appendChild(heading);
+ if(!entries.length){
+  const empty=document.createElement('p');empty.className='stat-none';
+  empty.textContent='Sin datos todavía';panel.appendChild(empty);return panel;
  }
- if(pages>1){
-   const pager=document.createElement('div');pager.className='stat-pager';
-   const prev=document.createElement('button');prev.type='button';prev.textContent='‹';prev.disabled=page===0;prev.title='Datos anteriores';prev.setAttribute('aria-label','Datos anteriores de '+title);prev.addEventListener('click',()=>changeStatPage(title,entries,maxItems,page-1,panel));
-   const counter=document.createElement('span');counter.textContent=(page+1)+' / '+pages;
-   const next=document.createElement('button');next.type='button';next.textContent='›';next.disabled=page>=pages-1;next.title='Datos siguientes';next.setAttribute('aria-label','Datos siguientes de '+title);next.addEventListener('click',()=>changeStatPage(title,entries,maxItems,page+1,panel));
-   pager.append(prev,counter,next);panel.appendChild(pager);
+ const max=Math.max(...entries.map(x=>x[1]),1);
+ for(const [label,value] of entries){
+  const line=document.createElement('div');line.className='stat-row';
+  const name=document.createElement('div');name.className='stat-row-name';name.textContent=label;name.title=label;
+  const bar=document.createElement('div');bar.className='stat-row-bar';
+  const fill=document.createElement('div');fill.className='stat-row-fill';
+  fill.style.width=(100*value/max).toFixed(1)+'%';bar.appendChild(fill);
+  const count=document.createElement('span');count.className='stat-row-count';count.textContent=String(value);
+  line.append(name,bar,count);panel.appendChild(line);
  }
  return panel;
 };
