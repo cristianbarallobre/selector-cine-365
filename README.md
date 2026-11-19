@@ -2,7 +2,9 @@
 
 Aplicación de escritorio para **Windows 10/11 de 64 bits** que permite llevar un registro personal de películas, sortear el siguiente visionado y comprobar plataformas de streaming en España.
 
-**Última versión del proyecto:** `v8.1` · **Tecnologías:** Go, HTML/CSS/JavaScript, Microsoft WebView2.
+**Última versión del proyecto:** `v8.1.1` · **Tecnologías:** Go, HTML/CSS/JavaScript, Microsoft WebView2.
+
+**Creado por Cristian Barallobre Rúa.** © 2026. Todos los derechos reservados.
 
 ## Funciones principales
 
@@ -48,7 +50,13 @@ Los datos del usuario se guardan por defecto en:
 
 Entre otros archivos se utilizan `colecciones.json`, `mis_365_peliculas.txt`, `identidades_cine.json` y `plataformas_ajustes.json`. **No subas estos archivos ni tus claves de API a GitHub.** El contenido de la carpeta AppData pertenece a cada instalación local.
 
-Antes de actualizar a la v8.1 es recomendable exportar una copia de seguridad: la conciliación de identificaciones puede modificar las marcas de visto de varias listas.
+Antes de actualizar desde una versión anterior a la v8.1 es recomendable exportar una copia de seguridad: la conciliación de identificaciones puede modificar las marcas de visto de varias listas.
+
+## Autoría del proyecto
+
+**Autor:** Cristian Barallobre Rúa. La app muestra la firma en la cabecera. El repositorio incorpora también metadatos de autoría en `plantilla.html`, `autoria.go` y en las respuestas HTTP del servidor local. Estos datos no son una medida anticopia ni equivalen a una prueba jurídica concluyente; GitHub conserva el historial de cambios.
+
+Para más información, consulta [AUTORIA.md](AUTORIA.md).
 
 ## Atribución
 

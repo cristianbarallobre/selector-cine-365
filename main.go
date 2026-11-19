@@ -62,6 +62,8 @@ func makeHTML(initial, token string) (string, error) {
 	}
 	out := strings.ReplaceAll(string(template), "__ATLAS_LISTA_INICIAL__", html.EscapeString(initial))
 	out = strings.ReplaceAll(out, "__ATLAS_TOKEN__", token)
+	out = strings.ReplaceAll(out, "__APP_AUTHOR__", html.EscapeString(appAuthor))
+	out = strings.ReplaceAll(out, "__APP_COPYRIGHT__", html.EscapeString(appCopyright))
 	return out, nil
 }
 
@@ -92,6 +94,9 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
+	// Metadata integrada en el ejecutable para identificar el origen del programa.
+	w.Header().Set("X-Selector-Creator", appAuthor)
+	w.Header().Set("X-Selector-Source", appSourceURL)
 	switch r.URL.Path {
 	case "/":
 		if r.Method != http.MethodGet {

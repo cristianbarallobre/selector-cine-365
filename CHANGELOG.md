@@ -2,6 +2,13 @@
 
 Este registro recoge las principales funciones incorporadas a lo largo del desarrollo. Es un resumen; no pretende representar un historial de commits anteriores.
 
+## v8.1.1 — Firma del autor (19 de noviembre de 2026)
+
+- Firma discreta «Hecho por Cristian Barallobre Rúa» en la cabecera del programa.
+- Metadatos de autoría en el HTML y en el servidor Go; constantes de autoría integradas en el ejecutable.
+- Archivo `AUTORIA.md` para documentar la autoría y el repositorio canónico.
+- Sin cambios en los datos personales, las colecciones, la conciliación de TMDB ni las copias de seguridad.
+
 ## v8.1 — Identificación y sincronización entre listas
 
 - Reconocimiento prioritario de películas equivalentes mediante el identificador de TMDB.
