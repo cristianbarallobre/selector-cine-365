@@ -2,8 +2,13 @@
 set -euo pipefail
 : "$MAC_ARCH"
 : "$MAC_LABEL"
-export CGO_ENABLED=1 GOOS=darwin GOARCH="$MAC_ARCH"
-go test ./...
+export CGO_ENABLED=1 GOOS=darwin GOARCH="$MAC_ARCH" MACOSX_DEPLOYMENT_TARGET=12.0
+if [ "$MAC_ARCH" = "arm64" ] && [ "$(uname -m)" = "x86_64" ]; then
+  # Compilación cruzada: el test se ejecuta en la CPU Intel anfitriona.
+  GOARCH=amd64 CC=clang go test ./...
+else
+  go test ./...
+fi
 mkdir -p dist
 APP='dist/Selector de Cine 365.app'
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
