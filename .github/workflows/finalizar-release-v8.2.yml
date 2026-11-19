@@ -1,0 +1,62 @@
+name: Finalizar descargas v8.2
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/finalizar-release-v8.2.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 44564174139
+          github-token: ${{ github.token }}
+          repository: cristianbarallobre/selector-cine-365
+          pattern: cine-v82-*
+          merge-multiple: true
+          path: dist
+      - name: Verificar las tres descargas
+        run: |
+          test -s dist/Selector_Cine_365_v8_2_Mac_Apple_Silicon.zip
+          test -s dist/Selector_Cine_365_v8_2_Mac_Intel.zip
+          test -s dist/Selector_Cine_365_v8_2_Windows.zip
+          sha256sum dist/*.zip
+      - name: Publicar ZIP de Windows y ambos Mac
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > NOTES.md <<'EOF'
+          ## Selector de Cine 365 — v8.2
+
+          **Autor:** Cristian Barallobre Rúa.
+
+          Descargas incluidas:
+          - **Mac Apple Silicon:** Selector_Cine_365_v8_2_Mac_Apple_Silicon.zip
+          - **Mac Intel:** Selector_Cine_365_v8_2_Mac_Intel.zip
+          - **Windows 64 bits:** Selector_Cine_365_v8_2_Windows.zip
+
+          Mac utiliza una ventana nativa Cocoa/WKWebView, con las mismas funciones
+          de películas, listas, estadísticas, TMDB y copias de seguridad.
+          Para Mac: [instrucciones de instalación](../../blob/main/MACOS.md).
+
+          **Importante:** la app para Mac está firmada ad hoc, no dispone de
+          Developer ID ni notarización de Apple. En macOS puede aparecer
+          una advertencia de seguridad. Revisa su procedencia antes de abrirla.
+
+          Las dos variantes Mac compilan y pasan pruebas de Go en macOS Intel;
+          Apple Silicon se compiló de forma cruzada. Sigue pendiente una
+          prueba interactiva en un equipo Mac real.
+          EOF
+          if gh release view v8.2 >/dev/null 2>&1; then
+            gh release upload v8.2 dist/*.zip --clobber
+          else
+            gh release create v8.2 dist/*.zip --target "$GITHUB_SHA" \
+              --title 'Selector de Cine 365 — v8.2 (Windows y Mac)' \
+              --notes-file NOTES.md --latest
+          fi
