@@ -39,19 +39,19 @@ jobs:
       - name: Guardar APK como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: Selector_Cine_365_Android_v9_beta2_APK
+          name: Selector_Cine_365_Android_v9_beta3_APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
       - name: Publicar pre-release de Android
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk Selector_Cine_365_Android_v9_BETA2.apk
-          if gh release view v9.0.0-android-beta.2 >/dev/null 2>&1; then
-            gh release upload v9.0.0-android-beta.2 Selector_Cine_365_Android_v9_BETA2.apk --clobber
+          cp android/app/build/outputs/apk/debug/app-debug.apk Selector_Cine_365_Android_v9_BETA3.apk
+          if gh release view v9.0.0-android-beta.3 >/dev/null 2>&1; then
+            gh release upload v9.0.0-android-beta.3 Selector_Cine_365_Android_v9_BETA3.apk --clobber
           else
-            gh release create v9.0.0-android-beta.2 Selector_Cine_365_Android_v9_BETA2.apk \
+            gh release create v9.0.0-android-beta.3 Selector_Cine_365_Android_v9_BETA3.apk \
               --target "$GITHUB_SHA" --prerelease \
-              --title 'Selector Cine 365 - Android v9 beta 2' \
-              --notes 'BETA Android 2: scroll reiniciado por sección, iconos monocromos, carga incremental y tarjetas grandes con carteles TMDB cacheados. Se instala junto a beta 1 para proteger sus datos: exporta/importa las listas si quieres trasladarlas. La sincronización de retorno a Windows aún no es completa.'
+              --title 'Selector Cine 365 - Android v9 beta 3' \
+              --notes 'BETA Android 3: botones de estadísticas sin salto de scroll y nueva pestaña Ayuda con instrucciones de TMDB, uso básico y nube opcional. Instalar aparte de beta 2 para conservar sus datos; exportar e importar el JSON si se quieren trasladar. La sincronización completa de retorno a Windows continúa pendiente.'
           fi
