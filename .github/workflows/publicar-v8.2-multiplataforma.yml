@@ -8,7 +8,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: selector-v82-release
+  group: selector-v82-release-26
   cancel-in-progress: false
 jobs:
   mac:
@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: macos-15
+          - runner: macos-26
             arch: arm64
             label: Apple_Silicon
           - runner: macos-15-intel
