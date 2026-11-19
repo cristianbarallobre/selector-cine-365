@@ -277,6 +277,15 @@ h2{font-size:19px}
 .creator-credit strong{color:#f3c66d;font-weight:680}
 @media(max-width:650px){.creator-credit{font-size:9px;white-space:normal;max-width:150px;text-align:right}}
 @media(max-height:690px){.creator-credit{font-size:10px}}
+
+.sync-desktop-panel{margin-top:12px;padding:14px;border:1px solid #506a83;background:#162535;border-radius:12px;max-height:45dvh;overflow-y:auto}
+.sync-desktop-panel[hidden]{display:none}
+.sync-desktop-panel h3{font-size:15px;color:#f4d28d;margin:0 0 8px}
+.sync-desktop-panel p{font-size:13px;color:#d3e2f0;line-height:1.55}
+.sync-desktop-panel .sync-choice{display:flex;justify-content:space-between;gap:9px;align-items:center;flex-wrap:wrap;padding:9px 0;border-bottom:1px solid #3e5269;font-size:13px}
+.sync-desktop-panel select{border:1px solid #587392;border-radius:8px;background:#172839;color:#eff4fa;padding:7px}
+.sync-desktop-actions{display:flex;gap:8px;margin-top:13px;flex-wrap:wrap}
+.sync-desktop-actions button{flex:1;min-height:40px}
 </style>
 </head>
 <body>
@@ -385,6 +394,16 @@ h2{font-size:19px}
           <button class="tool" type="button" id="cloudDisable">Desactivar</button>
         </div>
         <div class="cloud-status" id="cloudStatus" aria-live="polite">Comprobando copias…</div>
+        <button class="tool" type="button" id="cloudSyncReview" style="width:100%;margin-top:8px">⇄ Revisar sincronización con otros dispositivos</button>
+        <div class="sync-desktop-panel" id="cloudSyncPanel" hidden>
+          <h3>Revisar antes de importar</h3>
+          <p id="cloudSyncSummary"></p><div id="cloudSyncConflicts"></div>
+          <p>Se crea una copia local antes de combinar. No se sustituyen archivos de otros dispositivos.</p>
+          <div class="sync-desktop-actions">
+            <button class="primary" type="button" id="cloudSyncConfirm">Confirmar y sincronizar</button>
+            <button class="tool" type="button" id="cloudSyncCancel">Cancelar</button>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -733,7 +752,7 @@ async function saveLocal(){
    if(!response.ok)throw new Error('HTTP '+response.status);
    return response.headers.get('X-Cine-Cloud');
  });
- try{const cloudResult=await saveQueue;if(epoch===saveEpoch){$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':'✓ Guardado';void cloudRefresh();}}
+ try{const cloudResult=await saveQueue;if(epoch===saveEpoch){$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':cloudResult==='pending'?'✓ Local · Revisar sincronización':'✓ Guardado';void cloudRefresh();}}
  catch(err){if(epoch===saveEpoch)$('saveState').textContent='⚠ Error al guardar';}
 }
 function replaceList(text){let clean=text.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');const test=parse(clean);if(!test.entries.length){$('message').textContent='No se encontraron películas.';return false;}
@@ -1182,8 +1201,10 @@ function cloudShow(s){
  const box=$('cloudStatus');box.classList.toggle('warn',Boolean(s.last_error));
  if(s.enabled){
    if(document.activeElement!==$('cloudFolder'))$('cloudFolder').value=s.folder;
-   box.textContent=s.last_error?'⚠ Guardado local correcto; copia en nube fallida: '+s.last_error:
-     s.last_backup?'✓ Copia en nube actualizada · '+new Date(s.last_backup).toLocaleString('es-ES'):'✓ Carpeta configurada';
+   box.textContent=s.needs_review?'⚠ Hay otros dispositivos en esta carpeta. Pulsa «Revisar sincronización» antes de publicar cambios.':
+     s.last_error?'⚠ Copia en nube fallida: '+s.last_error:
+     s.sync_paired?'✓ Sincronización activada · copias independientes':
+     s.last_backup?'✓ Copia en nube actualizada · '+new Date(s.last_backup).toLocaleString('es-ES'):'✓ Carpeta configurada; revisa antes de combinar';
  }else{
    box.textContent='Sin carpeta de nube configurada';
  }
@@ -1198,7 +1219,7 @@ $('cloudBrowse').addEventListener('click',async()=>{
 });
 $('cloudActivate').addEventListener('click',async()=>{
  const folder=$('cloudFolder').value.trim();if(!folder){$('cloudStatus').textContent='Selecciona primero una carpeta';return;}
- const btn=$('cloudActivate');btn.disabled=true;$('cloudStatus').textContent='Guardando y creando la primera copia…';
+ const btn=$('cloudActivate');btn.disabled=true;$('cloudStatus').textContent='Conectando una carpeta compartida sin sobrescribir otros dispositivos…';
  try{await saveLocal();cloudShow(await cloudRequest('/api/cloud/config','POST',{folder}));}
  catch(e){$('cloudStatus').textContent='⚠ '+e.message;$('cloudStatus').classList.add('warn');}
  finally{btn.disabled=false;}
