@@ -1232,6 +1232,48 @@ $('cloudDisable').addEventListener('click',async()=>{
  try{cloudShow(await cloudRequest('/api/cloud/config','POST',{folder:''}));$('cloudFolder').value='';}
  catch(e){$('cloudStatus').textContent='⚠ '+e.message;}
 });
+
+let syncPreviewToken='';
+$('cloudSyncReview').addEventListener('click',async()=>{
+ const button=$('cloudSyncReview');button.disabled=true;$('cloudSyncPanel').hidden=true;
+ try{
+  await saveQueue;
+  const data=await cloudRequest('/api/cloud/preview','POST');
+  syncPreviewToken=data.token;
+  $('cloudSyncSummary').textContent='Fuentes compartidas: '+data.sources+'. En este PC: '+data.local_lists+
+   ' listas y '+data.local_seen+' vistas. Después de combinar: '+data.result_lists+
+   ' listas y '+data.result_seen+' vistas.';
+  const target=$('cloudSyncConflicts');target.replaceChildren();
+  for(const conflict of data.conflicts||[]){
+   const label=document.createElement('label');label.className='sync-choice';
+   const name=document.createElement('span');name.textContent='Conflicto: '+conflict.key.replace('|',' · ');
+   const select=document.createElement('select');select.dataset.key=conflict.key;
+   const pending=document.createElement('option');pending.value='';pending.textContent='Elige un estado';
+   const local=document.createElement('option');local.value=String(conflict.local);local.textContent='PC: '+(conflict.local?'Vista':'Pendiente');
+   const remote=document.createElement('option');remote.value=String(conflict.remote);remote.textContent='Otro equipo: '+(conflict.remote?'Vista':'Pendiente');
+   select.append(pending,local,remote);label.append(name,select);target.appendChild(label);
+  }
+  $('cloudSyncPanel').hidden=false;
+ }catch(e){syncPreviewToken='';$('cloudStatus').textContent='⚠ '+e.message;}
+ finally{button.disabled=false;}
+});
+$('cloudSyncCancel').addEventListener('click',()=>{syncPreviewToken='';$('cloudSyncPanel').hidden=true;});
+$('cloudSyncConfirm').addEventListener('click',async()=>{
+ if(!syncPreviewToken)return;
+ const decisions={};
+ for(const select of $('cloudSyncConflicts').querySelectorAll('select')){
+  if(select.value===''){select.focus();return;}
+  decisions[select.dataset.key]=select.value==='true';
+ }
+ const button=$('cloudSyncConfirm');button.disabled=true;
+ try{
+  $('cloudSyncSummary').textContent='Combinando y creando copia de recuperación…';
+  const data=await cloudRequest('/api/cloud/sync','POST',{token:syncPreviewToken,decisions});
+  $('cloudSyncSummary').textContent='✓ '+data.lists+' listas · '+data.seen+' vistas.';
+  location.reload();
+ }catch(e){$('cloudSyncSummary').textContent='⚠ '+e.message+' Comprueba la copia local de recuperación.';}
+ finally{button.disabled=false;}
+});
 void cloudRefresh();
 
 // Subscription/free/ad-supported services only; rental and purchase never
