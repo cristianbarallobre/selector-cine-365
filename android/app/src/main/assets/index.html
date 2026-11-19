@@ -399,6 +399,25 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
 .mobile-tab.active{color:#9bd0ff!important;background:#283b53!important}
 @media(max-width:370px){#view-library .film-toggle{grid-template-columns:25px 70px minmax(0,1fr)!important;gap:8px!important;padding:12px 9px 8px!important}#view-library .film-toggle .film-poster,#view-library .film-toggle .poster-placeholder{width:70px!important;height:103px!important}#view-library .film-name{font-size:15px!important}}
 </style>
+
+<style id="android-beta3-help-statistics">
+/* Seis pestañas con iconos y zonas táctiles uniformes. */
+.mobile-bottom-nav{grid-template-columns:repeat(6,minmax(0,1fr))!important}
+.mobile-bottom-nav .mobile-tab{width:100%!important;min-width:0!important;padding:3px 0!important;font-size:clamp(8px,2.35vw,10px)!important;letter-spacing:-.2px!important;white-space:nowrap!important}
+.mobile-bottom-nav .mobile-tab-icon svg{width:22px!important;height:22px!important}
+#view-statistics,#view-statistics .stat-panel{overflow-anchor:none!important}
+#view-help .panel{margin:0!important;height:auto!important;overflow:visible!important}
+#view-help .help-intro{font-size:14px;color:#c1d0df;line-height:1.55;margin:0 0 15px}
+#view-help .help-card{background:#202e3f;border:1px solid #435971;border-radius:13px;padding:14px 15px;margin-bottom:11px}
+#view-help .help-card h3{font-size:16px;color:#f2d18f;line-height:1.35;margin:0 0 8px}
+#view-help .help-card p{font-size:14px;line-height:1.6;color:#d4e0ec;margin:0}
+#view-help .help-card ol{margin:3px 0 12px;padding-left:21px;display:grid;gap:7px;color:#d4e0ec;font-size:14px;line-height:1.5}
+#view-help .help-card a{color:#acd7ff;text-decoration:underline;text-underline-offset:3px}
+#view-help .help-api-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:13px}
+#view-help .help-api-actions button{flex:1 1 150px;width:auto!important;min-height:46px!important;padding:10px!important;font-size:14px!important}
+#view-help .help-api-actions a{flex:1 1 135px;text-align:center;padding:8px}
+#view-help .help-note{font-size:12px;line-height:1.5;color:#9fb3c7;padding:1px 2px 8px}
+</style>
 </head>
 <body>
 <textarea id="initialState" hidden>SELECTOR CINE 365 — 365 PELÍCULAS 
@@ -1216,12 +1235,52 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
   <p id="syncResult" class="mobile-help" aria-live="polite"></p>
  </div>
 </section>
+
+<section id="view-help" class="view mobile-page" hidden aria-label="Ayuda e instrucciones de uso">
+ <div class="panel mobile-help-panel">
+  <div class="panel-heading"><h2>Guía rápida</h2><span class="count-tag">Ayuda</span></div>
+  <p class="help-intro">Lo esencial para usar Selector Cine 365. Puedes guardar películas sin clave API y sin conectar una nube.</p>
+  <div class="help-card">
+   <h3>1 · Biblioteca</h3>
+   <p>Elige una lista arriba, busca películas y filtra por <strong>Todas, Pendientes o Vistas</strong>. Pulsa una ficha para cambiarla entre vista y pendiente. «Cargar más» añade películas sin perder tu posición.</p>
+  </div>
+  <div class="help-card">
+   <h3>2 · Carteles y plataformas: clave TMDB</h3>
+   <p>Para mostrar carteles, puntuaciones y plataformas necesitas una clave personal de The Movie Database (TMDB).</p>
+   <ol>
+    <li>Crea una cuenta en <a href="https://www.themoviedb.org/signup" target="_blank" rel="noopener noreferrer">TMDB</a> e inicia sesión.</li>
+    <li>En <strong>Ajustes de cuenta → API</strong> solicita una clave y acepta las condiciones. Es más sencillo desde un ordenador.</li>
+    <li>Copia la <strong>API Key (v3)</strong> o el <strong>API Read Access Token</strong>.</li>
+    <li>Pulsa «Configurar TMDB», pega tu clave y toca <strong>Guardar y consultar</strong>.</li>
+   </ol>
+   <div class="help-api-actions">
+    <button type="button" id="helpConfigureTmdb" class="primary">Configurar TMDB</button>
+    <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer">Conseguir mi clave</a>
+   </div>
+   <p style="margin-top:12px!important;font-size:12px!important;color:#b1c5d7!important">No compartas tu clave. TMDB ofrece acceso gratuito para usos no comerciales, sujeto a condiciones. Las plataformas en España proceden de JustWatch a través de TMDB y pueden cambiar.</p>
+  </div>
+  <div class="help-card">
+   <h3>3 · Sorteo y estadísticas</h3>
+   <p>En <strong>Sorteo</strong> puedes elegir una pendiente al azar y filtrar por plataforma. En <strong>Estadísticas</strong> verás tu progreso; las flechas permiten consultar más resultados.</p>
+  </div>
+  <div class="help-card">
+   <h3>4 · Listas y copias</h3>
+   <p>En <strong>Listas</strong> puedes crear, importar y exportar colecciones. Usa <strong>Copia de seguridad</strong> para guardar un JSON con tus listas y marcas.</p>
+  </div>
+  <div class="help-card">
+   <h3>5 · Nube (opcional)</h3>
+   <p>Tus datos se guardan <strong>en el móvil</strong> sin nube. Para compartirlos, entra en <strong>Nube</strong>, elige una carpeta, revisa la vista previa y confirma la sincronización. Esta beta todavía no sincroniza de vuelta a Windows de forma completa.</p>
+  </div>
+  <p class="help-note">Este producto utiliza la API de TMDB, pero no está respaldado ni certificado por TMDB.</p>
+ </div>
+</section>
 <nav class="mobile-bottom-nav" aria-label="Navegación principal">
  <button class="mobile-tab active" type="button" data-view="library"><span class="mobile-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/></svg></span>Biblioteca</button>
  <button class="mobile-tab" type="button" data-view="sort"><span class="mobile-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1" fill="currentColor" stroke="none"/></svg></span>Sorteo</button>
  <button class="mobile-tab" type="button" data-view="statistics"><span class="mobile-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 20h18M5 17v-6h4v6M10 17V5h4v12M15 17V9h4v8"/></svg></span>Estadísticas</button>
  <button class="mobile-tab" type="button" data-view="collections"><span class="mobile-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 9h10M8 13h10M8 17h10M6 9h.01M6 13h.01M6 17h.01"/></svg></span>Listas</button>
  <button class="mobile-tab" type="button" data-view="settings"><span class="mobile-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 19h12a4 4 0 0 0 .1-8 6 6 0 0 0-11.7-1.1A4.5 4.5 0 0 0 6 19Z"/></svg></span>Nube</button>
+ <button class="mobile-tab" type="button" data-view="help"><span class="mobile-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9"/><path d="M9.4 9a2.7 2.7 0 0 1 5.2 1c0 2-2.6 2.1-2.6 4.1"/><path d="M12 17.5h.01"/></svg></span>Ayuda</button>
 </nav>
   <section id="view-statistics" class="view" hidden>
     <div class="panel"><div class="panel-heading"><h2>Estadísticas de cine</h2><span id="statsTitle" class="count-tag"></span></div>
@@ -1481,6 +1540,7 @@ async function loadPlatforms(force){
 }
 function showPlatformModal(){ $('platformOverlay').hidden=false;$('platformStatus').textContent='';$('apiKey').value='';$('apiKey').focus();}
 function closePlatformModal(){$('platformOverlay').hidden=true;}
+ $('helpConfigureTmdb').addEventListener('click',showPlatformModal);
 $('platformSetup').addEventListener('click',showPlatformModal);
 $('platformRefresh').addEventListener('click',()=>void loadPlatforms(true));
 $('closePlatforms').addEventListener('click',closePlatformModal);
@@ -1911,7 +1971,7 @@ function deleteList(id){if(libraryState.lists.length<2)return;const l=librarySta
 function showView(name){
  if(name==='collections'&&virtualMode){rawText=activeCollection().text||'';virtualMode=false;restartList();}
  activeView=name;
- for(const v of ['library','sort','statistics','collections','settings'])$('view-'+v).hidden=(v!==name);
+ for(const v of ['library','sort','statistics','collections','settings','help'])$('view-'+v).hidden=(v!==name);
  document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
  if(name==='library')renderList();if(name==='statistics')renderStats();if(name==='collections')renderCollectionControls();
  // Al cambiar de menú se muestra el comienzo de la sección, no la posición anterior.
@@ -2316,6 +2376,16 @@ function updateChoiceMedia(){
  if(r?.vote_count>0)detail.push('★ '+Number(r.vote_average).toFixed(1)+' / 10 · TMDB');
  $('resultDetails').textContent=detail.filter(Boolean).join(' · ');
 }
+
+function changeStatPage(title,entries,maxItems,nextPage,previousPanel){
+ // Solo sustituimos la estadística solicitada: no reconstruimos la pantalla.
+ const scrollView=$('view-statistics');
+ const previousScroll=scrollView.scrollTop;
+ statPages.set(title,nextPage);
+ previousPanel.replaceWith(statRows(title,entries,maxItems));
+ scrollView.scrollTop=previousScroll;
+ requestAnimationFrame(()=>{if(activeView==='statistics')scrollView.scrollTop=previousScroll;});
+}
 const statRows=(title,entries,maxItems=8)=>{
  const panel=document.createElement('div');panel.className='stat-panel';const heading=document.createElement('h3');heading.textContent=title;panel.appendChild(heading);
  if(!entries.length){const empty=document.createElement('p');empty.className='stat-none';empty.textContent='Sin datos todavía';panel.appendChild(empty);return panel;}
@@ -2331,9 +2401,9 @@ const statRows=(title,entries,maxItems=8)=>{
  }
  if(pages>1){
    const pager=document.createElement('div');pager.className='stat-pager';
-   const prev=document.createElement('button');prev.textContent='‹';prev.disabled=page===0;prev.title='Datos anteriores';prev.addEventListener('click',()=>{statPages.set(title,page-1);renderStats();});
+   const prev=document.createElement('button');prev.type='button';prev.textContent='‹';prev.disabled=page===0;prev.title='Datos anteriores';prev.setAttribute('aria-label','Datos anteriores de '+title);prev.addEventListener('click',()=>changeStatPage(title,entries,maxItems,page-1,panel));
    const counter=document.createElement('span');counter.textContent=(page+1)+' / '+pages;
-   const next=document.createElement('button');next.textContent='›';next.disabled=page>=pages-1;next.title='Datos siguientes';next.addEventListener('click',()=>{statPages.set(title,page+1);renderStats();});
+   const next=document.createElement('button');next.type='button';next.textContent='›';next.disabled=page>=pages-1;next.title='Datos siguientes';next.setAttribute('aria-label','Datos siguientes de '+title);next.addEventListener('click',()=>changeStatPage(title,entries,maxItems,page+1,panel));
    pager.append(prev,counter,next);panel.appendChild(pager);
  }
  return panel;
@@ -2407,7 +2477,7 @@ $('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0
 });
 
 let layoutResizeTimer=null;
-window.addEventListener('resize',()=>{clearTimeout(layoutResizeTimer);layoutResizeTimer=setTimeout(()=>{if(activeView==='library')renderList();else if(activeView==='statistics')renderStats();else renderCollectionControls();},100)});
+window.addEventListener('resize',()=>{clearTimeout(layoutResizeTimer);layoutResizeTimer=setTimeout(()=>{if(activeView==='library')renderList();else if(activeView==='statistics')renderStats();else if(activeView==='collections')renderCollectionControls();},100)});
 fetch('/api/ping',{cache:'no-store'}).catch(()=>{});
 setInterval(()=>{fetch('/api/ping',{cache:'no-store'}).catch(()=>{});},12000);
 window.addEventListener('pagehide',()=>{
