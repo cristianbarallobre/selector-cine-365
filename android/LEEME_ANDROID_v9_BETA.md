@@ -1,50 +1,45 @@
-# Selector Cine 365 · Android v9 beta 4
+# Selector Cine 365 · Android v9 beta 5 / Windows v9 beta 5
 
-Esta versión es **experimental**. Conserva tu aplicación anterior y exporta una copia JSON de las listas antes de probar. La APK de esta beta tiene un identificador distinto, por lo que no accede automáticamente a la biblioteca ni a la caché de TMDB de otras betas.
+**Versión experimental.** Instalar Android beta 5 no sustituye a beta 4: paquete de prueba es.cine365.app.v9beta5. Exporta/importa tu copia JSON si quieres trasladar tus listas. La app de Windows beta 5 usa el directorio de datos habitual, así que guarda una copia y **no ejecutes dos versiones de Windows simultáneamente**.
 
-## Novedades
+## Qué cambia
 
-- Estadísticas completas: sin flechas, todas las filas visibles y scroll vertical.
-- Sexta pestaña «Ayuda» con instrucciones de TMDB y funciones básicas.
-- Datos de TMDB guardados sin caducidad automática. Al abrir se lee la caché local: solo películas nuevas sin ficha o actualizaciones manuales generan solicitudes. Los carteles también se guardan en el móvil.
-- Sincronización experimental con la versión **Windows v9 beta 4**, con vista previa, conflictos y archivos independientes por dispositivo.
-- Sincronización **opcional**: la biblioteca se guarda en el móvil incluso sin nube ni clave API.
+- Ayuda clara para el usuario: **OneDrive es la opción recomendada para compartir Windows y Android**. El botón «Elegir carpeta local» no abre OneDrive en el móvil.
+- Código de acceso directo a OneDrive PERSONAL en Android mediante API oficial **Microsoft Graph**, con selección de carpeta de primer nivel, creación opcional de Pruebas_Selector_Cine_365, desconexión y conservación del modo solo local.
+- Inicio de sesión en Microsoft en navegador externo mediante flujo OAuth 2.0 de **código de dispositivo**: la app muestra un código de un solo uso. Los tokens se cifran con Android Keystore. **La app nunca solicita la contraseña de Microsoft.**
+- La sincronización existente sigue siendo experimental y **requiere revisión manual al recibir cambios**. Cada dispositivo escribe su archivo propio en Selector_Cine_365_Copias/sincronizacion/dispositivos.
+- Las listas y marcas se guardan localmente aunque OneDrive esté desconectado. No se suben tokens TMDB ni se vuelve a consultar TMDB solo por conectar OneDrive.
+- Continúa la compatibilidad opcional con carpetas locales accesibles mediante Android Storage Access Framework; otras nubes dependen de la compatibilidad real del proveedor.
 
-## Instalación y seguridad
+## Requisito imprescindible para habilitar el inicio de sesión Microsoft
 
-- Instalar `Selector_Cine_365_Android_v9_BETA4.apk`. Nombre de paquete de prueba: `es.cine365.app.v9beta4`.
-- La Beta 3 no se reemplaza; para conservar películas vistas, exporta «Copia de seguridad» JSON desde la anterior y restáurala en esta.
-- El token TMDB se configura en cada instalación. No se sube a la nube.
-- La caché persiste entre aperturas **de esta misma instalación**, pero no se comparte automáticamente entre aplicaciones con identificadores distintos.
-- No desinstales la versión anterior hasta comprobar todas tus listas.
+**La APK publicada sin MICROSOFT_CLIENT_ID NO permite conectar a OneDrive.** La interfaz lo advierte y deshabilita el botón; no se suplanta la autorización ni se inventa una sesión. Registrar la aplicación en Microsoft es una tarea del responsable de la publicación, **no de los usuarios finales**.
 
-## Nube: no depende de OneDrive
+1. En [Microsoft Entra, Registros de aplicaciones](https://entra.microsoft.com/), registrar Selector Cine 365 y seleccionar cuentas personales de Microsoft (o cuentas de cualquier directorio y personales).
+2. En **Autenticación / Configuración avanzada**, habilitar **flujos de cliente público** para el flujo de código de dispositivo. No se necesita secreto de cliente ni URI de redirección para este flujo.
+3. En **Permisos de API → Microsoft Graph → Delegados**, configurar Files.ReadWrite y User.Read. offline_access se solicita para renovar sesiones. Para la selección libre de carpetas se necesita Files.ReadWrite: la variante Files.ReadWrite.AppFolder solo serviría para la carpeta propia reservada de la app.
+4. Copiar el **ID de aplicación (cliente)**, UUID público, como variable de repositorio GitHub Actions llamada MICROSOFT_CLIENT_ID. **No** es contraseña ni secreto. No copiar client secret.
+5. Compilar una nueva APK y verificar el inicio de sesión **en un Android real** y la visibilidad de la carpeta en el cliente de OneDrive para Windows. No se puede afirmar compatibilidad real sin esta prueba.
 
-**Windows** permite seleccionar cualquier carpeta local sincronizada por un servicio externo (OneDrive, Google Drive, Dropbox u otro). **Android** usa el selector de carpetas del sistema (Storage Access Framework, SAF), que solo funciona si el proveedor elegido permite seleccionar carpetas y ofrece **lectura y escritura reales**. Que una nube aparezca en «Archivos» no garantiza esa capacidad.
+**Advertencia:** el flujo de código de dispositivo requiere escribir un código temporal en la página oficial de Microsoft; no es todavía el inicio de sesión con una sola pulsación mediante MSAL que sería deseable para producción. En OneDrive Empresarial no está habilitado este flujo en esta beta, que usa el endpoint /consumers.
 
-1. Elige una carpeta compartida del proveedor en Windows y asegúrate de que se sincronice en el disco local.
-2. Android → **Nube → Elegir carpeta**: selecciona **la misma carpeta compartida** o directamente `Selector_Cine_365_Copias`.
-3. Android → **Activar copia**: el dispositivo aún **no publica** datos compartidos hasta que revises la primera combinación.
-4. **Revisar sincronización**: muestra listas, vistas y conflictos; confirma solamente después de comprobarlos.
-5. En Windows v9 beta 4 usa **Revisar sincronización con otros dispositivos**, resuelve posibles conflictos y confirma. A partir de entonces cada equipo publica su propio archivo de dispositivo al guardar.
-6. Para recibir cambios nuevos del otro dispositivo en esta beta, vuelve a usar **Revisar sincronización**. **No es todavía sincronización entrante automática**.
+## Guía de pruebas (cuando esté registrado Microsoft)
 
-Si tu aplicación de nube en Android no permite seleccionar una carpeta con lectura/escritura, **no es compatible con este acceso directo por SAF**. Como alternativa, una aplicación de sincronización de carpetas de terceros puede mantener una carpeta local del móvil sincronizada con esa nube y puedes seleccionarla desde Android. Debes comprobar que admita sincronización bidireccional y que no borre conflictos sin avisarte. También puedes exportar/importar JSON manualmente.
+1. En Windows abre tu carpeta local de OneDrive y crea Pruebas_Selector_Cine_365. Selecciona esa carpeta en Selector Cine 365 Windows Beta 5. No elijas la carpeta que contiene tus copias reales.
+2. En Android abre **Nube → Conectar cuenta Microsoft**. Abre Microsoft y escribe el código temporal. Vuelve a la app.
+3. En el desplegable de OneDrive selecciona Pruebas_Selector_Cine_365 o créala desde la propia app. Pulsa **Utilizar esta carpeta**.
+4. En ambos equipos pulsa **Revisar sincronización**; inspecciona las cantidades y resuelve conflictos. **La selección sola no publica tus películas.**
+5. Marca una película en Windows, revisa la sincronización en Android, y viceversa.
+6. Para detener la nube usa **Desactivar** o **Desconectar cuenta Microsoft**. Los archivos remotos no se borran.
+7. Haz copia JSON antes de hacer pruebas de desmarcado simultáneo o cambios de listas.
 
-### Protección de datos
+## Protecciones y límites
 
-- `actual/` y `historico/` siguen siendo copias de recuperación de Windows.
-- `sincronizacion/dispositivos/<id>.json` contiene la copia específica de cada instalación: **cada dispositivo escribe solo su archivo**.
-- Se hace una copia local de recuperación antes de importar; no se aplican cambios contradictorios sin elección.
-- No se sincronizan tokens TMDB, cachés de imágenes ni contraseñas.
-- Las eliminaciones y renombrados simultáneos de listas, y la sincronización automática de entrada, **todavía requieren más pruebas y protección**. No uses esta beta como único respaldo.
+- No se publican datos al conectar la cuenta ni al elegir una carpeta: se exige primera revisión/confirmación.
+- Antes de importar, se crea respaldo local. Cada dispositivo publica su JSON, sin sobrescribir el archivo independiente de otro.
+- La sincronización bidireccional de entrada **aún no es automática**: hay que pulsar «Revisar sincronización».
+- Renombrados/eliminaciones de listas simultáneos y recuperación ante cambios concurrentes siguen siendo casos experimentales.
+- Se conserva caché persistente de TMDB sin actualizaciones automáticas.
+- Microsoft Graph puede introducir límites, permisos y revisiones de consentimiento según la cuenta.
 
-## Comprobaciones recomendadas
-
-1. Importar tu copia JSON de la beta anterior; marcar una película en Android, revisar en Windows e importar allí.
-2. Desmarcarla en Windows, revisar de nuevo en Android y comprobar que cambió.
-3. Cambiar de estado la misma película con ambos dispositivos desconectados y comprobar el aviso de conflicto.
-4. Desactivar la nube y confirmar que los datos se siguen guardando localmente.
-5. Cerrar y reabrir la aplicación: comprobar que se muestran carteles y fichas guardados sin volver a descargar todo.
-
-**Autor:** Cristian Barallobre Rúa. Este producto utiliza TMDB, pero no está respaldado ni certificado por TMDB.
+**Autor:** Cristian Barallobre Rúa. Este producto utiliza TMDB pero no está respaldado ni certificado por TMDB.
