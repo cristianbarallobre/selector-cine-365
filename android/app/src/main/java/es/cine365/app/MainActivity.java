@@ -65,6 +65,15 @@ public class MainActivity extends Activity {
             @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
                 if (!APP_ORIGIN.equals(uri.getScheme()+"://"+uri.getHost())) return null;
+                // La WebView no dispone de un servidor HTTP: resolvemos aquí los carteles de TMDB.
+                if ("/api/poster".equals(uri.getPath())) {
+                    try {
+                        String posterPath=uri.getQueryParameter("path");
+                        byte[] image=backend.tmdb.poster(posterPath);
+                        String mime=posterPath.endsWith(".png")?"image/png":posterPath.endsWith(".webp")?"image/webp":"image/jpeg";
+                        return new WebResourceResponse(mime,null,new ByteArrayInputStream(image));
+                    } catch(Exception e) { return errorResponse(); }
+                }
                 if (!uri.getPath().startsWith("/assets/")) return null;
                 String file = uri.getPath().substring(8);
                 if (!file.equals("index.html") && !file.equals("icon.png")) return errorResponse();
