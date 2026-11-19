@@ -44,7 +44,7 @@ func newCloudBackups(dir string) *cloudBackups {
 		var s cloudSettings
 		if json.Unmarshal(b, &s) == nil && s.Folder != "" {
 			c.folder = s.Folder
-			if st, err := os.Stat(filepath.Join(c.folder, cloudDirectoryName, "actual", "colecciones.json")); err == nil {
+			if st, err := os.Stat(filepath.Join(cloudSyncRoot(c.folder), "actual", "colecciones.json")); err == nil {
 				c.lastBackup = st.ModTime().Format(time.RFC3339)
 			}
 		}
@@ -56,7 +56,7 @@ func (c *cloudBackups) statusLocked() cloudStatus {
 		if c.folder == "" {
 			return ""
 		}
-		return filepath.Join(c.folder, cloudDirectoryName)
+		return cloudSyncRoot(c.folder)
 	}(), LastBackup: c.lastBackup, LastError: c.lastError}
 }
 func (c *cloudBackups) status() cloudStatus {
@@ -131,7 +131,7 @@ func (c *cloudBackups) backup() cloudStatus {
 		c.lastError = "La carpeta de nube no está disponible"
 		return c.statusLocked()
 	}
-	dest := filepath.Join(c.folder, cloudDirectoryName)
+	dest := cloudSyncRoot(c.folder)
 	if err = os.MkdirAll(filepath.Join(dest, "actual"), 0700); err != nil {
 		c.lastError = err.Error()
 		return c.statusLocked()
