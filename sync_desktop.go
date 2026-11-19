@@ -270,8 +270,6 @@ func readSyncFile(path string) ([]byte,error) {
  file,err:=os.Open(path);if err!=nil{return nil,err};defer file.Close()
  st,err:=file.Stat();if err!=nil{return nil,err}
  if st.IsDir()||st.Size()>8*1024*1024{return nil,fmt.Errorf("archivo compartido demasiado grande: %s",filepath.Base(path))}
- b:=make([]byte,st.Size())
- if _,err:=file.Read(b);err!=nil&&len(b)==0{return nil,err}
  return os.ReadFile(path)
 }
 func (a *runningApp) cloudPlanFor(local libraryState,folder string) (syncPlan,error) {
