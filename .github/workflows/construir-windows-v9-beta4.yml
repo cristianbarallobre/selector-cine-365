@@ -9,7 +9,7 @@ on:
       - 'collections.go'
       - 'main.go'
       - 'plantilla.html'
-      - '.github/workflows/construir-windows-v9-beta5.yml'
+      - '.github/workflows/construir-windows-v9-beta4.yml'
   workflow_dispatch:
 
 permissions:
