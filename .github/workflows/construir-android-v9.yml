@@ -39,19 +39,19 @@ jobs:
       - name: Guardar APK como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: Selector_Cine_365_Android_v9_beta3_APK
+          name: Selector_Cine_365_Android_v9_beta4_APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
       - name: Publicar pre-release de Android
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk Selector_Cine_365_Android_v9_BETA3.apk
-          if gh release view v9.0.0-android-beta.3 >/dev/null 2>&1; then
-            gh release upload v9.0.0-android-beta.3 Selector_Cine_365_Android_v9_BETA3.apk --clobber
+          cp android/app/build/outputs/apk/debug/app-debug.apk Selector_Cine_365_Android_v9_BETA4.apk
+          if gh release view v9.0.0-android-beta.4 >/dev/null 2>&1; then
+            gh release upload v9.0.0-android-beta.4 Selector_Cine_365_Android_v9_BETA4.apk --clobber
           else
-            gh release create v9.0.0-android-beta.3 Selector_Cine_365_Android_v9_BETA3.apk \
+            gh release create v9.0.0-android-beta.4 Selector_Cine_365_Android_v9_BETA4.apk \
               --target "$GITHUB_SHA" --prerelease \
-              --title 'Selector Cine 365 - Android v9 beta 3' \
-              --notes 'BETA Android 3: botones de estadísticas sin salto de scroll y nueva pestaña Ayuda con instrucciones de TMDB, uso básico y nube opcional. Instalar aparte de beta 2 para conservar sus datos; exportar e importar el JSON si se quieren trasladar. La sincronización completa de retorno a Windows continúa pendiente.'
+              --title 'Selector Cine 365 - Android v9 beta 4' \
+              --notes 'BETA 4: estadísticas sin flechas, caché TMDB persistente y nubes compatibles mediante SAF. Sincronización bidireccional manual con Windows v9 beta 4, vista previa y copias independientes. No desinstalar la beta anterior. Validar antes de considerarla estable.'
           fi
