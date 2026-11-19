@@ -164,7 +164,10 @@ final class CloudBackup {
         Plan p=new Plan();p.library=new JSONObject(backend.readOrDefault("colecciones.json","{}"));
         if(!Backend.validLibrary(p.library))throw new Exception("Biblioteca local inválida");
         p.revisions=sync.revisions();p.known=sync.known();
-        StringBuilder digest=new StringBuilder("Cine365-sync-v2|");
+        // Incluir también el estado local en la huella: editar después de la vista previa
+        // obliga a revisar otra vez antes de importar datos.
+        StringBuilder digest=new StringBuilder("Cine365-sync-v2|local:"+hexHash(
+            backend.readOrDefault("colecciones.json","").getBytes(StandardCharsets.UTF_8))+"|");
         Uri root=existingBase();
         if(root!=null){
             Uri actual=findChild(root,"actual");
@@ -197,7 +200,7 @@ final class CloudBackup {
                 }
             }
         }
-        // Hash only remote inputs: local movie edits do not silently invalidate a preview on save.
+        // La huella incluye los archivos remotos y la biblioteca local original.
         p.fingerprint=hexHash(digest.toString().getBytes(StandardCharsets.UTF_8));
         return p;
     }
@@ -229,11 +232,14 @@ final class CloudBackup {
             }
             if(resolved.length()>0){
                 plan.library=SyncStore.applyStatuses(plan.library,resolved);
+            }
+            // Guardar la biblioteca con copia de recuperación antes de modificar
+            // el historial causal o publicar cambios en otra nube.
+            backend.storeStateImported(plan.library);
+            if(resolved.length()>0){
                 sync.resolve(plan.revisions,plan.known,resolved);
                 plan.revisions=sync.revisions();plan.known=sync.known();
             }else sync.accept(plan.revisions,plan.known);
-            // Local atomic backup happens before outgoing cloud publication.
-            backend.storeStateImported(plan.library);
             activated=true;
             activity.getPreferences(Context.MODE_PRIVATE).edit().putBoolean("sync_activated_v2",true).apply();
             JSONObject backup=backup();
