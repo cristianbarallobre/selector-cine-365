@@ -1,47 +1,50 @@
-# Selector Cine 365 — Android v9.0 beta 3
+# Selector Cine 365 · Android v9 beta 4
 
-**Autor:** Cristian Barallobre Rúa. Repositorio oficial: https://github.com/cristianbarallobre/selector-cine-365
+Esta versión es **experimental**. Conserva tu aplicación anterior y exporta una copia JSON de las listas antes de probar. La APK de esta beta tiene un identificador distinto, por lo que no accede automáticamente a la biblioteca ni a la caché de TMDB de otras betas.
 
-## ¿Qué incluye esta prueba?
+## Novedades
 
-- Identidad visual renovada, icono de claqueta generado para el proyecto y cabecera fija.
-- Seis pantallas: Biblioteca, Sorteo, Estadísticas, Listas, Nube y Ayuda.
-- Scroll solo dentro del contenido de la sección seleccionada y controles táctiles grandes.
-- Compatible con el formato original de colecciones (ID interno `atlas`), conservando el nombre y carpeta de almacenamiento históricos cuando corresponda.
-- Primera conexión a carpeta compartida en modo **solo lectura**. Vista previa con número de listas y películas vistas; hay que confirmar para importar y empezar a publicar el snapshot de Android.
-- Las copias de PC `Selector_Cine_365_Copias/actual/colecciones.json` y `historico/` nunca son modificadas por Android. Android utiliza su propio fichero en `sincronizacion/dispositivos/`.
-- Revisión de cambios hechos sin conexión por dispositivo mediante relojes causales. Los estados contradictorios concurrentes se muestran para resolverlos.
-- La importación crea una copia local de recuperación antes de guardar.
+- Estadísticas completas: sin flechas, todas las filas visibles y scroll vertical.
+- Sexta pestaña «Ayuda» con instrucciones de TMDB y funciones básicas.
+- Datos de TMDB guardados sin caducidad automática. Al abrir se lee la caché local: solo películas nuevas sin ficha o actualizaciones manuales generan solicitudes. Los carteles también se guardan en el móvil.
+- Sincronización experimental con la versión **Windows v9 beta 4**, con vista previa, conflictos y archivos independientes por dispositivo.
+- Sincronización **opcional**: la biblioteca se guarda en el móvil incluso sin nube ni clave API.
 
-## Instalar en Xiaomi Mi 9T
+## Instalación y seguridad
 
-Descarga el APK de la prepublicación v9.0-beta.3 y ábrelo desde el gestor de archivos. **Se instala junto a tu antigua APK** con el identificador `es.cine365.app.v9beta3`, sin eliminar los datos de la beta anterior. Se instala aparte porque la firma de desarrollo puede cambiar entre compilaciones. Para trasladar tus listas, expórtalas desde la beta 1 e impórtalas en la beta 3. Android puede advertir sobre la firma de desarrollo; no desactives Play Protect de forma general.
+- Instalar `Selector_Cine_365_Android_v9_BETA4.apk`. Nombre de paquete de prueba: `es.cine365.app.v9beta4`.
+- La Beta 3 no se reemplaza; para conservar películas vistas, exporta «Copia de seguridad» JSON desde la anterior y restáurala en esta.
+- El token TMDB se configura en cada instalación. No se sube a la nube.
+- La caché persiste entre aperturas **de esta misma instalación**, pero no se comparte automáticamente entre aplicaciones con identificadores distintos.
+- No desinstales la versión anterior hasta comprobar todas tus listas.
 
-## Mejoras de la beta 3
+## Nube: no depende de OneDrive
 
-- Las secciones vuelven arriba cuando cambias de pestaña.
-- Los seis iconos inferiores son monocromos, minimalistas y del mismo tamaño.
-- «Cargar más» incorpora 24 películas sin reconstruir la lista ni desplazar el scroll.
-- Los carteles se cargan desde TMDB mediante la ruta nativa de Android, con caché local.
-- Las tarjetas crecen según el título y las plataformas, con controles en una fila independiente.
+**Windows** permite seleccionar cualquier carpeta local sincronizada por un servicio externo (OneDrive, Google Drive, Dropbox u otro). **Android** usa el selector de carpetas del sistema (Storage Access Framework, SAF), que solo funciona si el proveedor elegido permite seleccionar carpetas y ofrece **lectura y escritura reales**. Que una nube aparezca en «Archivos» no garantiza esa capacidad.
 
-## Nuevas mejoras de la beta 3
+1. Elige una carpeta compartida del proveedor en Windows y asegúrate de que se sincronice en el disco local.
+2. Android → **Nube → Elegir carpeta**: selecciona **la misma carpeta compartida** o directamente `Selector_Cine_365_Copias`.
+3. Android → **Activar copia**: el dispositivo aún **no publica** datos compartidos hasta que revises la primera combinación.
+4. **Revisar sincronización**: muestra listas, vistas y conflictos; confirma solamente después de comprobarlos.
+5. En Windows v9 beta 4 usa **Revisar sincronización con otros dispositivos**, resuelve posibles conflictos y confirma. A partir de entonces cada equipo publica su propio archivo de dispositivo al guardar.
+6. Para recibir cambios nuevos del otro dispositivo en esta beta, vuelve a usar **Revisar sincronización**. **No es todavía sincronización entrante automática**.
 
-- Las flechas de Estadísticas solo actualizan el bloque correspondiente y conservan la posición del scroll.
-- Sexto icono «Ayuda», con un manual breve de Biblioteca, Sorteo, Estadísticas, Listas y nube opcional.
-- Instrucciones paso a paso para conseguir una API Key (v3) o un API Read Access Token de TMDB, con enlace a la página oficial y botón para configurarla directamente.
-- La versión beta 3 se instala sin reemplazar beta 2. Para trasladar los datos entre ambas, usa copia de seguridad JSON y restauración.
+Si tu aplicación de nube en Android no permite seleccionar una carpeta con lectura/escritura, **no es compatible con este acceso directo por SAF**. Como alternativa, una aplicación de sincronización de carpetas de terceros puede mantener una carpeta local del móvil sincronizada con esa nube y puedes seleccionarla desde Android. Debes comprobar que admita sincronización bidireccional y que no borre conflictos sin avisarte. También puedes exportar/importar JSON manualmente.
 
-## Sincronización con OneDrive
+### Protección de datos
 
-1. En Windows utiliza **Mis listas > Copia en nube** para dejar una copia de seguridad actualizada en la carpeta habitual. No elimines nada.
-2. Abre Android > Nube > Elegir carpeta. Selecciona la carpeta que contiene `Selector_Cine_365_Copias`, o esa misma carpeta.
-3. Pulsa Activar copia (solo registra el permiso) y **Revisar sincronización**.
-4. Lee los números de listas y vistos del móvil y los previstos tras importar. Resuelve conflictos si aparecen y confirma.
-5. Solo entonces el móvil publica su archivo, **no** la copia `actual` del PC.
+- `actual/` y `historico/` siguen siendo copias de recuperación de Windows.
+- `sincronizacion/dispositivos/<id>.json` contiene la copia específica de cada instalación: **cada dispositivo escribe solo su archivo**.
+- Se hace una copia local de recuperación antes de importar; no se aplican cambios contradictorios sin elección.
+- No se sincronizan tokens TMDB, cachés de imágenes ni contraseñas.
+- Las eliminaciones y renombrados simultáneos de listas, y la sincronización automática de entrada, **todavía requieren más pruebas y protección**. No uses esta beta como único respaldo.
 
-La sincronización a través de la app OneDrive para Android **depende de que el proveedor permita elegir y escribir carpetas mediante el Storage Access Framework**. OneDrive puede no aparecer en el selector de carpetas o no dar permisos persistentes. No podemos saltarnos esa restricción. Como alternativa temporal, exporta/importa JSON manualmente. **El inicio de sesión directo con Microsoft Graph todavía no está implementado** y requiere registrar una aplicación de Microsoft con sus permisos. No incluyas contraseñas en código ni archivos compartidos.
+## Comprobaciones recomendadas
 
-Windows v8.2 / v8.1.1 sigue haciendo respaldos, **pero todavía no recibe los cambios de Android**. No confundas esta beta con sincronización bidireccional completa de escritorio. El protocolo causal del móvil es una base para completar las versiones Windows y Mac.
+1. Importar tu copia JSON de la beta anterior; marcar una película en Android, revisar en Windows e importar allí.
+2. Desmarcarla en Windows, revisar de nuevo en Android y comprobar que cambió.
+3. Cambiar de estado la misma película con ambos dispositivos desconectados y comprobar el aviso de conflicto.
+4. Desactivar la nube y confirmar que los datos se siguen guardando localmente.
+5. Cerrar y reabrir la aplicación: comprobar que se muestran carteles y fichas guardados sin volver a descargar todo.
 
-La beta requiere pruebas físicas y debe mantenerse una copia independiente de las colecciones existentes.
+**Autor:** Cristian Barallobre Rúa. Este producto utiliza TMDB, pero no está respaldado ni certificado por TMDB.
