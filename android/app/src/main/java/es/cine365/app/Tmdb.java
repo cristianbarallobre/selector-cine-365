@@ -202,6 +202,40 @@ final class Tmdb {
             return result;
         }catch(Exception e){return empty("error",e.getMessage()==null?"No se puede consultar TMDB":e.getMessage());}
     }
+
+    // Aceptamos únicamente rutas de imágenes de TMDB, sin dominios ni rutas arbitrarias.
+    byte[] poster(String path)throws Exception{
+        if(path==null||!path.matches("/[A-Za-z0-9_-]{1,160}\\.(?:jpg|jpeg|png|webp)"))
+            throw new Exception("Ruta de cartel inválida");
+        File folder=new File(dir,"carteles_tmdb");
+        if(!folder.isDirectory()&&!folder.mkdirs())throw new Exception("No se pudo crear caché de carteles");
+        File local=new File(folder,path.substring(1));
+        if(local.isFile()&&local.length()>128&&local.length()<=2_500_000)return Files.readAllBytes(local.toPath());
+        HttpURLConnection conn=(HttpURLConnection)new URL("https://image.tmdb.org/t/p/w342"+path).openConnection();
+        conn.setConnectTimeout(8000);conn.setReadTimeout(12000);conn.setRequestProperty("Accept","image/*");
+        byte[] data;
+        try{
+            if(conn.getResponseCode()!=200||conn.getContentType()==null||!conn.getContentType().startsWith("image/"))
+                throw new Exception("Cartel no disponible");
+            try(InputStream in=conn.getInputStream();java.io.ByteArrayOutputStream out=new java.io.ByteArrayOutputStream()){
+                byte[] buffer=new byte[8192];int n;
+                while((n=in.read(buffer))!=-1){
+                    if(out.size()+n>2_500_000)throw new Exception("Cartel demasiado grande");
+                    out.write(buffer,0,n);
+                }
+                data=out.toByteArray();
+            }
+        }finally{conn.disconnect();}
+        if(data.length<=128)throw new Exception("Cartel vacío");
+        java.nio.file.Path temp=Files.createTempFile(folder.toPath(),"tmdb-", ".tmp");
+        try{
+            Files.write(temp,data);
+            try{Files.move(temp,local.toPath(),java.nio.file.StandardCopyOption.ATOMIC_MOVE,java.nio.file.StandardCopyOption.REPLACE_EXISTING);}
+            catch(java.nio.file.AtomicMoveNotSupportedException e){Files.move(temp,local.toPath(),java.nio.file.StandardCopyOption.REPLACE_EXISTING);}
+        }finally{Files.deleteIfExists(temp);}
+        return data;
+    }
+
     private String readFile(String name,String defaultValue){
         try{return new String(Files.readAllBytes(new File(dir,name).toPath()),StandardCharsets.UTF_8);}catch(Exception e){return defaultValue;}
     }
