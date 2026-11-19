@@ -83,7 +83,7 @@ final class CloudBackup {
         Uri query=DocumentsContract.buildChildDocumentsUriUsingTree(root,DocumentsContract.getDocumentId(item));
         try(Cursor cursor=activity.getContentResolver().query(query,
                 new String[]{DocumentsContract.Document.COLUMN_DOCUMENT_ID,DocumentsContract.Document.COLUMN_DISPLAY_NAME},null,null,null)){
-            if(cursor==null)throw new Exception("No se puede explorar la carpeta de OneDrive; comprueba sus permisos");
+            if(cursor==null)throw new Exception("No se puede explorar la carpeta seleccionada; comprueba permisos y conexión");
             while(cursor.moveToNext()){
                 String name=cursor.getString(1);
                 if(name!=null&&name.toLowerCase(java.util.Locale.ROOT).endsWith(".json"))
@@ -100,13 +100,13 @@ final class CloudBackup {
     }
     private Uri base()throws Exception{
         Uri root=tree();
-        // Compatible with selecting the same OneDrive parent as Windows OR
-        // selecting the existing Selector_Cine_365_Copias folder directly.
+        // Compatible con cualquier carpeta de proveedor SAF compatible, tanto raíz como subcarpeta.
+        // No se necesita una cuenta de un proveedor específico.
         if(findChild(root,"actual")!=null||findChild(root,"sincronizacion")!=null)return root;
         return ensureDirectory(root,ROOT);
     }
     private Uri existingBase()throws Exception{
-        Uri root=tree();if(findChild(root,"actual")!=null)return root;
+        Uri root=tree();if(findChild(root,"actual")!=null||findChild(root,"sincronizacion")!=null)return root;
         return findChild(root,ROOT);
     }
     private byte[] read(Uri uri)throws Exception{
@@ -144,7 +144,7 @@ final class CloudBackup {
             putFile(mobile,LocalDate.now()+"_"+sync.deviceId()+".json",data,false);
             lastBackup=OffsetDateTime.now().toString();lastError="";
             activity.getPreferences(Context.MODE_PRIVATE).edit().putString("last_backup",lastBackup).apply();
-        }catch(Exception e){lastError=e.getMessage()==null?"Error de acceso a OneDrive":e.getMessage();}
+        }catch(Exception e){lastError=e.getMessage()==null?"Error al acceder a la carpeta compartida":e.getMessage();}
         return status();
     }
     private static final class Plan {
@@ -219,7 +219,7 @@ final class CloudBackup {
         if(previewToken.isEmpty()||!previewToken.equals(expected))throw new Exception("Revisa primero los datos para sincronizar");
         try {
             Plan plan=buildPlan(backend);
-            if(!plan.fingerprint.equals(expected))throw new Exception("OneDrive ha cambiado desde la vista previa; vuelve a revisar");
+            if(!plan.fingerprint.equals(expected))throw new Exception("La carpeta compartida ha cambiado desde la vista previa; vuelve a revisar");
             JSONObject resolved=new JSONObject();
             for(int i=0;i<plan.conflicts.length();i++){
                 JSONObject conflict=plan.conflicts.getJSONObject(i);
