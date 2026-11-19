@@ -556,16 +556,26 @@ async function platformApi(path,body){
  return await res.json();
 }
 async function initPlatforms(){
- try{const r=await platformApi('/api/platforms/status');platformConfigured=!!r.configured;}
- catch(err){platformConfigured=false;}
- updatePlatformProgress();updateListPlatformOptions();renderList();
+ try{
+  const r=await platformApi('/api/platforms/status');platformConfigured=!!r.configured;
+  if(platformConfigured){
+   const cached=await platformApi('/api/platforms/cache');
+   for(const [key,entry] of Object.entries(cached.entries||{}))platformData.set(key,entry);
+  }
+ }catch(err){platformConfigured=false;}
+ updatePlatformProgress();updateListPlatformOptions();renderList();renderStats();
  if(platformConfigured)void loadPlatforms(false);
 }
 async function loadPlatforms(force){
  if(!platformConfigured){showPlatformModal();return;}
- const current=++platformRun;platformData.clear();platformFinished=0;platformTotal=parsed.entries.length;platformActive=true;updatePlatformProgress();renderList();
- // Tres consultas simultáneas, para no saturar la API.
- const entries=parsed.entries.map(f=>({...f}));let idx=0;
+ const current=++platformRun;
+ const all=parsed.entries.map(f=>({...f}));
+ const entries=force?all:all.filter(f=>!platformData.has(providerKey(f)));
+ platformTotal=all.length;platformFinished=all.length-entries.length;
+ platformActive=entries.length>0;updatePlatformProgress();renderList();
+ if(!entries.length){updateListPlatformOptions();return;}
+ // Solo títulos no cacheados, salvo cuando se pulsa Actualizar.
+ let idx=0;
  async function worker(){while(current===platformRun){const n=idx++;if(n>=entries.length)break;const f=entries[n];
    try{const r=await platformApi('/api/platforms/lookup',{title:f.title,year:Number(f.year)||0,force:!!force});if(current===platformRun){platformData.set(providerKey(f),r);if(r?.tmdb_id>0)registerIdentity(f,r.tmdb_id);}}
    catch(err){if(current===platformRun)platformData.set(providerKey(f),{state:'error',note:err.message});}
@@ -619,7 +629,7 @@ $('matchID').addEventListener('keydown',e=>{if(e.key==='Enter')$('saveMatch').cl
 $('saveKey').addEventListener('click',async()=>{
  const key=$('apiKey').value.trim();if(!key)return;
  $('platformStatus').textContent='Comprobando clave…';$('saveKey').disabled=true;
- try{await platformApi('/api/platforms/config',{key});platformConfigured=true;identityConfigured=true;closePlatformModal();updatePlatformProgress();void loadPlatforms(true);void scanIdentities(false);}
+ try{await platformApi('/api/platforms/config',{key});platformConfigured=true;identityConfigured=true;closePlatformModal();updatePlatformProgress();void loadPlatforms(true);}
  catch(err){$('platformStatus').textContent='No se pudo activar: '+err.message;}
  finally{$('saveKey').disabled=false;}
 });
@@ -744,7 +754,7 @@ $('filmPageGotoForm').addEventListener('submit',e=>{
  filmPage=page-1;renderList();input.value='';
 });
 function resetChoice(){chosen=null;$('resultPoster').hidden=true;$('resultPoster').removeAttribute('src');$('resultPlatforms').replaceChildren();$('resultTag').textContent='EL SORTEO TE ESPERA';$('resultTitle').textContent='Tu próxima película aparecerá aquí';$('resultDetails').textContent='';$('markWatched').disabled=true;$('copyChoice').disabled=true;}
-function scheduleSave(){if(identityConfigured&&!identityScanRunning)queueIdentityScanSoon(); $('saveState').textContent='Guardando…';clearTimeout(saveTimer);saveTimer=setTimeout(()=>{void saveLocal();},240);}
+function scheduleSave(){ $('saveState').textContent='Guardando…';clearTimeout(saveTimer);saveTimer=setTimeout(()=>{void saveLocal();},240);}
 async function saveLocal(){
  syncActiveText();const snapshot=JSON.stringify(libraryState);const epoch=++saveEpoch;
  saveQueue=saveQueue.catch(()=>{}).then(async()=>{
@@ -850,7 +860,7 @@ async function initIdentities(){
    const data=await platformApi('/api/identities');identityConfigured=Boolean(data.configured);
    for(const [key,id] of Object.entries(data.entries||{})){if(id>0)identityMap.set(key,id);}
    queueIdentityReconcile();
-   if(identityConfigured)void scanIdentities();
+   if(identityConfigured)identityStatus('TMDB: identidades locales cargadas · Revisar TMDB para buscar más');
    else identityStatus('TMDB sin configurar · coincidencias por título y año');
  }catch(e){identityStatus('Identificación TMDB no disponible');}
 }
@@ -942,7 +952,7 @@ async function initLibrary(){
 }
 function validLibrary(s){return s&&s.version===1&&Array.isArray(s.lists)&&s.lists.length>0&&s.lists.length<=40&&typeof s.active_id==='string'&&s.lists.some(l=>l.id===s.active_id)&&s.lists.every(l=>typeof l.text==='string'&&typeof l.name==='string'&&typeof l.id==='string');}
 function restartList(){
- filmPage=0;collectionPage=0;statPages.clear();platformRun++;platformData.clear();platformFinished=0;platformTotal=0;platformActive=false;lastChoice=null;resetChoice();filter='all';search='';$('search').value='';
+ filmPage=0;collectionPage=0;statPages.clear();platformRun++;platformFinished=0;platformTotal=0;platformActive=false;lastChoice=null;resetChoice();filter='all';search='';$('search').value='';
  selectedSortPlatform='all';$('platformSelect').value='all';selectedListPlatforms.clear();closeListPlatformMenu();
  document.querySelectorAll('.filter').forEach(b=>b.classList.toggle('selected',b.dataset.filter==='all'));
  updateListPlatformOptions();update();updatePlatformProgress();renderStats();renderCollectionControls();if(platformConfigured)void loadPlatforms(false);
