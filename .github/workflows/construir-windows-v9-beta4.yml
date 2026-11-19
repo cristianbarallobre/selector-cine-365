@@ -1,0 +1,63 @@
+name: Publicar Selector Cine 365 Windows v9 beta 4
+on:
+  push:
+    branches: [v9-android-beta]
+    paths:
+      - 'sync_desktop.go'
+      - 'sync_desktop_test.go'
+      - 'cloud.go'
+      - 'collections.go'
+      - 'main.go'
+      - 'plantilla.html'
+      - '.github/workflows/construir-windows-v9-beta4.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  beta-windows:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - name: Pruebas Go (incluida sincronización)
+        run: go test ./...
+      - name: Compilar Windows 64 bits
+        run: GOOS=windows GOARCH=amd64 go build -o Selector_Cine_365_Windows_v9_BETA4.exe .
+      - name: Preparar ZIP de pruebas
+        run: |
+          cat > LEEME_BETA4.txt <<'EOF'
+          SELECTOR CINE 365 - WINDOWS v9 BETA 4 (PRUEBAS)
+          Antes de usar con datos reales, exporta una copia JSON y conserva la v8.2.
+          No ejecutes dos versiones de escritorio al mismo tiempo.
+          La copia local sigue funcionando sin nube ni clave TMDB.
+          Para recibir cambios de Android, elige la misma carpeta sincronizada,
+          pulsa Revisar sincronizacion con otros dispositivos y confirma.
+          Cada escritorio escribe su snapshot independiente despues de confirmar.
+          El intercambio entrante debe revisarse manualmente por ahora.
+          La carpeta puede pertenecer a OneDrive, Drive, Dropbox u otro proveedor
+          que mantenga una copia local en Windows.
+          Aplicacion beta no firmada ni verificada en dispositivos reales.
+          EOF
+          zip -q Selector_Cine_365_Windows_v9_BETA4.zip Selector_Cine_365_Windows_v9_BETA4.exe LEEME_BETA4.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Selector_Cine_365_Windows_v9_BETA4
+          path: Selector_Cine_365_Windows_v9_BETA4.zip
+          if-no-files-found: error
+      - name: Publicar version preliminar Windows
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v9.0.0-windows-beta.4 >/dev/null 2>&1; then
+            gh release upload v9.0.0-windows-beta.4 Selector_Cine_365_Windows_v9_BETA4.zip --clobber
+          else
+            gh release create v9.0.0-windows-beta.4 Selector_Cine_365_Windows_v9_BETA4.zip \
+              --target "$GITHUB_SHA" --prerelease \
+              --title "Selector Cine 365 - Windows v9 Beta 4" \
+              --notes "BETA para probar sincronización con Android: vista previa y resolución de conflictos, snapshots separados, copia de recuperación y caché TMDB sin caducidad automática. No es una versión estable. Guarda copias JSON de tus listas y no ejecutes Windows v8.2 y v9 a la vez."
+          fi
