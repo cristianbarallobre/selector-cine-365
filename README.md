@@ -70,6 +70,14 @@ La información de disponibilidad de plataformas procede de JustWatch a través 
 
 Por el momento el proyecto **no incluye una licencia de reutilización de código**. Si el repositorio se hace público y se desea permitir modificaciones o redistribución, debe añadirse una licencia adecuada y revisar las obligaciones relativas a imágenes, datos y marcas de terceros.
 
-## Historial
+## Historial y documentación oficial
 
-Consulta [CHANGELOG.md](CHANGELOG.md) para ver los cambios de cada versión.
+El historial completo, actualizado hasta la **v8.1.1** y con el crédito de **Cristian Barallobre Rúa**, está disponible en los siguientes formatos:
+
+- [Leer el historial en GitHub](docs/HISTORIAL_VERSIONES.md).
+- [Descargar historial en PDF](docs/Selector_de_Cine_365_Historial_de_versiones_v8.1.1.pdf).
+- [Descargar historial editable en Word](docs/Selector_de_Cine_365_Historial_de_versiones_v8.1.1.docx).
+
+Los documentos Word y PDF publicados en `docs/` se generan automáticamente a partir del historial en Markdown mediante GitHub Actions. Consulta también [CHANGELOG.md](CHANGELOG.md) para ver el resumen de los cambios de cada versión.
+
+**Descarga actual para Windows:** [Selector de Cine 365 v8.1.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.1.1).
