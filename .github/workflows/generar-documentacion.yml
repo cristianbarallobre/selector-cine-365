@@ -24,11 +24,15 @@ jobs:
 
       - name: Generar Word y PDF
         run: |
+          # Dos etapas para conservar las tablas HTML de las fichas de versiones.
+          # La conversión directa de GFM a DOCX descarta esas tablas.
           pandoc docs/HISTORIAL_VERSIONES.md \
-            --from=gfm --to=docx --standalone \
-            --resource-path=docs:. \
-            --metadata=title:"Selector de Cine 365 - Historial de versiones v8.1.1" \
-            --metadata=author:"Cristian Barallobre Rúa" \
+            --from=gfm --to=html \
+            -o /tmp/selector-cine-historial.html
+          sed -i 's#../icon.png#icon.png#g' /tmp/selector-cine-historial.html
+          pandoc /tmp/selector-cine-historial.html \
+            --from=html --to=docx \
+            --resource-path=. \
             -o docs/Selector_de_Cine_365_Historial_de_versiones_v8.1.1.docx
           mkdir -p /tmp/selector-cine-lo
           libreoffice \
