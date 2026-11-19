@@ -1,0 +1,50 @@
+name: Generar historial oficial Word y PDF
+
+on:
+  push:
+    paths:
+      - "docs/HISTORIAL_VERSIONES.md"
+      - ".github/workflows/generar-documentacion.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  documentos:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtener proyecto
+        uses: actions/checkout@v4
+
+      - name: Instalar conversores y fuentes
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends pandoc libreoffice-writer fonts-liberation
+
+      - name: Generar Word y PDF
+        run: |
+          pandoc docs/HISTORIAL_VERSIONES.md \
+            --from=gfm --to=docx --standalone \
+            --resource-path=docs:. \
+            --metadata=title:"Selector de Cine 365 - Historial de versiones v8.1.1" \
+            --metadata=author:"Cristian Barallobre Rúa" \
+            -o docs/Selector_de_Cine_365_Historial_de_versiones_v8.1.1.docx
+          mkdir -p /tmp/selector-cine-lo
+          libreoffice \
+            -env:UserInstallation=file:///tmp/selector-cine-lo/profile \
+            --headless --convert-to pdf \
+            --outdir docs \
+            docs/Selector_de_Cine_365_Historial_de_versiones_v8.1.1.docx
+          test -s docs/Selector_de_Cine_365_Historial_de_versiones_v8.1.1.docx
+          test -s docs/Selector_de_Cine_365_Historial_de_versiones_v8.1.1.pdf
+
+      - name: Guardar documentos generados en repositorio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/Selector_de_Cine_365_Historial_de_versiones_v8.1.1.docx docs/Selector_de_Cine_365_Historial_de_versiones_v8.1.1.pdf
+          if ! git diff --cached --quiet; then
+            git commit -m "docs: publicar historial Word y PDF de v8.1.1"
+            git push origin HEAD:main
+          fi
