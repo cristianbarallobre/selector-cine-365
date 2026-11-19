@@ -68,6 +68,7 @@ final class Backend {
                 return ok(tmdb.identify(req.optString("title"),req.optInt("year"),req.optBoolean("force")).toString());
             }
             case "/api/platforms/status":return ok(new JSONObject().put("configured",tmdb.hasKey()).toString());
+            case "/api/platforms/cache":return ok(tmdb.cachedEntries().toString());
             case "/api/platforms/config":{
                 String key=new JSONObject(body).optString("key","").trim();
                 if(key.length()<12)return fail(400,"Clave TMDB incorrecta");
