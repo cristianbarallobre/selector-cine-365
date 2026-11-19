@@ -136,6 +136,10 @@ public class MainActivity extends Activity {
             try{Uri uri=Uri.parse(href);if("https".equals(uri.getScheme()))startActivity(new Intent(Intent.ACTION_VIEW,uri));}
             catch(Exception ignored){}
         });}
+        @JavascriptInterface public void openMicrosoftLogin(){runOnUiThread(()->{
+            try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://microsoft.com/devicelogin")));}
+            catch(Exception e){toast("No se pudo abrir la página de Microsoft");}
+        });}
         @JavascriptInterface public void copy(String text){runOnUiThread(()->{
             ClipboardManager c=(ClipboardManager)getSystemService(Context.CLIPBOARD_SERVICE);
             c.setPrimaryClip(ClipData.newPlainText("película",text));
