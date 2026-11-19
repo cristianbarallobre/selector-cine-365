@@ -1541,8 +1541,9 @@ async function initPlatforms(){
    for(const [key,entry] of Object.entries(cached.entries||{}))platformData.set(key,entry);
   }
  }catch(err){platformConfigured=false;}
+ // Al abrir no hacemos búsquedas de red, ni siquiera si faltan fichas.
+ // Las nuevas incorporaciones y «Actualizar» solicitan lo que haga falta.
  updatePlatformProgress();updateListPlatformOptions();renderList();renderStats();
- if(platformConfigured)void loadPlatforms(false);
 }
 async function loadPlatforms(force){
  if(!platformConfigured){showPlatformModal();return;}
