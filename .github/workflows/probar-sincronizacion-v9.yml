@@ -1,0 +1,26 @@
+name: Probar sincronización v9 (escritorio)
+on:
+  push:
+    branches: [feature/v9-sync-and-stats-beta4, v9-android-beta]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'plantilla.html'
+      - '.github/workflows/probar-sincronizacion-v9.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - name: Pruebas de las bibliotecas y sincronización
+        run: go test ./...
+      - name: Compilar Windows (sin publicar ni reemplazar versión estable)
+        run: GOOS=windows GOARCH=amd64 go build -o /tmp/Selector_Cine_365_v9_prueba.exe .
