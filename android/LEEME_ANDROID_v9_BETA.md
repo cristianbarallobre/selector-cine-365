@@ -1,4 +1,4 @@
-# Selector Cine 365 — Android v9.0 beta 1
+# Selector Cine 365 — Android v9.0 beta 2
 
 **Autor:** Cristian Barallobre Rúa. Repositorio oficial: https://github.com/cristianbarallobre/selector-cine-365
 
@@ -15,7 +15,15 @@
 
 ## Instalar en Xiaomi Mi 9T
 
-Descarga el APK de la prepublicación v9.0-beta.1 y ábrelo desde el gestor de archivos. **Se instala junto a tu antigua APK** con el identificador `es.cine365.app.v9beta`, sin eliminar sus datos. Android puede advertir sobre la firma de desarrollo; no desactives Play Protect de forma general.
+Descarga el APK de la prepublicación v9.0-beta.2 y ábrelo desde el gestor de archivos. **Se instala junto a tu antigua APK** con el identificador `es.cine365.app.v9beta2`, sin eliminar los datos de la beta anterior. Se instala aparte porque la firma de desarrollo puede cambiar entre compilaciones. Para trasladar tus listas, expórtalas desde la beta 1 e impórtalas en la beta 2. Android puede advertir sobre la firma de desarrollo; no desactives Play Protect de forma general.
+
+## Mejoras de la beta 2
+
+- Las secciones vuelven arriba cuando cambias de pestaña.
+- Los cinco iconos inferiores son monocromos, minimalistas y del mismo tamaño.
+- «Cargar más» incorpora 24 películas sin reconstruir la lista ni desplazar el scroll.
+- Los carteles se cargan desde TMDB mediante la ruta nativa de Android, con caché local.
+- Las tarjetas crecen según el título y las plataformas, con controles en una fila independiente.
 
 ## Sincronización con OneDrive
 
