@@ -53,6 +53,10 @@ final class Tmdb {
         if(!force){
             int id=identities().getJSONObject("entries").optInt(k);
             if(id>0)return new JSONObject().put("state","ok").put("tmdb_id",id);
+            // También recordar resultados negativos para no repetir búsquedas al abrir.
+            JSONObject records=identitiesCache(),prior=records==null?null:records.optJSONObject(k);
+            if(prior!=null && !"ok".equals(prior.optString("state")))
+                return new JSONObject(prior.toString());
         }
         JSONObject data=lookup(title,year,force);int id=data.optInt("tmdb_id");
         JSONObject records=identitiesCache();if(records==null)records=new JSONObject();
@@ -141,16 +145,17 @@ final class Tmdb {
         return new JSONObject().put("state",state).put("note",note).put("subscriptions",new JSONArray())
             .put("free",new JSONArray()).put("ads",new JSONArray()).put("rent",new JSONArray()).put("buy",new JSONArray());
     }
+    // Datos guardados en disco: lectura local al abrir, sin conexión a TMDB.
+    synchronized JSONObject cachedEntries()throws Exception{
+        return new JSONObject().put("entries",new JSONObject(cache.toString()));
+    }
     synchronized JSONObject lookup(String title,int releaseYear,boolean force)throws Exception{
         if(title==null||title.trim().isEmpty()||releaseYear<0||releaseYear>2200)return empty("error","Película no válida");
         String ck=cacheKey(title,releaseYear);
         JSONObject saved=cache.optJSONObject(ck);
-        if(!force&&saved!=null){
-            try {
-                long age=Instant.now().getEpochSecond()-Instant.parse(saved.optString("date")).getEpochSecond();
-                if(saved.optInt("metadata_version")>=3 && age>=0 && age < ("not-found".equals(saved.optString("state"))?86400:604800))return saved;
-            }catch(Exception ignored){}
-        }
+        // Sin caducidad por tiempo: refrescar solo cuando se pide explícitamente,
+        // se incorpora una película nueva o se corrige su identificación.
+        if(!force&&saved!=null&&saved.optInt("metadata_version")>=3)return saved;
         String api=getKey();if(api.isEmpty())return empty("error","Configura una clave de TMDB");
         JSONObject result;
         try{
@@ -200,7 +205,14 @@ final class Tmdb {
             }
             cache.put(ck,result);Backend.atomicWrite(new File(dir,"plataformas_cache.json"),new JSONObject().put("entries",cache).toString());
             return result;
-        }catch(Exception e){return empty("error",e.getMessage()==null?"No se puede consultar TMDB":e.getMessage());}
+        }catch(Exception e){
+            // Si no hay conexión no insistimos en cada inicio ni tras marcar una vista.
+            JSONObject failure=empty("error",e.getMessage()==null?"No se puede consultar TMDB":e.getMessage());
+            failure.put("date",Instant.now().toString()).put("metadata_version",3);
+            cache.put(ck,failure);
+            Backend.atomicWrite(new File(dir,"plataformas_cache.json"),new JSONObject().put("entries",cache).toString());
+            return failure;
+        }
     }
 
     // Aceptamos únicamente rutas de imágenes de TMDB, sin dominios ni rutas arbitrarias.
