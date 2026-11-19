@@ -1488,7 +1488,7 @@ let identityConfigured=false;
 const virtualID='__coincidencias__';
 let virtualMode=false;
 let selectedListPlatforms=new Set(),listPlatformOptionSignature=''; // independiente del filtro del sorteo
-const providerKey=f=>f.title.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/æ/g,'ae').replace(/œ/g,'oe').replace(/[^\p{L}\p{N}]+/gu,' ').trim()+'|'+f.year;
+const providerKey=f=>f.title.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/æ/g,'ae').replace(/œ/g,'oe').replace(/[^\p{L}\p{N}]+/gu,' ').trim()+'|'+(Number(f.year)||0);
 let manualFilm=null;
 const jwSearch=f=>'https://www.justwatch.com/es/buscar?q='+encodeURIComponent(f.title);
 function friendlyName(s){return s.replace(/Movistar Plus\+ Ficción Total/i,'Movistar+ Ficción Total').replace(/Movistar Plus\+/i,'Movistar+').replace(/Amazon Prime Video/i,'Prime Video').replace(/Netflix Standard with Ads/i,'Netflix con anuncios').replace(/HBO Max/i,'Max');}
@@ -1761,7 +1761,7 @@ function replaceList(text){let clean=text.replace(/^\uFEFF/,'').replace(/\r\n?/g
 // Identidad compartida por todas las listas. El ID TMDB tiene prioridad;
 // si falta, se usa título normalizado y año. No se mezclan remakes de años
 // diferentes salvo que TMDB confirme que son exactamente la misma película.
-function filmKey(f){return filmIdentity(f)+'|'+(f.year||'');}
+function filmKey(f){return filmIdentity(f)+'|'+(Number(f.year)||0);}
 function knownTMDB(f){return identityMap.get(filmKey(f))||platformData.get(providerKey(f))?.tmdb_id||0;}
 function buildIdentityGroups(){
  const records=new Map(),parents=new Map(),idOwners=new Map();
@@ -2424,7 +2424,7 @@ const statRows=(title,entries)=>{
  return panel;
 };
 function renderStats(){
- if(!parsed)return;const seen=parsed.entries.filter(f=>f.checked),hero=$('statsHero'),sections=$('statsSections');hero.replaceChildren();sections.replaceChildren();
+ if(!parsed)return;const statsScroll=$('view-statistics'),previousScroll=statsScroll.scrollTop;const seen=parsed.entries.filter(f=>f.checked),hero=$('statsHero'),sections=$('statsSections');hero.replaceChildren();sections.replaceChildren();
  const known=seen.map(f=>platformData.get(providerKey(f))).filter(Boolean),withRuntime=known.filter(r=>r.runtime>0);
  const minutes=withRuntime.reduce((sum,r)=>sum+r.runtime,0);
  for(const [label,val] of [['Películas vistas',seen.length],['Pendientes',parsed.pending.length],['Horas registradas',minutes?Math.floor(minutes/60)+' h '+(minutes%60)+' min':'—'],['Fichas TMDB',known.filter(x=>x.metadata_version>=2).length]]){
@@ -2441,6 +2441,10 @@ function renderStats(){
  }
  const sorted=(map,byDecade=false)=>[...map.entries()].sort((a,b)=>byDecade?Number(a[0].slice(0,4))-Number(b[0].slice(0,4)):b[1]-a[1]||a[0].localeCompare(b[0],'es'));
  sections.append(statRows('Películas vistas por década',sorted(decade,true),20),statRows('Géneros',sorted(genre),100),statRows('Países de producción',sorted(country),100),statRows('Directores',sorted(director),100));
+ if(activeView==='statistics'){
+  statsScroll.scrollTop=previousScroll;
+  requestAnimationFrame(()=>{if(activeView==='statistics')statsScroll.scrollTop=previousScroll;});
+ }
 }
 
 $('filmPrev').addEventListener('click',()=>{filmPage=Math.max(0,filmPage-1);renderList();});
