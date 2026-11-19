@@ -24,6 +24,8 @@ type cloudStatus struct {
 	Target     string `json:"target"`
 	LastBackup string `json:"last_backup,omitempty"`
 	LastError  string `json:"last_error,omitempty"`
+	SyncPaired bool `json:"sync_paired"`
+	NeedsReview bool `json:"needs_review"`
 }
 type cloudBackups struct {
 	mu           sync.Mutex
@@ -168,6 +170,20 @@ func (c *cloudBackups) backup() cloudStatus {
 	c.lastError = ""
 	return c.statusLocked()
 }
+// Detectar dispositivos conectados antes de publicar una copia antigua.
+func cloudHasDeviceSnapshots(folder string) bool {
+ if folder=="" {return false}
+ base:=filepath.Join(cloudSyncRoot(folder),"sincronizacion","dispositivos")
+ entries,err:=os.ReadDir(base);if err!=nil{return false}
+ for _,entry:=range entries{if !entry.IsDir() && strings.HasSuffix(entry.Name(),".json"){return true}}
+ return false
+}
+func (a *runningApp) cloudDisplayStatus() cloudStatus {
+ s:=a.cloud.status()
+ s.SyncPaired=a.syncStore!=nil&&a.syncStore.isPaired(s.Folder)
+ s.NeedsReview=s.Enabled&&!s.SyncPaired&&cloudHasDeviceSnapshots(s.Folder)
+ return s
+}
 func (a *runningApp) serveCloudHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if !a.auth(r) {
@@ -181,7 +197,7 @@ func (a *runningApp) serveCloudHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Método no permitido", 405)
 			return
 		}
-		respond(200, a.cloud.status())
+		respond(200, a.cloudDisplayStatus())
 	case "/api/cloud/browse":
 		if r.Method != http.MethodPost {
 			http.Error(w, "Método no permitido", 405)
@@ -207,6 +223,13 @@ func (a *runningApp) serveCloudHTTP(w http.ResponseWriter, r *http.Request) {
 			respond(400, map[string]string{"error": err.Error()})
 			return
 		}
+		a.mu.Lock();a.syncPreviewToken="";a.mu.Unlock()
+        // Si hay un Android registrado, primero revisar: no publicar la
+        // biblioteca local como una copia compartida por el simple hecho de conectar.
+        if payload.Folder!="" && a.syncStore!=nil && !a.syncStore.isPaired(payload.Folder) && cloudHasDeviceSnapshots(payload.Folder) {
+            respond(200,a.cloudDisplayStatus())
+            return
+        }
 		if payload.Folder != "" {
 			a.mu.Lock()
 			saveErr := saveLibrary(a.libraryPath, a.savePath, a.library)
@@ -222,6 +245,11 @@ func (a *runningApp) serveCloudHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Método no permitido", 405)
 			return
 		}
+		folder:=a.cloud.status().Folder
+        if a.syncStore!=nil && !a.syncStore.isPaired(folder) && cloudHasDeviceSnapshots(folder) {
+            respond(409,map[string]string{"error":"Hay otros dispositivos: revisa la sincronización antes de publicar la copia"})
+            return
+        }
 		s := a.cloud.backup()
 		if !s.Enabled {
 			respond(400, map[string]string{"error": "Configura antes una carpeta de nube"})
@@ -231,7 +259,27 @@ func (a *runningApp) serveCloudHTTP(w http.ResponseWriter, r *http.Request) {
 			respond(500, map[string]string{"error": s.LastError})
 			return
 		}
-		respond(200, s)
+		if err:=a.publishDeviceSnapshot();err!=nil {
+            respond(500,map[string]string{"error":err.Error()});return
+        }
+		respond(200, a.cloudDisplayStatus())
+    case "/api/cloud/preview":
+        if r.Method!=http.MethodPost {http.Error(w,"Método no permitido",405);return}
+        data,err:=a.cloudSyncPreview()
+        if err!=nil{respond(409,map[string]string{"error":err.Error()});return}
+        respond(200,data)
+    case "/api/cloud/sync":
+        if r.Method!=http.MethodPost {http.Error(w,"Método no permitido",405);return}
+        var payload struct {
+            Token string `json:"token"`
+            Decisions map[string]bool `json:"decisions"`
+        }
+        if err:=json.NewDecoder(io.LimitReader(r.Body,100<<10)).Decode(&payload);err!=nil {
+            respond(400,map[string]string{"error":"Solicitud incorrecta"});return
+        }
+        data,err:=a.cloudSyncConfirm(payload.Token,payload.Decisions)
+        if err!=nil{respond(409,map[string]string{"error":err.Error()});return}
+        respond(200,data)
 	default:
 		http.NotFound(w, r)
 	}
