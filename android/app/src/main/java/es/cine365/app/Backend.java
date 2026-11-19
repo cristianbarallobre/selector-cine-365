@@ -21,6 +21,7 @@ final class Backend {
     final File dir;
     final Tmdb tmdb;
     final CloudBackup cloud;
+    final OneDriveCloud onedrive;
     final SyncStore sync;
     private final Object filesLock=new Object();
     Backend(MainActivity activity){
@@ -28,7 +29,8 @@ final class Backend {
         dir=activity.getFilesDir();
         sync=new SyncStore(dir);
         tmdb=new Tmdb(dir);
-        cloud=new CloudBackup(activity,dir,sync);
+        onedrive=new OneDriveCloud(activity);
+        cloud=new CloudBackup(activity,dir,sync,onedrive);
         if(!new File(dir,"colecciones.json").exists()){
             try{
                 byte[] data;
@@ -82,6 +84,19 @@ final class Backend {
                 JSONObject p=new JSONObject(body);
                 tmdb.match(p.optString("title"),p.optInt("year"),p.optInt("id"));
                 cloud.backup();return ok(new JSONObject().put("saved",true).toString());
+            }
+            case "/api/onedrive/status":return ok(onedrive.status().toString());
+            case "/api/onedrive/connect":return ok(onedrive.begin().toString());
+            case "/api/onedrive/poll":return ok(onedrive.poll().toString());
+            case "/api/onedrive/folders":return ok(onedrive.folders().toString());
+            case "/api/onedrive/create":{
+                String name=new JSONObject(body).optString("name","Pruebas_Selector_Cine_365");
+                return ok(onedrive.createRoot(name).toString());
+            }
+            case "/api/onedrive/disconnect":{
+                if("onedrive".equals(cloud.status().optString("provider")))cloud.configure("");
+                onedrive.logout();
+                return ok(onedrive.status().toString());
             }
             case "/api/cloud/status":return ok(cloud.status().toString());
             case "/api/cloud/browse":return ok(new JSONObject().put("folder",activity.selectFolder()).toString());
