@@ -431,6 +431,18 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
 #view-statistics .stat-row-name{overflow-wrap:anywhere!important;overflow:visible!important;text-overflow:clip!important;white-space:normal!important}
 #view-statistics .stat-pager{display:none!important}
 </style>
+
+<style id="onedrive-v9-beta5-styles">
+.onedrive-box{padding:17px;border:1px solid #506884;background:#192838;border-radius:15px;margin:14px 0;display:grid;gap:10px}
+.onedrive-box h3{margin:0 0 3px;font-size:18px;color:#f0d09b}
+.onedrive-box .mobile-help{margin:0 0 5px}
+.onedrive-box button{min-height:48px!important;white-space:normal}
+.onedrive-box .input-key{width:100%;max-width:100%;min-height:50px}
+.onedrive-box #odLoginCode,.onedrive-box #odFolderArea{display:grid;gap:10px}
+.onedrive-box #odLoginCode[hidden],.onedrive-box #odFolderArea[hidden]{display:none!important}
+.onedrive-code{font-size:24px;font-weight:800;letter-spacing:.1em;word-break:break-all;text-align:center;border:1px dashed #d3ac75;background:#101925;padding:16px;border-radius:10px;color:#ffe3a2}
+.onedrive-box #odStatus{white-space:pre-line}
+</style>
 </head>
 <body>
 <textarea id="initialState" hidden>SELECTOR CINE 365 — 365 PELÍCULAS 
@@ -1233,9 +1245,33 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
 <section id="view-sort" class="view mobile-page" hidden></section>
 <section id="view-settings" class="view mobile-page" hidden>
  <div class="panel mobile-settings-panel"><h2>Ajustes y sincronización</h2>
-  <p class="mobile-help">Puedes utilizar cualquier servicio de nube que permita seleccionar una carpeta con acceso de lectura y escritura desde Android. Debe ser la misma carpeta sincronizada que utilices en Windows. Revisa los datos antes de combinarlos; la nube es opcional.</p>
+  <p class="mobile-help"><strong>¿Quieres sincronizar con Windows?</strong> Te recomendamos <strong>OneDrive</strong>. En el PC eliges una carpeta dentro de OneDrive; en Android conectas tu cuenta Microsoft y seleccionas esa misma carpeta. También puedes usar la app sin nube.</p>
+  <div class="onedrive-box" id="onedriveBox">
+   <h3>☁ Conectar OneDrive</h3>
+   <p class="mobile-help">No necesitas buscar OneDrive en las carpetas del teléfono. Conecta tu cuenta y selecciona una carpeta exclusiva para las pruebas, por ejemplo <strong>Pruebas_Selector_Cine_365</strong>. No se cambiarán tus listas hasta que revises y confirmes.</p>
+   <button type="button" class="primary" id="odConnect">Conectar cuenta Microsoft</button>
+   <div id="odLoginCode" hidden>
+    <p class="mobile-help">Para iniciar sesión de forma segura, abre la página oficial de Microsoft e introduce este código temporal:</p>
+    <div class="onedrive-code" id="odCode" aria-live="polite"></div>
+    <button type="button" class="tool" id="odCopyCode">Copiar código</button>
+    <button type="button" class="tool" id="odOpenLogin">Abrir Microsoft para iniciar sesión</button>
+    <p class="mobile-help">Vuelve a esta pantalla tras introducir el código. Nunca escribas tu contraseña dentro de Selector Cine 365.</p>
+   </div>
+   <div id="odFolderArea" hidden>
+    <label for="odFolders" class="mobile-help"><strong>Carpeta de OneDrive</strong></label>
+    <select id="odFolders" class="input-key" aria-label="Carpeta de OneDrive"></select>
+    <button type="button" class="tool" id="odRefresh">Actualizar carpetas</button>
+    <button type="button" class="primary" id="odUseFolder">Utilizar esta carpeta</button>
+    <p class="mobile-help">Si aún no tienes una carpeta para pruebas, crea una nueva en la raíz de tu OneDrive:</p>
+    <input id="odNewFolder" class="input-key" type="text" maxlength="70" value="Pruebas_Selector_Cine_365" aria-label="Nombre de nueva carpeta de OneDrive">
+    <button type="button" class="tool" id="odCreateFolder">Crear carpeta de pruebas</button>
+    <button type="button" class="tool" id="odDisconnect">Desconectar cuenta Microsoft</button>
+   </div>
+   <p class="mobile-help" id="odStatus" aria-live="polite">Comprobando disponibilidad de OneDrive…</p>
+  </div>
   <div id="tmdbSettingsTools" class="mobile-setting-actions"></div>
   <div id="cloudSettingsHome"></div>
+  <p class="mobile-help"><strong>Otra opción:</strong> «Elegir carpeta local» solo sirve para carpetas que Android permita leer y escribir. <strong>No conecta automáticamente con OneDrive.</strong></p>
   <div class="sync-preview-panel" id="syncPreviewPanel" hidden>
    <h3>Revisar antes de sincronizar</h3>
    <p id="syncPreviewSummary" class="mobile-help"></p>
@@ -1244,7 +1280,7 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
    <button id="syncConfirmButton" type="button" class="primary">✓ Importar y activar sincronización</button>
    <button id="syncCancelButton" type="button" class="tool">Cancelar</button>
   </div>
-  <div class="mobile-help mobile-sync-caution">La copia de seguridad principal del PC está en <code>Selector_Cine_365_Copias/actual</code>. Android primero muestra una vista previa y, al confirmarla, guarda sus cambios en <code>sincronizacion/dispositivos</code>. No borres esas carpetas.</div>
+  <div class="mobile-help mobile-sync-caution">En OneDrive la estructura es <code>Pruebas_Selector_Cine_365/Selector_Cine_365_Copias/</code> (o la carpeta que hayas elegido). La app usa un archivo por dispositivo. <strong>Primero pulsa «Revisar sincronización» en cada equipo y confirma la vista previa.</strong> No borres <code>actual</code> ni <code>sincronizacion</code>.</div>
   <p id="syncResult" class="mobile-help" aria-live="polite"></p>
  </div>
 </section>
@@ -1281,8 +1317,9 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
    <p>En <strong>Listas</strong> puedes crear, importar y exportar colecciones. Usa <strong>Copia de seguridad</strong> para guardar un JSON con tus listas y marcas.</p>
   </div>
   <div class="help-card">
-   <h3>5 · Nube (opcional)</h3>
-   <p>Tus datos se guardan <strong>en el móvil</strong> sin nube. Para compartirlos, entra en <strong>Nube</strong>, elige una carpeta, revisa la vista previa y confirma la sincronización. La sincronización entre dispositivos necesita una carpeta legible y escribible desde ambos. Android no admite todos los servicios como carpeta.</p>
+   <h3>5 · Sincronizar Windows y Android con OneDrive</h3>
+   <p>La nube es <strong>opcional</strong>. Sin conectarla, tus películas siguen guardadas en el móvil. Para compartirlas, en el PC crea una carpeta exclusiva como <strong>Pruebas_Selector_Cine_365</strong> dentro de OneDrive y selecciónala en los ajustes de Selector Cine 365 Windows. En Android pulsa <strong>Conectar cuenta Microsoft</strong>, inicia sesión desde la página oficial y elige esa misma carpeta. Finalmente pulsa <strong>Revisar sincronización</strong> en cada dispositivo y confirma la combinación.</p>
+   <p>La primera vez debes revisar el intercambio; para recibir novedades de otro dispositivo vuelve a pulsar «Revisar sincronización». No es aún sincronización entrante automática. «Elegir carpeta local» <strong>no equivale</strong> a entrar en OneDrive. Otras nubes solo funcionan si ofrecen carpetas compatibles con Android y Windows.</p>
   </div>
   <p class="help-note">Este producto utiliza la API de TMDB, pero no está respaldado ni certificado por TMDB.</p>
  </div>
@@ -1326,10 +1363,10 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
       <div class="backup-bar"><button class="tool" type="button" id="downloadBackup">⬇ Copia de seguridad</button><button class="tool" type="button" id="restoreBackup">↻ Restaurar copia</button></div>
       <input class="upload-input" type="file" id="backupFile" accept=".json,application/json">
       <div class="cloud-box" aria-label="Copias automáticas en tu nube">
-        <div class="cloud-title">☁ Copia automática en tu nube</div>
+        <div class="cloud-title">☁ Copias y sincronización de la carpeta elegida</div>
         <input class="cloud-path" id="cloudFolder" type="text" autocomplete="off" placeholder="Carpeta local de OneDrive, Drive, Dropbox…" aria-label="Carpeta para las copias automáticas">
         <div class="cloud-buttons">
-          <button class="tool" type="button" id="cloudBrowse">📁 Elegir carpeta</button>
+          <button class="tool" type="button" id="cloudBrowse">📁 Elegir carpeta local</button>
           <button class="tool" type="button" id="cloudActivate">✓ Activar copia</button>
           <button class="tool" type="button" id="cloudBackupNow">↻ Copiar ahora</button>
           <button class="tool" type="button" id="cloudDisable">Desactivar</button>
@@ -1467,7 +1504,7 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
  if(tools)document.getElementById('tmdbSettingsTools').appendChild(tools);
  const syncBox=document.querySelector('#view-settings .cloud-buttons');
  if(syncBox){const button=document.createElement('button');button.className='tool';button.type='button';button.id='cloudSyncNow';button.textContent='⇄ Revisar sincronización';syncBox.insertBefore(button,syncBox.firstChild)}
- const folder=document.getElementById('cloudFolder');if(folder){folder.readOnly=true;folder.placeholder='Elige una carpeta de nube compatible o almacenamiento compartido'}
+ const folder=document.getElementById('cloudFolder');if(folder){folder.readOnly=true;folder.placeholder='OneDrive conectado o carpeta local compatible'}
 })();
 </script>
 <script>
@@ -2204,10 +2241,124 @@ async function cloudRequest(path,method='GET',payload){
  const r=await fetch(path,opts);const data=await r.json();
  if(!r.ok)throw new Error(data.error||'No se pudo completar la operación');return data;
 }
+
+let odPollTimer=null;
+async function odStatus(){
+ try{
+   const state=await cloudRequest('/api/onedrive/status');
+   const connect=$('odConnect'),area=$('odFolderArea');
+   connect.hidden=state.connected;
+   area.hidden=!state.connected;
+   if(!state.available){
+     connect.disabled=true;
+     $('odStatus').textContent='La conexión directa con OneDrive está preparada pero pendiente de activación por el desarrollador (registro de Microsoft). Todavía puedes usar la app sin nube y hacer copias JSON.';
+   }else if(state.connected){
+     connect.disabled=false;
+     $('odLoginCode').hidden=true;
+     $('odStatus').textContent='✓ Cuenta Microsoft conectada. Elige tu carpeta de OneDrive; después revisa la sincronización.';
+     if(!area.dataset.loaded){area.dataset.loaded='1';await odLoadFolders();}
+   }else if(!$('odLoginCode').hidden){
+     $('odStatus').textContent='Esperando a que autorices el inicio de sesión en Microsoft…';
+   }else{
+     connect.disabled=false;
+     $('odStatus').textContent='OneDrive disponible. No se accederá a tus archivos hasta que inicies sesión y selecciones una carpeta.';
+   }
+ }catch(e){$('odStatus').textContent='⚠ '+e.message;}
+}
+async function odLoadFolders(preselect=''){
+ try{
+   $('odStatus').textContent='Consultando las carpetas de tu OneDrive…';
+   const response=await cloudRequest('/api/onedrive/folders');
+   const selection=$('odFolders');selection.replaceChildren();
+   for(const folder of response.folders||[]){
+     const option=document.createElement('option');option.value=folder.id;option.textContent=folder.name;
+     if(folder.id===preselect)option.selected=true;
+     selection.append(option);
+   }
+   $('odStatus').textContent=selection.options.length?'Elige la carpeta de pruebas que también utilizarás en Windows.':'No hay carpetas en la raíz de OneDrive. Puedes crear una carpeta de pruebas.';
+ }catch(e){$('odStatus').textContent='⚠ No se pudieron consultar las carpetas: '+e.message;}
+}
+$('odConnect').addEventListener('click',async()=>{
+ const b=$('odConnect');b.disabled=true;
+ try{
+   const flow=await cloudRequest('/api/onedrive/connect','POST');
+   $('odCode').textContent=flow.code;
+   $('odLoginCode').hidden=false;
+   $('odStatus').textContent='Abre Microsoft para iniciar sesión e introduce el código indicado.';
+   if(odPollTimer)clearInterval(odPollTimer);
+   odPollTimer=setInterval(async()=>{
+     try{
+       const r=await cloudRequest('/api/onedrive/poll','POST');
+       if(r.connected){
+         clearInterval(odPollTimer);odPollTimer=null;await odStatus();
+       }
+     }catch(e){clearInterval(odPollTimer);odPollTimer=null;$('odStatus').textContent='⚠ '+e.message;}
+   },6500);
+ }catch(e){$('odStatus').textContent='⚠ '+e.message;}
+ finally{b.disabled=false;}
+});
+$('odCopyCode').addEventListener('click',()=>{
+ const code=$('odCode').textContent;
+ if(window.CineAndroid&&window.CineAndroid.copy)window.CineAndroid.copy(code);
+ else if(navigator.clipboard)void navigator.clipboard.writeText(code);
+ $('odStatus').textContent='Código copiado. Pégalo en la página oficial de Microsoft.';
+});
+$('odOpenLogin').addEventListener('click',()=>{
+ if(window.CineAndroid&&window.CineAndroid.openMicrosoftLogin)window.CineAndroid.openMicrosoftLogin();
+});
+$('odRefresh').addEventListener('click',()=>void odLoadFolders());
+$('odCreateFolder').addEventListener('click',async()=>{
+ const name=$('odNewFolder').value.trim();
+ if(!name){$('odStatus').textContent='Escribe primero el nombre de la carpeta.';return;}
+ if(!confirm('¿Crear o seleccionar la carpeta «'+name+'» dentro de tu OneDrive? No se tocarán otras carpetas.'))return;
+ const button=$('odCreateFolder');button.disabled=true;
+ try{
+   const folder=await cloudRequest('/api/onedrive/create','POST',{name});
+   await odLoadFolders(folder.id);
+   $('odStatus').textContent='✓ Carpeta '+folder.name+' preparada. Pulsa «Utilizar esta carpeta».';
+ }catch(e){$('odStatus').textContent='⚠ '+e.message;}
+ finally{button.disabled=false;}
+});
+$('odUseFolder').addEventListener('click',async()=>{
+ const select=$('odFolders');
+ const id=select.value;
+ if(!id){$('odStatus').textContent='Selecciona o crea antes una carpeta.';return;}
+ const name=select.selectedOptions[0]?.textContent||'carpeta';
+ if(!confirm('¿Conectar la carpeta «'+name+'» de OneDrive? Se revisarán tus datos antes de publicar cambios.'))return;
+ const button=$('odUseFolder');button.disabled=true;
+ try{
+   await saveLocal();
+   const folder='onedrive://item/'+encodeURIComponent(id);
+   cloudShow(await cloudRequest('/api/cloud/config','POST',{folder}));
+   $('cloudFolder').dataset.cloudUri=folder;
+   $('cloudFolder').value='OneDrive · '+name;
+   $('odStatus').textContent='✓ Carpeta conectada. Ahora pulsa «Revisar sincronización» y confirma los datos antes de compartir.';
+ }catch(e){$('odStatus').textContent='⚠ '+e.message;}
+ finally{button.disabled=false;}
+});
+$('odDisconnect').addEventListener('click',async()=>{
+ if(!confirm('¿Desconectar la cuenta Microsoft? Tus películas seguirán guardadas en este móvil y los archivos de OneDrive no se borrarán.'))return;
+ try{
+   if(odPollTimer){clearInterval(odPollTimer);odPollTimer=null;}
+   await cloudRequest('/api/onedrive/disconnect','POST');
+   delete $('odFolderArea').dataset.loaded;
+   await cloudRefresh();await odStatus();
+ }catch(e){$('odStatus').textContent='⚠ '+e.message;}
+});
+void odStatus();
+
 function cloudShow(s){
  const box=$('cloudStatus');box.classList.toggle('warn',Boolean(s.last_error));
  if(s.enabled){
-   if(document.activeElement!==$('cloudFolder'))$('cloudFolder').value=s.folder;
+   if(document.activeElement!==$('cloudFolder')){
+     if(s.provider==='onedrive'){
+       $('cloudFolder').dataset.cloudUri=s.folder;
+       $('cloudFolder').value='OneDrive · carpeta seleccionada';
+     }else{
+       delete $('cloudFolder').dataset.cloudUri;
+       $('cloudFolder').value=s.folder;
+     }
+   }
    box.textContent=s.last_error?'⚠ '+s.last_error:
      !s.activated?'Carpeta seleccionada · Pendiente de revisar e importar, todavía no se ha publicado nada':
      s.last_backup?'✓ Copia intercambiada · '+new Date(s.last_backup).toLocaleString('es-ES'):'✓ Carpeta compartida preparada';
@@ -2219,12 +2370,12 @@ async function cloudRefresh(){try{cloudShow(await cloudRequest('/api/cloud/statu
 $('cloudBrowse').addEventListener('click',async()=>{
  const btn=$('cloudBrowse');btn.disabled=true;$('cloudStatus').textContent='Selecciona una carpeta de tu nube…';
  try{const data=await cloudRequest('/api/cloud/browse','POST');
-   if(data.folder){$('cloudFolder').value=data.folder;$('cloudStatus').textContent='Carpeta elegida. Pulsa «Activar copia». ';}else await cloudRefresh();
+   if(data.folder){delete $('cloudFolder').dataset.cloudUri;$('cloudFolder').value=data.folder;$('cloudStatus').textContent='Carpeta local elegida. Pulsa «Activar copia». ';}else await cloudRefresh();
  }catch(e){$('cloudStatus').textContent='⚠ '+e.message;$('cloudStatus').classList.add('warn');}
  finally{btn.disabled=false;}
 });
 $('cloudActivate').addEventListener('click',async()=>{
- const folder=$('cloudFolder').value.trim();if(!folder){$('cloudStatus').textContent='Selecciona primero una carpeta';return;}
+ const folder=($('cloudFolder').dataset.cloudUri||$('cloudFolder').value).trim();if(!folder){$('cloudStatus').textContent='Selecciona primero una carpeta';return;}
  const btn=$('cloudActivate');btn.disabled=true;$('cloudStatus').textContent='Conectando la carpeta, sin publicar datos…';
  try{await saveLocal();cloudShow(await cloudRequest('/api/cloud/config','POST',{folder}));}
  catch(e){$('cloudStatus').textContent='⚠ '+e.message;$('cloudStatus').classList.add('warn');}
@@ -2235,7 +2386,7 @@ $('cloudBackupNow').addEventListener('click',async()=>{
 });
 $('cloudDisable').addEventListener('click',async()=>{
  if(!confirm('¿Desactivar las copias automáticas? Las copias existentes no se borrarán.'))return;
- try{cloudShow(await cloudRequest('/api/cloud/config','POST',{folder:''}));$('cloudFolder').value='';}
+ try{cloudShow(await cloudRequest('/api/cloud/config','POST',{folder:''}));$('cloudFolder').value='';delete $('cloudFolder').dataset.cloudUri;}
  catch(e){$('cloudStatus').textContent='⚠ '+e.message;}
 });
 void cloudRefresh();
