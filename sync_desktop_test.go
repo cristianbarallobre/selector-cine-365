@@ -2,6 +2,8 @@ package main
 
 import (
  "encoding/json"
+ "net/http"
+ "net/http/httptest"
  "os"
  "path/filepath"
  "strings"
@@ -64,4 +66,31 @@ func TestSyncPreviewAndPublishPreserveAndroidSnapshot(t *testing.T){
  id,_,_:=store.parts()
  if _,err:=os.Stat(filepath.Join(cloudDir,cloudDirectoryName,"sincronizacion","dispositivos",id+".json"));err!=nil{t.Fatalf("desktop snapshot missing: %v",err)}
  if _,err:=os.Stat(filepath.Join(localDir,"sync_recuperacion"));err!=nil{t.Fatal("missing rescue copies")}
+}
+
+func TestDesktopSaveDoesNotOverwriteUnpairedRemote(t *testing.T){
+ root:=t.TempDir();localDir:=filepath.Join(root,"pc");shared:=filepath.Join(root,"nube")
+ if err:=os.MkdirAll(shared,0700);err!=nil{t.Fatal(err)}
+ before:=initialLibrary("☐ 001. Casablanca (1942)")
+ if err:=saveLibrary(filepath.Join(localDir,"colecciones.json"),filepath.Join(localDir,"mis_365_peliculas.txt"),before);err!=nil{t.Fatal(err)}
+ store,err:=newDesktopSyncStore(localDir);if err!=nil{t.Fatal(err)}
+ cloud:=newCloudBackups(localDir)
+ if err:=cloud.configure(shared);err!=nil{t.Fatal(err)}
+ rootCloud:=filepath.Join(shared,cloudDirectoryName)
+ peerFile:=filepath.Join(rootCloud,"sincronizacion","dispositivos","android-other.json")
+ if err:=cloudWriteFile(peerFile,[]byte("{\"device_id\":\"android-other\",\"protocol\":2}"));err!=nil{t.Fatal(err)}
+ actual:=filepath.Join(rootCloud,"actual","colecciones.json")
+ remote:=[]byte("{\"remote\":\"no tocar\"}")
+ if err:=cloudWriteFile(actual,remote);err!=nil{t.Fatal(err)}
+ app:=&runningApp{libraryPath:filepath.Join(localDir,"colecciones.json"),savePath:filepath.Join(localDir,"mis_365_peliculas.txt"),library:before,cloud:cloud,syncStore:store,token:"test"}
+ after:=initialLibrary("☑ 001. Casablanca (1942)")
+ payload,_:=json.Marshal(after)
+ req:=httptest.NewRequest(http.MethodPost,"/api/library",strings.NewReader(string(payload)))
+ req.Header.Set("X-Atlas-Token","test")
+ w:=httptest.NewRecorder();app.serveHTTP(w,req)
+ if w.Code!=204{t.Fatalf("local save failed: %d %s",w.Code,w.Body.String())}
+ if w.Header().Get("X-Cine-Cloud")!="pending"{t.Fatalf("expected pending review, got %s",w.Header().Get("X-Cine-Cloud"))}
+ saved,_:=os.ReadFile(actual);if string(saved)!=string(remote){t.Fatal("unpaired Windows replaced shared legacy data")}
+ savedPeer,_:=os.ReadFile(peerFile);if !strings.Contains(string(savedPeer),"android-other"){t.Fatal("remote snapshot changed")}
+ savedLocal,_:=os.ReadFile(app.libraryPath);if !strings.Contains(string(savedLocal),"☑ 001."){t.Fatal("local save lost")}
 }
