@@ -8,8 +8,8 @@
 <!-- Autoría: Cristian Barallobre Rúa · © 2026 · github.com/cristianbarallobre/selector-cine-365 -->
 <meta name="author" content="__APP_AUTHOR__">
 <meta name="copyright" content="__APP_COPYRIGHT__">
-<meta name="application-name" content="Selector de Cine 365">
-<title>Selector de Cine 365 · v8.2</title>
+<meta name="application-name" content="Selector Cine 365">
+<title>Selector Cine 365 · v9.0 beta</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1018;--panel:#171f2b;--panel2:#1b2735;--line:#314052;--subtle:#94a2b5;--light:#f4f6fa;--gold:#f3c66d;--gold2:#d59b40;--green:#a4e4bc;--red:#e5a6a6;--r:19px}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 960px 510px at 88% -10%,#263649 0%,transparent 76%),var(--bg);color:var(--light);font-family:'Segoe UI',system-ui,Arial,sans-serif;font-size:15px;min-height:100vh}button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
@@ -283,19 +283,10 @@ h2{font-size:19px}
 <textarea id="initialState" hidden>__ATLAS_LISTA_INICIAL__</textarea>
 <main data-created-by="__APP_AUTHOR__" data-repository="cristianbarallobre/selector-cine-365">
   <header class="header">
-    <div class="brand" aria-hidden="true">
-      <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" fill="none">
-        <rect x="9" y="21" width="47" height="34" rx="5" fill="#142132" stroke="#F0C76F" stroke-width="2.7"/>
-        <path d="M9 22.5h47v8.5H9z" fill="#F3C66D"/>
-        <path d="M15 22.5l7 8.5h9l-7-8.5zm18 0l7 8.5h9l-7-8.5z" fill="#233044"/>
-        <path d="M9.8 22.2 7.5 16a4 4 0 0 1 2.6-5l36-10.5a4 4 0 0 1 4.9 2.7l1.8 6.2-43 12.8Z" fill="#F4F6FA" transform="translate(0 5)"/>
-        <path d="m12 16 11-3-3-8-10 3zm18-5 11-3-3-8-11 3z" fill="#24334A" transform="translate(0 5)"/>
-        <circle cx="22" cy="43" r="3.5" fill="#F3C66D"/><path d="M31 43h16" stroke="#F3C66D" stroke-width="3" stroke-linecap="round"/>
-      </svg>
-    </div>
-    <div><div class="eyebrow">Atlas del cine</div><h1>¿Qué película veo hoy?</h1></div>
+    <div class="brand" aria-hidden="true"><img src="/icon.png" alt="" style="width:58px;height:58px;object-fit:contain"></div>
+    <div><div class="eyebrow">Selector Cine 365</div><h1>¿Qué película veo hoy?</h1></div>
     <div class="header-side">
-      <div class="header-tag">🎞️ SELECTOR 365 · v8.2</div>
+      <div class="header-tag">🎞️ SELECTOR CINE 365 · beta v9.0</div>
       <div class="saved" id="saveState" aria-live="polite">✓ Guardado</div>
       <div class="creator-credit" title="__APP_COPYRIGHT__">Hecho por <strong>__APP_AUTHOR__</strong></div>
     </div>
@@ -492,7 +483,7 @@ let rawText=$('initialState').value.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n')
 let parsed=null,filter='all',search='',chosen=null,lastChoice=null,saveTimer=null,saveQueue=Promise.resolve(),saveEpoch=0;
 let filmPage=0,collectionPage=0,statPages=new Map();
 let platformConfigured=false, platformData=new Map(),platformRun=0,platformActive=false,platformFinished=0,platformTotal=0;
-let libraryState={version:1,active_id:'atlas',lists:[{id:'atlas',name:'Atlas del cine · 365',text:rawText}]};
+let libraryState={version:1,active_id:'atlas',lists:[{id:'atlas',name:'Selector Cine 365 · 365',text:rawText}]};
 let editingListID=null,activeView='library',selectedSortPlatform='all';
 const identityMap=new Map(); // clave título-año -> ID TMDB guardado
 let identityScanRunning=false,identityScanAgain=false,identityScanProgress=0,identityScanTotal=0,identityRefreshTimer=null;
@@ -618,7 +609,7 @@ const pendingSymbols=new Set(['☐','□']);
 const allSymbols=/^[☐□☑☒✓✔✅]$/u;
 function lineInfo(text,idx){
  const original=text, trimmed=text.trim();
- if(!trimmed || /^ATLAS DEL CINE\b/i.test(trimmed) || /^#{1,6}\s/.test(trimmed) || /^[-_=]{3,}$/.test(trimmed))return null;
+ if(!trimmed || /^(?:ATLAS DEL CINE|SELECTOR CINE 365)\b/i.test(trimmed) || /^#{1,6}\s/.test(trimmed) || /^[-_=]{3,}$/.test(trimmed))return null;
  let m=trimmed.match(/^([☐□☑☒✓✔✅])\s*(?:(\d{1,4})[.)]\s*)?(.+?)\s*$/u);
  let checked=false,number='',name='';
  if(m){checked=!pendingSymbols.has(m[1]);number=m[2]||'';name=m[3]||'';}

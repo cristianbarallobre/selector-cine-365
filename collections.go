@@ -31,7 +31,7 @@ type libraryState struct {
 var listIDPattern = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,60}$`)
 
 func initialLibrary(legacy string) libraryState {
-	return libraryState{Version: 1, ActiveID: "atlas", Lists: []filmCollection{{ID: "atlas", Name: "Atlas del cine · 365", Text: legacy}}}
+	return libraryState{Version: 1, ActiveID: "atlas", Lists: []filmCollection{{ID: "atlas", Name: "Selector Cine 365 · 365", Text: legacy}}}
 }
 func validateLibrary(l libraryState) error {
 	if l.Version != 1 || len(l.Lists) < 1 || len(l.Lists) > 40 {

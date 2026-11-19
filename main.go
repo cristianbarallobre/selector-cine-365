@@ -27,7 +27,7 @@ func countFilms(data string) int {
 	n := 0
 	for _, line := range strings.Split(data, "\n") {
 		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(strings.ToUpper(line), "ATLAS DEL CINE") ||
+		if line == "" || (strings.HasPrefix(strings.ToUpper(line), "ATLAS DEL CINE") || strings.HasPrefix(strings.ToUpper(line), "SELECTOR CINE 365")) ||
 			strings.HasPrefix(line, "#") || line == "---" {
 			continue
 		}
@@ -250,6 +250,6 @@ func main() {
 		return
 	}
 	if err := serve(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		notifyError("Selector de Cine 365", err.Error())
+		notifyError("Selector Cine 365", err.Error())
 	}
 }
