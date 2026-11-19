@@ -1,0 +1,21 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'es.cine365.app'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'es.cine365.app'
+        minSdk 26
+        targetSdk 35
+        versionCode 9001
+        versionName '9.0.0-beta.1'
+    }
+    buildTypes {
+        debug {
+            // Install alongside the old Android test app; never uninstall user data.
+            applicationIdSuffix '.v9beta'
+            versionNameSuffix '-test'
+        }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
