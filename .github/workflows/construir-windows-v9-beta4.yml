@@ -1,4 +1,4 @@
-name: Publicar Selector Cine 365 Windows v9 beta 5
+name: Publicar Selector Cine 365 Windows v9 beta 5.1
 on:
   push:
     branches: [v9-android-beta]
@@ -27,11 +27,24 @@ jobs:
       - name: Pruebas Go (incluida sincronización)
         run: go test ./...
       - name: Compilar Windows 64 bits
-        run: GOOS=windows GOARCH=amd64 go build -o Selector_Cine_365_Windows_v9_BETA5.exe .
+        run: GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags='-H windowsgui -s -w' -o Selector_Cine_365_Windows_v9_BETA5_1.exe .
+      - name: Comprobar que el ejecutable no abre consola CMD
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          binary=Path("Selector_Cine_365_Windows_v9_BETA5_1.exe").read_bytes()
+          assert binary[:2]==b"MZ", "No es un ejecutable Windows"
+          pe=int.from_bytes(binary[0x3c:0x40], "little")
+          assert binary[pe:pe+4]==b"PE\x00\x00", "Cabecera PE incorrecta"
+          optional=pe+24
+          subsystem=int.from_bytes(binary[optional+68:optional+70], "little")
+          assert subsystem==2, f"Se esperaba Windows GUI (2), pero se generó subsistema {subsystem}"
+          print("OK: Windows GUI Subsystem = 2; no se abrirá CMD al arrancar")
+          PY
       - name: Preparar ZIP de pruebas
         run: |
-          cat > LEEME_BETA5.txt <<'EOF'
-          SELECTOR CINE 365 - WINDOWS v9 BETA 4 (PRUEBAS)
+          cat > LEEME_BETA5_1.txt <<'EOF'
+          SELECTOR CINE 365 - WINDOWS v9 BETA 5.1 (CORRECCION CONSOLA)
           Antes de usar con datos reales, exporta una copia JSON y conserva la v8.2.
           No ejecutes dos versiones de escritorio al mismo tiempo.
           La copia local sigue funcionando sin nube ni clave TMDB.
@@ -42,23 +55,23 @@ jobs:
           Para compartir con Android, usar carpeta exclusiva de OneDrive
           y conectar esa misma carpeta desde Selector Cine 365 Android.
           Otras nubes solo si ambas apps admiten las carpetas.
-          Aplicacion beta no firmada ni verificada en dispositivos reales.
+          Correccion Beta 5.1: interfaz grafica sin ventana CMD.\n          Aplicacion beta no firmada ni verificada en dispositivos reales.
           EOF
-          zip -q Selector_Cine_365_Windows_v9_BETA5.zip Selector_Cine_365_Windows_v9_BETA5.exe LEEME_BETA5.txt
+          zip -q Selector_Cine_365_Windows_v9_BETA5_1.zip Selector_Cine_365_Windows_v9_BETA5_1.exe LEEME_BETA5_1.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: Selector_Cine_365_Windows_v9_BETA5
-          path: Selector_Cine_365_Windows_v9_BETA5.zip
+          name: Selector_Cine_365_Windows_v9_BETA5_1
+          path: Selector_Cine_365_Windows_v9_BETA5_1.zip
           if-no-files-found: error
       - name: Publicar version preliminar Windows
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view v9.0.0-windows-beta.5 >/dev/null 2>&1; then
-            gh release upload v9.0.0-windows-beta.5 Selector_Cine_365_Windows_v9_BETA5.zip --clobber
+          if gh release view v9.0.0-windows-beta.5.1 >/dev/null 2>&1; then
+            gh release upload v9.0.0-windows-beta.5.1 Selector_Cine_365_Windows_v9_BETA5_1.zip --clobber
           else
-            gh release create v9.0.0-windows-beta.5 Selector_Cine_365_Windows_v9_BETA5.zip \
+            gh release create v9.0.0-windows-beta.5.1 Selector_Cine_365_Windows_v9_BETA5_1.zip \
               --target "$GITHUB_SHA" --prerelease \
-              --title "Selector Cine 365 - Windows v9 Beta 5" \
-              --notes "BETA 5: guía clara para compartir mediante OneDrive y Android; vista previa y resolución de conflictos, snapshots separados, copia de recuperación y caché TMDB sin caducidad automática. No es una versión estable. Guarda copias JSON de tus listas y no ejecutes Windows v8.2 y v9 a la vez."
+              --title "Selector Cine 365 - Windows v9 Beta 5.1" \
+              --notes "BETA 5.1: guía clara para compartir mediante OneDrive y Android; vista previa y resolución de conflictos, snapshots separados, copia de recuperación y caché TMDB sin caducidad automática. No es una versión estable. Guarda copias JSON de tus listas y no ejecutes Windows v8.2 y v9 a la vez."
           fi
