@@ -8,7 +8,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: selector-v82-release-26
+  group: selector-v82-release-cross
   cancel-in-progress: false
 jobs:
   mac:
@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: macos-26
+          - runner: macos-15-intel
             arch: arm64
             label: Apple_Silicon
           - runner: macos-15-intel
@@ -32,6 +32,7 @@ jobs:
         env:
           MAC_ARCH: ${{ matrix.arch }}
           MAC_LABEL: ${{ matrix.label }}
+          CC: ${{ matrix.arch == 'arm64' && 'clang -arch arm64' || 'clang' }}
         run: bash scripts/build_macos_app.sh
       - uses: actions/upload-artifact@v4
         with:
@@ -96,7 +97,7 @@ jobs:
           Developer ID. Si se bloquea en macOS, revisa su origen y ve a Ajustes
           del Sistema → Privacidad y seguridad → Abrir igualmente.
           Consulta [las instrucciones de Mac](../../blob/main/MACOS.md).
-          Compilado en runners macOS ARM64 e Intel; falta prueba interactiva en Mac real.
+          Binarios ARM64 e Intel compilados en un runner Mac Intel; ARM64 por compilación cruzada. Falta prueba interactiva en Mac real.
           NOTES
           if gh release view v8.2 >/dev/null 2>&1; then
             gh release upload v8.2 dist/*.zip --clobber
