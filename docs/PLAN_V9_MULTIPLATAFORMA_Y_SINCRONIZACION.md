@@ -18,6 +18,19 @@
 9. No se incluirán credenciales de OneDrive ni claves TMDB en los archivos compartidos.
 10. v8.2 y las versiones previas se mantendrán como recuperación hasta superar pruebas reales de v9.0.
 
+## 1.1 Funcionamiento local sin nube — requisito obligatorio
+
+**El guardado local es el modo predeterminado y completo en Windows, Android y macOS.** Ningún usuario necesita configurar OneDrive, crear una cuenta Microsoft ni activar sincronización para usar la biblioteca.
+
+- Al primer arranque, la aplicación crea sus archivos de datos privados en el propio dispositivo y guarda inmediatamente las ediciones posteriores.
+- Sin carpeta vinculada, no se intenta publicar, sustituir ni leer ninguna biblioteca remota; la pantalla Nube mostrará «No configurada» e informará de que el guardado local funciona.
+- La sincronización solo se inicia por decisión expresa del usuario, con revisión de la biblioteca remota y confirmación antes de publicar cambios.
+- «Desconectar nube» **no elimina** las listas ni las películas guardadas localmente. La aplicación sigue funcionando sin conexión.
+- Si más adelante se conecta la nube, las modificaciones locales previas se conservan y se incorporan mediante fusión y resolución de conflictos; jamás se reemplaza automáticamente la biblioteca local con un catálogo vacío o una copia remota por defecto.
+- El servicio TMDB es independiente de la nube: una clave personal de TMDB sirve para fichas, carteles e identificación, pero no es necesaria para gestionar y guardar las películas.
+- Android debe permitir exportar una copia de seguridad local antes de desinstalar o borrar datos, ya que el almacenamiento privado de la aplicación puede borrarse al desinstalarla.
+- Las pruebas de aceptación incluirán arrancar desde cero, crear y editar listas, cerrar y reabrir, trabajar sin Internet, desactivar nube y reconectarla después sin pérdida.
+
 ## 2. Identidad y marca
 
 - Nombre en icono, barra de título, pantallas, diálogos y documentación: **Selector Cine 365**.
