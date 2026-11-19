@@ -24,7 +24,15 @@ jobs:
         with:
           gradle-version: '8.7'
       - name: Instalar SDK 35
-        run: sdkmanager --install 'platforms;android-35' 'build-tools;35.0.0'
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -path '*/bin/sdkmanager' -type f | sort -V | tail -1)"
+          if [ -z "$SDKMANAGER" ]; then
+            echo "::error::Android command-line tools no están instaladas"
+            exit 1
+          fi
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
       - name: Crear APK Android de prueba
         working-directory: android
         run: gradle --no-daemon --stacktrace assembleDebug
