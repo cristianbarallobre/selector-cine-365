@@ -1,11 +1,11 @@
-# Selector Cine 365 — Android v9.0 beta 2
+# Selector Cine 365 — Android v9.0 beta 3
 
 **Autor:** Cristian Barallobre Rúa. Repositorio oficial: https://github.com/cristianbarallobre/selector-cine-365
 
 ## ¿Qué incluye esta prueba?
 
 - Identidad visual renovada, icono de claqueta generado para el proyecto y cabecera fija.
-- Cinco pantallas: Biblioteca, Sorteo, Estadísticas, Listas y Nube.
+- Seis pantallas: Biblioteca, Sorteo, Estadísticas, Listas, Nube y Ayuda.
 - Scroll solo dentro del contenido de la sección seleccionada y controles táctiles grandes.
 - Compatible con el formato original de colecciones (ID interno `atlas`), conservando el nombre y carpeta de almacenamiento históricos cuando corresponda.
 - Primera conexión a carpeta compartida en modo **solo lectura**. Vista previa con número de listas y películas vistas; hay que confirmar para importar y empezar a publicar el snapshot de Android.
@@ -15,15 +15,22 @@
 
 ## Instalar en Xiaomi Mi 9T
 
-Descarga el APK de la prepublicación v9.0-beta.2 y ábrelo desde el gestor de archivos. **Se instala junto a tu antigua APK** con el identificador `es.cine365.app.v9beta2`, sin eliminar los datos de la beta anterior. Se instala aparte porque la firma de desarrollo puede cambiar entre compilaciones. Para trasladar tus listas, expórtalas desde la beta 1 e impórtalas en la beta 2. Android puede advertir sobre la firma de desarrollo; no desactives Play Protect de forma general.
+Descarga el APK de la prepublicación v9.0-beta.3 y ábrelo desde el gestor de archivos. **Se instala junto a tu antigua APK** con el identificador `es.cine365.app.v9beta3`, sin eliminar los datos de la beta anterior. Se instala aparte porque la firma de desarrollo puede cambiar entre compilaciones. Para trasladar tus listas, expórtalas desde la beta 1 e impórtalas en la beta 3. Android puede advertir sobre la firma de desarrollo; no desactives Play Protect de forma general.
 
-## Mejoras de la beta 2
+## Mejoras de la beta 3
 
 - Las secciones vuelven arriba cuando cambias de pestaña.
-- Los cinco iconos inferiores son monocromos, minimalistas y del mismo tamaño.
+- Los seis iconos inferiores son monocromos, minimalistas y del mismo tamaño.
 - «Cargar más» incorpora 24 películas sin reconstruir la lista ni desplazar el scroll.
 - Los carteles se cargan desde TMDB mediante la ruta nativa de Android, con caché local.
 - Las tarjetas crecen según el título y las plataformas, con controles en una fila independiente.
+
+## Nuevas mejoras de la beta 3
+
+- Las flechas de Estadísticas solo actualizan el bloque correspondiente y conservan la posición del scroll.
+- Sexto icono «Ayuda», con un manual breve de Biblioteca, Sorteo, Estadísticas, Listas y nube opcional.
+- Instrucciones paso a paso para conseguir una API Key (v3) o un API Read Access Token de TMDB, con enlace a la página oficial y botón para configurarla directamente.
+- La versión beta 3 se instala sin reemplazar beta 2. Para trasladar los datos entre ambas, usa copia de seguridad JSON y restauración.
 
 ## Sincronización con OneDrive
 
