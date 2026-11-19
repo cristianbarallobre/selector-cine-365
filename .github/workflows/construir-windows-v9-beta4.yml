@@ -55,7 +55,8 @@ jobs:
           Para compartir con Android, usar carpeta exclusiva de OneDrive
           y conectar esa misma carpeta desde Selector Cine 365 Android.
           Otras nubes solo si ambas apps admiten las carpetas.
-          Correccion Beta 5.1: interfaz grafica sin ventana CMD.\n          Aplicacion beta no firmada ni verificada en dispositivos reales.
+          Correccion Beta 5.1: interfaz grafica sin ventana CMD.
+          Aplicacion beta no firmada ni verificada en dispositivos reales.
           EOF
           zip -q Selector_Cine_365_Windows_v9_BETA5_1.zip Selector_Cine_365_Windows_v9_BETA5_1.exe LEEME_BETA5_1.txt
       - uses: actions/upload-artifact@v4
@@ -73,5 +74,5 @@ jobs:
             gh release create v9.0.0-windows-beta.5.1 Selector_Cine_365_Windows_v9_BETA5_1.zip \
               --target "$GITHUB_SHA" --prerelease \
               --title "Selector Cine 365 - Windows v9 Beta 5.1" \
-              --notes "BETA 5.1: guía clara para compartir mediante OneDrive y Android; vista previa y resolución de conflictos, snapshots separados, copia de recuperación y caché TMDB sin caducidad automática. No es una versión estable. Guarda copias JSON de tus listas y no ejecutes Windows v8.2 y v9 a la vez."
+              --notes "BETA 5.1: corregida aparición de ventana negra CMD al iniciar. Mantiene la guía clara para compartir mediante OneDrive y Android; vista previa y resolución de conflictos, snapshots separados, copia de recuperación y caché TMDB sin caducidad automática. No es una versión estable. Guarda copias JSON de tus listas y no ejecutes Windows v8.2 y v9 a la vez."
           fi
