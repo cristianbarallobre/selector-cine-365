@@ -1,0 +1,47 @@
+name: Probar Android Beta 5 sin publicar
+on:
+  push:
+    branches: [feature/v9-onedrive-android-beta5]
+    paths:
+      - 'android/**'
+      - '.github/workflows/probar-android-v9-beta5.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      MICROSOFT_CLIENT_ID: '00000000-0000-0000-0000-000000000000'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: Preparar SDK Android 35
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -path '*/bin/sdkmanager' -type f | sort -V | tail -1)"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Comprobar JavaScript Android
+        run: |
+          python3 - <<'PY'
+          import re, pathlib, subprocess, tempfile
+          text=pathlib.Path('android/app/src/main/assets/index.html').read_text()
+          scripts=re.findall(r'<script(?P<attrs>[^>]*)>(?P<js>.*?)</script>',text,re.S|re.I)
+          for index,(attrs,js) in enumerate(scripts):
+              if 'src=' in attrs or 'application/json' in attrs: continue
+              path=pathlib.Path(tempfile.gettempdir()) / f'cine_android_{index}.js'
+              path.write_text(js)
+              subprocess.run(['node','--check',str(path)],check=True)
+          PY
+      - name: Compilar APK de prueba con identificador Microsoft ficticio
+        working-directory: android
+        run: gradle --no-daemon --stacktrace assembleDebug
