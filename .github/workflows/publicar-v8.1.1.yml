@@ -1,0 +1,53 @@
+name: Publicar Selector de Cine 365 v8.1.1
+on:
+  push:
+    paths:
+      - ".github/workflows/publicar-v8.1.1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@v4
+      - name: Configurar Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Ejecutar pruebas
+        run: go test ./...
+      - name: Compilar Windows de 64 bits
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: "0"
+        run: |
+          go build -trimpath -ldflags="-H windowsgui -s -w" -o Selector_Cine_365_v8_1_1_Cristian_Barallobre_Windows.exe .
+      - name: Preparar ZIP de descarga
+        run: |
+          cat > LEEME.txt <<'EOF'
+          Selector de Cine 365 · v8.1.1
+          Autor: Cristian Barallobre Rúa
+          Sitio oficial: https://github.com/cristianbarallobre/selector-cine-365
+          
+          Windows 10/11 de 64 bits.
+          Extrae el ZIP y ejecuta Selector_Cine_365_v8_1_1_Cristian_Barallobre_Windows.exe.
+          Requiere Microsoft Edge WebView2 Runtime y conexión a Internet para TMDB.
+          EOF
+          zip -9 Selector_Cine_365_v8_1_1_RELEASE_PUBLICA.zip Selector_Cine_365_v8_1_1_Cristian_Barallobre_Windows.exe LEEME.txt
+      - name: Publicar Release v8.1.1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v8.1.1 >/dev/null 2>&1; then
+            echo "La Release v8.1.1 ya existe; no se modifica."
+            exit 0
+          fi
+          gh release create v8.1.1 Selector_Cine_365_v8_1_1_RELEASE_PUBLICA.zip \
+            --target "$GITHUB_SHA" \
+            --title "Selector de Cine 365 — v8.1.1" \
+            --notes "Añade la firma visual «Hecho por Cristian Barallobre Rúa» y metadatos de autoría en el programa y el código fuente. Conserva las funciones de la v8.1."
