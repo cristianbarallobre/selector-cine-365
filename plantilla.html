@@ -1,0 +1,1411 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#10151f">
+<link rel="icon" type="image/png" href="/icon.png">
+<title>Selector de Cine 365 · v8.1</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1018;--panel:#171f2b;--panel2:#1b2735;--line:#314052;--subtle:#94a2b5;--light:#f4f6fa;--gold:#f3c66d;--gold2:#d59b40;--green:#a4e4bc;--red:#e5a6a6;--r:19px}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 960px 510px at 88% -10%,#263649 0%,transparent 76%),var(--bg);color:var(--light);font-family:'Segoe UI',system-ui,Arial,sans-serif;font-size:15px;min-height:100vh}button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+main{max-width:1250px;padding:28px 28px 32px;margin:auto}.header{display:flex;align-items:center;gap:18px;margin-bottom:27px}.brand{width:72px;height:72px;flex-shrink:0;background:linear-gradient(145deg,#2c3748,#131b27);border:1px solid #485c73;border-radius:18px;display:grid;place-items:center;box-shadow:0 8px 30px #0005}.brand svg{width:49px;height:49px}.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.17em;color:var(--gold);font-weight:800;margin:0 0 5px}h1{font-size:clamp(27px,3vw,38px);line-height:1.17;letter-spacing:-.032em;margin:0}.header-tag{margin-left:auto;border:1px solid #445165;color:var(--gold);background:#1a2533;padding:9px 14px;border-radius:99px;font-size:13px;font-weight:750;white-space:nowrap}
+.columns{display:grid;grid-template-columns:minmax(0,1.22fr) minmax(350px,.78fr);gap:21px;align-items:start}.panel{background:linear-gradient(180deg,#192331,#151d29);border:1px solid var(--line);border-radius:var(--r);padding:22px;box-shadow:0 17px 46px #0003;min-width:0}.panel-heading{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:17px}h2{font-size:20px;letter-spacing:-.02em;margin:0;font-weight:760}.count-tag{color:#c3ceda;background:#253244;border:1px solid #35465c;font-size:13px;border-radius:99px;padding:5px 11px;white-space:nowrap}
+.search{height:45px;width:100%;border:1px solid #3f5166;background:#101823;color:var(--light);border-radius:11px;outline:0;padding:0 15px;margin-bottom:13px}.search::placeholder{color:#91a2b5}.filters{display:flex;gap:7px;margin-bottom:15px}.filter{border:1px solid #35465a;background:#1c2837;color:#b9c6d5;border-radius:9px;font-size:13px;font-weight:730;padding:9px 14px;flex:1}.filter.selected{color:#191508;background:var(--gold);border-color:var(--gold2)}
+.film-list{height:485px;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:8px;padding:2px 6px 2px 1px;scrollbar-color:#45566b #16202b;scrollbar-width:thin}.film-item{width:100%;border:1px solid #344558;background:#202d3b;color:var(--light);border-radius:12px;padding:12px 13px;display:flex;align-items:center;gap:12px;text-align:left;transition:background .13s,border-color .13s,transform .13s}.film-item:hover{background:#2b394a;border-color:#71849a}.film-item:active{transform:scale(.997)}.film-item.seen{background:#1b302f;border-color:#345b4e}.film-item.seen:hover{background:#24433c;border-color:#608e74}.checkbox{flex:none;width:24px;height:24px;border:2px solid #889db2;border-radius:7px;display:grid;place-items:center;font-weight:900;color:#14221b;background:#101a26;font-size:17px}.film-item.seen .checkbox{background:var(--green);border-color:var(--green)}.film-main{min-width:0;flex:1}.film-name{font-size:14px;font-weight:680;line-height:1.35;display:block;overflow-wrap:anywhere}.film-sub{display:block;color:#9caec1;font-size:12px;margin-top:3px}.pill{border:1px solid #496075;border-radius:99px;color:#b6c5d5;font-size:11px;font-weight:760;line-height:1;padding:6px 8px;flex-shrink:0}.seen .pill{color:var(--green);border-color:#49725f}.empty-list{padding:38px 18px;text-align:center;color:#a9b9ca;font-weight:550}
+.tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:16px}.tool{background:#243143;border:1px solid #445773;color:#e6ecf4;border-radius:10px;padding:11px 8px;font-size:13px;font-weight:720;text-align:center;min-height:43px}.tool:hover{background:#344459}.upload-input{display:none}.saved{min-height:18px;margin-top:13px;font-size:12px;color:#9bd7ad;text-align:right}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:23px 0 13px}.stat{border:1px solid #334456;border-radius:12px;background:#202c3c;padding:12px 7px;text-align:center}.stat-value{font-size:25px;font-weight:800;line-height:1.15;letter-spacing:-.035em}.stat-label{font-size:12px;color:#a8bacb;margin-top:4px}.progress{background:#313e4c;height:10px;overflow:hidden;border-radius:99px;margin:0 0 22px}.progress-bar{height:100%;width:0;background:linear-gradient(90deg,#75caa0,var(--green));border-radius:99px;transition:width .25s}
+.primary{background:linear-gradient(160deg,#ffdc89,#e5ad4d);border:1px solid #eab75e;color:#251a0d;border-radius:12px;width:100%;font-size:16px;font-weight:840;padding:15px 10px;box-shadow:0 6px 18px #0002}.primary:hover{filter:brightness(1.05)}.pick{border:1px solid #8f704d;border-radius:15px;background:linear-gradient(145deg,#37302b,#262329 75%);min-height:226px;padding:23px 19px;margin:19px 0 14px;display:flex;flex-direction:column;justify-content:center}.result-tag{color:var(--gold);text-transform:uppercase;font-size:12px;font-weight:830;letter-spacing:.13em}.result-title{font-size:clamp(21px,2.2vw,28px);letter-spacing:-.024em;line-height:1.22;margin:13px 0 12px;overflow-wrap:anywhere}.result-meta{font-size:14px;color:#dbcfc0}.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.action{background:#263547;color:#eff3f7;border:1px solid #475c73;border-radius:10px;padding:11px 8px;font-size:13px;font-weight:730}.action.good{background:#b6eac7;color:#173323;border-color:#b6eac7}.action:hover:not(:disabled){filter:brightness(1.14)}.toast{color:#b3e6c3;min-height:22px;font-size:13px;margin-top:14px}
+.overlay[hidden]{display:none}.overlay{position:fixed;inset:0;background:#080b11d9;backdrop-filter:blur(6px);z-index:20;display:grid;place-items:center;padding:20px}.modal{max-width:680px;width:100%;background:#1a2532;border:1px solid #45566d;border-radius:18px;box-shadow:0 30px 80px #0009;padding:23px}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}.modal textarea{display:block;width:100%;height:325px;resize:vertical;border-radius:12px;border:1px solid #4c5e74;background:#0e1621;color:#e9eef5;padding:15px;line-height:1.5;font:13px/1.5 Consolas,'Courier New',monospace}.modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:17px}.modal .primary{width:auto;padding:10px 20px;font-size:14px}.close{border:1px solid #475c70;background:#233043;color:#eef3f9;border-radius:9px;padding:8px 13px}.modal-status{font-size:13px;min-height:16px;margin-top:8px;color:var(--green)}
+@media(max-width:900px){main{padding:18px 15px 30px}.columns{grid-template-columns:1fr}.film-list{height:420px}.header-tag{display:none}.panel{padding:17px}}@media(max-width:450px){.brand{width:54px;height:54px}.brand svg{width:39px;height:39px}h1{font-size:25px}.film-item{gap:8px;padding:10px}.pill{font-size:10px}.tools{gap:7px}.panel{padding:14px}}
+
+/* Disponibilidad en España */
+.platform-controls{display:flex;align-items:center;gap:7px;margin-left:auto}
+.mini-ctrl{border:1px solid #53657b;background:#233349;color:#e2e9f2;border-radius:10px;padding:7px 11px;font-size:12px;font-weight:760;white-space:nowrap}
+.mini-ctrl:hover{background:#34445a}.mini-ctrl:disabled{opacity:.45}
+.film-item{padding:0;gap:0;overflow:hidden;flex:0 0 auto;min-height:65px}.film-toggle{display:flex;flex:1;min-width:0;align-items:center;gap:11px;text-align:left;padding:12px 8px 12px 12px;border:0;color:inherit;background:transparent;cursor:pointer}.film-toggle:hover{background:#ffffff05}.film-toggle .film-main{min-width:0;flex:1}.film-item .pill{margin:0 8px 0 2px}
+.film-platforms{font-size:12px;color:#f0cc85;line-height:1.4;display:block;margin-top:5px;font-weight:600;white-space:normal}
+.film-platforms.muted{color:#8fa1b5;font-weight:500}.film-platforms.offline{color:#c4b7a4}.film-platforms strong{color:#f8db9b}
+.wherelink{display:flex;justify-content:center;align-items:center;flex-shrink:0;margin:7px 8px 7px 0;min-width:31px;height:34px;color:#f0c16d;font-weight:800;border:1px solid #5c523e;border-radius:9px;text-decoration:none;background:#2d2b2b}.wherelink:hover{background:#433a2e}
+.platform-progress{color:#c9b47f;font-size:12px;min-height:17px;margin:5px 0 10px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+.platform-credit{font-size:11px;color:#8999ad;text-align:right;margin-top:9px}.platform-credit a{color:#cbb475;text-decoration:none}
+.platform-detail{font-size:12px;color:#e4c589;margin-top:10px;line-height:1.5}.platform-detail a{color:#f0d191}
+.input-key{height:43px;width:100%;padding:10px 13px;border:1px solid #5b6f82;border-radius:10px;background:#0e1621;color:white;margin:12px 0}
+.api-text{color:#b7c4d2;font-size:14px;line-height:1.55}.api-text a{color:#e8bb65}.key-inline{display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:1200px){.film-item .pill{display:none}}
+@media(max-width:650px){.platform-controls{gap:4px}.mini-ctrl{font-size:11px;padding:7px}.film-platforms{font-size:11px}.film-item .pill{display:none}.film-toggle{padding:10px}}
+
+/* V6: navigation, poster, ratings and libraries */
+.top-nav{display:flex;align-items:center;gap:8px;margin:-8px 0 20px;flex-wrap:wrap}
+.nav-btn{border:1px solid #3b4c60;background:#1a2737;color:#cfdae7;border-radius:11px;padding:11px 18px;font-weight:750;font-size:13px}
+.nav-btn:hover{background:#2c3d50}.nav-btn.active{border-color:#d9ac5c;background:#413724;color:#ffda89}
+.list-switch{margin-left:auto;min-width:190px;max-width:290px;flex:1;border:1px solid #485b71;border-radius:10px;background:#1e2a3a;color:#f0e6d6;padding:10px 12px;font-size:13px;font-weight:680}
+.view[hidden]{display:none!important}.tool-wide{grid-column:span 2}
+.film-poster{width:42px;height:60px;object-fit:cover;border-radius:6px;border:1px solid #627185;flex:none;background:#151e2a}
+.poster-placeholder{width:42px;height:60px;flex:none;display:grid;place-items:center;border:1px solid #3a4a5f;background:#152131;color:#7d8b9b;border-radius:6px;font-size:22px}
+.title-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.film-name{min-width:0;flex:0 1 auto}.film-rating{border:1px solid #826941;color:#ffda91;border-radius:7px;padding:3px 6px;font-size:11px;font-weight:780;white-space:nowrap;background:#3a2f24}
+.film-toggle{gap:10px;min-width:0}.film-item{min-height:86px}.film-platforms{margin-top:4px}.film-sub{margin-top:4px}
+.select-label{display:block;color:#d2c197;font-size:11px;font-weight:800;letter-spacing:.12em;margin:13px 0 7px}
+.platform-select{display:block;width:100%;border:1px solid #6d614d;border-radius:11px;background:#282b31;color:#f2e0c1;padding:12px 12px;font-size:14px;font-weight:720;outline:none}
+.sort-count{font-size:12px;color:#b6c5d3;margin:7px 0 13px;min-height:16px}
+.pick{flex-direction:row;align-items:center;justify-content:flex-start;gap:17px}.result-copy{flex:1;min-width:0}.chosen-poster{height:154px;width:103px;border:1px solid #887253;border-radius:9px;object-fit:cover;flex:none}.chosen-poster[hidden]{display:none}
+.stats-hero{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
+.stats-hero .stat{padding:17px 10px}.stats-hero .stat-value{font-size:30px}
+.stats-sections{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.stat-panel{background:#1b2735;border:1px solid #324457;border-radius:14px;padding:18px}.stat-panel h3{font-size:16px;margin:0 0 15px}
+.stat-row{display:grid;grid-template-columns:minmax(95px,1fr) 2fr 36px;gap:10px;align-items:center;margin:11px 0;font-size:13px}
+.stat-row-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.stat-row-bar{height:9px;background:#2c3b49;border-radius:9px;overflow:hidden}.stat-row-fill{background:linear-gradient(90deg,#bd934f,#efc36a);height:100%;border-radius:9px}
+.stat-row-count{text-align:right;color:#e6c98f;font-weight:800}.stat-none{color:#9eacbd;font-size:13px}
+.collection-rows{display:grid;gap:10px}.collection-item{display:flex;gap:12px;align-items:center;padding:17px;border:1px solid #3c5064;background:#202e3c;border-radius:13px}
+.collection-item.current{border-color:#aa8750;background:#2c2e33}.collection-info{flex:1;min-width:0}.collection-name{font-weight:780;font-size:16px}.collection-meta{margin-top:5px;font-size:13px;color:#a9b9c9}.collection-buttons{display:flex;gap:7px;flex-wrap:wrap}
+.backup-bar{display:flex;gap:10px;margin-top:20px}.backup-bar .tool{flex:1}.collection-item button{font-size:12px}
+@media(max-width:1050px){.film-item .pill{display:none}.film-poster,.poster-placeholder{width:34px;height:50px}.stats-sections{grid-template-columns:1fr}}
+@media(max-width:650px){.list-switch{max-width:none;width:100%;margin:0}.nav-btn{flex:1;padding:10px}.film-poster,.poster-placeholder{width:36px;height:51px}.stats-hero{grid-template-columns:repeat(2,1fr)}.collection-item{flex-wrap:wrap}.collection-buttons{width:100%}}
+
+/* v6.1: filtro multiseleccion de plataformas para la biblioteca (independiente del sorteo) */
+.library-platform-row{display:flex;align-items:center;flex-wrap:wrap;gap:9px 12px;margin:4px 0 10px;min-height:41px}
+.library-platform-label{font-size:11px;font-weight:820;letter-spacing:.085em;color:#d5c197;white-space:nowrap}
+.library-platform-picker{position:relative;flex:1 1 210px;min-width:170px}
+.library-platform-button{width:100%;border:1px solid #74664d;border-radius:10px;background:#282c32;color:#f3deb7;display:flex;align-items:center;justify-content:space-between;gap:9px;text-align:left;min-height:39px;padding:9px 12px;font-size:13px;font-weight:740}
+.library-platform-button:hover,.library-platform-button[aria-expanded="true"]{background:#38352f;border-color:#d0a963}
+.library-platform-chevron{color:#f2c36c;font-size:12px;flex-shrink:0}
+.library-platform-count{font-size:12px;color:#aabed2;white-space:nowrap;margin-left:auto;font-variant-numeric:tabular-nums}
+.library-platform-menu[hidden]{display:none}
+.library-platform-menu{position:absolute;z-index:12;top:calc(100% + 6px);left:0;width:min(385px,calc(100vw - 56px));max-width:100%;border:1px solid #5b6575;background:#1a2736;border-radius:13px;box-shadow:0 24px 48px #0009;padding:12px}
+.library-platform-menu-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 9px;padding:0 3px}
+.library-platform-menu-header strong{font-size:13px;color:#eaf1f8}
+.library-platform-reset{border:1px solid #866b43;border-radius:8px;padding:6px 11px;color:#f1d095;background:#332d28;font-weight:720;font-size:12px}
+.library-platform-reset:hover{background:#4b3c2b}
+.library-platform-options{display:grid;gap:5px;max-height:246px;overflow-y:auto;padding-right:3px;scrollbar-color:#52657a #1a2736}
+.library-platform-option{display:flex;align-items:center;gap:10px;padding:8px 9px;border:1px solid #2c4256;border-radius:8px;cursor:pointer;font-size:13px;color:#dfe8f3;background:#202d3d}
+.library-platform-option:hover{background:#2e3c4e;border-color:#667891}
+.library-platform-option:has(input:checked){background:#383425;border-color:#9e7b43;color:#ffe0a2}
+.library-platform-option input{width:16px;height:16px;margin:0;flex:none;accent-color:#e9b65b;cursor:pointer}
+.library-platform-option span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:650px){.library-platform-label{width:100%}.library-platform-picker{flex:1 1 210px}.library-platform-count{margin-left:0}.library-platform-menu{max-width:none;width:100%}}
+
+/* Copias automáticas en carpeta sincronizada */
+.cloud-box{margin-top:20px;padding:19px;background:#111c28;border:1px solid #3a5264;border-radius:15px}
+.cloud-title{font-size:16px;font-weight:780;color:#f2c76f;margin-bottom:12px}
+.cloud-path{width:100%;border:1px solid #495b70;background:#0e1621;color:#f2f5fa;border-radius:10px;padding:11px 13px;min-height:43px}
+.cloud-path::placeholder{color:#8ea0b2}
+.cloud-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}
+.cloud-buttons .tool{flex:1;min-width:125px}
+.cloud-status{min-height:23px;margin-top:11px;color:#a8dbc2;font-size:13px;overflow-wrap:anywhere;line-height:1.5}
+.cloud-status.warn{color:#e9b0a5}
+@media(max-width:650px){.cloud-buttons .tool{min-width:40%;}}
+/* v7.5 — ajuste manual de títulos TMDB */
+.matchlink{width:31px;height:34px;flex:none;border:1px solid #596577;border-radius:9px;color:#ccdded;background:#293749;margin:7px 3px 7px 0;font-size:16px;font-weight:760}
+.matchlink:hover{background:#3c5068;border-color:#d3ae6d;color:#f4d48f}
+.match-hint{color:#bfcbda;font-size:13px;line-height:1.6;margin-bottom:12px}
+.match-hint a{color:#f0c66b}
+.match-title{font-weight:770;color:#f4d28d;margin-bottom:8px;font-size:15px}
+.match-controls{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:9px;margin-top:13px}
+.match-controls .primary{width:auto}
+@media(max-width:550px){.matchlink{margin-right:2px}.film-item{gap:0}}
+
+/* v7.6: ventana sin desplazamiento general y contenido paginado. */
+html,body{height:100%;overflow:hidden}
+body{min-height:0}
+main{height:100dvh;min-height:0;max-width:1340px;margin:auto;padding:14px 20px 17px;display:flex;flex-direction:column;overflow:hidden}
+.header{flex:0 0 auto;margin:0 0 12px;gap:13px;min-height:62px}
+.brand{width:58px;height:58px;border-radius:13px}.brand svg{width:41px;height:41px}
+h1{font-size:29px}.eyebrow{font-size:11px}.header-side{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.header-tag{margin-left:0;padding:6px 10px;font-size:12px}.saved{margin:0;text-align:right;font-size:11px;min-height:12px}
+.top-nav{flex:0 0 auto;margin:0 0 11px;gap:7px}.nav-btn{padding:9px 13px}.list-switch{padding:9px 10px}
+.view{flex:1;min-height:0;overflow:hidden}
+.columns{height:100%;min-height:0;align-items:stretch;gap:16px;grid-template-columns:minmax(0,1.26fr) minmax(350px,.74fr)}
+.panel{height:100%;min-height:0;padding:15px;overflow:hidden}
+#view-library .panel{display:flex;flex-direction:column}
+.panel-heading{margin-bottom:12px;flex:0 0 auto}
+h2{font-size:19px}
+#view-library .search{margin-bottom:8px;height:39px;flex:0 0 auto}
+#view-library .filters{margin-bottom:8px;flex:0 0 auto}
+#view-library .filter{padding:7px 11px}
+#view-library .library-platform-row{margin:0 0 7px;min-height:36px;flex:0 0 auto}
+#view-library .library-platform-button{min-height:34px;padding:7px 10px}
+#view-library .platform-progress{min-height:17px;margin:0 0 7px;flex:0 0 auto}
+#view-library .film-list{height:auto;flex:1;min-height:0;overflow:hidden;padding:1px;gap:7px}
+#view-library .film-item{height:85px;min-height:85px;max-height:85px;flex:0 0 85px}
+#view-library .film-toggle{padding:9px 8px 9px 10px}
+#view-library .film-poster,#view-library .poster-placeholder{width:40px;height:57px}
+.page-controls{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:34px;flex:0 0 auto;margin-top:8px}
+.page-btn{border:1px solid #40536a;background:#253449;color:#e5eef7;border-radius:9px;padding:7px 12px;min-width:98px;font-weight:740;font-size:12px}
+.page-btn:hover:not(:disabled){background:#384b64}.page-btn:disabled{opacity:.32}
+.page-label{color:#aabbce;font-size:12px;font-variant-numeric:tabular-nums;text-align:center}
+#view-library .stats{margin:6px 0 9px}.stat{padding:10px 5px}.stat-value{font-size:23px}
+#view-library .progress{margin:0 0 13px}
+#view-library .select-label{margin:6px 0 6px}
+#view-library .platform-select{padding:10px}
+#view-library .sort-count{margin:6px 0 9px}
+#view-library .primary{padding:12px 9px}
+#view-library .pick{flex:1;min-height:120px;margin:11px 0 10px;padding:14px;align-items:center;overflow:hidden}
+#view-library .result-title{font-size:clamp(19px,2.0vw,25px);margin:9px 0}
+#view-library .chosen-poster{height:min(132px,100%);width:auto;max-width:88px}
+#view-library .actions{flex:0 0 auto}
+#view-library .toast{min-height:14px;margin-top:7px;flex:0 0 auto}
+#view-statistics .panel{display:flex;flex-direction:column}
+#view-statistics .stats-hero{margin-bottom:10px;flex:0 0 auto;gap:9px}
+#view-statistics .stats-hero .stat{padding:9px 6px}
+#view-statistics .stats-hero .stat-value{font-size:24px}
+#view-statistics .stats-sections{flex:1;min-height:0;overflow:hidden;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:10px}
+.stat-panel{min-height:0;overflow:hidden;padding:10px 12px;display:flex;flex-direction:column}
+.stat-panel h3{font-size:14px;margin:0 0 6px}
+.stat-panel .stat-row{margin:3px 0;gap:8px;font-size:12px;min-height:20px}
+.stat-pager{margin-top:auto;display:flex;gap:6px;justify-content:space-between;align-items:center;font-size:11px;color:#a9b7ca;padding-top:3px}
+.stat-pager button{background:#29394b;border:1px solid #43566a;border-radius:7px;color:#f1d49a;padding:3px 10px;font-weight:760}
+.stat-pager button:disabled{opacity:.32}
+#view-collections .panel{display:flex;flex-direction:column}
+#view-collections .collection-rows{flex:1;min-height:0;overflow:hidden;align-content:start;gap:7px}
+#view-collections .collection-item{padding:8px 12px;min-height:58px}
+#view-collections .collection-name{font-size:14px}
+#view-collections .collection-meta{font-size:12px;margin-top:2px}
+#view-collections .collection-paging{margin:4px 0 6px;min-height:26px}
+#view-collections .collection-paging .page-btn{padding:4px 9px;min-width:85px}
+.manage-header{font-size:13px;font-weight:780;color:var(--gold);display:flex;justify-content:space-between;gap:10px;padding:0 2px;margin:3px 0 7px;flex:0 0 auto}
+.manage-header span{font-weight:550;color:#aab6c7;max-width:52%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.manager-tools{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;flex:0 0 auto}
+.manager-tools .tool{min-height:38px;padding:7px 3px;font-size:12px}
+.manage-message{min-height:0;font-size:12px;color:#a5dbbd;margin-top:3px;flex:0 0 auto}
+.manage-message:empty{display:none}
+#view-collections .backup-bar{flex:0 0 auto;margin-top:8px;gap:7px}
+#view-collections .backup-bar .tool{padding:7px;min-height:35px}
+#view-collections .cloud-box{flex:0 0 auto;margin-top:9px;padding:12px}
+#view-collections .cloud-title{margin-bottom:7px;font-size:14px}
+#view-collections .cloud-path{min-height:36px;padding:7px 10px;font-size:12px}
+#view-collections .cloud-buttons{margin-top:7px;gap:6px;flex-wrap:nowrap}
+#view-collections .cloud-buttons .tool{min-width:0;min-height:34px;padding:7px 2px;font-size:11px}
+#view-collections .cloud-status{min-height:17px;margin-top:6px;font-size:11px;line-height:1.3}
+.overlay{overflow:hidden}.modal{max-height:calc(100dvh - 32px);overflow:auto}
+@media(max-width:980px){.columns{grid-template-columns:minmax(0,1.08fr) minmax(320px,.92fr)}.panel{padding:11px}.header-tag{display:none}.manager-tools{grid-template-columns:repeat(3,minmax(0,1fr))}.manager-tools .tool{font-size:11px}.film-item .pill{display:none}}
+@media(max-width:760px){main{padding:10px}.columns{grid-template-columns:1fr;grid-template-rows:60% 40%;gap:8px}.header{margin-bottom:8px}.top-nav{margin-bottom:8px}.panel{padding:10px}.manager-tools{grid-template-columns:repeat(2,minmax(0,1fr))}.manager-tools .tool:last-child{grid-column:span 2}}
+@media(max-height:690px){.header{min-height:46px;margin-bottom:6px}.brand{width:43px;height:43px}.brand svg{width:31px;height:31px}h1{font-size:23px}.top-nav{margin-bottom:6px}.nav-btn{padding:6px 9px}#view-library .pick{min-height:70px}.stats-hero .stat-value{font-size:20px}#view-collections .cloud-box{padding:8px;margin-top:5px}#view-collections .cloud-title{margin-bottom:4px}#view-collections .cloud-buttons{margin-top:4px}}
+/* En ventanas muy pequeñas, preservar la accesibilidad antes que recortar controles. */
+@media(max-height:590px){html,body{overflow:auto}main{height:auto;min-height:590px;overflow:visible}.view{overflow:visible}.panel{height:auto;overflow:visible}}
+/* v7.8: paginación numerada ampliada, saltos de 10 y acceso directo. */
+#filmPaging{gap:8px}
+.film-page-center{display:flex;flex:1;min-width:0;justify-content:center;align-items:center;flex-direction:column;gap:2px}
+.numbered-pages{display:flex;gap:4px;align-items:center;justify-content:center;flex-wrap:nowrap;min-height:30px}
+.page-number{display:inline-grid;place-items:center;width:31px;height:30px;border:1px solid #40536a;background:#253449;color:#e5eef7;border-radius:7px;padding:0;font-size:12px;font-weight:770}
+.page-number:hover:not(:disabled){border-color:#c9a059;background:#394a5b}
+.page-number.active{background:var(--gold);color:#241c0f;border-color:var(--gold2)}
+.page-ellipsis{color:#99a8b9;min-width:18px;text-align:center;font-size:14px;user-select:none}
+#filmPaging .page-label{font-size:10px;white-space:nowrap}
+#filmPaging .page-btn{min-width:87px;padding:7px 8px}
+.manager-tools{grid-template-columns:repeat(3,minmax(0,1fr))}
+.manager-tools .tool{min-height:34px;padding:6px 3px}
+.batch-target{color:#aabbd0;font-size:13px;margin:-5px 0 12px}
+.batch-target strong{color:var(--gold)}
+.batch-choose{margin:0 0 10px;width:100%}
+#batchText{height:min(285px,37dvh)}
+@media(max-width:650px){.numbered-pages{gap:2px}.page-number{width:26px;height:28px;font-size:11px}.page-ellipsis{min-width:11px}#filmPaging .page-btn{min-width:70px;font-size:11px;padding:6px 4px}}
+@media(max-height:690px){#filmPaging .page-label{display:none}.page-number{height:28px}}
+
+/* v8.0: borrado individual con búsqueda y doble confirmación. */
+.remove-film-button{grid-column:1/-1;color:#f5c3be;border-color:#78565b}
+.remove-film-button:hover{background:#49313a}
+.delete-film-modal{max-width:660px}
+.delete-target,.delete-warning-sub{color:#aebed0;font-size:13px;line-height:1.5}
+.delete-target strong,.delete-warning-sub strong{color:var(--gold)}
+.delete-film-search{margin:10px 0 8px}
+.delete-film-counter{font-size:12px;color:#a6b6c8;min-height:19px;margin-bottom:7px}
+.delete-film-results{display:flex;flex-direction:column;gap:6px;max-height:min(348px,40dvh);overflow-y:auto;scrollbar-color:#4b5c70 #152030}
+.delete-film-choice{width:100%;display:flex;justify-content:space-between;align-items:center;text-align:left;gap:12px;padding:10px 12px;background:#202e3e;color:#edf4fc;border:1px solid #3d5266;border-radius:9px}
+.delete-film-choice:hover{background:#2c3c50}
+.delete-film-choice.active{background:#3f3428;border-color:#e4b763}
+.delete-film-choice span{font-weight:690;font-size:13px;overflow-wrap:anywhere}
+.delete-film-choice small{color:#adc0d3;font-size:11px;white-space:nowrap}
+.delete-film-empty{padding:22px 10px;text-align:center;color:#adbed0}
+.delete-film-selected{min-height:28px;padding-top:11px;color:#e4c382;font-size:13px}
+.danger-action{background:#a74145;border:1px solid #dc777c;border-radius:10px;color:#fff;font-size:13px;font-weight:770;padding:10px 16px}
+.danger-action:hover:not(:disabled){background:#bc4e52}
+.delete-warning{font-size:16px;font-weight:740;margin:8px 0 18px}
+.delete-confirm-film{padding:16px;border-radius:12px;background:#342a31;border:1px solid #8b5158;font-size:16px;font-weight:750;margin-bottom:11px;overflow-wrap:anywhere}
+@media(max-height:640px){.delete-film-results{max-height:28dvh}}
+/* v7.8: mantener una paginación amplia y compacta, sin scroll de la ventana. */
+#filmPaging{gap:5px}
+#filmPaging .page-btn{min-width:79px;padding:7px 5px}
+.film-page-center{gap:3px;overflow:hidden}
+.numbered-pages{gap:3px;max-width:100%;overflow:hidden}
+.page-number{width:29px;min-width:27px;height:29px;font-size:11.5px;flex-shrink:0}
+.page-ellipsis.page-skip{border:1px solid #43546a;background:#1e2a38;border-radius:7px;min-width:27px;width:27px;height:29px;font-size:11px;color:#e2c68c;font-weight:700;cursor:pointer;flex-shrink:0}
+.page-ellipsis.page-skip:hover{border-color:var(--gold);background:#334156}
+.pager-details{display:flex;align-items:center;justify-content:center;gap:10px;min-height:23px;max-width:100%}
+.pager-direct{display:flex;align-items:center;gap:4px;white-space:nowrap;color:#aabaca;font-size:10px}
+.pager-direct input{box-sizing:border-box;width:47px;height:21px;padding:2px 5px;border:1px solid #43546a;border-radius:5px;background:#101a26;color:#f1f5fa;font-size:11px;text-align:center;font-variant-numeric:tabular-nums}
+.pager-direct input::-webkit-inner-spin-button,.pager-direct input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.pager-direct button{height:21px;padding:1px 6px;border-radius:5px;border:1px solid #7b633e;background:#3b3020;color:#ffe0a3;cursor:pointer;font-size:10px;font-weight:700}
+.pager-direct button:hover{background:#544128}
+#filmPaging .page-label{font-size:10px}
+@media(max-width:720px){#filmPaging{gap:3px}#filmPaging .page-btn{min-width:68px;font-size:11px;padding:6px 3px}.page-number{width:26px;min-width:25px;font-size:11px}.numbered-pages{gap:2px}.pager-details{gap:5px}.pager-direct{font-size:9px}}
+@media(max-height:690px){.pager-details{min-height:21px}.pager-direct input{height:19px}.pager-direct button{height:19px}}
+
+/* v8.0: ventana fija, búsqueda vacía hasta escribir y resultados con scroll interno */
+.delete-film-modal{height:min(675px,calc(100dvh - 28px));display:flex;flex-direction:column;overflow:hidden}
+.delete-film-modal #deleteFilmPickStage{display:flex;flex:1;min-height:0;flex-direction:column}
+.delete-film-modal #deleteFilmConfirmStage{display:flex;flex:1;flex-direction:column;min-height:0}
+.delete-film-modal #deleteFilmPickStage[hidden],.delete-film-modal #deleteFilmConfirmStage[hidden]{display:none!important}
+.delete-film-modal .delete-film-results{flex:1;min-height:0;max-height:none;overflow-y:auto;align-content:start;scrollbar-color:#556c81 #152030;padding-right:4px}
+.delete-film-modal .delete-film-selected{min-height:35px;flex:0 0 auto}
+.delete-film-modal .modal-actions{flex:0 0 auto;margin-top:auto;padding-top:10px}
+.delete-film-modal .delete-target{flex:0 0 auto;max-height:44px;overflow:hidden}
+.delete-film-modal .delete-film-search,.delete-film-modal .delete-film-counter{flex:0 0 auto}
+.compare-config-btn{font-size:12px}
+.compare-info{display:flex;gap:8px;align-items:center;justify-content:space-between;flex:0 0 auto;min-height:23px;margin:2px 0 4px;color:#c6d4e4;font-size:12px}
+.compare-info strong{color:#f3c66d}.compare-info span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.compare-info span:last-child{flex-shrink:0}
+.compare-list-options{display:flex;flex-direction:column;gap:7px;overflow-y:auto;min-height:0;max-height:min(380px,50dvh);padding:4px}
+.compare-option{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #3f5269;border-radius:10px;background:#233144;cursor:pointer;font-size:13px}
+.compare-option:hover{background:#304258}
+.compare-option input{width:18px;height:18px;accent-color:#e4b963;flex-shrink:0}
+.compare-note{color:#b2c3d5;font-size:13px;line-height:1.45;margin:5px 0 10px}
+.compare-status{font-size:12px;color:#f2c66d;min-height:16px;margin-top:8px}
+.film-toggle.readonly{cursor:default;user-select:text}
+.film-toggle.readonly:hover{background:transparent}
+.view-only-tag{font-size:12px;color:#d8c28c;font-weight:650}
+#view-library .film-item.readonly .checkbox{opacity:.8}
+.identity-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:0 0 auto;color:#adbed0;font-size:11px;min-height:27px;margin:0 0 3px}
+.identity-bar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.identity-bar button{flex:0 0 auto;padding:5px 9px;font-size:11px}
+@media(max-height:700px){.identity-bar{min-height:22px;margin:0}.identity-bar button{padding:3px 8px}}
+@media(max-height:600px){.delete-film-modal{height:calc(100dvh - 18px)}.delete-film-modal .modal-head{margin-bottom:8px}.delete-film-modal .modal-actions{padding-top:5px}}
+</style>
+</head>
+<body>
+<textarea id="initialState" hidden>__ATLAS_LISTA_INICIAL__</textarea>
+<main>
+  <header class="header">
+    <div class="brand" aria-hidden="true">
+      <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" fill="none">
+        <rect x="9" y="21" width="47" height="34" rx="5" fill="#142132" stroke="#F0C76F" stroke-width="2.7"/>
+        <path d="M9 22.5h47v8.5H9z" fill="#F3C66D"/>
+        <path d="M15 22.5l7 8.5h9l-7-8.5zm18 0l7 8.5h9l-7-8.5z" fill="#233044"/>
+        <path d="M9.8 22.2 7.5 16a4 4 0 0 1 2.6-5l36-10.5a4 4 0 0 1 4.9 2.7l1.8 6.2-43 12.8Z" fill="#F4F6FA" transform="translate(0 5)"/>
+        <path d="m12 16 11-3-3-8-10 3zm18-5 11-3-3-8-11 3z" fill="#24334A" transform="translate(0 5)"/>
+        <circle cx="22" cy="43" r="3.5" fill="#F3C66D"/><path d="M31 43h16" stroke="#F3C66D" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div><div class="eyebrow">Atlas del cine</div><h1>¿Qué película veo hoy?</h1></div>
+    <div class="header-side"><div class="header-tag">🎞️ SELECTOR 365 · v8.1</div><div class="saved" id="saveState" aria-live="polite">✓ Guardado</div></div>
+  </header>
+  <nav class="top-nav" aria-label="Secciones">
+    <button class="nav-btn active" type="button" data-view="library">🎞 Biblioteca</button>
+    <button class="nav-btn" type="button" data-view="statistics">▥ Estadísticas</button>
+    <button class="nav-btn" type="button" data-view="collections">▤ Mis listas</button>
+    <select id="listSwitcher" class="list-switch" aria-label="Seleccionar lista"></select>
+  </nav>
+  <div id="view-library" class="columns view">
+    <section class="panel" aria-label="Biblioteca de películas">
+      <div class="panel-heading"><h2>Tu colección</h2><div class="platform-controls"><button class="mini-ctrl" id="platformSetup" type="button">⚙ Plataformas</button><button class="mini-ctrl" id="platformRefresh" type="button" title="Actualizar disponibilidad en España">↻ Actualizar</button><span class="count-tag" id="libraryCount">365 películas</span></div></div>
+      <input type="search" id="search" class="search" placeholder="Buscar película..." autocomplete="off" aria-label="Buscar película">
+      <div class="filters" role="group" aria-label="Filtrar películas">
+        <button type="button" class="filter selected" data-filter="all">Todas</button>
+        <button type="button" class="filter" data-filter="pending">Pendientes</button>
+        <button type="button" class="filter" data-filter="seen">Vistas</button>
+      </div>
+      <div class="library-platform-row" aria-label="Filtro de plataformas para la lista de películas">
+        <span class="library-platform-label">VER EN LA LISTA</span>
+        <div class="library-platform-picker" id="libraryPlatformPicker">
+          <button type="button" class="library-platform-button" id="listPlatformButton" aria-haspopup="true" aria-expanded="false" aria-controls="listPlatformMenu"><span id="listPlatformSummary">Todas las plataformas</span><span class="library-platform-chevron" aria-hidden="true">▾</span></button>
+          <div class="library-platform-menu" id="listPlatformMenu" hidden>
+            <div class="library-platform-menu-header"><strong>Seleccionar plataformas</strong><button type="button" class="library-platform-reset" id="listPlatformReset">Todas</button></div>
+            <div class="library-platform-options" id="listPlatformOptions" role="group" aria-label="Plataformas para filtrar la biblioteca"></div>
+          </div>
+        </div>
+        <span class="library-platform-count" id="listPlatformCount" aria-live="polite">Mostrando todas</span>
+      </div>
+      <div class="platform-progress" id="platformProgress" aria-live="polite"></div>
+      <div id="filmList" class="film-list" role="list" aria-label="Películas de tu lista"></div>
+      <div class="page-controls" id="filmPaging" aria-label="Navegar por las películas">
+        <button type="button" class="page-btn" id="filmPrev">‹ Anterior</button>
+        <div class="film-page-center"><div class="numbered-pages" id="filmPageNumbers" role="group" aria-label="Saltar a una página"></div><div class="pager-details"><span class="page-label" id="filmPageLabel" aria-live="polite"></span><form class="pager-direct" id="filmPageGotoForm" aria-label="Ir a una página concreta"><label for="filmPageGoto">Página</label><input type="number" inputmode="numeric" id="filmPageGoto" min="1" step="1" placeholder="N.º" aria-label="Número de página"><span id="filmPageTotal">/ 1</span><button type="submit" title="Ir directamente a esa página">Ir</button></form></div></div>
+        <button type="button" class="page-btn" id="filmNext">Siguiente ›</button>
+      </div>
+    </section>
+    <section class="panel" aria-label="Sorteo de películas">
+      <div class="panel-heading"><h2>Tu próximo visionado</h2></div>
+      <div class="stats">
+        <div class="stat"><div class="stat-value" id="watched">—</div><div class="stat-label">Vistas</div></div>
+        <div class="stat"><div class="stat-value" id="remaining">—</div><div class="stat-label">Pendientes</div></div>
+        <div class="stat"><div class="stat-value" id="total">—</div><div class="stat-label">Total</div></div>
+      </div>
+      <div class="progress" role="progressbar" aria-label="Películas vistas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress"><div class="progress-bar" id="progressFill"></div></div>
+      <label class="select-label" for="platformSelect">SORTEAR ENTRE</label>
+      <select id="platformSelect" class="platform-select" aria-label="Plataforma para el sorteo">
+        <option value="all">Todas las películas pendientes</option>
+        <option value="any">Cualquier plataforma (streaming)</option>
+      </select>
+      <div id="sortCount" class="sort-count" aria-live="polite"></div>
+      <button type="button" class="primary" id="choose">🎲 Elegir una película al azar</button>
+      <div class="pick" aria-live="polite"><img id="resultPoster" class="chosen-poster" alt="" hidden><div class="result-copy"><div class="result-tag" id="resultTag">EL SORTEO TE ESPERA</div><h3 class="result-title" id="resultTitle">Tu próxima película aparecerá aquí</h3><div class="result-meta" id="resultDetails"></div><div class="platform-detail" id="resultPlatforms"></div></div></div>
+      <div class="actions"><button class="action" id="copyChoice" disabled>📋 Copiar título</button><button class="action good" id="markWatched" disabled>✓ Marcar como vista</button></div>
+      <div id="message" class="toast" aria-live="polite"></div>
+    </section>
+  </div>
+  <section id="view-statistics" class="view" hidden>
+    <div class="panel"><div class="panel-heading"><h2>Estadísticas de cine</h2><span id="statsTitle" class="count-tag"></span></div>
+      <div class="stats-hero" id="statsHero"></div>
+      <div class="stats-sections" id="statsSections"></div>
+    </div>
+  </section>
+  <section id="view-collections" class="view" hidden>
+    <div class="panel"><div class="panel-heading"><h2>Mis listas de películas</h2><div class="platform-controls"><button class="mini-ctrl compare-config-btn" id="configureCompare" type="button">⚭ Comparar listas</button><button class="mini-ctrl" id="newList" type="button">＋ Nueva lista</button></div></div>
+      <div id="collectionRows" class="collection-rows"></div>
+      <div class="page-controls collection-paging" aria-label="Navegar por las listas">
+        <button type="button" class="page-btn" id="collectionPrev">‹ Anterior</button>
+        <span class="page-label" id="collectionPageLabel"></span>
+        <button type="button" class="page-btn" id="collectionNext">Siguiente ›</button>
+      </div>
+      <div class="compare-info"><span id="compareInfo">Coincidencias: sin configurar</span><span>Solo lectura en Biblioteca</span></div>
+      <div class="identity-bar"><span id="identityStatus" role="status" aria-live="polite">Identificación: preparando…</span><button id="identityRefresh" type="button" class="mini-ctrl" title="Volver a comprobar títulos pendientes en TMDB">↻ Revisar TMDB</button></div>
+      <div class="manage-header">Gestionar lista activa <span id="manageListName"></span></div>
+      <div class="manager-tools">
+        <button class="tool" id="openFile" type="button">📂 Abrir TXT</button>
+        <button class="tool" id="pasteBtn" type="button">📋 Pegar lista</button>
+        <button class="tool" id="copyBtn" type="button">📄 Copiar lista</button>
+        <button class="tool" id="exportBtn" type="button">⬇ Exportar TXT</button>
+        <button class="tool" id="addFilmBtn" type="button">＋ Añadir película</button>
+        <button class="tool" id="addBatchBtn" type="button">＋ Añadir lista de películas</button>
+        <button class="tool remove-film-button" id="deleteFilmBtn" type="button">▤ Eliminar película</button>
+      </div>
+      <input class="upload-input" type="file" id="fileInput" accept=".txt,text/plain">
+      <div class="manage-message" id="listActionsState" aria-live="polite"></div>
+      <div class="backup-bar"><button class="tool" type="button" id="downloadBackup">⬇ Copia de seguridad</button><button class="tool" type="button" id="restoreBackup">↻ Restaurar copia</button></div>
+      <input class="upload-input" type="file" id="backupFile" accept=".json,application/json">
+      <div class="cloud-box" aria-label="Copias automáticas en tu nube">
+        <div class="cloud-title">☁ Copia automática en tu nube</div>
+        <input class="cloud-path" id="cloudFolder" type="text" autocomplete="off" placeholder="Carpeta local de OneDrive, Drive, Dropbox…" aria-label="Carpeta para las copias automáticas">
+        <div class="cloud-buttons">
+          <button class="tool" type="button" id="cloudBrowse">📁 Elegir carpeta</button>
+          <button class="tool" type="button" id="cloudActivate">✓ Activar copia</button>
+          <button class="tool" type="button" id="cloudBackupNow">↻ Copiar ahora</button>
+          <button class="tool" type="button" id="cloudDisable">Desactivar</button>
+        </div>
+        <div class="cloud-status" id="cloudStatus" aria-live="polite">Comprobando copias…</div>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="overlay" id="listOverlay" hidden>
+ <section class="modal" role="dialog" aria-modal="true" aria-labelledby="listModalTitle">
+   <div class="modal-head"><h2 id="listModalTitle">Nueva lista</h2><button class="close" type="button" id="closeListModal">✕</button></div>
+   <input id="listNameInput" class="input-key" placeholder="Nombre de la lista" maxlength="100" aria-label="Nombre de lista">
+   <textarea id="newListText" placeholder="Opcional: pega aquí las películas de tu nueva lista (☐ Título (año))" spellcheck="false" aria-label="Contenido inicial de la lista"></textarea>
+   <div class="modal-actions"><button class="close" id="cancelList" type="button">Cancelar</button><button class="primary" type="button" id="applyList">Guardar lista</button></div>
+ </section>
+</div>
+<div class="overlay" id="filmOverlay" hidden>
+ <section class="modal" role="dialog" aria-modal="true" aria-labelledby="filmModalTitle">
+  <div class="modal-head"><h2 id="filmModalTitle">Añadir película</h2><button class="close" id="closeFilmModal" type="button">✕</button></div>
+  <input class="input-key" id="newFilmTitle" placeholder="Título de la película" maxlength="250">
+  <input class="input-key" id="newFilmYear" placeholder="Año (opcional)" maxlength="4" inputmode="numeric">
+  <div class="modal-actions"><button class="close" id="cancelFilm" type="button">Cancelar</button><button class="primary" type="button" id="applyFilm">Añadir a esta lista</button></div>
+ </section>
+</div>
+<div class="overlay" id="batchOverlay" hidden>
+ <section class="modal" role="dialog" aria-modal="true" aria-labelledby="batchModalTitle">
+  <div class="modal-head"><h2 id="batchModalTitle">Añadir varias películas</h2><button class="close" type="button" id="closeBatchModal" aria-label="Cerrar">✕</button></div>
+  <div class="batch-target">Se añadirán a <strong id="batchCollectionName"></strong> sin borrar las existentes.</div>
+  <button class="tool batch-choose" type="button" id="batchChooseFile">📂 Seleccionar archivo TXT</button>
+  <input class="upload-input" type="file" id="batchFileInput" accept=".txt,text/plain">
+  <textarea id="batchText" spellcheck="false" placeholder="O pega aquí una lista de películas, una por línea. Puedes usar ☐ y ☑, título y año."></textarea>
+  <div class="modal-status" id="batchStatus" role="status" aria-live="polite"></div>
+  <div class="modal-actions"><button class="close" type="button" id="cancelBatch">Cancelar</button><button class="primary" type="button" id="applyBatch">Añadir películas nuevas</button></div>
+ </section>
+</div>
+<div class="overlay" id="deleteFilmOverlay" hidden>
+ <section class="modal delete-film-modal" role="dialog" aria-modal="true" aria-labelledby="deleteFilmModalTitle">
+  <div class="modal-head"><h2 id="deleteFilmModalTitle">Eliminar película</h2><button class="close" type="button" id="closeDeleteFilm" aria-label="Cerrar">✕</button></div>
+  <div id="deleteFilmPickStage">
+   <div class="delete-target">Lista activa: <strong id="deleteFilmListName"></strong></div>
+   <input class="input-key delete-film-search" id="deleteFilmSearch" type="search" autocomplete="off" placeholder="Buscar título o año…" aria-label="Buscar película para eliminar">
+   <div class="delete-film-counter" id="deleteFilmCount" aria-live="polite"></div>
+   <div class="delete-film-results" id="deleteFilmResults" role="listbox" aria-label="Películas de la lista activa"></div>
+   <div class="delete-film-selected" id="deleteFilmSelected" aria-live="polite">Selecciona una película de los resultados.</div>
+   <div class="modal-actions"><button class="close" type="button" id="cancelDeleteFilm">Cancelar</button><button class="danger-action" type="button" id="requestDeleteFilm" disabled>Eliminar película seleccionada</button></div>
+  </div>
+  <div id="deleteFilmConfirmStage" hidden>
+   <div class="delete-warning">¿Seguro que quieres eliminar esta película de la lista?</div>
+   <div class="delete-confirm-film" id="deleteFilmConfirmTitle"></div>
+   <div class="delete-warning-sub">Solo se elimina de «<strong id="deleteFilmConfirmList"></strong>». Las demás listas no cambian.</div>
+   <div class="modal-actions"><button class="close" type="button" id="backDeleteFilm">Volver</button><button class="danger-action" type="button" id="confirmDeleteFilm">Sí, eliminar película</button></div>
+  </div>
+ </section>
+</div>
+<div class="overlay" id="compareOverlay" hidden>
+  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="compareModalTitle">
+    <div class="modal-head"><h2 id="compareModalTitle">Películas coincidentes</h2><button type="button" class="close" id="closeCompare" aria-label="Cerrar">✕</button></div>
+    <p class="compare-note">Elige al menos dos listas. La colección virtual mostrará las películas que aparecen en <strong>todas</strong> las listas elegidas, identificadas como la misma película (preferentemente por ID de TMDB). No modificará ninguna lista.</p>
+    <div id="compareListOptions" class="compare-list-options" role="group" aria-label="Listas que se comparan"></div>
+    <div class="compare-status" id="compareStatus" aria-live="polite"></div>
+    <div class="modal-actions"><button type="button" class="close" id="cancelCompare">Cancelar</button><button type="button" class="close" id="clearCompare">Quitar comparación</button><button type="button" class="primary" id="saveCompare">Guardar comparación</button></div>
+  </section>
+</div>
+<div class="overlay" id="platformOverlay" hidden>
+ <section class="modal" role="dialog" aria-modal="true" aria-labelledby="platformModalTitle">
+  <div class="modal-head"><h2 id="platformModalTitle">Plataformas en España</h2><button class="close" type="button" id="closePlatforms" aria-label="Cerrar">✕</button></div>
+  <div class="api-text">Para mostrar Netflix, Movistar Plus+, Filmin y las demás plataformas junto a cada película, introduce una clave personal gratuita de TMDB. Se configura una vez.<br><a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer">Conseguir clave API de TMDB ↗</a><div style="margin-top:14px;font-size:12px;color:#899aab">Fuente de disponibilidad: JustWatch. Este producto utiliza la API de TMDB, pero no está respaldado ni certificado por TMDB.</div></div>
+  <input class="input-key" id="apiKey" type="password" autocomplete="off" placeholder="Pega aquí tu API Key (v3) o token de lectura (v4)">
+  <div class="key-inline"><button type="button" id="saveKey" class="primary" style="width:auto;padding:10px 20px;font-size:14px">Guardar y consultar</button><button type="button" class="close" id="cancelPlatforms">Cancelar</button></div>
+  <div class="modal-status" id="platformStatus" aria-live="polite"></div>
+ </section>
+</div>
+<div class="overlay" id="matchOverlay" hidden>
+  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="matchModalTitle">
+    <div class="modal-head"><h2 id="matchModalTitle">Identificar película en TMDB</h2><button type="button" class="close" id="closeMatch" aria-label="Cerrar">✕</button></div>
+    <div class="match-title" id="matchFilmTitle"></div>
+    <div class="match-hint">Busca la película en <a id="matchSearchLink" target="_blank" rel="noopener noreferrer" href="https://www.themoviedb.org/">TMDB ↗</a> y pega su número de identificación o el enlace completo. Se comprobará el año antes de guardarlo.</div>
+    <input class="input-key" type="text" inputmode="numeric" id="matchID" placeholder="ID de TMDB o enlace de la película" autocomplete="off" aria-label="ID de TMDB">
+    <div class="modal-status" id="matchStatus" aria-live="polite"></div>
+    <div class="match-controls">
+      <button type="button" class="close" id="resetMatch">Volver a búsqueda automática</button>
+      <button type="button" class="primary" id="saveMatch">Guardar identificación</button>
+    </div>
+  </section>
+</div>
+<div class="overlay" id="pasteOverlay" hidden>
+  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head"><h2 id="modalTitle">Pegar nueva lista</h2><button class="close" type="button" id="closeModal" aria-label="Cerrar">✕</button></div>
+    <textarea id="pasteText" placeholder="Pega aquí el contenido de Word o de tu TXT" spellcheck="false" aria-label="Texto de la lista"></textarea>
+    <div class="modal-status" id="pasteStatus" aria-live="polite"></div>
+    <div class="modal-actions"><button class="close" id="cancelPaste" type="button">Cancelar</button><button class="primary" type="button" id="applyPaste">Cargar lista</button></div>
+  </section>
+</div>
+<script>
+(() => {
+'use strict';
+const $=id=>document.getElementById(id);
+const token='__ATLAS_TOKEN__';
+let rawText=$('initialState').value.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
+let parsed=null,filter='all',search='',chosen=null,lastChoice=null,saveTimer=null,saveQueue=Promise.resolve(),saveEpoch=0;
+let filmPage=0,collectionPage=0,statPages=new Map();
+let platformConfigured=false, platformData=new Map(),platformRun=0,platformActive=false,platformFinished=0,platformTotal=0;
+let libraryState={version:1,active_id:'atlas',lists:[{id:'atlas',name:'Atlas del cine · 365',text:rawText}]};
+let editingListID=null,activeView='library',selectedSortPlatform='all';
+const identityMap=new Map(); // clave título-año -> ID TMDB guardado
+let identityScanRunning=false,identityScanAgain=false,identityScanProgress=0,identityScanTotal=0,identityRefreshTimer=null;
+let identityConfigured=false;
+
+const virtualID='__coincidencias__';
+let virtualMode=false;
+let selectedListPlatforms=new Set(),listPlatformOptionSignature=''; // independiente del filtro del sorteo
+const providerKey=f=>f.title.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/æ/g,'ae').replace(/œ/g,'oe').replace(/[^\p{L}\p{N}]+/gu,' ').trim()+'|'+f.year;
+let manualFilm=null;
+const jwSearch=f=>'https://www.justwatch.com/es/buscar?q='+encodeURIComponent(f.title);
+function friendlyName(s){return s.replace(/Movistar Plus\+ Ficción Total/i,'Movistar+ Ficción Total').replace(/Movistar Plus\+/i,'Movistar+').replace(/Amazon Prime Video/i,'Prime Video').replace(/Netflix Standard with Ads/i,'Netflix con anuncios').replace(/HBO Max/i,'Max');}
+function platformBadge(f){
+ const r=platformData.get(providerKey(f));
+ if(!platformConfigured)return ['Configurar plataformas','muted'];
+ if(!r)return ['Por consultar…','muted'];
+ if(r.state==='error')return ['Sin conexión','offline'];
+ if(r.state==='not-found')return ['Título sin identificar','muted'];
+ if(r.state==='no-data')return ['Sin disponibilidad registrada','muted'];
+ let p=[...(r.subscriptions||[]),...(r.free||[]),...(r.ads||[])];p=[...new Set(p)];
+ if(p.length){const disp=p.slice(0,3).map(friendlyName);return [disp.join(' · ')+(p.length>3?' · +'+(p.length-3):''),''];}
+ if(r.rent?.length){return ['Alquiler: '+r.rent.slice(0,2).map(friendlyName).join(' · ')+(r.rent.length>2?' · +'+(r.rent.length-2):''),'offline'];}
+ if(r.buy?.length){return ['Solo compra digital','offline'];}
+ return ['Sin streaming registrado','muted'];
+}
+function platformTitle(r){if(!r)return 'Consulta disponibilidad en JustWatch';let msg=[];
+ if(r.subscriptions?.length)msg.push('Suscripción: '+r.subscriptions.join(', '));
+ if(r.free?.length)msg.push('Gratis: '+r.free.join(', '));
+ if(r.ads?.length)msg.push('Con anuncios: '+r.ads.join(', '));
+ if(r.rent?.length)msg.push('Alquiler: '+r.rent.join(', '));
+ if(r.buy?.length)msg.push('Compra: '+r.buy.join(', '));
+ return msg.join(' | ')||'Ver alternativas en JustWatch';}
+function updatePlatformProgress(){
+ const el=$('platformProgress');
+ if(!platformConfigured){el.textContent='Activa las plataformas para consultar la disponibilidad en España';return;}
+ if(platformActive){el.textContent='Consultando plataformas: '+platformFinished+'/'+platformTotal;return;}
+ if(platformFinished>0){el.textContent='Plataformas consultadas: '+platformFinished+'/'+platformTotal;return;}
+ el.textContent='Disponibilidad de plataformas en España';
+}
+function updateChoicePlatforms(){
+ const el=$('resultPlatforms');el.replaceChildren();if(!chosen)return;
+ const r=platformData.get(providerKey(chosen));const x=platformBadge(chosen);
+   updateChoiceMedia();
+ const label=document.createElement('span');label.textContent=x[0]+'  ';el.appendChild(label);
+ const link=document.createElement('a');link.href=(r?.film_url||jwSearch(chosen));link.target='_blank';link.rel='noopener noreferrer';link.textContent='Ver dónde →';el.appendChild(link);
+}
+function scheduledPlatformRender(){if(scheduledPlatformRender.timer)return;scheduledPlatformRender.timer=setTimeout(()=>{scheduledPlatformRender.timer=null;renderList();updateChoicePlatforms();updatePlatformChoices();updateListPlatformOptions();renderStats();},260);}
+async function platformApi(path,body){
+ const res=await fetch(path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json','X-Atlas-Token':token},body:body?JSON.stringify(body):undefined,cache:'no-store'});
+ if(!res.ok){const error=await res.text();throw new Error(error.replace(/<[^>]+>/g,'').slice(0,200));}
+ return await res.json();
+}
+async function initPlatforms(){
+ try{const r=await platformApi('/api/platforms/status');platformConfigured=!!r.configured;}
+ catch(err){platformConfigured=false;}
+ updatePlatformProgress();updateListPlatformOptions();renderList();
+ if(platformConfigured)void loadPlatforms(false);
+}
+async function loadPlatforms(force){
+ if(!platformConfigured){showPlatformModal();return;}
+ const current=++platformRun;platformData.clear();platformFinished=0;platformTotal=parsed.entries.length;platformActive=true;updatePlatformProgress();renderList();
+ // Tres consultas simultáneas, para no saturar la API.
+ const entries=parsed.entries.map(f=>({...f}));let idx=0;
+ async function worker(){while(current===platformRun){const n=idx++;if(n>=entries.length)break;const f=entries[n];
+   try{const r=await platformApi('/api/platforms/lookup',{title:f.title,year:Number(f.year)||0,force:!!force});if(current===platformRun){platformData.set(providerKey(f),r);if(r?.tmdb_id>0)registerIdentity(f,r.tmdb_id);}}
+   catch(err){if(current===platformRun)platformData.set(providerKey(f),{state:'error',note:err.message});}
+   if(current===platformRun){platformFinished++;if(platformFinished%5===0||platformFinished===platformTotal){updatePlatformProgress();scheduledPlatformRender();}}
+ }}
+ await Promise.all([worker(),worker(),worker()]);if(current!==platformRun)return;
+ platformActive=false;updatePlatformProgress();scheduledPlatformRender();
+}
+function showPlatformModal(){ $('platformOverlay').hidden=false;$('platformStatus').textContent='';$('apiKey').value='';$('apiKey').focus();}
+function closePlatformModal(){$('platformOverlay').hidden=true;}
+$('platformSetup').addEventListener('click',showPlatformModal);
+$('platformRefresh').addEventListener('click',()=>void loadPlatforms(true));
+$('closePlatforms').addEventListener('click',closePlatformModal);
+$('cancelPlatforms').addEventListener('click',closePlatformModal);
+$('platformOverlay').addEventListener('click',e=>{if(e.target===$('platformOverlay'))closePlatformModal();});
+function openMatchModal(f){
+ if(!platformConfigured){showPlatformModal();return;}
+ manualFilm={title:f.title,year:Number(f.year)||0};
+ const r=platformData.get(providerKey(f));
+ $('matchFilmTitle').textContent=f.title+(f.year?' ('+f.year+')':'');
+ $('matchID').value=r?.tmdb_id||knownTMDB(f)||'';
+ $('matchSearchLink').href='https://www.themoviedb.org/search?query='+encodeURIComponent(f.title);
+ $('matchStatus').textContent=''; $('matchOverlay').hidden=false; $('matchID').focus();
+}
+function closeMatchModal(){ $('matchOverlay').hidden=true;manualFilm=null; }
+$('closeMatch').addEventListener('click',closeMatchModal);
+$('matchOverlay').addEventListener('click',e=>{if(e.target===$('matchOverlay'))closeMatchModal();});
+async function applyManualMatch(id){
+ if(!manualFilm)return;
+ const film={...manualFilm},key=providerKey(film);
+ $('saveMatch').disabled=true;$('resetMatch').disabled=true;
+ $('matchStatus').textContent=id?'Comprobando película…':'Reintentando búsqueda automática…';
+ try {
+   await platformApi('/api/platforms/match',{title:film.title,year:film.year,id});
+   const info=await platformApi('/api/platforms/lookup',{title:film.title,year:film.year,force:true});
+   platformData.set(key,info);
+   if(info?.tmdb_id>0)registerIdentity(film,info.tmdb_id);else{identityMap.delete(filmKey(film));queueIdentityReconcile();}
+   closeMatchModal();scheduledPlatformRender();void cloudRefresh();
+   $('message').textContent=info.state==='not-found'?'No se encontró. Prueba a introducir el ID de TMDB.':'Identificación actualizada.';
+ } catch(e){$('matchStatus').textContent='⚠ '+e.message;}
+ finally{$('saveMatch').disabled=false;$('resetMatch').disabled=false;}
+}
+$('saveMatch').addEventListener('click',()=>{
+ const typed=$('matchID').value.trim();
+ const id=/^\d{1,9}$/.test(typed)?Number(typed):Number(typed.match(/^https?:\/\/(?:www\.)?themoviedb\.org\/movie\/(\d{1,9})(?:[\/?#-]|$)/i)?.[1]||0);
+ if(!id){$('matchStatus').textContent='Escribe el ID numérico o la URL de TMDB.';return;}
+ void applyManualMatch(id);
+});
+$('resetMatch').addEventListener('click',()=>void applyManualMatch(0));
+$('matchID').addEventListener('keydown',e=>{if(e.key==='Enter')$('saveMatch').click()});
+$('saveKey').addEventListener('click',async()=>{
+ const key=$('apiKey').value.trim();if(!key)return;
+ $('platformStatus').textContent='Comprobando clave…';$('saveKey').disabled=true;
+ try{await platformApi('/api/platforms/config',{key});platformConfigured=true;identityConfigured=true;closePlatformModal();updatePlatformProgress();void loadPlatforms(true);void scanIdentities(false);}
+ catch(err){$('platformStatus').textContent='No se pudo activar: '+err.message;}
+ finally{$('saveKey').disabled=false;}
+});
+
+const pendingSymbols=new Set(['☐','□']);
+const allSymbols=/^[☐□☑☒✓✔✅]$/u;
+function lineInfo(text,idx){
+ const original=text, trimmed=text.trim();
+ if(!trimmed || /^ATLAS DEL CINE\b/i.test(trimmed) || /^#{1,6}\s/.test(trimmed) || /^[-_=]{3,}$/.test(trimmed))return null;
+ let m=trimmed.match(/^([☐□☑☒✓✔✅])\s*(?:(\d{1,4})[.)]\s*)?(.+?)\s*$/u);
+ let checked=false,number='',name='';
+ if(m){checked=!pendingSymbols.has(m[1]);number=m[2]||'';name=m[3]||'';}
+ else {
+   m=trimmed.match(/^(?:(\d{1,4})[.)]|[-•])\s*(.+)$/u);
+   if(m){number=m[1]||'';name=m[2]||'';}
+   else name=trimmed;
+ }
+ name=name.trim();if(!name)return null;
+ const yearMatch=name.match(/\s+\((\d{4})\)$/);
+ return {idx,original,checked,number,name,title:yearMatch?name.slice(0,-yearMatch[0].length):name,year:yearMatch?yearMatch[1]:''};
+}
+function parse(text){
+ const lines=text.split('\n'),entries=[];
+ for(let i=0;i<lines.length;i++){const f=lineInfo(lines[i],i);if(f)entries.push(f);}
+ return {lines,entries,seen:entries.filter(f=>f.checked).length,pending:entries.filter(f=>!f.checked)};
+}
+function update(){parsed=parse(rawText);const n=parsed.entries.length;
+ $('total').textContent=n;$('watched').textContent=parsed.seen;$('remaining').textContent=parsed.pending.length;
+ $('libraryCount').textContent=`${n} ${n===1?'película':'películas'}`;
+ const pct=n?Math.round(100*parsed.seen/n):0;
+ $('progressFill').style.width=pct+'%';$('progress').setAttribute('aria-valuenow',pct);
+ updateSortAvailability();
+ renderList();
+}
+function renderList(){
+ const parent=$('filmList');parent.replaceChildren();const needle=search.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ const matches=parsed.entries.filter(f=>{
+   if(filter==='seen'&&!f.checked||filter==='pending'&&f.checked)return false;
+   if(needle&&!f.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(needle))return false;
+   if(selectedListPlatforms.size){const available=platformData.get(providerKey(f));if(!available||available.state!=='ok'||!subscriptions(available).some(p=>selectedListPlatforms.has(p)))return false;}
+   return true;
+ });
+ const areaHeight=parent.clientHeight||370;
+ const pageSize=Math.max(1,Math.floor((areaHeight+7)/92));
+ const pageCount=Math.max(1,Math.ceil(matches.length/pageSize));
+ filmPage=Math.max(0,Math.min(filmPage,pageCount-1));
+ const start=filmPage*pageSize;
+ const frag=document.createDocumentFragment();
+ for(const f of matches.slice(start,start+pageSize)){
+   const b=document.createElement('div');b.className='film-item'+(f.checked?' seen':'');b.dataset.idx=f.idx;b.setAttribute('role','listitem');if(virtualMode)b.classList.add('readonly');
+   const togg=document.createElement(virtualMode?'span':'button');if(!virtualMode)togg.type='button';togg.className='film-toggle'+(virtualMode?' readonly':'');if(!virtualMode){togg.dataset.idx=f.idx;togg.setAttribute('aria-pressed',f.checked?'true':'false');togg.title='Marcar como '+(f.checked?'pendiente':'vista');}
+   const chk=document.createElement('span');chk.className='checkbox';chk.textContent=f.checked?'✓':'';
+   const r=platformData.get(providerKey(f));
+   const poster=posterElement(r);
+   const main=document.createElement('span');main.className='film-main';
+   const titleLine=document.createElement('span');titleLine.className='title-line';
+   const title=document.createElement('span');title.className='film-name';title.textContent=f.title;titleLine.appendChild(title);
+   if(r?.vote_count>0){const rating=document.createElement('span');rating.className='film-rating';rating.textContent='★ '+Number(r.vote_average).toFixed(1)+' TMDB';rating.title='Valoración de usuarios de TMDB ('+r.vote_count+' votos)';titleLine.appendChild(rating);}
+   main.appendChild(titleLine);
+   if(f.year||f.number){const sub=document.createElement('span');sub.className='film-sub';sub.textContent=[f.number?'N.º '+f.number:'',f.year].filter(Boolean).join(' · ');main.appendChild(sub);}
+   const badge=document.createElement('span');badge.className='film-platforms';const [name,css]=platformBadge(f);if(css)badge.classList.add(css);badge.textContent=name;
+   badge.title=platformTitle(r);main.appendChild(badge);
+   togg.append(chk,poster,main);
+   const pill=document.createElement('span');pill.className='pill';pill.textContent=f.checked?'Vista':'Pendiente';
+   const link=document.createElement('a');link.className='wherelink';link.href=(r?.film_url||jwSearch(f));link.target='_blank';link.rel='noopener noreferrer';link.title='Consultar en JustWatch / TMDB';link.setAttribute('aria-label','Consultar dónde ver '+f.title);link.textContent='↗';
+   const fix=document.createElement('button');fix.type='button';fix.className='matchlink';fix.title='Corregir identificación de TMDB';fix.setAttribute('aria-label','Corregir identificación de '+f.title);fix.textContent='✎';fix.addEventListener('click',()=>{if(!virtualMode)openMatchModal(f);});fix.disabled=virtualMode;fix.hidden=virtualMode;
+   b.append(togg,pill,fix,link);frag.appendChild(b);
+ }
+ if(!matches.length){
+   const div=document.createElement('div');div.className='empty-list';
+   div.textContent=!parsed.entries.length?'Tu lista está vacía':
+     selectedListPlatforms.size&&!platformConfigured?'Configura las plataformas en ⚙ Plataformas para utilizar este filtro':
+     selectedListPlatforms.size&&platformActive?'Buscando películas de las plataformas seleccionadas…':
+     selectedListPlatforms.size?'No hay películas que coincidan con las plataformas seleccionadas':'No se encontraron películas';
+   frag.appendChild(div);
+ }
+ parent.appendChild(frag);
+ $('listPlatformCount').textContent='Filtradas: '+matches.length+' de '+parsed.entries.length;
+ $('filmPageLabel').textContent=matches.length?((start+1)+'–'+Math.min(matches.length,start+pageSize)+' de '+matches.length):'0 películas';
+ renderNumberedPages(pageCount,filmPage,matches.length);
+ $('filmPrev').disabled=filmPage===0; $('filmNext').disabled=filmPage>=pageCount-1;
+}
+// Página con ventana amplia: hasta 11 números contiguos y extremos.
+// Los separadores permiten saltar 10 páginas, además del campo «Página ... Ir».
+function filmPageTokens(current,total,visibleCount){
+ const amount=Math.min(total,Math.max(3,visibleCount));
+ let start=Math.max(0,current-Math.floor(amount/2));
+ start=Math.min(start,total-amount);
+ const end=start+amount-1,tokens=[];
+ if(start>0){tokens.push({kind:'page',index:0});if(start>1)tokens.push({kind:'skip',index:Math.max(0,current-10),direction:'back'});}
+ for(let i=start;i<=end;i++)tokens.push({kind:'page',index:i});
+ if(end<total-1){if(end<total-2)tokens.push({kind:'skip',index:Math.min(total-1,current+10),direction:'forward'});tokens.push({kind:'page',index:total-1});}
+ return tokens;
+}
+function renderNumberedPages(total,current,filmCount){
+ const container=$('filmPageNumbers');container.replaceChildren();
+ $('filmPageTotal').textContent='/ '+total;
+ $('filmPageGoto').max=String(total);
+ if(filmCount===0||total<=1){container.hidden=true;$('filmPageGotoForm').hidden=true;return;}
+ container.hidden=false;$('filmPageGotoForm').hidden=false;
+ const paging=$('filmPaging');
+ const available=(paging.clientWidth||700)-($('filmPrev').offsetWidth||80)-($('filmNext').offsetWidth||80)-28;
+ // Reservar espacio para primera/última y los dos posibles saltos «…».
+ const visibleCount=Math.min(11,Math.max(3,Math.floor((available-122)/32)));
+ for(const token of filmPageTokens(current,total,visibleCount)){
+   if(token.kind==='skip'){
+     const button=document.createElement('button');button.type='button';button.className='page-ellipsis page-skip';button.textContent=token.direction==='back'?'«':'»';
+     button.title=token.direction==='back'?'Retroceder hasta 10 páginas':'Avanzar hasta 10 páginas';
+     button.setAttribute('aria-label',button.title);
+     button.addEventListener('click',()=>{filmPage=token.index;renderList();});container.appendChild(button);continue;
+   }
+   const p=token.index;
+   const button=document.createElement('button');button.type='button';button.className='page-number'+(p===current?' active':'');button.textContent=String(p+1);button.title='Ir a la página '+(p+1);button.setAttribute('aria-label','Ir a la página '+(p+1));
+   if(p===current)button.setAttribute('aria-current','page');
+   button.addEventListener('click',()=>{filmPage=p;renderList();});container.appendChild(button);
+ }
+}
+$('filmPageGotoForm').addEventListener('submit',e=>{
+ e.preventDefault();const input=$('filmPageGoto');const page=Number(input.value);
+ const max=Number(input.max)||1;
+ if(!Number.isInteger(page)||page<1||page>max){input.focus();input.select();return;}
+ filmPage=page-1;renderList();input.value='';
+});
+function resetChoice(){chosen=null;$('resultPoster').hidden=true;$('resultPoster').removeAttribute('src');$('resultPlatforms').replaceChildren();$('resultTag').textContent='EL SORTEO TE ESPERA';$('resultTitle').textContent='Tu próxima película aparecerá aquí';$('resultDetails').textContent='';$('markWatched').disabled=true;$('copyChoice').disabled=true;}
+function scheduleSave(){if(identityConfigured&&!identityScanRunning)queueIdentityScanSoon(); $('saveState').textContent='Guardando…';clearTimeout(saveTimer);saveTimer=setTimeout(()=>{void saveLocal();},240);}
+async function saveLocal(){
+ syncActiveText();const snapshot=JSON.stringify(libraryState);const epoch=++saveEpoch;
+ saveQueue=saveQueue.catch(()=>{}).then(async()=>{
+   const response=await fetch('/api/library',{method:'POST',headers:{'Content-Type':'application/json','X-Atlas-Token':token},body:snapshot,cache:'no-store'});
+   if(!response.ok)throw new Error('HTTP '+response.status);
+   return response.headers.get('X-Cine-Cloud');
+ });
+ try{const cloudResult=await saveQueue;if(epoch===saveEpoch){$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':'✓ Guardado';void cloudRefresh();}}
+ catch(err){if(epoch===saveEpoch)$('saveState').textContent='⚠ Error al guardar';}
+}
+function replaceList(text){let clean=text.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');const test=parse(clean);if(!test.entries.length){$('message').textContent='No se encontraron películas.';return false;}
+ rawText=clean;syncActiveText();reconcileWatched();rawText=activeCollection().text||'';restartList();scheduleSave();return true;
+}
+// Identidad compartida por todas las listas. El ID TMDB tiene prioridad;
+// si falta, se usa título normalizado y año. No se mezclan remakes de años
+// diferentes salvo que TMDB confirme que son exactamente la misma película.
+function filmKey(f){return filmIdentity(f)+'|'+(f.year||'');}
+function knownTMDB(f){return identityMap.get(filmKey(f))||platformData.get(providerKey(f))?.tmdb_id||0;}
+function buildIdentityGroups(){
+ const records=new Map(),parents=new Map(),idOwners=new Map();
+ const find=k=>{let parent=parents.get(k)||k;if(parent!==k){parent=find(parent);parents.set(k,parent);}return parent;};
+ const union=(a,b)=>{a=find(a);b=find(b);if(a!==b)parents.set(b,a);};
+ for(const list of libraryState.lists){
+   for(const f of parse(list.text).entries){const key=filmKey(f);if(!key)continue;
+     if(!parents.has(key))parents.set(key,key);
+     const record=records.get(key)||{title:filmIdentity(f),year:f.year||'',id:0};
+     record.id=knownTMDB(f)||record.id;
+     records.set(key,record);
+   }
+ }
+ // Reliable cross-language/cross-title merge by confirmed TMDB movie ID.
+ for(const [key,entry] of records){if(!entry.id)continue;
+   const previous=idOwners.get(entry.id);
+   if(previous)union(previous,key);else idOwners.set(entry.id,key);
+ }
+ // Missing-year entries are joined by an *exact* title only if the rest of
+ // the collection has a single candidate year. Avoids mixing remakes.
+ const yearsByTitle=new Map();
+ for(const [key,entry] of records){if(!entry.year)continue;let byYear=yearsByTitle.get(entry.title);if(!byYear){byYear=new Set();yearsByTitle.set(entry.title,byYear);}byYear.add(key);}
+ for(const [key,entry] of records){if(entry.year)continue;
+   const matches=yearsByTitle.get(entry.title);if(!matches||matches.size!==1)continue;
+   const candidate=[...matches][0],other=records.get(candidate);
+   if(entry.id&&other.id&&entry.id!==other.id)continue;
+   union(key,candidate);
+ }
+ const out=new Map();for(const key of records.keys())out.set(key,find(key));return out;
+}
+function groupKey(f,groups){return groups.get(filmKey(f))||filmKey(f);}
+function setMarkOnLine(line,seen){
+ const mark=seen?'☑':'☐';
+ if(/^\s*[☐□☑☒✓✔✅]/u.test(line))return line.replace(/^(\s*)[☐□☑☒✓✔✅]/u,'$1'+mark);
+ return line.replace(/^(\s*)/,'$1'+mark+' ');
+}
+function propagateSeen(f,newChecked){
+ const groups=buildIdentityGroups(),target=groupKey(f,groups);let changed=0;
+ for(const list of libraryState.lists){
+   const data=parse(list.text);const lines=data.lines.slice();let touched=false;
+   for(const item of data.entries){
+     if(groupKey(item,groups)!==target||item.checked===newChecked)continue;
+     lines[item.idx]=setMarkOnLine(lines[item.idx],newChecked);changed++;touched=true;
+   }
+   if(touched)list.text=lines.join('\n');
+ }
+ return changed;
+}
+// Se ejecuta al abrir, importar, añadir películas, recibir un nuevo ID TMDB
+// y cambiar identificaciones. Basta una marca ☑ en CUALQUIER lista para que
+// todas las apariciones de esa misma película también estén vistas.
+function reconcileWatched(){
+ const groups=buildIdentityGroups(),watched=new Set();
+ for(const list of libraryState.lists){for(const f of parse(list.text).entries){if(f.checked)watched.add(groupKey(f,groups));}}
+ let changed=0;
+ for(const list of libraryState.lists){
+   const data=parse(list.text),lines=data.lines.slice();let touched=false;
+   for(const f of data.entries){
+     if(f.checked||!watched.has(groupKey(f,groups)))continue;
+     lines[f.idx]=setMarkOnLine(lines[f.idx],true);changed++;touched=true;
+   }
+   if(touched)list.text=lines.join('\n');
+ }
+ return changed;
+}
+// La identificación se efectúa en segundo plano, sin bloquear la interfaz.
+function registerIdentity(f,id){
+ if(!(id>0))return false;
+ const key=filmKey(f),existing=identityMap.get(key);
+ if(existing===id)return false;
+ identityMap.set(key,id);queueIdentityReconcile();return true;
+}
+function queueIdentityReconcile(){
+ if(identityRefreshTimer)return;
+ identityRefreshTimer=setTimeout(()=>{
+   identityRefreshTimer=null;
+   const changed=reconcileWatched();
+   if(virtualMode)rawText=buildIntersection();else rawText=activeCollection().text||'';
+   update();renderStats();renderCollectionControls();
+   if(changed)scheduleSave();
+ },350);
+}
+function identityStatus(text){$('identityStatus').textContent=text;}
+async function initIdentities(){
+ try{
+   const data=await platformApi('/api/identities');identityConfigured=Boolean(data.configured);
+   for(const [key,id] of Object.entries(data.entries||{})){if(id>0)identityMap.set(key,id);}
+   queueIdentityReconcile();
+   if(identityConfigured)void scanIdentities();
+   else identityStatus('TMDB sin configurar · coincidencias por título y año');
+ }catch(e){identityStatus('Identificación TMDB no disponible');}
+}
+async function scanIdentities(force=false){
+ if(!identityConfigured){identityStatus('Configura TMDB para reconocer títulos distintos');return;}
+ if(identityScanRunning){identityScanAgain=true;return;}
+ identityScanRunning=true;identityScanAgain=false;
+ // Priorizar las colecciones comparadas y después el resto.
+ const ids=new Set(libraryState.comparison_ids||[]);
+ const prioritized=[...libraryState.lists].sort((a,b)=>Number(ids.has(b.id))-Number(ids.has(a.id)));
+ const unique=new Map();
+ for(const list of prioritized){for(const f of parse(list.text).entries){const k=filmKey(f);if(!identityMap.has(k)&&!unique.has(k))unique.set(k,{title:f.title,year:Number(f.year)||0});}}
+ const films=[...unique.values()];identityScanProgress=0;identityScanTotal=films.length;
+ if(!films.length){identityStatus('Identidades TMDB: todas las películas identificadas');identityScanRunning=false;return;}
+ identityStatus('Identificando '+films.length+' títulos en TMDB…');let next=0,errors=0,unresolved=0;
+ async function worker(){
+   while(next<films.length){const f=films[next++];
+     try{
+       const info=await platformApi('/api/identities/resolve',{title:f.title,year:f.year,force});
+       if(info.state==='unconfigured'){identityConfigured=false;break;}
+       if(info.state==='error'){errors++;}
+       else if(info.tmdb_id>0)registerIdentity(f,info.tmdb_id);
+       else unresolved++;
+       // If TMDB temporarily rejects requests, do not hammer the API.
+       if(info.state==='error'&&/429|límite|clave/i.test(info.note||'')){errors++;break;}
+     }catch(e){errors++;}
+     identityScanProgress++;
+     if(identityScanProgress%10===0||identityScanProgress===identityScanTotal){
+       identityStatus('Revisando TMDB: '+identityScanProgress+' / '+identityScanTotal+' · '+unresolved+' sin identificar'+(errors?' · '+errors+' errores':''));
+     }
+     await new Promise(resolve=>setTimeout(resolve,240));
+   }
+ }
+ await Promise.all([worker(),worker()]);identityScanRunning=false;
+ identityStatus(identityConfigured?'TMDB: '+(identityScanProgress-errors-unresolved)+' identificadas · '+unresolved+' sin identificar'+(errors?' · '+errors+' errores':''):'TMDB sin configurar');
+ queueIdentityReconcile();
+ if(identityScanAgain){identityScanAgain=false;void scanIdentities(false);}
+}
+let identityScanSoon=null;
+function queueIdentityScanSoon(){if(identityScanSoon)return;identityScanSoon=setTimeout(()=>{identityScanSoon=null;void scanIdentities(false);},800);}
+$('identityRefresh').addEventListener('click',()=>{identityConfigured=platformConfigured;void scanIdentities(true);});
+function toggle(idx){
+ if(virtualMode)return;
+ const f=parsed.entries.find(e=>e.idx===idx);if(!f)return;
+ syncActiveText();const next=!f.checked;const changed=propagateSeen(f,next);
+ rawText=activeCollection().text||'';
+ update();renderStats();renderCollectionControls();scheduleSave();
+ if(chosen&&chosen.idx===idx){$('resultTag').textContent=next?'✓ MARCADA COMO VISTA':'PENDIENTE';$('markWatched').disabled=next;chosen=next?null:parsed.entries.find(e=>e.idx===idx);}
+ $('message').textContent=(next?'Marcada como vista':'Marcada como pendiente')+' en '+changed+' '+(changed===1?'registro':'registros')+' de tus listas.';
+ updateChoicePlatforms();
+}
+
+// A library can contain several independently editable TXT lists.
+const activeCollection=()=>libraryState.lists.find(x=>x.id===libraryState.active_id)||libraryState.lists[0];
+function syncActiveText(){if(virtualMode)return;const active=activeCollection();if(active)active.text=rawText;}
+function comparisonLists(){return (libraryState.comparison_ids||[]).map(id=>libraryState.lists.find(x=>x.id===id)).filter(Boolean);}
+function hasComparison(){return comparisonLists().length>=2;}
+// Colección calculada, nunca persistida como lista real. El primer listado define el orden.
+function buildIntersection(){
+ const lists=comparisonLists();if(lists.length<2)return '';
+ const groups=buildIdentityGroups();
+ const first=parse(lists[0].text).entries;
+ const others=lists.slice(1).map(list=>{
+   const m=new Map();for(const f of parse(list.text).entries){const key=groupKey(f,groups);m.set(key,(m.get(key)||false)||f.checked);}
+   return m;
+ });
+ const included=new Set(),lines=[];
+ for(const f of first){
+   const key=groupKey(f,groups);if(included.has(key)||!others.every(m=>m.has(key)))continue;
+   included.add(key);
+   lines.push((f.checked||others.some(m=>m.get(key))?'☑':'☐')+' '+(f.number?f.number+'. ':'')+f.title+(f.year?' ('+f.year+')':''));
+ }
+ return lines.join('\n');
+}
+function refreshVirtualContent(){if(virtualMode)rawText=buildIntersection();}
+function sanitizeComparisonIDs(){
+ const available=new Set(libraryState.lists.map(x=>x.id));
+ const raw=Array.isArray(libraryState.comparison_ids)?libraryState.comparison_ids:[];
+ const ids=[...new Set(raw.filter(id=>available.has(id)))];
+ libraryState.comparison_ids=ids.length>=2?ids:[];
+ if(virtualMode&&!hasComparison()){virtualMode=false;rawText=activeCollection().text||'';}
+}
+
+async function initLibrary(){
+ try{const response=await fetch('/api/library',{headers:{'X-Atlas-Token':token},cache:'no-store'});
+   if(response.ok){const state=await response.json();if(validLibrary(state))libraryState=state;}
+ }catch(e){}
+ sanitizeComparisonIDs();const reconciled=reconcileWatched();rawText=activeCollection().text||'';renderCollectionControls();update();renderStats();if(reconciled)scheduleSave();
+}
+function validLibrary(s){return s&&s.version===1&&Array.isArray(s.lists)&&s.lists.length>0&&s.lists.length<=40&&typeof s.active_id==='string'&&s.lists.some(l=>l.id===s.active_id)&&s.lists.every(l=>typeof l.text==='string'&&typeof l.name==='string'&&typeof l.id==='string');}
+function restartList(){
+ filmPage=0;collectionPage=0;statPages.clear();platformRun++;platformData.clear();platformFinished=0;platformTotal=0;platformActive=false;lastChoice=null;resetChoice();filter='all';search='';$('search').value='';
+ selectedSortPlatform='all';$('platformSelect').value='all';selectedListPlatforms.clear();closeListPlatformMenu();
+ document.querySelectorAll('.filter').forEach(b=>b.classList.toggle('selected',b.dataset.filter==='all'));
+ updateListPlatformOptions();update();updatePlatformProgress();renderStats();renderCollectionControls();if(platformConfigured)void loadPlatforms(false);
+}
+function switchCollection(id){
+ if(id===virtualID){
+   if(!hasComparison()||virtualMode)return;
+   syncActiveText();virtualMode=true;rawText=buildIntersection();restartList();showView('library');return;
+ }
+ if(!libraryState.lists.some(l=>l.id===id)||(!virtualMode&&id===libraryState.active_id))return;
+ syncActiveText();virtualMode=false;libraryState.active_id=id;rawText=activeCollection().text||'';restartList();scheduleSave();showView('library');
+}
+function renderCollectionControls(){
+ const sel=$('listSwitcher');sel.replaceChildren();for(const list of libraryState.lists){const o=document.createElement('option');o.value=list.id;o.textContent=list.name;sel.appendChild(o)}
+ if(hasComparison()){const o=document.createElement('option');o.value=virtualID;o.textContent='⚭ Películas coincidentes (solo lectura)';sel.appendChild(o);}
+ sel.value=virtualMode?virtualID:libraryState.active_id;
+ $('compareInfo').textContent=hasComparison()?'Coincidencias: '+comparisonLists().map(x=>x.name).join(' · '):'Coincidencias: sin configurar';$('compareInfo').title=$('compareInfo').textContent;
+ $('libraryCount').title=virtualMode?'Coincidencias entre '+comparisonLists().length+' listas · solo lectura':'';
+ $('addFilmBtn').disabled=false;
+ const rows=$('collectionRows');rows.replaceChildren();
+ $('manageListName').textContent=activeCollection()?.name||'';
+ const rowHeight=65, visible=Math.max(1,Math.floor(((rows.clientHeight||160)+7)/rowHeight));
+ const pages=Math.max(1,Math.ceil(libraryState.lists.length/visible));
+ collectionPage=Math.max(0,Math.min(collectionPage,pages-1));
+ const start=collectionPage*visible;
+ $('collectionPageLabel').textContent=(start+1)+'–'+Math.min(libraryState.lists.length,start+visible)+' de '+libraryState.lists.length;
+ $('collectionPrev').disabled=collectionPage===0;$('collectionNext').disabled=collectionPage>=pages-1;
+ for(const item of libraryState.lists.slice(start,start+visible)){
+   const parsedItem=parse(item.text);const row=document.createElement('div');row.className='collection-item'+(item.id===libraryState.active_id?' current':'');
+   const info=document.createElement('div');info.className='collection-info';const name=document.createElement('div');name.className='collection-name';name.textContent=item.name;
+   const meta=document.createElement('div');meta.className='collection-meta';meta.textContent=parsedItem.entries.length+' películas · '+parsedItem.seen+' vistas';info.append(name,meta);
+   const buttons=document.createElement('div');buttons.className='collection-buttons';
+   const enter=document.createElement('button');enter.className='mini-ctrl';enter.textContent=item.id===libraryState.active_id?'✓ Activa':'Abrir';enter.disabled=item.id===libraryState.active_id;enter.addEventListener('click',()=>switchCollection(item.id));
+   const rename=document.createElement('button');rename.className='mini-ctrl';rename.textContent='Renombrar';rename.addEventListener('click',()=>openListModal(item.id));
+   const del=document.createElement('button');del.className='mini-ctrl';del.textContent='Eliminar';del.disabled=libraryState.lists.length<2;del.addEventListener('click',()=>deleteList(item.id));
+   buttons.append(enter,rename,del);row.append(info,buttons);rows.appendChild(row);
+ }
+}
+function openListModal(id=null){editingListID=id;const target=libraryState.lists.find(x=>x.id===id);
+ $('listModalTitle').textContent=target?'Renombrar lista':'Nueva lista';$('listNameInput').value=target?.name||'';
+ $('newListText').value='';$('newListText').hidden=!!target;$('listOverlay').hidden=false;$('listNameInput').focus();
+}
+function closeListModal(){$('listOverlay').hidden=true;}
+function deleteList(id){if(libraryState.lists.length<2)return;const l=libraryState.lists.find(x=>x.id===id);if(!l)return;
+ if(!confirm('¿Eliminar «'+l.name+'»? Esta lista dejará de aparecer en la aplicación.'))return;
+ syncActiveText();libraryState.lists=libraryState.lists.filter(x=>x.id!==id);
+ if(libraryState.active_id===id){libraryState.active_id=libraryState.lists[0].id;}
+ sanitizeComparisonIDs();
+ if(!virtualMode){rawText=activeCollection().text||'';restartList();}else{refreshVirtualContent();restartList();}
+ renderCollectionControls();scheduleSave();
+}
+function showView(name){if(name==='collections'&&virtualMode){rawText=activeCollection().text||'';virtualMode=false;restartList();}activeView=name;for(const v of ['library','statistics','collections'])$('view-'+v).hidden=(v!==name);
+ document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
+ if(name==='library')renderList();if(name==='statistics')renderStats();if(name==='collections')renderCollectionControls();
+}
+document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
+function openCompareModal(){
+ if(virtualMode)refreshVirtualContent();
+ const target=$('compareListOptions');target.replaceChildren();
+ const active=new Set(libraryState.comparison_ids||[]);
+ for(const l of libraryState.lists){
+   const label=document.createElement('label');label.className='compare-option';
+   const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.value=l.id;checkbox.checked=active.has(l.id);
+   const name=document.createElement('span');name.textContent=l.name;
+   label.append(checkbox,name);target.appendChild(label);
+ }
+ $('compareStatus').textContent='';$('compareOverlay').hidden=false;
+}
+function closeCompareModal(){$('compareOverlay').hidden=true;}
+$('configureCompare').addEventListener('click',openCompareModal);
+$('closeCompare').addEventListener('click',closeCompareModal);
+$('cancelCompare').addEventListener('click',closeCompareModal);
+$('compareOverlay').addEventListener('click',e=>{if(e.target===$('compareOverlay'))closeCompareModal();});
+$('clearCompare').addEventListener('click',()=>{
+ if(virtualMode){virtualMode=false;rawText=activeCollection().text||'';restartList();}
+ libraryState.comparison_ids=[];closeCompareModal();renderCollectionControls();scheduleSave();
+});
+$('saveCompare').addEventListener('click',()=>{
+ const selected=[...$('compareListOptions').querySelectorAll('input:checked')].map(x=>x.value);
+ if(selected.length<2){$('compareStatus').textContent='Selecciona al menos dos listas.';return;}
+ libraryState.comparison_ids=selected;
+ if(virtualMode){rawText=buildIntersection();restartList();}
+ closeCompareModal();renderCollectionControls();scheduleSave();
+ $('listActionsState').textContent='Coincidencias configuradas. Ya puedes elegirlas en la Biblioteca.';
+});
+$('listSwitcher').addEventListener('change',e=>switchCollection(e.target.value));
+$('collectionPrev').addEventListener('click',()=>{collectionPage=Math.max(0,collectionPage-1);renderCollectionControls();});
+$('collectionNext').addEventListener('click',()=>{collectionPage++;renderCollectionControls();});
+$('newList').addEventListener('click',()=>openListModal());
+$('closeListModal').addEventListener('click',closeListModal);$('cancelList').addEventListener('click',closeListModal);
+$('listOverlay').addEventListener('click',e=>{if(e.target===$('listOverlay'))closeListModal();});
+$('applyList').addEventListener('click',()=>{
+ const name=$('listNameInput').value.trim();if(!name){$('listNameInput').focus();return;}
+ if(editingListID){const it=libraryState.lists.find(x=>x.id===editingListID);if(it)it.name=name;renderCollectionControls();scheduleSave();closeListModal();return;}
+ if(libraryState.lists.length>=40){alert('El límite es de 40 listas.');return;}
+ syncActiveText();const text=$('newListText').value.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
+ const id='lista_'+Date.now().toString(36)+'_'+Math.floor(Math.random()*100000).toString(36);
+ libraryState.lists.push({id,name,text});virtualMode=false;libraryState.active_id=id;reconcileWatched();rawText=activeCollection().text||'';closeListModal();restartList();scheduleSave();showView('library');
+});
+// Añadir una lista completa a una colección existente sin sustituir ni duplicar sus películas.
+function filmIdentity(f){return f.title.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/æ/g,'ae').replace(/œ/g,'oe').replace(/[^\p{L}\p{N}]+/gu,' ').trim();}
+function appendImportedFilms(text){
+ const incoming=parse(text.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n')).entries;
+ if(!incoming.length)return {added:0,skipped:0,total:0,error:'No hay películas reconocibles en el texto.'};
+ const known=new Map();
+ for(const f of parse(rawText).entries){const key=filmIdentity(f),years=known.get(key)||new Set();years.add(f.year||'');known.set(key,years);}
+ const added=[];let skipped=0;
+ for(const f of incoming){
+   const key=filmIdentity(f);if(!key){skipped++;continue;}
+   const years=known.get(key)||new Set();
+   // Un título sin año se considera duplicado de cualquier versión homónima.
+   if(years.has(f.year||'')||years.has('')||(f.year===''&&years.size>0)){skipped++;continue;}
+   const name=f.title.trim()+(f.year?' ('+f.year+')':'');
+   added.push((f.checked?'☑':'☐')+' '+name);
+   years.add(f.year||'');known.set(key,years);
+ }
+ const result=rawText.trimEnd()+(rawText.trim()&&added.length?'\n':'')+added.join('\n');
+ if(result.length>900000)return {added:0,skipped,total:incoming.length,error:'La lista resultante supera el tamaño permitido.'};
+ if(added.length){rawText=result;syncActiveText();reconcileWatched();rawText=activeCollection().text||'';restartList();scheduleSave();}
+ return {added:added.length,skipped,total:incoming.length};
+}
+function closeBatchModal(){$('batchOverlay').hidden=true;$('batchText').value='';$('batchStatus').textContent='';$('batchFileInput').value='';}
+$('addBatchBtn').addEventListener('click',()=>{
+ $('batchCollectionName').textContent=activeCollection()?.name||'';
+ $('batchText').value='';$('batchStatus').textContent='';$('batchOverlay').hidden=false;$('batchText').focus();
+});
+$('closeBatchModal').addEventListener('click',closeBatchModal);
+$('cancelBatch').addEventListener('click',closeBatchModal);
+$('batchOverlay').addEventListener('click',e=>{if(e.target===$('batchOverlay'))closeBatchModal();});
+$('batchChooseFile').addEventListener('click',()=>$('batchFileInput').click());
+async function readTextFile(file){
+ if(file.size>1024*1024)throw new Error('El archivo TXT es demasiado grande (máximo 1 MB).');
+ const bytes=new Uint8Array(await file.arrayBuffer());
+ if(bytes.length>=2&&bytes[0]===0xff&&bytes[1]===0xfe)return new TextDecoder('utf-16le').decode(bytes);
+ if(bytes.length>=2&&bytes[0]===0xfe&&bytes[1]===0xff)return new TextDecoder('utf-16be').decode(bytes);
+ try{return new TextDecoder('utf-8',{fatal:true}).decode(bytes);}catch(e){return new TextDecoder('windows-1252').decode(bytes);}
+}
+$('batchFileInput').addEventListener('change',async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ try{$('batchText').value=await readTextFile(file);$('batchStatus').textContent=file.name+' · '+parse($('batchText').value).entries.length+' películas detectadas';}
+ catch(err){$('batchStatus').textContent='⚠ '+err.message;}
+ e.target.value='';
+});
+$('batchText').addEventListener('input',()=>{$('batchStatus').textContent=parse($('batchText').value).entries.length+' películas detectadas';});
+$('applyBatch').addEventListener('click',()=>{
+ const result=appendImportedFilms($('batchText').value);
+ if(result.error){$('batchStatus').textContent='⚠ '+result.error;return;}
+ closeBatchModal();renderCollectionControls();
+ notify(result.added+' '+(result.added===1?'película añadida':'películas añadidas')+' a «'+activeCollection().name+'» · '+result.skipped+' '+(result.skipped===1?'duplicada omitida':'duplicadas omitidas')+'.');
+});
+function addFilmClose(){$('filmOverlay').hidden=true;}
+$('addFilmBtn').addEventListener('click',()=>{$('newFilmTitle').value='';$('newFilmYear').value='';$('filmOverlay').hidden=false;$('newFilmTitle').focus();});
+$('closeFilmModal').addEventListener('click',addFilmClose);$('cancelFilm').addEventListener('click',addFilmClose);
+$('filmOverlay').addEventListener('click',e=>{if(e.target===$('filmOverlay'))addFilmClose();});
+$('applyFilm').addEventListener('click',()=>{
+ const title=$('newFilmTitle').value.trim(),year=$('newFilmYear').value.trim();if(!title){$('newFilmTitle').focus();return;}
+ if(year && !/^(18|19|20|21)\d{2}$/.test(year)){alert('Año incorrecto');return;}
+ rawText=rawText.trimEnd()+(rawText.trim()?'\n':'')+'☐ '+title+(year?' ('+year+')':'');
+ syncActiveText();reconcileWatched();rawText=activeCollection().text||'';addFilmClose();update();renderCollectionControls();scheduleSave();notify('Película añadida a «'+activeCollection().name+'».');if(platformConfigured)void loadPlatforms(false);
+});
+// Eliminar una sola película de la lista activa sin tocar otras colecciones.
+let deleteFilmCandidate=null;
+function closeDeleteFilmModal(){
+ $('deleteFilmOverlay').hidden=true;
+ deleteFilmCandidate=null;
+ $('deleteFilmSearch').value='';
+ $('deleteFilmPickStage').hidden=false;
+ $('deleteFilmConfirmStage').hidden=true;
+}
+function renderDeleteFilmResults(){
+ const parent=$('deleteFilmResults');parent.replaceChildren();
+ const needle=$('deleteFilmSearch').value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es');
+ const entries=parse(rawText).entries;
+ if(!needle){$('deleteFilmCount').textContent='Escribe el título o el año de la película.';return;}
+ const matching=entries.filter(f=>(f.title+' '+f.year+' '+f.number).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es').includes(needle));
+ $('deleteFilmCount').textContent=matching.length+' '+(matching.length===1?'película encontrada':'películas encontradas')+(matching.length>250?' · mostrando 250, afina la búsqueda':'');
+ for(const f of matching.slice(0,250)){
+   const btn=document.createElement('button');btn.type='button';btn.className='delete-film-choice'+(deleteFilmCandidate?.idx===f.idx?' active':'');btn.setAttribute('role','option');btn.setAttribute('aria-selected',deleteFilmCandidate?.idx===f.idx?'true':'false');
+   const text=document.createElement('span');text.textContent=f.title+(f.year?' ('+f.year+')':'');
+   const state=document.createElement('small');state.textContent=f.checked?'✓ Vista':'☐ Pendiente';
+   btn.append(text,state);btn.addEventListener('click',()=>{
+     deleteFilmCandidate={idx:f.idx,original:f.original,title:f.title,year:f.year};
+     $('deleteFilmSelected').textContent='Seleccionada: '+f.title+(f.year?' ('+f.year+')':'');
+     $('requestDeleteFilm').disabled=false;renderDeleteFilmResults();
+   });parent.appendChild(btn);
+ }
+ if(!matching.length){const empty=document.createElement('div');empty.className='delete-film-empty';empty.textContent=entries.length?'No hay coincidencias.':'Esta lista no contiene películas.';parent.appendChild(empty);}
+}
+function openDeleteFilmModal(){
+ deleteFilmCandidate=null;
+ $('deleteFilmListName').textContent=activeCollection().name;
+ $('deleteFilmSearch').value='';$('deleteFilmSelected').textContent='Selecciona una película de los resultados.';
+ $('requestDeleteFilm').disabled=true;
+ $('deleteFilmPickStage').hidden=false;$('deleteFilmConfirmStage').hidden=true;
+ $('deleteFilmOverlay').hidden=false;
+ renderDeleteFilmResults();$('deleteFilmSearch').focus();
+}
+$('deleteFilmBtn').addEventListener('click',openDeleteFilmModal);
+$('closeDeleteFilm').addEventListener('click',closeDeleteFilmModal);
+$('cancelDeleteFilm').addEventListener('click',closeDeleteFilmModal);
+$('deleteFilmOverlay').addEventListener('click',e=>{if(e.target===$('deleteFilmOverlay'))closeDeleteFilmModal();});
+$('deleteFilmSearch').addEventListener('input',()=>{
+ deleteFilmCandidate=null;$('requestDeleteFilm').disabled=true;
+ $('deleteFilmSelected').textContent='Selecciona una película de los resultados.';renderDeleteFilmResults();
+});
+$('requestDeleteFilm').addEventListener('click',()=>{
+ if(!deleteFilmCandidate)return;
+ $('deleteFilmConfirmTitle').textContent=deleteFilmCandidate.title+(deleteFilmCandidate.year?' ('+deleteFilmCandidate.year+')':'');
+ $('deleteFilmConfirmList').textContent=activeCollection().name;
+ $('deleteFilmPickStage').hidden=true;$('deleteFilmConfirmStage').hidden=false;$('confirmDeleteFilm').focus();
+});
+$('backDeleteFilm').addEventListener('click',()=>{
+ $('deleteFilmConfirmStage').hidden=true;$('deleteFilmPickStage').hidden=false;$('requestDeleteFilm').focus();
+});
+$('confirmDeleteFilm').addEventListener('click',()=>{
+ const item=deleteFilmCandidate;if(!item)return;
+ const current=parse(rawText),valid=current.entries.some(f=>f.idx===item.idx&&f.original===item.original);
+ if(!valid){
+   $('deleteFilmConfirmStage').hidden=true;$('deleteFilmPickStage').hidden=false;
+   deleteFilmCandidate=null;$('requestDeleteFilm').disabled=true;
+   $('deleteFilmSelected').textContent='La lista ha cambiado; vuelve a seleccionar la película.';
+   renderDeleteFilmResults();return;
+ }
+ const lines=current.lines.slice();lines.splice(item.idx,1);
+ // Solo se elimina la línea seleccionada; ni las marcas ni las demás listas se modifican.
+ rawText=lines.join('\n');syncActiveText();resetChoice();lastChoice=null;
+ closeDeleteFilmModal();update();renderStats();renderCollectionControls();updateListPlatformOptions();scheduleSave();
+ const message='Película eliminada de «'+activeCollection().name+'»: '+item.title;
+ $('listActionsState').textContent=message;notify(message);
+});
+function saveDownload(filename,contents,mime){const blob=new Blob([contents],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);}
+$('downloadBackup').addEventListener('click',()=>{
+ syncActiveText();const now=new Date().toISOString().slice(0,10);
+ const backup={...libraryState,backup_created_at:new Date().toISOString()};
+ saveDownload('Cine365_copia_'+now+'.json',JSON.stringify(backup,null,2),'application/json;charset=utf-8');
+});
+$('restoreBackup').addEventListener('click',()=>$('backupFile').click());
+$('backupFile').addEventListener('change',async e=>{
+ const f=e.target.files?.[0];if(!f)return;
+ try{
+   if(f.size>3*1024*1024)throw new Error('El archivo es demasiado grande');
+   const state=JSON.parse(await f.text());if(!validLibrary(state))throw new Error('No es una copia válida');
+   if(!confirm('¿Restaurar '+state.lists.length+' listas? Se sustituirán todas las listas actuales.'))return;
+   libraryState={version:1,active_id:state.active_id,lists:state.lists.map(l=>({id:l.id,name:l.name,text:l.text})),comparison_ids:state.comparison_ids||[]};
+   virtualMode=false;sanitizeComparisonIDs();reconcileWatched();rawText=activeCollection().text||'';restartList();scheduleSave();showView('library');
+ }catch(err){alert('No se pudo restaurar: '+err.message)}finally{e.target.value='';}
+});
+// Copia adicional de las listas en una carpeta local sincronizada con la nube.
+async function cloudRequest(path,method='GET',payload){
+ const opts={method,headers:{'X-Atlas-Token':token},cache:'no-store'};
+ if(payload!==undefined){opts.headers['Content-Type']='application/json';opts.body=JSON.stringify(payload)}
+ const r=await fetch(path,opts);const data=await r.json();
+ if(!r.ok)throw new Error(data.error||'No se pudo completar la operación');return data;
+}
+function cloudShow(s){
+ const box=$('cloudStatus');box.classList.toggle('warn',Boolean(s.last_error));
+ if(s.enabled){
+   if(document.activeElement!==$('cloudFolder'))$('cloudFolder').value=s.folder;
+   box.textContent=s.last_error?'⚠ Guardado local correcto; copia en nube fallida: '+s.last_error:
+     s.last_backup?'✓ Copia en nube actualizada · '+new Date(s.last_backup).toLocaleString('es-ES'):'✓ Carpeta configurada';
+ }else{
+   box.textContent='Sin carpeta de nube configurada';
+ }
+}
+async function cloudRefresh(){try{cloudShow(await cloudRequest('/api/cloud/status'))}catch(e){$('cloudStatus').textContent='⚠ No se pudo comprobar la copia en nube';}}
+$('cloudBrowse').addEventListener('click',async()=>{
+ const btn=$('cloudBrowse');btn.disabled=true;$('cloudStatus').textContent='Selecciona una carpeta de tu nube…';
+ try{const data=await cloudRequest('/api/cloud/browse','POST');
+   if(data.folder){$('cloudFolder').value=data.folder;$('cloudStatus').textContent='Carpeta elegida. Pulsa «Activar copia». ';}else await cloudRefresh();
+ }catch(e){$('cloudStatus').textContent='⚠ '+e.message;$('cloudStatus').classList.add('warn');}
+ finally{btn.disabled=false;}
+});
+$('cloudActivate').addEventListener('click',async()=>{
+ const folder=$('cloudFolder').value.trim();if(!folder){$('cloudStatus').textContent='Selecciona primero una carpeta';return;}
+ const btn=$('cloudActivate');btn.disabled=true;$('cloudStatus').textContent='Guardando y creando la primera copia…';
+ try{await saveLocal();cloudShow(await cloudRequest('/api/cloud/config','POST',{folder}));}
+ catch(e){$('cloudStatus').textContent='⚠ '+e.message;$('cloudStatus').classList.add('warn');}
+ finally{btn.disabled=false;}
+});
+$('cloudBackupNow').addEventListener('click',async()=>{
+ try{cloudShow(await cloudRequest('/api/cloud/backup','POST'))}catch(e){$('cloudStatus').textContent='⚠ '+e.message;$('cloudStatus').classList.add('warn')}
+});
+$('cloudDisable').addEventListener('click',async()=>{
+ if(!confirm('¿Desactivar las copias automáticas? Las copias existentes no se borrarán.'))return;
+ try{cloudShow(await cloudRequest('/api/cloud/config','POST',{folder:''}));$('cloudFolder').value='';}
+ catch(e){$('cloudStatus').textContent='⚠ '+e.message;}
+});
+void cloudRefresh();
+
+// Subscription/free/ad-supported services only; rental and purchase never
+// count as available for a streaming-provider draw.
+function normalizedProvider(p){const n=p.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ if(n.includes('movistar'))return 'Movistar Plus+';
+ if(n.includes('filmin'))return 'Filmin';
+ if(n.includes('prime video')||n.includes('amazon prime'))return 'Prime Video';
+ if(n.includes('netflix'))return 'Netflix';
+ if(n.includes('disney'))return 'Disney+';
+ if(n.includes('hbo max')||n==='max')return 'Max';
+ if(n.includes('apple tv'))return 'Apple TV+';
+ return p.trim();
+}
+function subscriptions(r){return [...(r?.subscriptions||[]),...(r?.free||[]),...(r?.ads||[])].map(normalizedProvider);}
+
+// Filter only the visible library. Any selected streaming platform may match;
+// the sorting selector stays entirely independent. Rentals/purchases do not count.
+const popularListPlatforms=['Movistar Plus+','Filmin','Netflix','Prime Video','Disney+','Max','Apple TV+'];
+function closeListPlatformMenu(){
+ $('listPlatformMenu').hidden=true;$('listPlatformButton').setAttribute('aria-expanded','false');
+}
+function updateListPlatformSummary(){
+ const names=[...selectedListPlatforms].sort((a,b)=>a.localeCompare(b,'es'));
+ $('listPlatformSummary').textContent=!names.length?'Todas las plataformas':names.length<=2?names.join(' + '):names.length+' plataformas seleccionadas';
+ $('listPlatformButton').title=!names.length?'Todas las películas, tengan o no streaming registrado':names.join(', ');
+ $('listPlatformReset').disabled=names.length===0;
+}
+function updateListPlatformOptions(){
+ const providers=new Set(popularListPlatforms);
+ for(const item of platformData.values())for(const p of subscriptions(item))providers.add(p);
+ for(const p of selectedListPlatforms)providers.add(p);
+ const names=[...providers].sort((a,b)=>a.localeCompare(b,'es'));
+ const signature=JSON.stringify(names);
+ if(signature!==listPlatformOptionSignature){
+   listPlatformOptionSignature=signature;
+   const box=$('listPlatformOptions');box.replaceChildren();
+   for(const p of names){
+     const label=document.createElement('label');label.className='library-platform-option';
+     const check=document.createElement('input');check.type='checkbox';check.value=p;check.checked=selectedListPlatforms.has(p);
+     check.setAttribute('aria-label',p);check.addEventListener('change',()=>{
+       if(check.checked)selectedListPlatforms.add(p);else selectedListPlatforms.delete(p);
+       filmPage=0;updateListPlatformSummary();renderList();
+     });
+     const name=document.createElement('span');name.textContent=p;label.append(check,name);box.appendChild(label);
+   }
+ }else{
+   for(const check of $('listPlatformOptions').querySelectorAll('input[type="checkbox"]'))check.checked=selectedListPlatforms.has(check.value);
+ }
+ updateListPlatformSummary();
+}
+$('listPlatformButton').addEventListener('click',()=>{
+ const menu=$('listPlatformMenu'),toOpen=menu.hidden;
+ if(toOpen)updateListPlatformOptions();menu.hidden=!toOpen;
+ $('listPlatformButton').setAttribute('aria-expanded',String(toOpen));
+});
+$('listPlatformReset').addEventListener('click',()=>{
+ selectedListPlatforms.clear();filmPage=0;updateListPlatformOptions();renderList();
+});
+document.addEventListener('pointerdown',e=>{
+ if(!$('libraryPlatformPicker').contains(e.target))closeListPlatformMenu();
+});
+
+function eligibleFilms(){
+ if(selectedSortPlatform==='all')return parsed.pending;
+ return parsed.pending.filter(f=>{
+   const r=platformData.get(providerKey(f));if(!r||r.state!=='ok')return false;
+   const providers=subscriptions(r);return selectedSortPlatform==='any'?providers.length>0:providers.includes(selectedSortPlatform);
+ });
+}
+function updateSortAvailability(){
+ const count=eligibleFilms().length;const total=parsed.pending.length;
+ $('choose').disabled=count===0;
+ $('choose').textContent=count?'🎲 Elegir una película al azar':'Sin películas para sortear';
+ $('sortCount').textContent=selectedSortPlatform==='all'?`${total} pendientes`:`${count} de ${total} pendientes disponibles`;
+}
+function updatePlatformChoices(){
+ const select=$('platformSelect'),prev=selectedSortPlatform;
+ const common=['Movistar Plus+','Filmin','Netflix','Prime Video','Disney+','Max','Apple TV+'];const all=new Set(common);
+ for(const r of platformData.values())for(const p of subscriptions(r))all.add(p);
+ select.replaceChildren();for(const [id,label] of [['all','Todas las películas pendientes'],['any','Cualquier plataforma (streaming)']]){
+   const o=document.createElement('option');o.value=id;o.textContent=label;select.appendChild(o);
+ }
+ for(const name of [...all].sort((a,b)=>a.localeCompare(b,'es'))){const o=document.createElement('option');o.value=name;o.textContent=name;select.appendChild(o)}
+ select.value=prev;if(select.value!==prev){selectedSortPlatform='all';select.value='all'}
+ updateSortAvailability();
+}
+$('platformSelect').addEventListener('change',e=>{selectedSortPlatform=e.target.value;resetChoice();updateSortAvailability()});
+function posterElement(r){
+ if(r?.poster_path){const img=document.createElement('img');img.className='film-poster';img.alt='';img.loading='lazy';img.src='/api/poster?token='+encodeURIComponent(token)+'&path='+encodeURIComponent(r.poster_path);img.addEventListener('error',()=>{img.replaceWith(posterPlaceholder())},{once:true});return img;}
+ return posterPlaceholder();
+}
+function posterPlaceholder(){const span=document.createElement('span');span.className='poster-placeholder';span.textContent='▣';span.setAttribute('aria-hidden','true');return span;}
+function updateChoiceMedia(){
+ const el=$('resultPoster');el.hidden=true;el.removeAttribute('src');if(!chosen)return;
+ const r=platformData.get(providerKey(chosen));if(r?.poster_path){el.src='/api/poster?token='+encodeURIComponent(token)+'&path='+encodeURIComponent(r.poster_path);el.hidden=false;}
+ const detail=[chosen.number?'N.º '+chosen.number:'',chosen.year];
+ if(r?.vote_count>0)detail.push('★ '+Number(r.vote_average).toFixed(1)+' / 10 · TMDB');
+ $('resultDetails').textContent=detail.filter(Boolean).join(' · ');
+}
+const statRows=(title,entries,maxItems=8)=>{
+ const panel=document.createElement('div');panel.className='stat-panel';const heading=document.createElement('h3');heading.textContent=title;panel.appendChild(heading);
+ if(!entries.length){const empty=document.createElement('p');empty.className='stat-none';empty.textContent='Sin datos todavía';panel.appendChild(empty);return panel;}
+ const sectionHeight=$('statsSections').clientHeight||400;
+ const rowCount=Math.max(2,Math.min(maxItems,Math.floor((sectionHeight/2-67)/25)));
+ const pages=Math.max(1,Math.ceil(entries.length/rowCount));
+ const page=Math.max(0,Math.min(statPages.get(title)||0,pages-1));statPages.set(title,page);
+ const max=Math.max(...entries.map(x=>x[1]),1);
+ for(const [label,value] of entries.slice(page*rowCount,(page+1)*rowCount)){
+   const line=document.createElement('div');line.className='stat-row';const name=document.createElement('div');name.className='stat-row-name';name.textContent=label;name.title=label;
+   const bar=document.createElement('div');bar.className='stat-row-bar';const fill=document.createElement('div');fill.className='stat-row-fill';fill.style.width=(100*value/max).toFixed(1)+'%';bar.appendChild(fill);
+   const count=document.createElement('span');count.className='stat-row-count';count.textContent=String(value);line.append(name,bar,count);panel.appendChild(line);
+ }
+ if(pages>1){
+   const pager=document.createElement('div');pager.className='stat-pager';
+   const prev=document.createElement('button');prev.textContent='‹';prev.disabled=page===0;prev.title='Datos anteriores';prev.addEventListener('click',()=>{statPages.set(title,page-1);renderStats();});
+   const counter=document.createElement('span');counter.textContent=(page+1)+' / '+pages;
+   const next=document.createElement('button');next.textContent='›';next.disabled=page>=pages-1;next.title='Datos siguientes';next.addEventListener('click',()=>{statPages.set(title,page+1);renderStats();});
+   pager.append(prev,counter,next);panel.appendChild(pager);
+ }
+ return panel;
+};
+function renderStats(){
+ if(!parsed)return;const seen=parsed.entries.filter(f=>f.checked),hero=$('statsHero'),sections=$('statsSections');hero.replaceChildren();sections.replaceChildren();
+ const known=seen.map(f=>platformData.get(providerKey(f))).filter(Boolean),withRuntime=known.filter(r=>r.runtime>0);
+ const minutes=withRuntime.reduce((sum,r)=>sum+r.runtime,0);
+ for(const [label,val] of [['Películas vistas',seen.length],['Pendientes',parsed.pending.length],['Horas registradas',minutes?Math.floor(minutes/60)+' h '+(minutes%60)+' min':'—'],['Fichas TMDB',known.filter(x=>x.metadata_version>=2).length]]){
+   const stat=document.createElement('div');stat.className='stat';const value=document.createElement('div');value.className='stat-value';value.textContent=val;const name=document.createElement('div');name.className='stat-label';name.textContent=label;stat.append(value,name);hero.appendChild(stat);
+ }
+ $('statsTitle').textContent=virtualMode?'Películas coincidentes · solo lectura':activeCollection()?.name||'';
+ const decade=new Map(),genre=new Map(),country=new Map(),director=new Map();
+ const add=(map,label)=>{if(label)map.set(label,(map.get(label)||0)+1)};
+ for(const film of seen){if(film.year){const y=Number(film.year);if(y>1890&&y<2200)add(decade,String(Math.floor(y/10)*10)+'s');}
+   const r=platformData.get(providerKey(film));if(!r)continue;
+   for(const g of r.genres||[])add(genre,g);
+   for(const c of r.countries||[])add(country,c);
+   for(const d of (r.director||'').split(' / '))add(director,d);
+ }
+ const sorted=(map,byDecade=false)=>[...map.entries()].sort((a,b)=>byDecade?Number(a[0].slice(0,4))-Number(b[0].slice(0,4)):b[1]-a[1]||a[0].localeCompare(b[0],'es'));
+ sections.append(statRows('Películas vistas por década',sorted(decade,true),20),statRows('Géneros',sorted(genre),100),statRows('Países de producción',sorted(country),100),statRows('Directores',sorted(director),100));
+}
+
+$('filmPrev').addEventListener('click',()=>{filmPage=Math.max(0,filmPage-1);renderList();});
+$('filmNext').addEventListener('click',()=>{filmPage++;renderList();});
+$('filmList').addEventListener('click',e=>{const b=e.target.closest('button[data-idx]');if(b)toggle(Number(b.dataset.idx));});
+$('search').addEventListener('input',e=>{search=e.target.value;filmPage=0;renderList();});
+document.querySelectorAll('.filter').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;filmPage=0;document.querySelectorAll('.filter').forEach(x=>x.classList.toggle('selected',x===b));renderList();}));
+$('choose').addEventListener('click',()=>{
+ const pending=eligibleFilms();if(!pending.length)return;
+ const options=pending.length>1?pending.filter(f=>f.idx!==lastChoice):pending;const pool=options.length?options:pending;
+ const values=new Uint32Array(1);if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(values);
+ const pos=(window.crypto&&crypto.getRandomValues?values[0]:Math.floor(Math.random()*4294967296))%pool.length;
+ chosen=pool[pos];lastChoice=chosen.idx;
+ $('resultTag').textContent='🍿 LA ELEGIDA';$('resultTitle').textContent=chosen.title;
+ $('resultDetails').textContent=[chosen.number?'N.º '+chosen.number:'',chosen.year].filter(Boolean).join(' · ');updateChoicePlatforms();
+ $('markWatched').disabled=virtualMode;$('copyChoice').disabled=false;$('message').textContent=virtualMode?'Vista de coincidencias · solo lectura':'';
+});
+$('markWatched').addEventListener('click',()=>{if(chosen)toggle(chosen.idx);});
+function notify(text){$('message').textContent=text;$('listActionsState').textContent=text;}
+async function copyText(text){
+ try {if(navigator.clipboard&&window.isSecureContext)await navigator.clipboard.writeText(text);
+ else{const t=document.createElement('textarea');t.value=text;t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.select();if(!document.execCommand('copy'))throw new Error('no copy');t.remove();}
+ notify('Copiado.');
+ }catch(err){notify('No se pudo copiar al portapapeles.');}
+}
+$('copyChoice').addEventListener('click',()=>{if(chosen)void copyText(chosen.name);});
+$('copyBtn').addEventListener('click',()=>void copyText(rawText));
+$('exportBtn').addEventListener('click',()=>{
+ const blob=new Blob(['\uFEFF',rawText],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Mi_lista_de_peliculas.txt';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);notify('TXT exportado.');
+});
+const overlay=$('pasteOverlay');function closeModal(){overlay.hidden=true;$('pasteText').value='';$('pasteStatus').textContent='';}
+$('pasteBtn').addEventListener('click',()=>{overlay.hidden=false;$('pasteText').focus();});
+$('closeModal').addEventListener('click',closeModal);$('cancelPaste').addEventListener('click',closeModal);overlay.addEventListener('click',e=>{if(e.target===overlay)closeModal();});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!overlay.hidden)closeModal();if(!$('deleteFilmOverlay').hidden)closeDeleteFilmModal();if(!$('compareOverlay').hidden)closeCompareModal();if(!$('platformOverlay').hidden)closePlatformModal();if(!$('batchOverlay').hidden)closeBatchModal();closeListPlatformMenu();$('listOverlay').hidden=true;$('filmOverlay').hidden=true;}});
+$('pasteText').addEventListener('input',()=>{const n=parse($('pasteText').value).entries.length;$('pasteStatus').textContent=n?`${n} ${n===1?'película detectada':'películas detectadas'}`:'';});
+$('applyPaste').addEventListener('click',()=>{if(replaceList($('pasteText').value)){closeModal();notify('Lista actualizada.');}else $('pasteStatus').textContent='No se encontraron películas.';});
+$('openFile').addEventListener('click',()=>$('fileInput').click());
+$('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;
+ try {
+ const bytes=new Uint8Array(await file.arrayBuffer());let txt='';
+ if(bytes.length>=2 && bytes[0]===0xff && bytes[1]===0xfe)txt=new TextDecoder('utf-16le').decode(bytes);
+ else if(bytes.length>=2 && bytes[0]===0xfe && bytes[1]===0xff)txt=new TextDecoder('utf-16be').decode(bytes);
+ else {try{txt=new TextDecoder('utf-8',{fatal:true}).decode(bytes);}catch(err){txt=new TextDecoder('windows-1252').decode(bytes);}}
+ notify(replaceList(txt)?`Lista cargada: ${file.name}`:'No se encontraron películas.');
+ }
+ catch(err){notify('No se pudo abrir el archivo.');}
+ e.target.value='';
+});
+
+let layoutResizeTimer=null;
+window.addEventListener('resize',()=>{clearTimeout(layoutResizeTimer);layoutResizeTimer=setTimeout(()=>{if(activeView==='library')renderList();else if(activeView==='statistics')renderStats();else renderCollectionControls();},100)});
+fetch('/api/ping',{cache:'no-store'}).catch(()=>{});
+setInterval(()=>{fetch('/api/ping',{cache:'no-store'}).catch(()=>{});},12000);
+window.addEventListener('pagehide',()=>{
+ try{syncActiveText();navigator.sendBeacon('/api/library?token='+encodeURIComponent(token),new Blob([JSON.stringify(libraryState)],{type:'application/json'}));}catch(err){}
+ try{navigator.sendBeacon('/api/quit?token='+encodeURIComponent(token),'cerrar');}catch(err){}
+});
+updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void initLibrary().then(async()=>{await initIdentities();await initPlatforms();});
+})();
+</script>
+</body>
+</html>
