@@ -7,13 +7,13 @@ android {
         applicationId 'es.cine365.app'
         minSdk 26
         targetSdk 35
-        versionCode 9001
-        versionName '9.0.0-beta.1'
+        versionCode 9002
+        versionName '9.0.0-beta.2'
     }
     buildTypes {
         debug {
             // Install alongside the old Android test app; never uninstall user data.
-            applicationIdSuffix '.v9beta'
+            applicationIdSuffix '.v9beta2'
             versionNameSuffix '-test'
         }
     }
