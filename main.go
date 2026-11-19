@@ -74,6 +74,8 @@ type runningApp struct {
 	library       libraryState
 	platforms     *availabilityServer
 	cloud         *cloudBackups
+	syncStore     *desktopSyncStore
+	syncPreviewToken string
 	html          []byte
 	token         string
 	lastActivity  atomic.Int64
@@ -122,7 +124,7 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write(data)
 	case "/api/library":
 		a.serveLibraryHTTP(w, r)
-	case "/api/cloud/status", "/api/cloud/config", "/api/cloud/backup", "/api/cloud/browse":
+	case "/api/cloud/status", "/api/cloud/config", "/api/cloud/backup", "/api/cloud/browse", "/api/cloud/preview", "/api/cloud/sync":
 		a.serveCloudHTTP(w, r)
 	case "/api/poster":
 		a.servePosterHTTP(w, r)
@@ -209,7 +211,12 @@ func serve() error {
 	}
 	libPath := filepath.Join(filepath.Dir(savePath), "colecciones.json")
 	lib := loadLibrary(libPath, state)
-	app := &runningApp{html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath)), cloud: newCloudBackups(filepath.Dir(savePath)), token: token, stopCh: make(chan struct{})}
+	syncStore, syncErr := newDesktopSyncStore(filepath.Dir(savePath))
+ if syncErr!=nil {
+  // Un fallo en el estado de sincronización no debe impedir usar datos locales.
+  logDiagnostic("Sincronización no disponible: "+syncErr.Error())
+ }
+ app := &runningApp{html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath)), cloud: newCloudBackups(filepath.Dir(savePath)), syncStore:syncStore, token: token, stopCh: make(chan struct{})}
 	app.touch()
 	listener, err := net.Listen("tcp4", "127.0.0.1:0")
 	if err != nil {
