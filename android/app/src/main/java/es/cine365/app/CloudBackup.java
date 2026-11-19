@@ -28,12 +28,13 @@ final class CloudBackup {
     private final MainActivity activity;
     private final File appDir;
     private final SyncStore sync;
+    private final OneDriveCloud oneDrive;
     private String folder="",lastBackup="",lastSync="",lastError="";
     private boolean activated=false;
     private String previewToken="";
 
-    CloudBackup(MainActivity a,File files,SyncStore sync){
-        this.activity=a;this.appDir=files;this.sync=sync;
+    CloudBackup(MainActivity a,File files,SyncStore sync,OneDriveCloud oneDrive){
+        this.activity=a;this.appDir=files;this.sync=sync;this.oneDrive=oneDrive;
         folder=a.getPreferences(Context.MODE_PRIVATE).getString("backup_uri","");
         lastBackup=a.getPreferences(Context.MODE_PRIVATE).getString("last_backup","");
         lastSync=a.getPreferences(Context.MODE_PRIVATE).getString("last_sync","");
@@ -43,12 +44,18 @@ final class CloudBackup {
         uriValue=uriValue.trim();
         if(!uriValue.isEmpty()){
             Uri uri=Uri.parse(uriValue);
-            if(!"content".equals(uri.getScheme()))throw new Exception("Selecciona una carpeta del sistema, no una ruta de texto");
+            if("onedrive".equals(uri.getScheme())){
+                if(!"item".equals(uri.getAuthority())||uri.getLastPathSegment()==null||uri.getLastPathSegment().isEmpty())
+                    throw new Exception("Selecciona una carpeta de OneDrive desde la lista.");
+                if(!oneDrive.connected())throw new Exception("Primero conecta tu cuenta Microsoft.");
+            }else if(!"content".equals(uri.getScheme()))throw new Exception("Selecciona una carpeta válida.");
             boolean read=false,write=false;
-            for(UriPermission permission:activity.getContentResolver().getPersistedUriPermissions()){
-                if(uri.equals(permission.getUri())){read=permission.isReadPermission();write=permission.isWritePermission();}
+            if("content".equals(uri.getScheme())){
+                for(UriPermission permission:activity.getContentResolver().getPersistedUriPermissions()){
+                    if(uri.equals(permission.getUri())){read=permission.isReadPermission();write=permission.isWritePermission();}
+                }
+                if(!read||!write)throw new Exception("La carpeta elegida necesita permiso de lectura y escritura");
             }
-            if(!read||!write)throw new Exception("La carpeta elegida necesita permiso de lectura y escritura");
         }
         if(!folder.equals(uriValue)){
             activated=false;previewToken="";
@@ -59,14 +66,23 @@ final class CloudBackup {
     }
     synchronized JSONObject status()throws Exception{
         return new JSONObject().put("enabled",!folder.isEmpty()).put("activated",activated).put("needs_review",!folder.isEmpty()&&!activated).put("folder",folder).put("target",folder)
-            .put("last_backup",lastBackup).put("last_sync",lastSync).put("last_error",lastError);
+            .put("last_backup",lastBackup).put("last_sync",lastSync).put("last_error",lastError)
+            .put("provider",folder.startsWith("onedrive://")?"onedrive":folder.isEmpty()?"none":"folder");
     }
     private Uri tree(){return Uri.parse(folder);}
+    private boolean graphMode(){return folder.startsWith("onedrive://");}
+    private static Uri driveUri(String id){return Uri.parse("onedrive://item/"+Uri.encode(id));}
+    private static String driveId(Uri uri){return uri.getLastPathSegment();}
     private Uri document(Uri child){
+        if(graphMode())return child;
         Uri tree=tree();if(child.equals(tree))return DocumentsContract.buildDocumentUriUsingTree(tree,DocumentsContract.getTreeDocumentId(tree));
         return child;
     }
     private Uri findChild(Uri parent,String name)throws Exception{
+        if(graphMode()){
+            JSONObject item=oneDrive.find(driveId(parent),name);
+            return item==null?null:driveUri(item.getString("id"));
+        }
         Uri root=tree();Uri item=document(parent);
         String id=DocumentsContract.getDocumentId(item);
         Uri children=DocumentsContract.buildChildDocumentsUriUsingTree(root,id);
@@ -79,6 +95,16 @@ final class CloudBackup {
         return null;
     }
     private List<Uri> children(Uri parent)throws Exception{
+        if(graphMode()){
+            List<Uri> files=new ArrayList<>();
+            JSONArray items=oneDrive.allChildren(driveId(parent));
+            for(int i=0;i<items.length();i++){
+                JSONObject item=items.getJSONObject(i);
+                if(item.has("file")&&item.optString("name").toLowerCase(java.util.Locale.ROOT).endsWith(".json"))
+                    files.add(driveUri(item.getString("id")));
+            }
+            return files;
+        }
         Uri root=tree();Uri item=document(parent);List<Uri> list=new ArrayList<>();
         Uri query=DocumentsContract.buildChildDocumentsUriUsingTree(root,DocumentsContract.getDocumentId(item));
         try(Cursor cursor=activity.getContentResolver().query(query,
@@ -93,6 +119,7 @@ final class CloudBackup {
         return list;
     }
     private Uri ensureDirectory(Uri parent,String name)throws Exception{
+        if(graphMode())return driveUri(oneDrive.newDirectory(driveId(parent),name).getString("id"));
         Uri item=findChild(parent,name);if(item!=null)return item;
         Uri created=DocumentsContract.createDocument(activity.getContentResolver(),document(parent),DocumentsContract.Document.MIME_TYPE_DIR,name);
         if(created==null)throw new Exception("El proveedor no permite crear la carpeta «"+name+"»");
@@ -110,6 +137,7 @@ final class CloudBackup {
         return findChild(root,ROOT);
     }
     private byte[] read(Uri uri)throws Exception{
+        if(graphMode())return oneDrive.read(driveId(uri));
         try(InputStream in=activity.getContentResolver().openInputStream(uri);
             ByteArrayOutputStream out=new ByteArrayOutputStream()){
             if(in==null)throw new Exception("No se puede leer documento de nube");
@@ -118,6 +146,7 @@ final class CloudBackup {
         }
     }
     private void putFile(Uri folder,String name,byte[] bytes,boolean overwrite)throws Exception{
+        if(graphMode()){oneDrive.write(driveId(folder),name,bytes,overwrite);return;}
         Uri file=findChild(folder,name);
         if(file!=null&&!overwrite)return;
         if(file==null)file=DocumentsContract.createDocument(activity.getContentResolver(),document(folder),
