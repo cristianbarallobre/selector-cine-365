@@ -1,0 +1,105 @@
+name: Selector de Cine v8.2 - Windows y Mac
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publicar-v8.2-multiplataforma.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: selector-v82-release
+  cancel-in-progress: false
+jobs:
+  mac:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+            label: Apple_Silicon
+          - runner: macos-15-intel
+            arch: amd64
+            label: Intel
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Pruebas y compilación nativa
+        env:
+          MAC_ARCH: ${{ matrix.arch }}
+          MAC_LABEL: ${{ matrix.label }}
+        run: bash scripts/build_macos_app.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cine-v82-mac-${{ matrix.label }}
+          path: dist/Selector_Cine_365_v8_2_Mac_${{ matrix.label }}.zip
+          if-no-files-found: error
+  windows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go test ./...
+      - name: Compilar Windows
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: '0'
+        run: |
+          mkdir -p dist
+          go build -trimpath -ldflags='-H windowsgui -s -w' -o dist/Selector_Cine_365_v8_2_Windows.exe .
+          cd dist
+          printf 'Selector de Cine 365 v8.2\nAutor: Cristian Barallobre Rúa\nRequiere Edge WebView2 Runtime\n' > LEEME_WINDOWS.txt
+          zip -9 Selector_Cine_365_v8_2_Windows.zip Selector_Cine_365_v8_2_Windows.exe LEEME_WINDOWS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cine-v82-win
+          path: dist/Selector_Cine_365_v8_2_Windows.zip
+          if-no-files-found: error
+  release:
+    needs: [mac, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cine-v82-*
+          merge-multiple: true
+          path: dist
+      - name: Comprobar archivos
+        run: |
+          test -s dist/Selector_Cine_365_v8_2_Mac_Apple_Silicon.zip
+          test -s dist/Selector_Cine_365_v8_2_Mac_Intel.zip
+          test -s dist/Selector_Cine_365_v8_2_Windows.zip
+          sha256sum dist/*.zip
+      - name: Publicar descargas
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > NOTES.md <<'NOTES'
+          ## Selector de Cine 365 v8.2
+          **Autor:** Cristian Barallobre Rúa.
+
+          **Descargas:** `Mac_Apple_Silicon` para Mac M1/M2/M3/M4 y posteriores,
+          `Mac_Intel` para Mac Intel, y `Windows` para Windows 10/11 (64 bits).
+
+          **Mac:** nueva aplicación nativa Cocoa/WKWebView con su icono de Dock,
+          tus listas, TMDB, estadísticas y copias a carpeta sincronizada.
+          **Windows:** mantiene su versión WebView2 con la misma interfaz.
+
+          **Importante (Mac):** app firmada ad hoc, **no notarizada** ni firmada con
+          Developer ID. Si se bloquea en macOS, revisa su origen y ve a Ajustes
+          del Sistema → Privacidad y seguridad → Abrir igualmente.
+          Consulta [las instrucciones de Mac](../../blob/main/MACOS.md).
+          Compilado en runners macOS ARM64 e Intel; falta prueba interactiva en Mac real.
+          NOTES
+          if gh release view v8.2 >/dev/null 2>&1; then
+            gh release upload v8.2 dist/*.zip --clobber
+          else
+            gh release create v8.2 dist/*.zip --target "$GITHUB_SHA" --title 'Selector de Cine 365 — v8.2 (Windows y Mac)' --notes-file NOTES.md --latest
+          fi

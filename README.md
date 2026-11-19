@@ -1,8 +1,8 @@
 # Selector de Cine 365 🎬
 
-Aplicación de escritorio para **Windows 10/11 de 64 bits** que permite llevar un registro personal de películas, sortear el siguiente visionado y comprobar plataformas de streaming en España.
+Aplicación de escritorio para **Windows 10/11 y macOS (Apple Silicon e Intel)** que permite llevar un registro personal de películas, sortear el siguiente visionado y comprobar plataformas de streaming en España.
 
-**Última versión del proyecto:** `v8.1.1` · **Tecnologías:** Go, HTML/CSS/JavaScript, Microsoft WebView2.
+**Última versión del proyecto:** `v8.2` · **Tecnologías:** Go, HTML/CSS/JavaScript, Microsoft WebView2 (Windows) y WKWebView (macOS).
 
 **Creado por Cristian Barallobre Rúa.** © 2026. Todos los derechos reservados.
 
@@ -19,11 +19,11 @@ Aplicación de escritorio para **Windows 10/11 de 64 bits** que permite llevar u
 
 ## Descargar y usar
 
-Si solo quieres utilizar el programa, **no necesitas Go ni descargar el código**. Descarga el ZIP para Windows de la sección [Releases](../../releases), extráelo y ejecuta el archivo `.exe`.
+Si solo quieres utilizar el programa, **no necesitas Go ni descargar el código**. Desde [Releases](../../releases/latest) descarga el ZIP correspondiente a **Windows**, **Mac Apple Silicon** o **Mac Intel**. En Windows ejecuta el `.exe`; en Mac, mueve la `.app` a Aplicaciones. [Instrucciones para macOS](MACOS.md).
 
 En esta publicación, la lista inicial contiene las 365 películas **sin marcas de vista personales**. Si ya usabas la aplicación, tus propias marcas seguirán almacenadas en AppData.
 
-La aplicación utiliza el motor **Microsoft Edge WebView2 Runtime**. Si no está disponible, consulta la [página oficial de WebView2](https://developer.microsoft.com/microsoft-edge/webview2/).
+Windows utiliza **Microsoft Edge WebView2 Runtime**; macOS utiliza **WKWebView**, incluido en el sistema. Si no está disponible, consulta la [página oficial de WebView2](https://developer.microsoft.com/microsoft-edge/webview2/).
 
 La consulta de carteles, notas, identificaciones y plataformas necesita una clave personal de TMDB; se introduce desde la aplicación. La gestión local de las listas puede utilizarse sin ella.
 
@@ -36,16 +36,17 @@ go test ./...
 GOOS=windows GOARCH=amd64 go build -o Selector_Cine_365.exe .
 ```
 
-En Windows puedes ejecutar `go build -o Selector_Cine_365.exe .` directamente. El recurso `rsrc_amd64.syso` aporta el icono de Windows a la compilación AMD64.
+En Windows puedes ejecutar `go build -o Selector_Cine_365.exe .` directamente. El recurso `rsrc_windows_amd64.syso` aporta el icono de Windows a la compilación AMD64.
 
-La interfaz web está en `plantilla.html`, la lista inicial en `lista_inicial.txt`, el servidor local en `main.go`, las colecciones en `collections.go`, la integración con TMDB en `providers.go` e `identity.go`, y la ventana WebView2 en `window_windows.go`.
+La ventana nativa de macOS está en `window_darwin.go` y `macos_view_darwin.m`, y el selector de carpeta en `cloud_picker_darwin.go`. La interfaz web está en `plantilla.html`, la lista inicial en `lista_inicial.txt`, el servidor local en `main.go`, las colecciones en `collections.go`, la integración con TMDB en `providers.go` e `identity.go`, y la ventana WebView2 en `window_windows.go`.
 
 ## Datos personales y copias de seguridad
 
 Los datos del usuario se guardan por defecto en:
 
 ```text
-%APPDATA%\AtlasDelCine\
+Windows: %APPDATA%\AtlasDelCine\
+macOS:   ~/Library/Application Support/AtlasDelCine/
 ```
 
 Entre otros archivos se utilizan `colecciones.json`, `mis_365_peliculas.txt`, `identidades_cine.json` y `plataformas_ajustes.json`. **No subas estos archivos ni tus claves de API a GitHub.** El contenido de la carpeta AppData pertenece a cada instalación local.
@@ -80,4 +81,7 @@ El historial completo, actualizado hasta la **v8.1.1** y con el crédito de **Cr
 
 Los documentos Word y PDF publicados en `docs/` se generan automáticamente a partir del historial en Markdown mediante GitHub Actions. Consulta también [CHANGELOG.md](CHANGELOG.md) para ver el resumen de los cambios de cada versión.
 
-**Descarga actual para Windows:** [Selector de Cine 365 v8.1.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.1.1).
+**Descargas (Windows, Mac Apple Silicon y Mac Intel):** [Selector de Cine 365 v8.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.2).
+## macOS
+
+Consulta [instrucciones de instalación, almacenamiento y seguridad para Mac](MACOS.md). Las apps de Mac tienen firma ad hoc, pero no están notarizadas por Apple. Se requiere una prueba práctica de interfaz en un Mac real.

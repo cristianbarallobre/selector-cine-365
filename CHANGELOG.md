@@ -2,6 +2,15 @@
 
 Este registro recoge las principales funciones incorporadas a lo largo del desarrollo. Es un resumen; no pretende representar un historial de commits anteriores.
 
+## v8.2 — Windows y macOS
+
+- Primera versión de escritorio para Mac Apple Silicon y Mac Intel con Cocoa y WKWebView.
+- Selector de carpetas para copias en macOS, compatible con rutas locales sincronizadas.
+- Se mantienen las listas, sincronización de vistas, TMDB, estadísticas y la firma del autor.
+- GitHub Actions compila tres ZIP de distribución: Windows, Mac Intel y Mac Apple Silicon.
+- Los Mac se compilan y prueban de forma automatizada; resta comprobar su interfaz en un Mac de usuario.
+- macOS: aplicación sin notarización ni certificado Apple Developer ID.
+
 ## v8.1.1 — Firma del autor (19 de noviembre de 2026)
 
 - Firma discreta «Hecho por Cristian Barallobre Rúa» en la cabecera del programa.
