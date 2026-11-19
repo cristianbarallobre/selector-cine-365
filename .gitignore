@@ -1,0 +1,35 @@
+# Archivos privados: no compartir listas del usuario, claves ni configuración
+colecciones.json
+mis_365_peliculas.txt
+plataformas_ajustes.json
+plataformas_cache.json
+identificaciones_tmdb.json
+identidades_cine.json
+*.log
+diagnostico*.txt
+
+# Copias locales y carpetas de datos
+AtlasDelCine/
+Selector_Cine_365_Copias/
+actual/
+historico/
+posters/
+poster_cache/
+*.bak
+*.tmp
+
+# Compilación local
+*.exe
+*.dll
+*.test
+*.out
+dist/
+build/
+
+# IDE y sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Nota: se conserva rsrc_amd64.syso deliberadamente, aporta recursos de icono para Windows.
