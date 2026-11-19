@@ -511,7 +511,7 @@ let identityConfigured=false;
 const virtualID='__coincidencias__';
 let virtualMode=false;
 let selectedListPlatforms=new Set(),listPlatformOptionSignature=''; // independiente del filtro del sorteo
-const providerKey=f=>f.title.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/æ/g,'ae').replace(/œ/g,'oe').replace(/[^\p{L}\p{N}]+/gu,' ').trim()+'|'+f.year;
+const providerKey=f=>f.title.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/æ/g,'ae').replace(/œ/g,'oe').replace(/[^\p{L}\p{N}]+/gu,' ').trim()+'|'+(Number(f.year)||0);
 let manualFilm=null;
 const jwSearch=f=>'https://www.justwatch.com/es/buscar?q='+encodeURIComponent(f.title);
 function friendlyName(s){return s.replace(/Movistar Plus\+ Ficción Total/i,'Movistar+ Ficción Total').replace(/Movistar Plus\+/i,'Movistar+').replace(/Amazon Prime Video/i,'Prime Video').replace(/Netflix Standard with Ads/i,'Netflix con anuncios').replace(/HBO Max/i,'Max');}
@@ -771,7 +771,7 @@ function replaceList(text){let clean=text.replace(/^\uFEFF/,'').replace(/\r\n?/g
 // Identidad compartida por todas las listas. El ID TMDB tiene prioridad;
 // si falta, se usa título normalizado y año. No se mezclan remakes de años
 // diferentes salvo que TMDB confirme que son exactamente la misma película.
-function filmKey(f){return filmIdentity(f)+'|'+(f.year||'');}
+function filmKey(f){return filmIdentity(f)+'|'+(Number(f.year)||0);}
 function knownTMDB(f){return identityMap.get(filmKey(f))||platformData.get(providerKey(f))?.tmdb_id||0;}
 function buildIdentityGroups(){
  const records=new Map(),parents=new Map(),idOwners=new Map();
