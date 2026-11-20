@@ -169,7 +169,3 @@ Las betas son versiones de prueba y pueden tener errores. La sincronización seg
 - Guía de Microsoft Azure, Entra y OneDrive: <https://github.com/cristianbarallobre/selector-cine-365/blob/v9-android-beta/docs/GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.md>
 - TMDB: <https://www.themoviedb.org/>
 - Portal Microsoft Azure: <https://portal.azure.com/>
-
----
-
-**Nota final:** la conexión a OneDrive es opcional, la clave de TMDB es opcional y las listas locales siguen siendo la base de la aplicación. Empareja cada dispositivo solo cuando hayas comprobado las copias.
