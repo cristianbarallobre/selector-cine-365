@@ -282,6 +282,24 @@ final class CloudBackup {
                 .put("seen",SyncStore.watchedCount(plan.library));
         }catch(Exception e){lastError=e.getMessage();throw e;}
     }
+    /** Compare library content, not JSONObject insertion order, to avoid needless OneDrive uploads. */
+    private static boolean sameLibrary(JSONObject a,JSONObject b){
+        if(a.optInt("version")!=b.optInt("version")||!a.optString("active_id").equals(b.optString("active_id")))
+            return false;
+        JSONArray la=a.optJSONArray("lists"),lb=b.optJSONArray("lists");
+        if(la==null||lb==null||la.length()!=lb.length())return false;
+        for(int i=0;i<la.length();i++){
+            JSONObject x=la.optJSONObject(i),y=lb.optJSONObject(i);
+            if(x==null||y==null||!x.optString("id").equals(y.optString("id"))
+                ||!x.optString("name").equals(y.optString("name"))
+                ||!x.optString("text").equals(y.optString("text")))return false;
+        }
+        JSONArray ca=a.optJSONArray("comparison_ids"),cb=b.optJSONArray("comparison_ids");
+        int na=ca==null?0:ca.length(),nb=cb==null?0:cb.length();
+        if(na!=nb)return false;
+        for(int i=0;i<na;i++)if(!ca.optString(i).equals(cb.optString(i)))return false;
+        return true;
+    }
     /**
      * Automatic inbound merge is deliberately opt-in by first manual pairing.
      * New list additions and causal seen/pending changes are imported; opposite
@@ -298,7 +316,7 @@ final class CloudBackup {
             if(plan.sources==0)return status().put("changed",false).put("skipped","no_remote_sources");
             JSONObject before=new JSONObject(backend.readOrDefault("colecciones.json","{}"));
             if(!Backend.validLibrary(before))throw new Exception("Biblioteca local no válida");
-            boolean changed=!before.toString().equals(plan.library.toString());
+            boolean changed=!sameLibrary(before,plan.library);
             boolean metadataChanged=!sync.revisions().toString().equals(plan.revisions.toString())
                 ||!sync.known().toString().equals(plan.known.toString());
             if(!changed&&!metadataChanged){
