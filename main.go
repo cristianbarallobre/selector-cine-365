@@ -76,6 +76,9 @@ type runningApp struct {
 	cloud         *cloudBackups
 	syncStore     *desktopSyncStore
 	syncPreviewToken string
+    syncLastCheck atomic.Int64
+    syncLastReceived atomic.Int64
+    syncPendingConflict atomic.Bool
 	html          []byte
 	token         string
 	lastActivity  atomic.Int64
