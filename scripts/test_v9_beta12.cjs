@@ -29,7 +29,7 @@ assert.ok(android.html.includes('window.CineAndroid?Math.min(2000,'),'Mantener c
 const gradle=fs.readFileSync('android/app/build.gradle','utf8');
 assert.ok(gradle.includes("applicationId 'es.cine365.app'"),'Identificador estable Android');
 assert.ok(!gradle.includes('applicationIdSuffix'),'No generar un paquete distinto en cada Beta');
-assert.ok(gradle.includes('versionCode 9011'),'Versión de Android incrementada');
+assert.ok(gradle.includes('versionCode 9012'),'Versión de Android incrementada');
 const script=desktop.script,start=script.indexOf('function applyFilmMembershipLists('),end=script.indexOf('function toggleSearchedFilm(',start);
 assert.ok(start>=0&&end>start);
 function parse(t){const lines=t.split('\n'),entries=[];
