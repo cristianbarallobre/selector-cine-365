@@ -30,7 +30,7 @@ final class CloudBackup {
     private final SyncStore sync;
     private final OneDriveCloud oneDrive;
     private String folder="",lastBackup="",lastSync="",lastError="";
-    private boolean activated=false;
+    private boolean activated=false,autoNeedsReview=false;
     private String previewToken="";
 
     CloudBackup(MainActivity a,File files,SyncStore sync,OneDriveCloud oneDrive){
@@ -58,16 +58,17 @@ final class CloudBackup {
             }
         }
         if(!folder.equals(uriValue)){
-            activated=false;previewToken="";
+            activated=false;autoNeedsReview=false;previewToken="";
             activity.getPreferences(Context.MODE_PRIVATE).edit().putBoolean("sync_activated_v2",false).apply();
         }
         folder=uriValue;lastError="";
         activity.getPreferences(Context.MODE_PRIVATE).edit().putString("backup_uri",folder).apply();
     }
     synchronized JSONObject status()throws Exception{
-        return new JSONObject().put("enabled",!folder.isEmpty()).put("activated",activated).put("needs_review",!folder.isEmpty()&&!activated).put("folder",folder).put("target",folder)
+        return new JSONObject().put("enabled",!folder.isEmpty()).put("activated",activated).put("needs_review",!folder.isEmpty()&&(!activated||autoNeedsReview)).put("folder",folder).put("target",folder)
             .put("last_backup",lastBackup).put("last_sync",lastSync).put("last_error",lastError)
-            .put("provider",folder.startsWith("onedrive://")?"onedrive":folder.isEmpty()?"none":"folder");
+            .put("provider",folder.startsWith("onedrive://")?"onedrive":folder.isEmpty()?"none":"folder")
+            .put("auto_sync",!folder.isEmpty()&&activated);
     }
     private Uri tree(){return Uri.parse(folder);}
     private boolean graphMode(){return folder.startsWith("onedrive://");}
@@ -269,7 +270,7 @@ final class CloudBackup {
                 sync.resolve(plan.revisions,plan.known,resolved);
                 plan.revisions=sync.revisions();plan.known=sync.known();
             }else sync.accept(plan.revisions,plan.known);
-            activated=true;
+            activated=true;autoNeedsReview=false;
             activity.getPreferences(Context.MODE_PRIVATE).edit().putBoolean("sync_activated_v2",true).apply();
             JSONObject backup=backup();
             if(!backup.optString("last_error").isEmpty())throw new Exception(backup.optString("last_error"));
@@ -281,4 +282,46 @@ final class CloudBackup {
                 .put("seen",SyncStore.watchedCount(plan.library));
         }catch(Exception e){lastError=e.getMessage();throw e;}
     }
+    /**
+     * Automatic inbound merge is deliberately opt-in by first manual pairing.
+     * New list additions and causal seen/pending changes are imported; opposite
+     * concurrent decisions are left untouched until the user reviews them.
+     */
+    synchronized JSONObject autoSynchronize(Backend backend)throws Exception{
+        if(folder.isEmpty()||!activated)return status().put("changed",false).put("skipped","not_paired");
+        if(!previewToken.isEmpty())return status().put("changed",false).put("skipped","manual_review_open");
+        try{
+            Plan plan=buildPlan(backend);
+            if(plan.conflicts.length()>0){
+                autoNeedsReview=true;
+                return status().put("changed",false).put("conflicts",plan.conflicts.length());
+            }
+            if(plan.sources==0)return status().put("changed",false).put("skipped","no_remote_sources");
+            JSONObject before=new JSONObject(backend.readOrDefault("colecciones.json","{}"));
+            if(!Backend.validLibrary(before))throw new Exception("Biblioteca local no válida");
+            boolean changed=!before.toString().equals(plan.library.toString());
+            boolean metadataChanged=!sync.revisions().toString().equals(plan.revisions.toString())
+                ||!sync.known().toString().equals(plan.known.toString());
+            if(!changed&&!metadataChanged){
+                autoNeedsReview=false;
+                return status().put("changed",false);
+            }
+            // Creates the same daily local recovery point as a manual import.
+            if(changed)backend.storeStateImported(plan.library);
+            sync.accept(plan.revisions,plan.known);
+            autoNeedsReview=false;
+            JSONObject result=backup();
+            if(!result.optString("last_error").isEmpty())throw new Exception(result.optString("last_error"));
+            lastSync=OffsetDateTime.now().toString();
+            activity.getPreferences(Context.MODE_PRIVATE).edit().putString("last_sync",lastSync).apply();
+            return status().put("changed",changed).put("metadata_updated",metadataChanged)
+                .put("lists",plan.library.getJSONArray("lists").length())
+                .put("seen",SyncStore.watchedCount(plan.library))
+                .put("sources",plan.sources);
+        }catch(Exception e){
+            lastError=e.getMessage()==null?"No se pudo revisar la nube":e.getMessage();
+            throw e;
+        }
+    }
+
 }
