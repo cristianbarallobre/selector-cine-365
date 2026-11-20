@@ -1,4 +1,4 @@
-name: Publicar Selector Cine 365 Windows v9 beta 8
+name: Publicar Selector Cine 365 Windows v9 beta 9
 on:
   push:
     branches: [v9-android-beta]
@@ -28,13 +28,33 @@ jobs:
           go-version: '1.23'
       - name: Pruebas Go (incluida sincronización)
         run: go test ./...
+      - name: Revisar JavaScript, casilla de películas, listas y manual de Windows
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re,subprocess,tempfile
+          html=Path('plantilla.html').read_text()
+          assert 'Conectar TMDB' in html
+          assert 'data-view="instructions"' in html
+          assert 'collectionPageNumbers' in html
+          assert 'film-check-action' in html and 'togg.append(tick,poster,main)' in html
+          assert "main.inert=true" not in html
+          assert "Pruebas_Selector_Cine_365" not in html
+          scripts=re.findall(r'<script(?P<attrs>[^>]*)>(?P<js>.*?)</script>',html,re.S|re.I)
+          for i,(attrs,js) in enumerate(scripts):
+              if 'src=' in attrs or 'application/json' in attrs:continue
+              path=Path(tempfile.gettempdir())/f'cine_windows_{i}.js'
+              path.write_text(js)
+              subprocess.run(['node','--check',str(path)],check=True)
+          print('Comprobaciones Windows OK')
+          PY
       - name: Compilar Windows 64 bits
-        run: GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags='-H windowsgui -s -w' -o Selector_Cine_365_Windows_v9_BETA8.exe .
+        run: GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags='-H windowsgui -s -w' -o Selector_Cine_365_Windows_v9_BETA9.exe .
       - name: Comprobar que el ejecutable no abre consola CMD
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          binary=Path("Selector_Cine_365_Windows_v9_BETA8.exe").read_bytes()
+          binary=Path("Selector_Cine_365_Windows_v9_BETA9.exe").read_bytes()
           assert binary[:2]==b"MZ", "No es un ejecutable Windows"
           pe=int.from_bytes(binary[0x3c:0x40], "little")
           assert binary[pe:pe+4]==b"PE\x00\x00", "Cabecera PE incorrecta"
@@ -45,8 +65,8 @@ jobs:
           PY
       - name: Preparar ZIP de pruebas
         run: |
-          cat > LEEME_BETA8.txt <<'EOF'
-          SELECTOR CINE 365 - WINDOWS v9 BETA 8 (CORRECCION CONSOLA)
+          cat > LEEME_BETA9.txt <<'EOF'
+          SELECTOR CINE 365 - WINDOWS v9 BETA 9 (INSTRUCCIONES, LISTAS Y TICK)
           Antes de usar con datos reales, exporta una copia JSON y conserva la v8.2.
           No ejecutes dos versiones de escritorio al mismo tiempo.
           La copia local sigue funcionando sin nube ni clave TMDB.
@@ -59,24 +79,24 @@ jobs:
           Para compartir con Android, usar carpeta exclusiva de OneDrive
           y conectar esa misma carpeta desde Selector Cine 365 Android.
           Otras nubes solo si ambas apps admiten las carpetas.
-          Se conserva la correccion de arranque: ventana grafica sin CMD.
+          Se conserva la correccion de arranque: ventana grafica sin CMD.\n          Novedades: Conectar TMDB, Instrucciones, paginacion numerica de listas.\n          Solo el tick cambia el estado de vista; el resto de la ficha no.
           Aplicacion beta no firmada ni verificada en dispositivos reales.
           EOF
-          zip -q Selector_Cine_365_Windows_v9_BETA8.zip Selector_Cine_365_Windows_v9_BETA8.exe LEEME_BETA8.txt
+          zip -q Selector_Cine_365_Windows_v9_BETA9.zip Selector_Cine_365_Windows_v9_BETA9.exe LEEME_BETA9.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: Selector_Cine_365_Windows_v9_BETA8
-          path: Selector_Cine_365_Windows_v9_BETA8.zip
+          name: Selector_Cine_365_Windows_v9_BETA9
+          path: Selector_Cine_365_Windows_v9_BETA9.zip
           if-no-files-found: error
       - name: Publicar version preliminar Windows
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view v9.0.0-windows-beta.8 >/dev/null 2>&1; then
-            gh release upload v9.0.0-windows-beta.8 Selector_Cine_365_Windows_v9_BETA8.zip --clobber
+          if gh release view v9.0.0-windows-beta.9 >/dev/null 2>&1; then
+            gh release upload v9.0.0-windows-beta.9 Selector_Cine_365_Windows_v9_BETA9.zip --clobber
           else
-            gh release create v9.0.0-windows-beta.8 Selector_Cine_365_Windows_v9_BETA8.zip \
+            gh release create v9.0.0-windows-beta.9 Selector_Cine_365_Windows_v9_BETA9.zip \
               --target "$GITHUB_SHA" --prerelease \
-              --title "Selector Cine 365 - Windows v9 Beta 8" \
-              --notes "BETA 8: importación automática desde OneDrive al abrir, reanudar y periódicamente tras primera conexión manual. Los conflictos requieren revisión. Se mantiene compilación Windows GUI sin CMD y validación de cabecera PE. No es estable: guarda una copia JSON antes de probar y no ejecutes dos versiones de Windows a la vez."
+              --title "Selector Cine 365 - Windows v9 Beta 9" \
+              --notes "BETA 9 Windows: Conectar TMDB; nueva sección Instrucciones con manual completo; paginación numérica y salto entre listas; marcar vista solo tocando tick; sincronización automática no bloquea interfaz; compilación Windows GUI verificada (sin CMD). Pruebas experimentales: conserva copia JSON y no ejecutes dos betas de Windows a la vez."
           fi
