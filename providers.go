@@ -120,6 +120,44 @@ func (p *availabilityServer) saveKey(key string) error {
 	p.apiKey = key
 	return nil
 }
+// No se comparten las credenciales API; solo IDs confirmados por el usuario.
+func (p *availabilityServer) manualOverrides() map[string]int {
+ p.mu.Lock();defer p.mu.Unlock()
+ result:=make(map[string]int,len(p.overrides))
+ for k,id:=range p.overrides{result[k]=id}
+ return result
+}
+func (p *availabilityServer) importManualOverrides(mappings map[string]int) error {
+ if len(mappings)>10000{return errors.New("Demasiadas identificaciones")}
+ p.mu.Lock();defer p.mu.Unlock()
+ next:=make(map[string]int,len(p.overrides)+len(mappings))
+ for k,id:=range p.overrides{next[k]=id}
+ changed:=false
+ for key,id:=range mappings {
+  if len(key)<3||len(key)>275||!strings.Contains(key,"|")||id<0||id>999999999{return errors.New("Identificación TMDB incorrecta")}
+  old,exists:=next[key]
+  if id==0{
+   if exists{delete(next,key);changed=true}
+   delete(p.identities,key);delete(p.cache,key)
+  }else if !exists||old!=id{
+   next[key]=id;changed=true
+   p.identities[key]=filmIdentityRecord{TMDBID:id,State:"ok",Updated:time.Now().Format(time.RFC3339)}
+   delete(p.cache,key)
+  }
+ }
+ if !changed{return nil}
+ bytes,e:=json.MarshalIndent(next,"","  ");if e!=nil{return e}
+ if e=os.MkdirAll(filepath.Dir(p.overridesPath),0700);e!=nil{return e}
+ temp:=p.overridesPath+".tmp"
+ if e=os.WriteFile(temp,bytes,0600);e!=nil{return e}
+ if e=os.Rename(temp,p.overridesPath);e!=nil{return e}
+ p.overrides=next
+ p.saveIdentityCacheLocked()
+ if cacheBytes,e:=json.Marshal(platformCache{Entries:p.cache});e==nil{
+  _=os.WriteFile(p.cachePath,cacheBytes,0600)
+ }
+ return nil
+}
 func (p *availabilityServer) getCached(k string, force bool) (providerResult, bool) {
 	if force {
 		return providerResult{}, false
@@ -569,6 +607,19 @@ func (a *runningApp) servePlatformHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch r.URL.Path {
+    case "/api/platforms/overrides":
+        if r.Method!="GET"{http.Error(w,"Método no permitido",405);return}
+        _=json.NewEncoder(w).Encode(map[string]any{"overrides":a.platforms.manualOverrides()})
+    case "/api/platforms/overrides/import":
+        if r.Method!="POST"{http.Error(w,"Método no permitido",405);return}
+        var payload struct{Overrides map[string]int `json:"overrides"`}
+        if e:=json.NewDecoder(http.MaxBytesReader(w,r.Body,1<<20)).Decode(&payload);e!=nil{
+            http.Error(w,"Identificaciones inválidas",400);return
+        }
+        if e:=a.platforms.importManualOverrides(payload.Overrides);e!=nil{
+            http.Error(w,e.Error(),400);return
+        }
+        _=json.NewEncoder(w).Encode(map[string]bool{"saved":true})
     case "/api/platforms/cache":
         if r.Method!="GET"{http.Error(w,"Método no permitido",405);return}
         _=json.NewEncoder(w).Encode(map[string]any{"entries":a.platforms.cachedEntries()})
