@@ -2,6 +2,8 @@
 
 **Versión coordinada v9 Beta 12 (20 de noviembre de 2026).** Los cambios recientes se basan en el código fuente v9, no en la rama antigua v8.2. Los paquetes Mac usan el mismo frontend y motor Go que Windows; no se afirma que se hayan validado manualmente en hardware real.
 
+Para un historial exhaustivo preparado para Word y PDF consulta [Historial completo v1–v9 Beta 12](docs/HISTORIAL_V9_BETA12.md). El registro detallado de v8.1.1 permanece como documento histórico independiente.
+
 ## v9 Beta 12 — Windows, macOS, Android (beta)
 
 - Búsqueda global entre listas, sin duplicados por identidad TMDB o título/año; opción «Lista actual».
