@@ -5,12 +5,14 @@ function source(p){
  const script=s.match(/<script>([\s\S]*?)<\/script>/)?.[1];
  assert.ok(script,'JS existente en '+p);
  assert.doesNotThrow(()=>new Function(script),'JS debe compilar '+p);
- for(const needle of ['cloudAutoReceive','cineRecentIntents','cineLoadRevisions','film-check-action','togg.append(tick,poster,main)','data-view="instructions"','data-search-scope="all"','filmMembershipIndex','applyFilmMembershipLists','membershipOverlay','Conectar TMDB']){
+ for(const needle of ['cloudAutoReceive','cineRecentIntents','cineLoadRevisions','film-check-action','togg.append(tick,poster,main)','data-search-scope="all"','filmMembershipIndex','applyFilmMembershipLists','membershipOverlay','Conectar TMDB']){
   assert.ok(s.includes(needle),'Falta en '+p+': '+needle);
  }
  return {html:s,script};
 }
 const desktop=source('plantilla.html'),android=source('android/app/src/main/assets/index.html');
+assert.ok(desktop.html.includes('data-view="instructions"'),'Windows debe conservar Instrucciones');
+assert.ok(android.html.includes('data-view="help"'),'Android debe conservar Ayuda');
 for(const {html,script} of [desktop,android]){
  assert.ok(!html.includes('main.inert=true'),'No bloquear toda la interfaz');
  assert.ok(script.includes('const readonly=virtualMode&&!global'),'Las coincidencias son solo lectura, la búsqueda global editable');
