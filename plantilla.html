@@ -302,6 +302,13 @@ h2{font-size:19px}
 #view-library .film-toggle .film-check-action .checkbox{pointer-events:none}
 @media(max-width:650px){.film-item .film-check-action{width:30px;height:44px}}
 </style>
+<style id="cine-collection-pages-v9">
+#view-collections .collection-paging{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;align-items:center}
+#view-collections #collectionPageNumbers{display:flex;gap:3px;align-items:center;flex-wrap:wrap;justify-content:center}
+#view-collections #collectionPageGotoForm input{border:1px solid #56708c;background:#132336;color:#fff;border-radius:6px;padding:5px;text-align:center}
+#view-collections #collectionPageGotoForm label,#view-collections #collectionPageTotal{color:#b5cbe0;font-size:11px}
+#view-collections #collectionPageNumbers[hidden],#view-collections #collectionPageGotoForm[hidden]{display:none!important}
+</style>
 </head>
 <body>
 <textarea id="initialState" hidden>__ATLAS_LISTA_INICIAL__</textarea>
@@ -381,6 +388,13 @@ h2{font-size:19px}
       <div class="page-controls collection-paging" aria-label="Navegar por las listas">
         <button type="button" class="page-btn" id="collectionPrev">‹ Anterior</button>
         <span class="page-label" id="collectionPageLabel"></span>
+        <div id="collectionPageNumbers" class="page-numbers" role="navigation" aria-label="Páginas de listas"></div>
+        <form id="collectionPageGotoForm" class="page-goto-form" style="display:flex;align-items:center;gap:4px">
+          <label for="collectionPageGoto">Página</label>
+          <input id="collectionPageGoto" type="number" min="1" inputmode="numeric" style="width:48px" aria-label="Número de página de listas">
+          <span id="collectionPageTotal" aria-label="Número total de páginas"></span>
+          <button class="page-btn" type="submit">Ir</button>
+        </form>
         <button type="button" class="page-btn" id="collectionNext">Siguiente ›</button>
       </div>
       <div class="compare-info"><span id="compareInfo">Coincidencias: sin configurar</span><span>Solo lectura en Biblioteca</span></div>
@@ -1008,6 +1022,7 @@ function renderCollectionControls(){
  const start=collectionPage*visible;
  $('collectionPageLabel').textContent=(start+1)+'–'+Math.min(libraryState.lists.length,start+visible)+' de '+libraryState.lists.length;
  $('collectionPrev').disabled=collectionPage===0;$('collectionNext').disabled=collectionPage>=pages-1;
+ renderCollectionNumberedPages(pages);
  for(const item of libraryState.lists.slice(start,start+visible)){
    const parsedItem=parse(item.text);const row=document.createElement('div');row.className='collection-item'+(item.id===libraryState.active_id?' current':'');
    const info=document.createElement('div');info.className='collection-info';const name=document.createElement('div');name.className='collection-name';name.textContent=item.name;
@@ -1019,6 +1034,33 @@ function renderCollectionControls(){
    buttons.append(enter,rename,del);row.append(info,buttons);rows.appendChild(row);
  }
 }
+function renderCollectionNumberedPages(total){
+ const numbers=$('collectionPageNumbers');numbers.replaceChildren();
+ $('collectionPageTotal').textContent='/ '+total;
+ $('collectionPageGoto').max=String(total);
+ numbers.hidden=total<=1;$('collectionPageGotoForm').hidden=total<=1;
+ if(total<=1)return;
+ for(const token of filmPageTokens(collectionPage,total,7)){
+   const btn=document.createElement('button');btn.type='button';
+   if(token.kind==='skip'){
+     btn.className='page-ellipsis page-skip';btn.textContent=token.direction==='back'?'«':'»';
+     btn.title=token.direction==='back'?'Retroceder hasta 10 páginas':'Avanzar hasta 10 páginas';
+   }else{
+     btn.className='page-number'+(token.index===collectionPage?' active':'');
+     btn.textContent=String(token.index+1);
+     if(token.index===collectionPage)btn.setAttribute('aria-current','page');
+     btn.title='Abrir página '+(token.index+1)+' de listas';
+   }
+   btn.addEventListener('click',()=>{collectionPage=token.index;renderCollectionControls();});
+   numbers.appendChild(btn);
+ }
+}
+$('collectionPageGotoForm').addEventListener('submit',event=>{
+ event.preventDefault();
+ const input=$('collectionPageGoto'),page=Number(input.value),max=Number(input.max)||1;
+ if(!Number.isInteger(page)||page<1||page>max){input.focus();return;}
+ collectionPage=page-1;input.value='';renderCollectionControls();
+});
 function openListModal(id=null){editingListID=id;const target=libraryState.lists.find(x=>x.id===id);
  $('listModalTitle').textContent=target?'Renombrar lista':'Nueva lista';$('listNameInput').value=target?.name||'';
  $('newListText').value='';$('newListText').hidden=!!target;$('listOverlay').hidden=false;$('listNameInput').focus();
