@@ -66,6 +66,38 @@ final class Tmdb {
         return new JSONObject().put("state",id>0?"ok":data.optString("state","not-found"))
             .put("tmdb_id",id).put("note",data.optString("note",""));
     }
+    synchronized JSONObject manualOverrides()throws Exception {
+        return new JSONObject(overrides.toString());
+    }
+    // Importa solo IDs de TMDB. Las claves API personales nunca salen del móvil.
+    synchronized void importManualOverrides(JSONObject changes)throws Exception {
+        if(changes==null||changes.length()>10000)throw new Exception("Identificaciones TMDB inválidas");
+        JSONObject next=new JSONObject(overrides.toString()),records=identitiesCache();
+        if(records==null)records=new JSONObject();
+        boolean modified=false;
+        for(java.util.Iterator<String>it=changes.keys();it.hasNext();){
+            String k=it.next();Object v=changes.get(k);
+            if(k.length()<3||k.length()>275||!k.contains("|")||!(v instanceof Number))
+                throw new Exception("Identificación TMDB inválida");
+            int id=((Number)v).intValue();
+            if(id<0||id>999999999)throw new Exception("ID de TMDB incorrecto");
+            if(id==0){
+                if(next.has(k)){next.remove(k);modified=true;}
+                if(records.has(k)){records.remove(k);modified=true;}
+                cache.remove(k);
+            }else if(next.optInt(k)!=id){
+                next.put(k,id);modified=true;
+                records.put(k,new JSONObject().put("tmdb_id",id).put("state","ok")
+                    .put("updated",java.time.OffsetDateTime.now().toString()));
+                cache.remove(k);
+            }
+        }
+        if(!modified)return;
+        Backend.atomicWrite(new File(dir,"identificaciones_tmdb.json"),next.toString(2));
+        Backend.atomicWrite(new File(dir,"identidades_cine.json"),new JSONObject().put("entries",records).toString(2));
+        Backend.atomicWrite(new File(dir,"plataformas_cache.json"),new JSONObject().put("entries",cache).toString());
+        overrides=next;
+    }
     synchronized boolean hasKey(){return !key.isEmpty();}
     synchronized String getKey(){return key;}
     synchronized void configure(String k)throws Exception{
