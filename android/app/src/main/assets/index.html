@@ -1686,13 +1686,20 @@ async function platformApi(path,body){
 }
 async function initPlatforms(){
  try{
-  const r=await platformApi('/api/platforms/status');platformConfigured=!!r.configured;
+  const r=await platformApi('/api/platforms/status');initPlatforms.retries=0;platformConfigured=!!r.configured;
   if(platformConfigured){
    // Una lectura del archivo local, sin centenares de peticiones WebView.
    const cached=await platformApi('/api/platforms/cache');
    for(const [key,entry] of Object.entries(cached.entries||{}))platformData.set(key,entry);
   }
- }catch(err){platformConfigured=false;}
+ }catch(err){
+  // Una respuesta fallida del backend NO significa que haya perdido la clave.
+  console.warn('No se ha podido leer la configuración TMDB:',err.message);
+  $('platformProgress').textContent='Conexión local TMDB no disponible. Reintentando…';
+  if((initPlatforms.retries=(initPlatforms.retries||0)+1)<=4)
+   setTimeout(()=>{if(!document.hidden)void initPlatforms();},1200);
+  return;
+ }
  // Al abrir no hacemos búsquedas de red, ni siquiera si faltan fichas.
  // Las nuevas incorporaciones y «Actualizar» solicitan lo que haga falta.
  updatePlatformProgress();updateListPlatformOptions();renderList();renderStats();
@@ -1744,6 +1751,11 @@ async function applyManualMatch(id){
  $('matchStatus').textContent=id?'Comprobando película…':'Reintentando búsqueda automática…';
  try {
    await platformApi('/api/platforms/match',{title:film.title,year:film.year,id});
+   // Persistir en biblioteca compartida además de las preferencias privadas.
+   libraryState.tmdb_overrides=libraryState.tmdb_overrides||{};
+   libraryState.tmdb_overrides[key]=id;
+   if(id>0)identityMap.set(filmKey(film),id);else identityMap.delete(filmKey(film));
+   scheduleSave();
    const info=await platformApi('/api/platforms/lookup',{title:film.title,year:film.year,force:true});
    platformData.set(key,info);
    if(info?.tmdb_id>0)registerIdentity(film,info.tmdb_id);else{identityMap.delete(filmKey(film));queueIdentityReconcile();}
@@ -2156,10 +2168,38 @@ function queueIdentityReconcile(){
  },350);
 }
 function identityStatus(text){$('identityStatus').textContent=text;}
+// Intercambiar solo identificadores TMDB, nunca la clave de la API.
+async function reconcileTMDBLibrary(){
+ const remote=libraryState.tmdb_overrides||{};
+ try{
+  const data=await platformApi('/api/platforms/overrides');
+  const stored=data.overrides||{};
+  const merged={...stored,...remote};
+  if(Object.keys(merged).length){
+   const changed=Object.keys(merged).some(key=>!Object.prototype.hasOwnProperty.call(remote,key)||remote[key]!==merged[key]);
+   libraryState.tmdb_overrides=merged;
+   const needsImport=Object.keys(merged).some(key=>stored[key]!==merged[key]);
+   if(needsImport){
+    await platformApi('/api/platforms/overrides/import',{overrides:merged});
+    for(const key of Object.keys(merged))if(stored[key]!==merged[key])platformData.delete(key);
+   }
+   for(const [key,id] of Object.entries(merged)){
+    if(id>0)identityMap.set(key,id);else identityMap.delete(key);
+   }
+   if(changed)scheduleSave();
+  }
+ }catch(error){
+  // Un fallo puntual no elimina una configuración válida.
+  console.warn('Identificaciones TMDB locales no disponibles:',error.message);
+ }
+}
 async function initIdentities(){
  try{
    const data=await platformApi('/api/identities');identityConfigured=Boolean(data.configured);
    for(const [key,id] of Object.entries(data.entries||{})){if(id>0)identityMap.set(key,id);}
+   for(const [key,id] of Object.entries(libraryState.tmdb_overrides||{})){
+    if(id>0)identityMap.set(key,id);else identityMap.delete(key);
+   }
    queueIdentityReconcile();
    if(identityConfigured)identityStatus('TMDB: identidades locales cargadas · usa «Revisar TMDB» para buscar más');
    else identityStatus('TMDB sin configurar · coincidencias por título y año');
@@ -2252,7 +2292,7 @@ async function initLibrary(){
  try{const response=await fetch('/api/library',{headers:{'X-Atlas-Token':token},cache:'no-store'});
    if(response.ok){const state=await response.json();if(validLibrary(state))libraryState=state;}
  }catch(e){}
- sanitizeComparisonIDs();const reconciled=reconcileWatched();rawText=activeCollection().text||'';renderCollectionControls();update();renderStats();if(reconciled)scheduleSave();
+ sanitizeComparisonIDs();await reconcileTMDBLibrary();const reconciled=reconcileWatched();rawText=activeCollection().text||'';renderCollectionControls();update();renderStats();if(reconciled)scheduleSave();
 }
 function validLibrary(s){return s&&s.version===1&&Array.isArray(s.lists)&&s.lists.length>0&&s.lists.length<=40&&typeof s.active_id==='string'&&s.lists.some(l=>l.id===s.active_id)&&s.lists.every(l=>typeof l.text==='string'&&typeof l.name==='string'&&typeof l.id==='string');}
 function restartList(){
@@ -2303,7 +2343,7 @@ function openListModal(id=null){editingListID=id;const target=libraryState.lists
 function closeListModal(){$('listOverlay').hidden=true;}
 function deleteList(id){if(libraryState.lists.length<2)return;const l=libraryState.lists.find(x=>x.id===id);if(!l)return;
  if(!confirm('¿Eliminar «'+l.name+'»? Esta lista dejará de aparecer en la aplicación.'))return;
- syncActiveText();libraryState.lists=libraryState.lists.filter(x=>x.id!==id);
+ syncActiveText();libraryState.deleted_lists=libraryState.deleted_lists||{};libraryState.deleted_lists[id]=true;libraryState.lists=libraryState.lists.filter(x=>x.id!==id);
  if(libraryState.active_id===id){libraryState.active_id=libraryState.lists[0].id;}
  sanitizeComparisonIDs();
  if(!virtualMode){rawText=activeCollection().text||'';restartList();}else{refreshVirtualContent();restartList();}
