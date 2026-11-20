@@ -180,9 +180,9 @@ Comprueba que Windows y Android apuntan a **la misma carpeta**, que el cliente O
 ---
 
 **Nota de conservación:** esta guía documenta la configuración que funcionó para Selector Cine 365 y los problemas reales encontrados en el proceso. La interfaz de Azure/Entra puede cambiar de nombre o ubicación; los valores técnicos (tipo de cuenta, permisos, Id. de cliente y URI de retorno) son la referencia principal mientras la app siga usando este registro.
-## Nota sobre la edición v9 Beta 12
+## Nota sobre la edición v9 Beta 12.2 (Android)
 
-- El registro público de Microsoft Entra, los permisos delegados y la URI de redirección no han cambiado al avanzar a Beta 12.
+- El registro público de Microsoft Entra, los permisos delegados y la URI de redirección no han cambiado al avanzar de Beta 12 a Beta 12.2. La corrección de notch y menú inferior solo afecta al diseño Android y no modifica la sincronización.
 - No se necesitan credenciales de Azure para utilizar la biblioteca local. La sincronización es opcional.
 - Android almacena y protege sus tokens en su espacio de aplicación; **no** los exportes en capturas ni los publiques en GitHub.
 - La app solo revisa la carpeta OneDrive seleccionada para su biblioteca; conserva una copia JSON independiente antes de conectar otro dispositivo.
