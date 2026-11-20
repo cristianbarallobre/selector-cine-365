@@ -185,9 +185,8 @@ final class SyncStore {
         tmdb=tmdb==null?new JSONObject():new JSONObject(tmdb.toString());
         JSONObject remoteTMDB=remote.optJSONObject("tmdb_overrides");
         if(remoteTMDB!=null)for(Iterator<String>it=remoteTMDB.keys();it.hasNext();){
-            String key=it.next(),localID=tmdb.optString(key,"");
-            int id=remoteTMDB.optInt(key);
-            if(localID.isEmpty()&&id>0)tmdb.put(key,id);
+            String key=it.next();int id=remoteTMDB.optInt(key);
+            if(!tmdb.has(key)&&id>=0)tmdb.put(key,id);
         }
         result.put("tmdb_overrides",tmdb);
         JSONArray left=result.getJSONArray("lists"),right=remote.getJSONArray("lists");
