@@ -2290,12 +2290,55 @@ $('backupFile').addEventListener('change',async e=>{
    virtualMode=false;sanitizeComparisonIDs();reconcileWatched();rawText=activeCollection().text||'';restartList();scheduleSave();showView('library');
  }catch(err){alert('No se pudo restaurar: '+err.message)}finally{e.target.value='';}
 });
+// La importación automática NO bloquea la interfaz. Solo una operación de
+// Nube iniciada por el usuario muestra la protección y desactiva sus controles.
+let cloudUserRequests=0,cloudDisabledControls=null,cloudSlowHint=null;
+const cloudOperationTitles={
+ '/api/onedrive/connect':'Preparando el inicio de sesión Microsoft…',
+ '/api/onedrive/folders':'Leyendo las carpetas de OneDrive…',
+ '/api/onedrive/create':'Creando la carpeta de OneDrive…',
+ '/api/onedrive/disconnect':'Desconectando la cuenta Microsoft…',
+ '/api/cloud/browse':'Abriendo el selector de carpetas…',
+ '/api/cloud/config':'Activando la carpeta compartida…',
+ '/api/cloud/backup':'Guardando una copia segura en OneDrive…',
+ '/api/cloud/preview':'Revisando las bibliotecas y sus cambios…',
+ '/api/cloud/sync':'Confirmando los cambios y creando copias…'
+};
+function cloudBusyStart(path){
+ const shield=$('cloudActivityShield');
+ if(!shield)return;
+ if(cloudUserRequests++===0){
+   cloudDisabledControls=[...$('view-settings').querySelectorAll('button,input,select')].map(el=>[el,el.disabled]);
+   for(const [el] of cloudDisabledControls)el.disabled=true;
+   shield.hidden=false;
+   $('view-settings').setAttribute('aria-busy','true');
+   cloudSlowHint=setTimeout(()=>{$('cloudActivityDetail').textContent='OneDrive está tardando en responder. La operación sigue en curso; evita repetirla.';},20000);
+ }
+ $('cloudActivityTitle').textContent=cloudOperationTitles[path]||'Trabajando con la nube…';
+ $('cloudActivityDetail').textContent='Espera a que termine. No pulses otros controles de Nube.';
+}
+function cloudBusyEnd(){
+ if(cloudUserRequests===0)return;
+ if(--cloudUserRequests>0)return;
+ clearTimeout(cloudSlowHint);cloudSlowHint=null;
+ for(const [el,wasDisabled] of cloudDisabledControls||[])if(el.isConnected)el.disabled=wasDisabled;
+ cloudDisabledControls=null;
+ const shield=$('cloudActivityShield');
+ if(shield)shield.hidden=true;
+ $('view-settings').removeAttribute('aria-busy');
+}
 // Copia adicional de las listas en una carpeta local sincronizada con la nube.
 async function cloudRequest(path,method='GET',payload){
- const opts={method,headers:{'X-Atlas-Token':token},cache:'no-store'};
- if(payload!==undefined){opts.headers['Content-Type']='application/json';opts.body=JSON.stringify(payload)}
- const r=await fetch(path,opts);const data=await r.json();
- if(!r.ok)throw new Error(data.error||'No se pudo completar la operación');return data;
+ const userStep=Object.hasOwn(cloudOperationTitles,path);
+ if(userStep)cloudBusyStart(path);
+ try{
+   const opts={method,headers:{'X-Atlas-Token':token},cache:'no-store'};
+   if(payload!==undefined){opts.headers['Content-Type']='application/json';opts.body=JSON.stringify(payload)}
+   const r=await fetch(path,opts);
+   const data=await r.json();
+   if(!r.ok)throw new Error(data.error||'No se pudo completar la operación');
+   return data;
+ }finally{if(userStep)cloudBusyEnd();}
 }
 
 let odAuthorizationUrl="";
