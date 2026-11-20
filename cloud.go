@@ -26,6 +26,8 @@ type cloudStatus struct {
 	LastError  string `json:"last_error,omitempty"`
 	SyncPaired bool `json:"sync_paired"`
 	NeedsReview bool `json:"needs_review"`
+ LastCheckMS int64 `json:"last_check_ms,omitempty"`
+ LastReceivedMS int64 `json:"last_received_ms,omitempty"`
 }
 type cloudBackups struct {
 	mu           sync.Mutex
