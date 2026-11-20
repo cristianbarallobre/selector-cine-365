@@ -1,0 +1,114 @@
+name: Publicar Selector Cine 365 Windows v9 beta 10
+on:
+  push:
+    branches: [v9-android-beta]
+    paths:
+      - 'sync_desktop.go'
+      - 'sync_desktop_test.go'
+      - 'sync_auto.go'
+      - 'sync_auto_test.go'
+      - 'sync_order_beta10_test.go'
+      - 'sync_support_beta10.go'
+      - 'sync_support_beta10_test.go'
+      - 'cloud.go'
+      - 'collections.go'
+      - 'main.go'
+      - 'plantilla.html'
+      - '.github/workflows/construir-windows-v9-beta4.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  beta-windows:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - name: Pruebas Go (incluida sincronización)
+        run: go test ./...
+      - name: Revisar JavaScript, casilla de películas, listas y manual de Windows
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re,subprocess,tempfile
+          html=Path('plantilla.html').read_text()
+          assert 'Conectar TMDB' in html
+          assert 'data-view="instructions"' in html
+          assert 'collectionPageNumbers' in html
+          assert 'film-check-action' in html and 'togg.append(tick,poster,main)' in html
+          assert 'cloudSyncNowFast' in html and 'cloudHistory' in html
+          assert 'cloudRecoveryRestore' in html and 'cloudLastCheck' in html
+          assert 'cineRevisionCache' in html and 'cineLoadRevisions' in html
+          assert '.cine-instructions-panel{width:100%;max-width:none;' in html
+          assert 'Date.now()-cloudAutoCheckedAt<20000' in html
+          assert "main.inert=true" not in html
+          assert "Pruebas_Selector_Cine_365" not in html
+          scripts=re.findall(r'<script(?P<attrs>[^>]*)>(?P<js>.*?)</script>',html,re.S|re.I)
+          for i,(attrs,js) in enumerate(scripts):
+              if 'src=' in attrs or 'application/json' in attrs:continue
+              path=Path(tempfile.gettempdir())/f'cine_windows_{i}.js'
+              path.write_text(js)
+              subprocess.run(['node','--check',str(path)],check=True)
+          print('Comprobaciones Windows OK')
+          PY
+      - name: Compilar Windows 64 bits
+        run: GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags='-H windowsgui -s -w' -o Selector_Cine_365_Windows_v9_BETA10.exe .
+      - name: Comprobar que el ejecutable no abre consola CMD
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          binary=Path("Selector_Cine_365_Windows_v9_BETA10.exe").read_bytes()
+          assert binary[:2]==b"MZ", "No es un ejecutable Windows"
+          pe=int.from_bytes(binary[0x3c:0x40], "little")
+          assert binary[pe:pe+4]==b"PE\x00\x00", "Cabecera PE incorrecta"
+          optional=pe+24
+          subsystem=int.from_bytes(binary[optional+68:optional+70], "little")
+          assert subsystem==2, f"Se esperaba Windows GUI (2), pero se generó subsistema {subsystem}"
+          print("OK: Windows GUI Subsystem = 2; no se abrirá CMD al arrancar")
+          PY
+      - name: Preparar ZIP de pruebas
+        run: |
+          cat > LEEME_BETA10.txt <<'EOF'
+          SELECTOR CINE 365 - WINDOWS v9 BETA 9 (INSTRUCCIONES, LISTAS Y TICK)
+          Antes de usar con datos reales, exporta una copia JSON y conserva la v8.2.
+          No ejecutes dos versiones de escritorio al mismo tiempo.
+          La copia local sigue funcionando sin nube ni clave TMDB.
+          PRIMERA CONEXION: selecciona la misma carpeta sincronizada,
+          pulsa Revisar sincronizacion en ambos dispositivos y confirma.
+          DESPUES: los cambios sin conflicto se reciben automaticamente
+          al abrir o volver a la app y durante su uso.
+          Cada escritorio escribe su snapshot independiente despues de confirmar.
+          Solo los conflictos necesitan revision manual. Mantener copias JSON.
+          Para compartir con Android, usar carpeta exclusiva de OneDrive
+          y conectar esa misma carpeta desde Selector Cine 365 Android.
+          Otras nubes solo si ambas apps admiten las carpetas.
+          Se conserva la correccion de arranque: ventana grafica sin CMD.
+          Novedades: proteger los desmarcados de copias antiguas, historial local,
+          ultimo momento de comprobacion, boton Sincronizar ahora y
+          restauracion de copias con proteccion del estado anterior.
+          Ajustado el ancho de Instrucciones. Solo el tick marca la pelicula.
+          Aplicacion beta no firmada ni verificada en dispositivos reales.
+          EOF
+          zip -q Selector_Cine_365_Windows_v9_BETA10.zip Selector_Cine_365_Windows_v9_BETA10.exe LEEME_BETA10.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Selector_Cine_365_Windows_v9_BETA10
+          path: Selector_Cine_365_Windows_v9_BETA10.zip
+          if-no-files-found: error
+      - name: Publicar version preliminar Windows
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v9.0.0-windows-beta.10 >/dev/null 2>&1; then
+            gh release upload v9.0.0-windows-beta.10 Selector_Cine_365_Windows_v9_BETA10.zip --clobber
+          else
+            gh release create v9.0.0-windows-beta.10 Selector_Cine_365_Windows_v9_BETA10.zip \
+              --target "$GITHUB_SHA" --prerelease \
+              --title "Selector Cine 365 - Windows v9 Beta 10" \
+              --notes "BETA 10 Windows: corrige resurrección de marcas desde copias antiguas tras emparejar y añade pruebas de causalidad, historial de cambios, última comprobación, Sincronizar ahora, recuperación de JSON local con rescate previo y ancho de Instrucciones corregido. Comprobación local cada 25 s durante uso. Windows GUI verificado sin CMD. Sincronización todavía experimental; conserva copia JSON y no ejecutes dos versiones a la vez."
+          fi

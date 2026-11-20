@@ -130,14 +130,22 @@ func (p *availabilityServer) getCached(k string, force bool) (providerResult, bo
 	if !ok {
 		return r, false
 	}
-	if r.MetadataVersion < 2 || r.State == "not-found" && r.MetadataVersion < 3 {
-		return providerResult{}, false
-	}
-	t, e := time.Parse(time.RFC3339, r.Date)
-	if e != nil || time.Since(t) > 7*24*time.Hour || (r.State == "not-found" && time.Since(t) > 24*time.Hour) {
-		return providerResult{}, false
-	}
-	return r, true
+	// Sin caducidad automática: solo se descarga una ficha nueva o se pulsa Actualizar.
+    if r.MetadataVersion < 3{return providerResult{},false}
+    return r,true
+}
+func (p *availabilityServer) cachedFailure(k,reason string) providerResult {
+    r:=newAvailabilityError(reason)
+    r.Date=time.Now().Format(time.RFC3339)
+    r.MetadataVersion=3
+    p.putCached(k,r)
+    return r
+}
+func (p *availabilityServer) cachedEntries() map[string]providerResult {
+    p.mu.Lock();defer p.mu.Unlock()
+    result:=make(map[string]providerResult,len(p.cache))
+    for k,v:=range p.cache{result[k]=v}
+    return result
 }
 func (p *availabilityServer) putCached(k string, r providerResult) {
 	p.mu.Lock()
@@ -415,7 +423,7 @@ func (p *availabilityServer) fetchFilm(ctx context.Context, title string, year i
 			}
 			params := url.Values{"language": {"es-ES"}, "query": {query}, "include_adult": {"false"}}
 			if err := requestTMDB(ctx, "/search/movie", params, apiKey, &search); err != nil {
-				return newAvailabilityError(err.Error())
+				return p.cachedFailure(cacheKey,err.Error())
 			}
 			choices := make([]struct {
 				ID       int    `json:"id"`
@@ -517,8 +525,8 @@ func (p *availabilityServer) fetchFilm(ctx context.Context, title string, year i
 			}
 		}
 	} else {
-		// Retry metadata on next visit instead of persisting an empty poster forever.
-		r.MetadataVersion = 0
+        // Conservar la ficha parcial y permitir actualización manual posterior.
+        r.Note = "Ficha parcial; pulsa Actualizar para reintentar los datos incompletos"
 	}
 	if !validPosterPath(r.PosterPath) {
 		r.PosterPath = ""
@@ -526,6 +534,7 @@ func (p *availabilityServer) fetchFilm(ctx context.Context, title string, year i
 	if e := requestTMDB(ctx, "/movie/"+strconv.Itoa(id)+"/watch/providers", url.Values{}, apiKey, &all); e != nil {
 		r.State = "error"
 		r.Note = e.Error()
+        p.putCached(cacheKey,r)
 		return r
 	}
 	es, ok := all.Results["ES"]
@@ -560,6 +569,9 @@ func (a *runningApp) servePlatformHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch r.URL.Path {
+    case "/api/platforms/cache":
+        if r.Method!="GET"{http.Error(w,"Método no permitido",405);return}
+        _=json.NewEncoder(w).Encode(map[string]any{"entries":a.platforms.cachedEntries()})
 	case "/api/platforms/status":
 		if r.Method != "GET" {
 			http.Error(w, "Método no permitido", 405)

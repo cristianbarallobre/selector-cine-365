@@ -1,87 +1,96 @@
-# Selector de Cine 365 🎬
+# Selector Cine 365 🎬
 
-Aplicación de escritorio para **Windows 10/11 y macOS (Apple Silicon e Intel)** que permite llevar un registro personal de películas, sortear el siguiente visionado y comprobar plataformas de streaming en España.
+Aplicación personal de cine para **Windows 10/11**, **macOS Apple Silicon e Intel** y **Android**, creada por **Cristian Barallobre Rúa**. Sirve para organizar listas, registrar películas vistas, decidir qué ver, consultar datos de TMDB y sincronizar bibliotecas entre dispositivos.
 
-**Última versión del proyecto:** `v8.2` · **Tecnologías:** Go, HTML/CSS/JavaScript, Microsoft WebView2 (Windows) y WKWebView (macOS).
+**Versión coordinada más reciente:** **v9 Beta 12 (20 de noviembre de 2026)**. Es una *beta*, no una edición estable o validada en todos los dispositivos. Las versiones anteriores quedan conservadas como histórico.
 
-**Creado por Cristian Barallobre Rúa.** © 2026. Todos los derechos reservados.
+## Descargar
 
-## Funciones principales
+**[Releases y descargas de Selector Cine 365](https://github.com/cristianbarallobre/selector-cine-365/releases)**
 
-- Crear e importar varias listas de películas y marcar títulos como vistos o pendientes.
-- Buscar, filtrar y navegar por páginas en cada colección.
-- Sortear películas pendientes, con filtros por servicios de streaming.
-- Mostrar carteles, notas y disponibilidad en España a través de TMDB y datos de plataformas procedentes de JustWatch.
-- Comparar listas mediante una colección virtual de películas coincidentes.
-- Reconocer títulos equivalentes utilizando IDs de TMDB y sincronizar las marcas de visto entre listas.
-- Consultar estadísticas de visionado, corregir identificaciones de TMDB y eliminar películas con confirmación.
-- Guardar los datos localmente en AppData y hacer una segunda copia en una carpeta sincronizada que configure el usuario.
+| Plataforma | Archivo de la Beta 12 | Requisitos |
+|---|---|---|
+| Windows | \`Selector_Cine_365_Windows_v9_BETA12.zip\` | Windows 10/11 de 64 bits y Microsoft WebView2 Runtime |
+| Mac Apple Silicon | \`Selector_Cine_365_Mac_Apple_Silicon_v9_BETA12.zip\` | macOS 12+; M1/M2/M3/M4 y posteriores |
+| Mac Intel | \`Selector_Cine_365_Mac_Intel_v9_BETA12.zip\` | macOS 12+; procesador Intel |
+| Android | \`Selector_Cine_365_Android_v9_BETA12.apk\` | Android 8.0+ (API 26); instalar únicamente la APK firmada publicada |
 
-## Descargar y usar
+**Importante:** si una plataforma aún no figura entre los archivos de la release, no descargues una APK sin firma ni sustituyas otra versión como si fuera equivalente. Consulta las notas de la publicación.
 
-Si solo quieres utilizar el programa, **no necesitas Go ni descargar el código**. Desde [Releases](../../releases/latest) descarga el ZIP correspondiente a **Windows**, **Mac Apple Silicon** o **Mac Intel**. En Windows ejecuta el `.exe`; en Mac, mueve la `.app` a Aplicaciones. [Instrucciones para macOS](MACOS.md).
+## Novedades v9 Beta 12
 
-En esta publicación, la lista inicial contiene las 365 películas **sin marcas de vista personales**. Si ya usabas la aplicación, tus propias marcas seguirán almacenadas en AppData.
+- **Buscar en la lista actual o en todas:** resultado global agrupado por identidad TMDB o título y año, sin repetir fichas de la misma película.
+- **Listas numeradas y navegables:** «Listas: 1, 2, 3» en cada ficha; pulsar el número abre la lista. Desde el botón de edición puedes añadir o retirar una película de otras listas.
+- **Marcar Vista/Pendiente:** solo el tick cambia el estado; los carteles y títulos no deben hacerlo. Si la misma película está identificada en varias listas, el estado se comparte.
+- **Carteles, año y valoración TMDB**, disponibilidad en España y enlaces a proveedores cuando haya datos. La nota mostrada es de **TMDB, no IMDb**.
+- **Windows y Mac:** misma interfaz web incrustada en aplicaciones nativas; Estadísticas con paginación fija en la parte inferior.
+- **Windows Beta 12:** corregidas las filas invisibles en «Mis listas» cuando Nube ocupa espacio; «Actualizar historial» comunica el resultado de la consulta y muestra discretamente el estado vacío.
+- **Android:** cabecera y navegación propias, desplazamiento en las secciones, biblioteca con carga progresiva y estadísticas sin paginación.
+- **Nube opcional:** almacenamiento local sin OneDrive y sin clave TMDB. Si conectas la nube, hay revisión inicial, sincronización periódica, revisiones causales, historial y recuperación de copias.
 
-Windows utiliza **Microsoft Edge WebView2 Runtime**; macOS utiliza **WKWebView**, incluido en el sistema. Si no está disponible, consulta la [página oficial de WebView2](https://developer.microsoft.com/microsoft-edge/webview2/).
+**La sincronización es experimental:** depende de OneDrive, no es instantánea y pide revisión manual ante modificaciones concurrentes no ordenables. No prometemos que siempre gane la hora del reloj: el historial causal y las revisiones determinan la precedencia.
 
-La consulta de carteles, notas, identificaciones y plataformas necesita una clave personal de TMDB; se introduce desde la aplicación. La gestión local de las listas puede utilizarse sin ella.
+## Actualizar sin perder datos
 
-## Código y compilación
+**Antes de instalar cualquier beta, exporta un JSON de la biblioteca y comprueba que puedes abrirlo.** Conserva una segunda copia fuera de la carpeta de sincronización.
 
-Se necesita **Go 1.23 o posterior** para compilar desde el código fuente.
+- **Windows:** cierra la versión anterior, sustituye el ejecutable y no abras dos versiones a la vez; el almacén local no cambia.
+- **Mac:** cierra la aplicación anterior y reemplaza la \`.app\` en Aplicaciones. Conserva los datos de \`~/Library/Application Support/AtlasDelCine/\`. La app Mac tiene firma *ad hoc* y **no está notarizada**, por lo que macOS puede solicitar autorización manual.
+- **Android Beta 11 → Beta 12:** ambas usan el identificador \`es.cine365.app\` y requieren el **mismo certificado privado de firma**. Con la APK publicada firmada correctamente, la Beta 12 reemplaza a Beta 11 y conserva sus datos.
+- **Android Beta 9 → Beta 12:** Beta 9 usaba \`es.cine365.app.v9beta9\` y una firma distinta. No existe actualización directa con conservación automática de datos. Exporta JSON desde Beta 9, verifica el archivo, desinstala la versión antigua solo después, instala Beta 12 e importa el JSON. Comprueba todo antes de conectar OneDrive.
 
-```bash
+**Nunca subas claves privadas Android (keystore/P12), contraseñas, tokens OAuth, claves TMDB ni datos personales al repositorio o a sus logs.** En versiones futuras de Android conserva el identificador y el certificado, sin sufijos de paquete por beta.
+
+## Desarrollo
+
+Fuentes compartidas para escritorio: **Go 1.23+** y \`plantilla.html\`; **Windows** utiliza WebView2 y **macOS** utiliza WKWebView. **Android** dispone de proyecto Gradle y Java propio, con la interfaz adaptada en \`android/app/src/main/assets/index.html\`.
+
+### Windows
+
+\`\`\`bash
 go test ./...
-GOOS=windows GOARCH=amd64 go build -o Selector_Cine_365.exe .
-```
+GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-H windowsgui -s -w" -o Selector_Cine_365_Windows.exe .
+\`\`\`
 
-En Windows puedes ejecutar `go build -o Selector_Cine_365.exe .` directamente. El recurso `rsrc_windows_amd64.syso` aporta el icono de Windows a la compilación AMD64.
+### macOS
 
-La ventana nativa de macOS está en `window_darwin.go` y `macos_view_darwin.m`, y el selector de carpeta en `cloud_picker_darwin.go`. La interfaz web está en `plantilla.html`, la lista inicial en `lista_inicial.txt`, el servidor local en `main.go`, las colecciones en `collections.go`, la integración con TMDB en `providers.go` e `identity.go`, y la ventana WebView2 en `window_windows.go`.
+Requiere un Mac con Xcode Command Line Tools, Go y las herramientas de firma. Para el empaquetado de Intel/ARM se utiliza \`scripts/build_macos_app.sh\` desde un runner macOS (consulta \`MACOS.md\`). Ambas variantes compilan **el mismo código v9 de Windows**, salvo la envoltura nativa.
 
-## Datos personales y copias de seguridad
+### Android
 
-Los datos del usuario se guardan por defecto en:
+\`\`\`bash
+cd android
+gradle testDebugUnitTest assembleRelease
+\`\`\`
 
-```text
-Windows: %APPDATA%\AtlasDelCine\
-macOS:   ~/Library/Application Support/AtlasDelCine/
-```
+La APK release de Gradle se genera sin firma si no existe configuración externa: **no es instalable ni apta para distribución**. Debe firmarse mediante un proceso seguro con una clave privada persistente y verificarse antes de publicar. No incluir esa clave en Git.
 
-Entre otros archivos se utilizan `colecciones.json`, `mis_365_peliculas.txt`, `identidades_cine.json` y `plataformas_ajustes.json`. **No subas estos archivos ni tus claves de API a GitHub.** El contenido de la carpeta AppData pertenece a cada instalación local.
+## Almacenamiento y nube
 
-Antes de actualizar desde una versión anterior a la v8.1 es recomendable exportar una copia de seguridad: la conciliación de identificaciones puede modificar las marcas de visto de varias listas.
+| Sistema | Carpeta privada habitual |
+|---|---|
+| Windows | \`%APPDATA%\\AtlasDelCine\\\` |
+| macOS | \`~/Library/Application Support/AtlasDelCine/\` |
+| Android | Memoria interna privada de la aplicación |
 
-## Autoría del proyecto
+Los nombres históricos \`AtlasDelCine\` y \`atlas\` permanecen **solo como identificadores de compatibilidad**, aunque la marca visible sea Selector Cine 365. No los renombres ni muevas manualmente sin un procedimiento de migración comprobado.
 
-**Autor:** Cristian Barallobre Rúa. La app muestra la firma en la cabecera. El repositorio incorpora también metadatos de autoría en `plantilla.html`, `autoria.go` y en las respuestas HTTP del servidor local. Estos datos no son una medida anticopia ni equivalen a una prueba jurídica concluyente; GitHub conserva el historial de cambios.
+En Windows y Mac puedes seleccionar una carpeta local sincronizada por el proveedor admitido; Android dispone de conexión a **OneDrive personal** con Microsoft OAuth2 + PKCE mediante el navegador. La primera sincronización debe revisarse y confirmarse en cada dispositivo. Al usar una carpeta con datos reales, no publiques una biblioteca vacía sobre otra.
 
-Para más información, consulta [AUTORIA.md](AUTORIA.md).
+## Documentación
 
-## Atribución
+- [Manual completo v9 Beta 12](docs/MANUAL_COMPLETO_SELECTOR_CINE_365.md) (también PDF).
+- [Guía Mac: Intel y Apple Silicon](MACOS.md).
+- [Guía Android: instalación, firma y OneDrive](android/LEEME_ANDROID_v9_BETA.md).
+- [Azure / Entra ID / OneDrive](docs/GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.md).
+- [Plan técnico v9 y límites de sincronización](docs/PLAN_V9_MULTIPLATAFORMA_Y_SINCRONIZACION.md).
+- [Cambios recientes](CHANGELOG.md) y [archivo histórico hasta v8.1.1](docs/HISTORIAL_VERSIONES.md).
+- [Autoría](AUTORIA.md).
 
-Este proyecto utiliza la API de [The Movie Database (TMDB)](https://www.themoviedb.org/), pero no está respaldado ni certificado por TMDB.
+Los PDF y Word de \`v8.1.1\` documentan **esa versión histórica**, no constituyen el manual de v9.
 
-**This product uses the TMDB API but is not endorsed or certified by TMDB.**
+## Derechos y atribuciones
 
-La información de disponibilidad de plataformas procede de JustWatch a través de TMDB. La disponibilidad varía según el país y la fecha.
+© 2026 Cristian Barallobre Rúa. Todos los derechos reservados. Este repositorio no incorpora una licencia pública de reutilización de código; no presupongas permisos que no se hayan otorgado.
 
-## Licencia
-
-Por el momento el proyecto **no incluye una licencia de reutilización de código**. Si el repositorio se hace público y se desea permitir modificaciones o redistribución, debe añadirse una licencia adecuada y revisar las obligaciones relativas a imágenes, datos y marcas de terceros.
-
-## Historial y documentación oficial
-
-El historial completo, actualizado hasta la **v8.1.1** y con el crédito de **Cristian Barallobre Rúa**, está disponible en los siguientes formatos:
-
-- [Leer el historial en GitHub](docs/HISTORIAL_VERSIONES.md).
-- [Descargar historial en PDF](docs/Selector_de_Cine_365_Historial_de_versiones_v8.1.1.pdf).
-- [Descargar historial editable en Word](docs/Selector_de_Cine_365_Historial_de_versiones_v8.1.1.docx).
-
-Los documentos Word y PDF publicados en `docs/` se generan automáticamente a partir del historial en Markdown mediante GitHub Actions. Consulta también [CHANGELOG.md](CHANGELOG.md) para ver el resumen de los cambios de cada versión.
-
-**Descargas (Windows, Mac Apple Silicon y Mac Intel):** [Selector de Cine 365 v8.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.2).
-## macOS
-
-Consulta [instrucciones de instalación, almacenamiento y seguridad para Mac](MACOS.md). Las apps de Mac tienen firma ad hoc, pero no están notarizadas por Apple. Se requiere una prueba práctica de interfaz en un Mac real.
+**This product uses the TMDB API but is not endorsed or certified by TMDB.** Los datos de disponibilidad pueden proceder de TMDB / JustWatch y cambiar sin aviso. El proyecto no guarda las listas en TMDB.

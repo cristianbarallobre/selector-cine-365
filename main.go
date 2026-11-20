@@ -27,7 +27,7 @@ func countFilms(data string) int {
 	n := 0
 	for _, line := range strings.Split(data, "\n") {
 		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(strings.ToUpper(line), "ATLAS DEL CINE") ||
+		if line == "" || (strings.HasPrefix(strings.ToUpper(line), "ATLAS DEL CINE") || strings.HasPrefix(strings.ToUpper(line), "SELECTOR CINE 365")) ||
 			strings.HasPrefix(line, "#") || line == "---" {
 			continue
 		}
@@ -74,6 +74,11 @@ type runningApp struct {
 	library       libraryState
 	platforms     *availabilityServer
 	cloud         *cloudBackups
+	syncStore     *desktopSyncStore
+	syncPreviewToken string
+    syncLastCheck atomic.Int64
+    syncLastReceived atomic.Int64
+    syncPendingConflict atomic.Bool
 	html          []byte
 	token         string
 	lastActivity  atomic.Int64
@@ -122,7 +127,9 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write(data)
 	case "/api/library":
 		a.serveLibraryHTTP(w, r)
-	case "/api/cloud/status", "/api/cloud/config", "/api/cloud/backup", "/api/cloud/browse":
+	case "/api/sync/history", "/api/sync/revisions", "/api/sync/recovery/list", "/api/sync/recovery/restore":
+		a.serveSyncSupport(w,r)
+	case "/api/cloud/status", "/api/cloud/config", "/api/cloud/backup", "/api/cloud/browse", "/api/cloud/preview", "/api/cloud/sync", "/api/cloud/auto":
 		a.serveCloudHTTP(w, r)
 	case "/api/poster":
 		a.servePosterHTTP(w, r)
@@ -209,7 +216,12 @@ func serve() error {
 	}
 	libPath := filepath.Join(filepath.Dir(savePath), "colecciones.json")
 	lib := loadLibrary(libPath, state)
-	app := &runningApp{html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath)), cloud: newCloudBackups(filepath.Dir(savePath)), token: token, stopCh: make(chan struct{})}
+	syncStore, syncErr := newDesktopSyncStore(filepath.Dir(savePath))
+ if syncErr!=nil {
+  // Un fallo en el estado de sincronización no debe impedir usar datos locales.
+  logDiagnostic("Sincronización no disponible: "+syncErr.Error())
+ }
+ app := &runningApp{html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath)), cloud: newCloudBackups(filepath.Dir(savePath)), syncStore:syncStore, token: token, stopCh: make(chan struct{})}
 	app.touch()
 	listener, err := net.Listen("tcp4", "127.0.0.1:0")
 	if err != nil {
@@ -250,6 +262,6 @@ func main() {
 		return
 	}
 	if err := serve(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		notifyError("Selector de Cine 365", err.Error())
+		notifyError("Selector Cine 365", err.Error())
 	}
 }

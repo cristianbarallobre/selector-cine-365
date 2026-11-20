@@ -1,4 +1,7 @@
-<!-- Documento de referencia de la versión 8.1.1. Fuente editable: historial DOCX en esta misma carpeta. -->
+<!-- Documento histórico v8.1.1: no modificar la narración de esa edición como si describiera v9. -->
+
+> **ARCHIVO HISTÓRICO — documentación cerrada en v8.1.1 (19 de noviembre de 2026).** No representa las funciones actuales de v9 Beta 12. Para Windows, Android y Mac consulta el [manual v9](MANUAL_COMPLETO_SELECTOR_CINE_365.md), el [historial reciente](../CHANGELOG.md) y la [página principal](../README.md).
+
 
 <img src="../icon.png" style="width:0.80709in;height:0.80709in" />
 

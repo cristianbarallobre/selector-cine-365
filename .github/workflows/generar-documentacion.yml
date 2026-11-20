@@ -2,6 +2,7 @@ name: Generar historial oficial Word y PDF
 
 on:
   push:
+    branches: [main]
     paths:
       - "docs/HISTORIAL_VERSIONES.md"
       - ".github/workflows/generar-documentacion.yml"
@@ -24,6 +25,7 @@ jobs:
 
       - name: Generar Word y PDF
         run: |
+          # Archivo HISTORICO v8.1.1: no mezclar con manual ni changelog v9.
           # Dos etapas para conservar las tablas HTML de las fichas de versiones.
           # La conversión directa de GFM a DOCX descarta esas tablas.
           pandoc docs/HISTORIAL_VERSIONES.md \

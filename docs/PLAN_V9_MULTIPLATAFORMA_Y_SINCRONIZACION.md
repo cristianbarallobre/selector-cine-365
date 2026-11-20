@@ -1,9 +1,17 @@
 # Selector Cine 365 — Plan funcional y técnico v9.0
 
-**Estado:** propuesta de diseño aprobada como objetivo; **NO implementada ni publicada como versión estable**.  
+**Estado (20-11-2026):** **v9 Beta 12 implementada de forma experimental en Windows y Android; el port Mac comparte código de Windows y se está empaquetando para Intel y Apple Silicon.** No está aprobada todavía como versión estable: faltan pruebas prolongadas de sincronización en dispositivos reales.  
 **Autor:** Cristian Barallobre Rúa.  
 **Plataformas previstas:** Windows, Android y macOS (Apple Silicon / Intel).  
-**Base revisada:** código de escritorio v8.2 en este repositorio y proyecto Android v8.3 beta suministrado para Android Studio.
+**Base actual:** código v9 Beta 12 de escritorio Go/HTML/WKWebView-WebView2 y código Android Java/Gradle dentro de este mismo repositorio. El plan recoge objetivos originales y puede incluir funciones todavía pendientes.
+
+## Seguimiento del estado v9 Beta 12
+
+**Ya implementado en la beta (sujeto a pruebas reales):** modo local sin nube; Windows y Android; base compartida para Windows y Mac; búsqueda global/listas numeradas; estado Vista/Pendiente desde el tick; PKCE/OneDrive personal en Android; revisiones causales, detección periódica, historial y copias de recuperación; interfaz Android adaptada.
+
+**Pendiente o con límites importantes:** verificación completa en Mac Intel y Apple Silicon; notarización y firma Apple Developer ID; automatización segura de firma Android para futuras publicaciones; comprobación física prolongada de propagación y conflictos de OneDrive; manejo de borrados/renombrados simultáneos; revisión exhaustiva de accesibilidad móvil.
+
+**Compatibilidad:** Android Beta 9 y Beta 12 no comparten identificador ni certificado, por lo que requieren migración única mediante JSON. Android Beta 11 y 12 sí comparten identificador permanente y deben firmarse con el mismo certificado. La versión estable v9.0 todavía **no** se ha publicado.
 
 ## 1. Objetivos y principios innegociables
 

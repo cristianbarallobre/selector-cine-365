@@ -1,0 +1,98 @@
+name: Compilar Selector Cine 365 v9 Android beta
+on:
+  push:
+    branches: [v9-android-beta]
+    paths:
+      - 'android/**'
+      - '.github/workflows/construir-android-v9.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      # ID de cliente Microsoft Entra: dato publico, nunca un secreto.
+      MICROSOFT_CLIENT_ID: '696458fe-0672-47e5-9fdd-aa0332e9884b'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: Instalar SDK 35
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -path '*/bin/sdkmanager' -type f | sort -V | tail -1)"
+          if [ -z "$SDKMANAGER" ]; then
+            echo "::error::Android command-line tools no están instaladas"
+            exit 1
+          fi
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Crear APK Android de prueba
+        working-directory: android
+        run: gradle --no-daemon --stacktrace testDebugUnitTest assembleDebug
+      - name: Comprobar nuevo flujo Microsoft PKCE y retorno de Android
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          backend=Path('android/app/src/main/java/es/cine365/app/OneDriveCloud.java').read_text()
+          manifest=Path('android/app/src/main/AndroidManifest.xml').read_text()
+          frontend=Path('android/app/src/main/assets/index.html').read_text()
+          expected='msal696458fe-0672-47e5-9fdd-aa0332e9884b'
+          assert 'code_challenge_method=S256' in backend
+          assert 'grant_type","authorization_code"' in backend
+          assert '"'+expected+'"' in manifest
+          assert 'api/onedrive/poll' not in frontend
+          assert 'odCopyCode' not in frontend
+          assert '/api/cloud/auto' in frontend
+          assert 'cloudAutoReceive' in frontend
+          assert 'main.inert=true' not in frontend
+          assert 'film-check-action' in frontend and 'togg.append(tick,poster,main)' in frontend
+          assert 'cloudActivityShield' in frontend
+          assert 'MANUAL_COMPLETO_SELECTOR_CINE_365.pdf' in frontend
+          assert 'mobileSyncNowFast' in frontend and 'mobileHistory' in frontend
+          assert 'cineRevisionCache' in frontend and 'cineLoadRevisions' in frontend
+          assert 'mobileRecoveryRestore' in frontend and 'mobileLastCheck' in frontend
+          assert 'Date.now()-cloudAutoCheckedAt<25000' in frontend
+          graph=Path('android/app/src/main/java/es/cine365/app/OneDriveCloud.java').read_text()
+          assert 'folderChanged' in graph and '/delta' in graph
+          store=Path('android/app/src/main/java/es/cine365/app/SyncStore.java').read_text()
+          assert 'strict' in store and 'appendHistory' in store
+          assert 'Pruebas_Selector_Cine_365' not in frontend
+          cloud=Path('android/app/src/main/java/es/cine365/app/CloudBackup.java').read_text()
+          assert 'autoSynchronize' in cloud and 'plan.conflicts.length()>0' in cloud
+          print('PKCE, retorno de navegador y eliminación de código manual: OK')
+          PY
+      - name: Verificar identificador Microsoft integrado en la APK
+        run: |
+          CONFIG="android/app/build/generated/source/buildConfig/debug/es/cine365/app/BuildConfig.java"
+          test -s "$CONFIG"
+          grep -F 'public static final String MICROSOFT_CLIENT_ID = "696458fe-0672-47e5-9fdd-aa0332e9884b";' "$CONFIG"
+          echo 'Microsoft Entra client ID integrado y validado.'
+      - name: Guardar APK como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: Selector_Cine_365_Android_v9_beta10_APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+      - name: Publicar pre-release de Android
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk Selector_Cine_365_Android_v9_BETA10.apk
+          if gh release view v9.0.0-android-beta.10 >/dev/null 2>&1; then
+            gh release upload v9.0.0-android-beta.10 Selector_Cine_365_Android_v9_BETA10.apk --clobber
+          else
+            gh release create v9.0.0-android-beta.10 Selector_Cine_365_Android_v9_BETA10.apk \
+              --target "$GITHUB_SHA" --prerelease \
+              --title 'Selector Cine 365 - Android v9 beta 10' \
+              --notes 'BETA 10 Android: corrige regreso de marcas antiguas después de desmarcar una película, agrega historial local, estado de última comprobación, Sincronizar ahora y recuperación segura de copias. Microsoft Graph Delta Query reduce descargas y busca cambios cada ~30 s mientras está activa; la latencia depende de OneDrive. Mantiene PKCE, caché TMDB y modo local. Beta independiente: exporta/importa JSON, reconecta OneDrive y selecciona esta Beta 10 en el retorno del navegador. No se ha probado en Xiaomi físico; conservar Beta 9 y copias JSON.'
+          fi
