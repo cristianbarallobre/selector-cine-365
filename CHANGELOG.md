@@ -4,6 +4,13 @@
 
 Para un historial exhaustivo preparado para Word y PDF consulta [Historial completo v1–v9 Beta 12](docs/HISTORIAL_V9_BETA12.md). El registro detallado de v8.1.1 permanece como documento histórico independiente.
 
+## v9 Beta 12.1 — Android (20 de noviembre de 2026)
+
+- Corrección del título parcialmente cubierto por la cámara frontal/notch y barras de sistema en Android 15 y posteriores.
+- La zona segura se calcula mediante `WindowInsets` del sistema (`systemBars` y `displayCutout`) y se aplica al contenedor nativo de la WebView, sin píxeles fijos; Android antiguos mantienen los ajustes de ventana previstos.
+- Misma identidad `es.cine365.app` y certificado de firma de Beta 12, `versionCode=9013`: actualización sobre la instalación existente sin borrar datos.
+- Windows y Mac no cambian; se reutilizan sus paquetes de Beta 12.
+
 ## v9 Beta 12 — Windows, macOS, Android (beta)
 
 - Búsqueda global entre listas, sin duplicados por identidad TMDB o título/año; opción «Lista actual».
