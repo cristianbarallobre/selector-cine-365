@@ -9,6 +9,7 @@ on:
       - 'sync_auto_test.go'
       - 'sync_order_beta10_test.go'
       - 'sync_support_beta10.go'
+      - 'sync_support_beta10_test.go'
       - 'cloud.go'
       - 'collections.go'
       - 'main.go'
@@ -42,6 +43,7 @@ jobs:
           assert 'film-check-action' in html and 'togg.append(tick,poster,main)' in html
           assert 'cloudSyncNowFast' in html and 'cloudHistory' in html
           assert 'cloudRecoveryRestore' in html and 'cloudLastCheck' in html
+          assert 'cineRevisionCache' in html and 'cineLoadRevisions' in html
           assert '.cine-instructions-panel{width:100%;max-width:none;' in html
           assert 'Date.now()-cloudAutoCheckedAt<20000' in html
           assert "main.inert=true" not in html
@@ -85,7 +87,11 @@ jobs:
           Para compartir con Android, usar carpeta exclusiva de OneDrive
           y conectar esa misma carpeta desde Selector Cine 365 Android.
           Otras nubes solo si ambas apps admiten las carpetas.
-          Se conserva la correccion de arranque: ventana grafica sin CMD.\n          Novedades: Conectar TMDB, Instrucciones, paginacion numerica de listas.\n          Solo el tick cambia el estado de vista; el resto de la ficha no.
+          Se conserva la correccion de arranque: ventana grafica sin CMD.
+          Novedades: proteger los desmarcados de copias antiguas, historial local,
+          ultimo momento de comprobacion, boton Sincronizar ahora y
+          restauracion de copias con proteccion del estado anterior.
+          Ajustado el ancho de Instrucciones. Solo el tick marca la pelicula.
           Aplicacion beta no firmada ni verificada en dispositivos reales.
           EOF
           zip -q Selector_Cine_365_Windows_v9_BETA10.zip Selector_Cine_365_Windows_v9_BETA10.exe LEEME_BETA10.txt
