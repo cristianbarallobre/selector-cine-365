@@ -19,10 +19,6 @@ func (a *runningApp) cloudAutoSync() (map[string]any,error) {
   return map[string]any{"changed":false,"skipped":"not_paired","needs_review":folder!=""},nil
  }
  a.mu.Lock()
- if a.syncPreviewToken!="" {
-  a.mu.Unlock()
-  return map[string]any{"changed":false,"skipped":"manual_review_open"},nil
- }
  plan,err:=a.cloudPlanFor(a.library,folder)
  if err!=nil{a.mu.Unlock();return nil,err}
  if len(plan.Conflicts)!=0{
