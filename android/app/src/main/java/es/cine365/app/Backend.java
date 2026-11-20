@@ -69,6 +69,14 @@ final class Backend {
                 JSONObject req=new JSONObject(body);
                 return ok(tmdb.identify(req.optString("title"),req.optInt("year"),req.optBoolean("force")).toString());
             }
+            case "/api/platforms/overrides":return ok(new JSONObject()
+                .put("overrides",tmdb.manualOverrides()).toString());
+            case "/api/platforms/overrides/import":{
+                JSONObject req=new JSONObject(body),mapping=req.optJSONObject("overrides");
+                if(mapping==null)return fail(400,"Identificaciones no válidas");
+                tmdb.importManualOverrides(mapping);
+                return ok(new JSONObject().put("saved",true).toString());
+            }
             case "/api/platforms/status":return ok(new JSONObject().put("configured",tmdb.hasKey()).toString());
             case "/api/platforms/cache":return ok(tmdb.cachedEntries().toString());
             case "/api/platforms/config":{
