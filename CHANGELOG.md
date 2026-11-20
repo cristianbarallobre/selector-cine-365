@@ -1,8 +1,16 @@
 # Historial de cambios — Selector Cine 365
 
-**Versión coordinada v9 Beta 12 (20 de noviembre de 2026).** Los cambios recientes se basan en el código fuente v9, no en la rama antigua v8.2. Los paquetes Mac usan el mismo frontend y motor Go que Windows; no se afirma que se hayan validado manualmente en hardware real.
+**Versión más reciente v9 Beta 12.2 (Android, 20 de noviembre de 2026); Windows y macOS conservan sus ejecutables v9 Beta 12.** Los cambios recientes se basan en el código fuente v9, no en la rama antigua v8.2. Los paquetes Mac usan el mismo frontend y motor Go que Windows; no se afirma que se hayan validado manualmente en hardware real.
 
 Para un historial exhaustivo preparado para Word y PDF consulta [Historial completo v1–v9 Beta 12](docs/HISTORIAL_V9_BETA12.md). El registro detallado de v8.1.1 permanece como documento histórico independiente.
+
+## v9 Beta 12.2 — Android (20 de noviembre de 2026)
+
+- Corregida la franja vacía debajo de las seis pestañas móviles, observada en Redmi tras Beta 12.1.
+- Se elimina la segunda reserva CSS `env(safe-area-inset-bottom)`, porque el contenedor nativo de Android ya aplica `WindowInsets` de barras y notch.
+- El menú vuelve al límite seguro inferior y se conserva la protección del título respecto a la cámara frontal.
+- Mismo paquete `es.cine365.app` y certificado que Beta 11, 12 y 12.1; código de versión **9014**, instalable directamente encima sin desinstalar.
+- Pruebas JavaScript y Gradle completadas, firma Android v2/v3 verificada. Pendiente confirmar visualmente en el Redmi. Windows/Mac sin cambios.
 
 ## v9 Beta 12.1 — Android (20 de noviembre de 2026)
 
