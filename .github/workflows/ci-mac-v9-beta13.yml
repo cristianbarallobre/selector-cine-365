@@ -2,7 +2,7 @@ name: CI v9 Beta 13 Mac Intel y Apple Silicon
 on:
   push:
     branches: ['fix/v9-beta13-sync-lists-tmdb-persistence']
-    paths: ['.github/workflows/ci-mac-v9-beta13.yml']
+    paths: ['.github/workflows/ci-mac-v9-beta13.yml', 'plantilla.html', 'providers.go', 'sync_desktop.go']
   workflow_dispatch:
 permissions:
   contents: read
