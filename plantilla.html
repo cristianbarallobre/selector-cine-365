@@ -532,7 +532,7 @@ let rawText=$('initialState').value.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n')
 let parsed=null,filter='all',search='',chosen=null,lastChoice=null,saveTimer=null,saveQueue=Promise.resolve(),saveEpoch=0;
 let filmPage=0,collectionPage=0,statPages=new Map(),searchScope='current',membershipCache=null,membershipFilm=null;
 let platformConfigured=false, platformData=new Map(),platformRun=0,platformActive=false,platformFinished=0,platformTotal=0;
-let libraryState={version:1,active_id:'atlas',lists:[{id:'atlas',name:'Atlas del cine · 365',text:rawText}]};
+let libraryState={version:1,active_id:'atlas',lists:[{id:'atlas',name:'365 películas',text:rawText}]};
 let editingListID=null,activeView='library',selectedSortPlatform='all';
 const identityMap=new Map(); // clave título-año -> ID TMDB guardado
 let identityScanRunning=false,identityScanAgain=false,identityScanProgress=0,identityScanTotal=0,identityRefreshTimer=null;
@@ -1114,10 +1114,12 @@ async function initLibrary(){
  try{const response=await fetch('/api/library',{headers:{'X-Atlas-Token':token},cache:'no-store'});
    if(response.ok){const state=await response.json();if(validLibrary(state))libraryState=state;}
  }catch(e){}
- sanitizeComparisonIDs();const reconciled=reconcileWatched();rawText=activeCollection().text||'';renderCollectionControls();update();renderStats();if(reconciled)scheduleSave();
+ sanitizeComparisonIDs();let renamed=false;for(const l of libraryState.lists){if(l.id==='atlas'&&l.name==='Atlas del cine · 365'){l.name='365 películas';renamed=true;}}const reconciled=reconcileWatched();rawText=activeCollection().text||'';renderCollectionControls();update();renderStats();if(reconciled||renamed)scheduleSave();
 }
 function validLibrary(s){return s&&s.version===1&&Array.isArray(s.lists)&&s.lists.length>0&&s.lists.length<=40&&typeof s.active_id==='string'&&s.lists.some(l=>l.id===s.active_id)&&s.lists.every(l=>typeof l.text==='string'&&typeof l.name==='string'&&typeof l.id==='string');}
 function restartList(){
+ searchScope='current';$('listPlatformButton').disabled=false;
+ document.querySelectorAll('[data-search-scope]').forEach(b=>{const active=b.dataset.searchScope==='current';b.classList.toggle('active',active);b.setAttribute('aria-pressed',active?'true':'false');});
  filmPage=0;collectionPage=0;statPages.clear();platformRun++;platformData.clear();platformFinished=0;platformTotal=0;platformActive=false;lastChoice=null;resetChoice();filter='all';search='';$('search').value='';
  selectedSortPlatform='all';$('platformSelect').value='all';selectedListPlatforms.clear();closeListPlatformMenu();
  document.querySelectorAll('.filter').forEach(b=>b.classList.toggle('selected',b.dataset.filter==='all'));
