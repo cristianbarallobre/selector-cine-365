@@ -15,7 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
-      MICROSOFT_CLIENT_ID: ${{ vars.MICROSOFT_CLIENT_ID }}
+      # ID de cliente Microsoft Entra: dato publico, nunca un secreto.
+      MICROSOFT_CLIENT_ID: '696458fe-0672-47e5-9fdd-aa0332e9884b'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -38,22 +39,28 @@ jobs:
       - name: Crear APK Android de prueba
         working-directory: android
         run: gradle --no-daemon --stacktrace assembleDebug
+      - name: Verificar identificador Microsoft integrado en la APK
+        run: |
+          CONFIG="android/app/build/generated/source/buildConfig/debug/es/cine365/app/BuildConfig.java"
+          test -s "$CONFIG"
+          grep -F 'public static final String MICROSOFT_CLIENT_ID = "696458fe-0672-47e5-9fdd-aa0332e9884b";' "$CONFIG"
+          echo 'Microsoft Entra client ID integrado y validado.'
       - name: Guardar APK como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: Selector_Cine_365_Android_v9_beta5_APK
+          name: Selector_Cine_365_Android_v9_beta6_APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
       - name: Publicar pre-release de Android
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk Selector_Cine_365_Android_v9_BETA5.apk
-          if gh release view v9.0.0-android-beta.5 >/dev/null 2>&1; then
-            gh release upload v9.0.0-android-beta.5 Selector_Cine_365_Android_v9_BETA5.apk --clobber
+          cp android/app/build/outputs/apk/debug/app-debug.apk Selector_Cine_365_Android_v9_BETA6.apk
+          if gh release view v9.0.0-android-beta.6 >/dev/null 2>&1; then
+            gh release upload v9.0.0-android-beta.6 Selector_Cine_365_Android_v9_BETA6.apk --clobber
           else
-            gh release create v9.0.0-android-beta.5 Selector_Cine_365_Android_v9_BETA5.apk \
+            gh release create v9.0.0-android-beta.6 Selector_Cine_365_Android_v9_BETA6.apk \
               --target "$GITHUB_SHA" --prerelease \
-              --title 'Selector Cine 365 - Android v9 beta 5' \
-              --notes 'BETA 4: estadísticas sin flechas, caché TMDB persistente y conector OneDrive Graph preparado (requiere registro Microsoft del editor), carpeta local opcional y caché TMDB. Sincronización bidireccional manual con Windows v9 beta 5, vista previa y copias independientes. No desinstalar la beta anterior. Validar antes de considerarla estable.'
+              --title 'Selector Cine 365 - Android v9 beta 6' \
+              --notes 'BETA 6 Android: identificador de Microsoft Entra incorporado, botón OneDrive activado, acceso mediante código temporal y elección de carpeta de pruebas. Requiere flujos de cliente público y permisos delegados Files.ReadWrite y User.Read. Sincronización entrante todavía manual y experimental con Windows Beta 5.1. No desinstalar la beta anterior: importa copia JSON. Validar acceso real antes de considerarla estable.'
           fi
