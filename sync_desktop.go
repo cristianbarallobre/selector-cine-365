@@ -191,6 +191,11 @@ func (s *desktopSyncStore) accept(p syncPlan,decisions map[string]bool,folder st
  return s.saveLocked()
 }
 func syncMerge(local libraryState,revisions map[string]syncRevision,known map[string]int64,peer syncSnapshot) (libraryState,map[string]syncRevision,map[string]int64,[]syncConflict,error) {
+ return syncMergeVersioned(local,revisions,known,peer,false)
+}
+// With an already paired device, ONLY explicit causal revisions may change a mark.
+// Raw legacy/snapshot ✓ flags are not operations and must never resurrect old marks.
+func syncMergeVersioned(local libraryState,revisions map[string]syncRevision,known map[string]int64,peer syncSnapshot,strict bool) (libraryState,map[string]syncRevision,map[string]int64,[]syncConflict,error) {
  if peer.Protocol!=1&&peer.Protocol!=syncProtocol{return local,nil,nil,nil,errors.New("versión de sincronización desconocida")}
  if err:=validateLibrary(peer.Library);err!=nil{return local,nil,nil,nil,fmt.Errorf("biblioteca remota no válida: %w",err)}
  // Copia profunda: un error de la fuente no modifica las listas en memoria.
@@ -238,7 +243,13 @@ func syncMerge(local libraryState,revisions map[string]syncRevision,known map[st
   conflicts=append(conflicts,syncConflict{Key:key,Local:ours.Checked,Remote:theirs.Checked,LocalDevice:ours.Device,RemoteDevice:theirs.Device})
  }
  allSeen:=syncStatuses(result)
- for key,seen:=range remoteMarks{if seen{allSeen[key]=true}}
+ if strict {
+  // Respect the user's current local status for every film; no OR from an
+  // unversioned peer library, including films added in old snapshots.
+  allSeen=syncStatuses(local)
+ } else {
+  for key,seen:=range remoteMarks{if seen{allSeen[key]=true}}
+ }
  for i:=range result.Lists{
   lines:=strings.Split(result.Lists[i].Text,"\n")
   for j,line:=range lines{
@@ -277,6 +288,7 @@ func (a *runningApp) cloudPlanFor(local libraryState,folder string) (syncPlan,er
  if folder==""{return syncPlan{},errors.New("selecciona una carpeta compartida")}
  if err:=validateLibrary(local);err!=nil{return syncPlan{},err}
  id,revisions,known:=a.syncStore.parts()
+ strict:=a.syncStore.isPaired(folder)
  p:=syncPlan{Library:local,Revisions:revisions,Known:known,Conflicts:[]syncConflict{}}
  hash:=sha256.New()
  localBytes,_:=json.Marshal(local)
@@ -294,7 +306,7 @@ func (a *runningApp) cloudPlanFor(local libraryState,folder string) (syncPlan,er
    if err:=json.Unmarshal(b,&peer);err!=nil{return fmt.Errorf("archivo de dispositivo corrupto (%s): %w",name,err)}
    if peer.DeviceID==id{return nil}
   }
-  merged,r,k,issues,err:=syncMerge(p.Library,p.Revisions,p.Known,peer)
+  merged,r,k,issues,err:=syncMergeVersioned(p.Library,p.Revisions,p.Known,peer,strict)
   if err!=nil{return err}
   p.Library=merged;p.Revisions=r;p.Known=k;p.Sources++
   existing:=map[string]bool{}
@@ -303,9 +315,11 @@ func (a *runningApp) cloudPlanFor(local libraryState,folder string) (syncPlan,er
   return nil
  }
  legacy:=filepath.Join(root,"actual","colecciones.json")
- if b,e:=readSyncFile(legacy);e==nil{
-  if err:=process("actual/colecciones.json",b,true);err!=nil{return p,err}
- }else if !os.IsNotExist(e){return p,e}
+ if !strict {
+  if b,e:=readSyncFile(legacy);e==nil{
+   if err:=process("actual/colecciones.json",b,true);err!=nil{return p,err}
+  }else if !os.IsNotExist(e){return p,e}
+ }
  peersDir:=filepath.Join(root,"sincronizacion","dispositivos")
  entries,err:=os.ReadDir(peersDir)
  if err!=nil&&!os.IsNotExist(err){return p,err}
