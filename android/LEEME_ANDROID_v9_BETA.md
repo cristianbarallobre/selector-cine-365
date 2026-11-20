@@ -1,6 +1,6 @@
-# Selector Cine 365 · Android v9 Beta 7
+# Selector Cine 365 · Android v9 Beta 8
 
-**Beta experimental para OneDrive PERSONAL.** Se ha sustituido el inicio de sesión con código temporal por el inicio interactivo desde navegador Microsoft mediante **OAuth 2.0 Authorization Code con PKCE**. La Beta 6 anterior no debe usarse para probar el login: su método de código fallaba en las pruebas reales.
+**Beta experimental para OneDrive PERSONAL.** Se ha sustituido el inicio de sesión con código temporal por el inicio interactivo desde navegador Microsoft mediante **OAuth 2.0 Authorization Code con PKCE**. La Beta 7 anterior no debe usarse para probar el login: su método de código fallaba en las pruebas reales.
 
 ## Requisito de Microsoft Entra: configurar una sola dirección de retorno
 
@@ -20,15 +20,28 @@ msal696458fe-0672-47e5-9fdd-aa0332e9884b://auth
 
 ## Instalación y prueba en Android
 
-- APK Beta 7: paquete `es.cine365.app.v9beta7`, separado de la Beta 6, por lo que **no sobrescribe datos anteriores**.
-- **Antes de las pruebas**, exporta un archivo JSON desde tu instalación actual y restáuralo en Beta 7 si quieres trasladar tus películas. **No desinstales la Beta 6** hasta confirmar las listas.
+- APK Beta 8: paquete `es.cine365.app.v9beta8`, separado de la Beta 7, por lo que **no sobrescribe datos anteriores**.
+- **Antes de las pruebas**, exporta un archivo JSON desde tu instalación actual y restáuralo en Beta 8 si quieres trasladar tus películas. **No desinstales la Beta 7** hasta confirmar las listas.
 - Pulsa **Nube → Conectar cuenta Microsoft**. La app abre la página oficial de Microsoft automáticamente en el navegador del móvil.
 - Inicia sesión y acepta los permisos de Microsoft Graph. Al finalizar, el navegador debería **volver directamente a Selector Cine 365** sin solicitar ningún código manual.
 - Selecciona o crea una carpeta de pruebas (por ejemplo `Pruebas_Selector_Cine_365`) en OneDrive y pulsa **Utilizar esta carpeta**. Eso **no publica** datos por sí solo.
-- En Windows Beta 5.1, selecciona esa misma carpeta local sincronizada dentro de OneDrive.
+- En Windows Beta 8, selecciona esa misma carpeta local sincronizada dentro de OneDrive.
 - Pulsa **Revisar sincronización** en los dos dispositivos; inspecciona los datos y confirma. Para recibir nuevos cambios del otro dispositivo, **hay que revisar de nuevo**.
 
 **La autenticación completa y el retorno del navegador aún deben validarse en un móvil real.** El éxito de compilación no demuestra que Azure haya aceptado la URI o que Microsoft permita el consentimiento.
+
+## Sincronización automática después de la primera revisión
+
+- **Primera vez:** confirma la sincronización en Windows y Android con «Revisar sincronización», usando la misma carpeta de OneDrive.
+- **Siguientes veces:** en ambos dispositivos los cambios seguros se reciben automáticamente **al abrir, volver a la app y mientras se mantiene abierta**. La comprobación es periódica, no instantánea: OneDrive necesita tiempo para subir los archivos.
+- **Conflictos:** si se ha marcado y desmarcado la misma película en dos dispositivos sin haber recibido el cambio del otro, **NO se decide automáticamente**. Pulsa «Revisar sincronización» para escoger qué conservar.
+- **Sin nube:** todos los cambios se guardan en cada dispositivo de forma local, sin requerir OneDrive ni TMDB.
+- **Uso de datos:** no se consulta TMDB para sincronizar. La aplicación revisa los archivos de OneDrive con intervalos limitados; no funciona como un servicio permanente en segundo plano.
+- **Límites todavía experimentales:** renombrados o eliminaciones de listas hechos simultáneamente en dos dispositivos, o archivos que no hayan terminado de subirse a OneDrive. Conservar copias JSON de recuperación.
+
+## Windows Beta 8
+
+Compilada específicamente con el subsistema **Windows GUI**, con comprobación automática de la cabecera PE. **No abre una ventana CMD**, a diferencia del viejo ejecutable Beta 5. Si en el título de una ventana aparece BETA5, cierra esa versión y abre exactamente el EXE `Selector_Cine_365_Windows_v9_BETA8.exe`. No ejecutes dos versiones simultáneamente: ambas comparten datos locales.
 
 ## Seguridad y funcionamiento
 
