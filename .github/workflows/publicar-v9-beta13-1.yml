@@ -1,0 +1,182 @@
+name: Publicar Selector Cine 365 v9 Beta 13.1 - Windows Android y Mac
+on:
+  push:
+    branches: ['main']
+    paths: ['.github/workflows/publicar-v9-beta13-1.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: cine-v9-beta13-1-publicacion
+  cancel-in-progress: false
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Pruebas de sincronización y caché local TMDB
+        run: |
+          go test ./... -count=1
+          node scripts/test_v9_beta13.cjs
+          grep -F '"/api/platforms/cache"' main.go
+          grep -F '9.0.0-beta.13.1' scripts/build_macos_app.sh
+          grep -F "versionCode 9015" android/app/build.gradle
+      - name: Descargar Windows Beta 13.1
+        uses: actions/download-artifact@v4
+        with:
+          name: Selector_Cine_365_Windows_v9_BETA13_1
+          run-id: 44829805619
+          repository: cristianbarallobre/selector-cine-365
+          github-token: ${{ github.token }}
+          path: dist
+      - name: Descargar Mac Apple Silicon Beta 13.1
+        uses: actions/download-artifact@v4
+        with:
+          name: Selector_Cine_365_Mac_Apple_Silicon_v9_BETA13_1
+          run-id: 44830855769
+          repository: cristianbarallobre/selector-cine-365
+          github-token: ${{ github.token }}
+          path: dist
+      - name: Descargar Mac Intel Beta 13.1
+        uses: actions/download-artifact@v4
+        with:
+          name: Selector_Cine_365_Mac_Intel_v9_BETA13_1
+          run-id: 44830855769
+          repository: cristianbarallobre/selector-cine-365
+          github-token: ${{ github.token }}
+          path: dist
+      - name: Descargar Android Beta 13 sin firma
+        uses: actions/download-artifact@v4
+        with:
+          name: Selector_Cine_365_Android_v9_BETA13_unsigned
+          run-id: 44826692958
+          repository: cristianbarallobre/selector-cine-365
+          github-token: ${{ github.token }}
+          path: unsigned
+      - name: APK firmada original exacta y comprobaciones criptográficas
+        run: |
+          echo 'ea1f83dbf120254ea1f54eec09b0418046d395a7e6cbac3930741328f476e249  unsigned/Selector_Cine_365_Android_v9_BETA13_UNSIGNED.apk' | sha256sum -c
+          echo '9d23ce6db5fa53e0485ee6ca80d1137ff7669c3eb078194121f503c58cc15da9  scripts/release/beta13_android_signed_delta.b64' | sha256sum -c
+          python scripts/release/reconstruct_signed_beta13.py \
+            unsigned/Selector_Cine_365_Android_v9_BETA13_UNSIGNED.apk \
+            scripts/release/beta13_android_signed_delta.b64 \
+            dist/Selector_Cine_365_Android_v9_BETA13.apk
+          java -jar unsigned/android-tools/lib/apksigner.jar verify --verbose --print-certs dist/Selector_Cine_365_Android_v9_BETA13.apk | tee /tmp/cine13-sign.txt
+          grep -Fx 'Verified using v2 scheme (APK Signature Scheme v2): true' /tmp/cine13-sign.txt
+          grep -Fx 'Verified using v3 scheme (APK Signature Scheme v3): true' /tmp/cine13-sign.txt
+          grep -Fx 'Signer #1 certificate SHA-256 digest: b8a17f39e4fa24d7c110d452161425c7524412c3a5a4d7459b1132ffd0825fb6' /tmp/cine13-sign.txt
+          echo '0cff436f96b15c324169e4626746fd5a905d0c26ba5d9ddc769b81ed51f5eabe  dist/Selector_Cine_365_Android_v9_BETA13.apk' | sha256sum -c
+      - name: Verificar los tres ZIP de escritorio
+        run: |
+          echo '73e955f8a39fcf3383b3da0e179db0bf148623af3648c0d3f8d4a76d6899e397  dist/Selector_Cine_365_Windows_v9_BETA13_1.zip' | sha256sum -c
+          echo '071635d1d2f4e9cec171600719a569bf8a6b48fe61f8af441b995da5728b1669  dist/Selector_Cine_365_Mac_Apple_Silicon_v9_BETA13_1.zip' | sha256sum -c
+          echo 'e7c2905e4cb44b6d6d91dcfe22c6a6350acea823f98b1c5f42d8666189343c48  dist/Selector_Cine_365_Mac_Intel_v9_BETA13_1.zip' | sha256sum -c
+          for f in dist/*.zip; do unzip -t "$f" | tail -1; done
+      - name: Instalar conversores PDF y Word
+        run: |
+          python -m pip install --disable-pip-version-check 'mistune>=3,<4' 'weasyprint>=68,<70' 'reportlab>=4.4,<5' 'pypdf>=5,<7' 'python-docx>=1,<2'
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends pandoc libreoffice-writer fonts-liberation fonts-dejavu-core poppler-utils
+      - name: Regenerar manuales y nuevo historial Beta 13.1
+        run: |
+          python scripts/generar_manual_completo.py
+          python scripts/generar_guia_azure_entra_onedrive.py docs/GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.md docs/GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.pdf
+          pandoc docs/HISTORIAL_V9_BETA13_1.md --from=gfm --to=docx \
+            --reference-doc=docs/Selector_de_Cine_365_Historial_de_versiones_v8.1.1.docx \
+            --metadata=lang:es-ES \
+            --metadata=title:'Selector Cine 365 - Historial hasta v9 Beta 13.1' \
+            -o docs/Selector_Cine_365_Historial_v9_BETA13_1.docx
+          mkdir -p /tmp/cine365-beta131-lo
+          libreoffice -env:UserInstallation=file:///tmp/cine365-beta131-lo/profile --headless --convert-to pdf --outdir docs docs/Selector_Cine_365_Historial_v9_BETA13_1.docx
+          python - <<'PY'
+          from pathlib import Path
+          from pypdf import PdfReader
+          from docx import Document
+          for name,terms in [
+            ('MANUAL_COMPLETO_SELECTOR_CINE_365.pdf',['Beta 13.1','TMDB','OneDrive']),
+            ('GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.pdf',['Beta 13.1','OneDrive','Android']),
+            ('Selector_Cine_365_Historial_v9_BETA13_1.pdf',['Beta 13.1','Beta 13','Beta 12','Android'])]:
+            p=Path('docs')/name
+            assert p.is_file() and p.stat().st_size>12000,p
+            reader=PdfReader(p)
+            assert len(reader.pages)>1,p
+            body=' '.join(pg.extract_text() or '' for pg in reader.pages)
+            for term in terms: assert term in body,(name,term)
+            print(name,len(reader.pages),'páginas')
+          f=Path('docs/Selector_Cine_365_Historial_v9_BETA13_1.docx')
+          d=Document(f)
+          assert f.stat().st_size>20000 and 'Beta 13.1' in '\n'.join(p.text for p in d.paragraphs)
+          PY
+          pdftoppm -f 1 -l 1 -r 100 -png -singlefile docs/Selector_Cine_365_Historial_v9_BETA13_1.pdf /tmp/cine131_first
+          cp docs/MANUAL_COMPLETO_SELECTOR_CINE_365.pdf docs/GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.pdf docs/Selector_Cine_365_Historial_v9_BETA13_1.pdf docs/Selector_Cine_365_Historial_v9_BETA13_1.docx dist/
+      - name: Publicar release oficial v9.0.0-beta.13.1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=v9.0.0-beta.13.1
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+            gh release edit "$TAG" --notes-file RELEASE_NOTES_v9_BETA13_1.md --prerelease
+          else
+            gh release create "$TAG" dist/* --target "$GITHUB_SHA" --prerelease \
+              --title 'Selector Cine 365 v9 Beta 13.1 - Windows Mac TMDB y Android Beta 13' \
+              --notes-file RELEASE_NOTES_v9_BETA13_1.md
+          fi
+      - name: Verificar los ocho archivos publicados mediante descarga
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/verificado_beta131
+          gh release download v9.0.0-beta.13.1 --dir /tmp/verificado_beta131
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          expected={
+            'Selector_Cine_365_Windows_v9_BETA13_1.zip',
+            'Selector_Cine_365_Mac_Apple_Silicon_v9_BETA13_1.zip',
+            'Selector_Cine_365_Mac_Intel_v9_BETA13_1.zip',
+            'Selector_Cine_365_Android_v9_BETA13.apk',
+            'MANUAL_COMPLETO_SELECTOR_CINE_365.pdf',
+            'GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.pdf',
+            'Selector_Cine_365_Historial_v9_BETA13_1.pdf',
+            'Selector_Cine_365_Historial_v9_BETA13_1.docx',
+          }
+          remote=Path('/tmp/verificado_beta131')
+          assert {p.name for p in remote.iterdir()}==expected,'Faltan activos'
+          for name in sorted(expected):
+            a=(Path('dist')/name).read_bytes()
+            b=(remote/name).read_bytes()
+            assert hashlib.sha256(a).digest()==hashlib.sha256(b).digest(),name
+            print('OK',name,len(b))
+          PY
+      - name: Conservar PDF y Word nuevos en main
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/MANUAL_COMPLETO_SELECTOR_CINE_365.pdf docs/GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.pdf docs/Selector_Cine_365_Historial_v9_BETA13_1.pdf docs/Selector_Cine_365_Historial_v9_BETA13_1.docx
+          if ! git diff --cached --quiet; then
+            git commit -m 'docs(beta13.1): manuales PDF e historial completo Word/PDF'
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Selector_Cine_365_BETA13_1_Distribucion_8_Archivos
+          path: dist/*
+          if-no-files-found: error
