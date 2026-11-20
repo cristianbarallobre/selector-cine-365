@@ -240,7 +240,7 @@ func syncMergeVersioned(local libraryState,revisions map[string]syncRevision,kno
  // Solo los IDs de TMDB confirmados; jamás incluir o sincronizar la clave API.
  if result.TMDBOverrides==nil{result.TMDBOverrides=map[string]int{}}
  for key,id:=range peer.Library.TMDBOverrides{
-  if id>0&&result.TMDBOverrides[key]==0{result.TMDBOverrides[key]=id}
+  if _,exists:=result.TMDBOverrides[key];!exists{result.TMDBOverrides[key]=id}
  }
  remoteMarks:=syncStatuses(peer.Library)
  for _,other:=range peer.Library.Lists {
