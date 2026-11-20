@@ -61,7 +61,7 @@ func validateLibrary(l libraryState) error {
 	if len(l.DeletedLists)>1000 {return errors.New("Demasiadas eliminaciones registradas")}
 	if len(l.TMDBOverrides)>10000 {return errors.New("Demasiadas identificaciones TMDB")}
 	for key,id:=range l.TMDBOverrides {
-		if len(key)>275||!utf8.ValidString(key)||!strings.Contains(key,"|")||id<1||id>999999999 {return errors.New("Identificación TMDB inválida")}
+		if len(key)>275||!utf8.ValidString(key)||!strings.Contains(key,"|")||id<0||id>999999999 {return errors.New("Identificación TMDB inválida")}
 	}
 	if len(l.ComparisonIDs) == 1 || len(l.ComparisonIDs) > len(l.Lists) {
 		return errors.New("La comparación requiere al menos dos listas")
