@@ -289,7 +289,6 @@ final class CloudBackup {
      */
     synchronized JSONObject autoSynchronize(Backend backend)throws Exception{
         if(folder.isEmpty()||!activated)return status().put("changed",false).put("skipped","not_paired");
-        if(!previewToken.isEmpty())return status().put("changed",false).put("skipped","manual_review_open");
         try{
             Plan plan=buildPlan(backend);
             if(plan.conflicts.length()>0){
