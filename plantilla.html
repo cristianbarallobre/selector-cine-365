@@ -654,7 +654,7 @@ const token='__ATLAS_TOKEN__';
 let rawText=$('initialState').value.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
 let parsed=null,filter='all',search='',chosen=null,lastChoice=null,saveTimer=null,saveQueue=Promise.resolve(),saveEpoch=0;
 let filmPage=0,collectionPage=0,statPages=new Map(),searchScope='current',membershipCache=null,membershipFilm=null;
-let platformConfigured=false, platformData=new Map(),platformRun=0,platformActive=false,platformFinished=0,platformTotal=0;
+let platformConfigured=false, platformStatusUnavailable=false, platformData=new Map(),platformRun=0,platformActive=false,platformFinished=0,platformTotal=0;
 let libraryState={version:1,active_id:'atlas',lists:[{id:'atlas',name:'Selector Cine 365 · 365',text:rawText}]};
 let editingListID=null,activeView='library',selectedSortPlatform='all';
 const identityMap=new Map(); // clave título-año -> ID TMDB guardado
@@ -670,7 +670,7 @@ const jwSearch=f=>'https://www.justwatch.com/es/buscar?q='+encodeURIComponent(f.
 function friendlyName(s){return s.replace(/Movistar Plus\+ Ficción Total/i,'Movistar+ Ficción Total').replace(/Movistar Plus\+/i,'Movistar+').replace(/Amazon Prime Video/i,'Prime Video').replace(/Netflix Standard with Ads/i,'Netflix con anuncios').replace(/HBO Max/i,'Max');}
 function platformBadge(f){
  const r=platformData.get(providerKey(f));
- if(!platformConfigured)return ['Configurar plataformas','muted'];
+ if(!platformConfigured)return [platformStatusUnavailable?'TMDB: comprobación pendiente':'Configurar plataformas','muted'];
  if(!r)return ['Por consultar…','muted'];
  if(r.state==='error')return ['Sin conexión','offline'];
  if(r.state==='not-found')return ['Título sin identificar','muted'];
@@ -710,7 +710,7 @@ async function platformApi(path,body){
 }
 async function initPlatforms(){
  try{
-  const r=await platformApi('/api/platforms/status');initPlatforms.retries=0;platformConfigured=!!r.configured;
+  const r=await platformApi('/api/platforms/status');initPlatforms.retries=0;platformStatusUnavailable=false;platformConfigured=!!r.configured;
   if(platformConfigured){
    const cached=await platformApi('/api/platforms/cache');
    for(const [key,entry] of Object.entries(cached.entries||{}))platformData.set(key,entry);
@@ -718,6 +718,7 @@ async function initPlatforms(){
  }catch(err){
   // Una respuesta fallida del backend NO significa que haya perdido la clave.
   console.warn('No se ha podido leer la configuración TMDB:',err.message);
+  platformStatusUnavailable=true;renderList();
   $('platformProgress').textContent='Conexión local TMDB no disponible. Reintentando…';
   if((initPlatforms.retries=(initPlatforms.retries||0)+1)<=4)
    setTimeout(()=>{if(!document.hidden)void initPlatforms();},1200);
