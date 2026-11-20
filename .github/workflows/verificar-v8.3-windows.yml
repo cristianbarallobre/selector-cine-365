@@ -1,0 +1,50 @@
+name: Selector de Cine v8.3 - Compilar Windows
+on:
+  push:
+    branches: [main, 'feature/v8-3-*']
+    paths:
+      - 'plantilla.html'
+      - 'scripts/ui-regression.test.cjs'
+      - '.github/workflows/verificar-v8.3-windows.yml'
+      - '*.go'
+      - 'go.mod'
+  pull_request:
+    paths:
+      - 'plantilla.html'
+      - 'scripts/ui-regression.test.cjs'
+      - '.github/workflows/verificar-v8.3-windows.yml'
+      - '*.go'
+      - 'go.mod'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Comprobar funciones y regresiones
+        run: |
+          go test ./...
+          node scripts/ui-regression.test.cjs
+      - name: Compilar ejecutable Windows
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: '0'
+        run: |
+          mkdir -p dist
+          go build -trimpath -ldflags='-H windowsgui -s -w' -o dist/Selector_Cine_365_v8_3_Windows.exe .
+          printf 'Selector de Cine 365 v8.3\nRequiere WebView2 Runtime.\nPara probar: descomprime el ZIP y ejecuta EXE.\n' > dist/LEEME_WINDOWS.txt
+          cd dist && zip -9 Selector_Cine_365_v8_3_Windows.zip Selector_Cine_365_v8_3_Windows.exe LEEME_WINDOWS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Selector_Cine_365_v8_3_Windows
+          path: dist/Selector_Cine_365_v8_3_Windows.zip
+          if-no-files-found: error
