@@ -33,6 +33,7 @@ final class CloudBackup {
     private long lastCheckMS=0,lastReceivedMS=0;
     private boolean activated=false,autoNeedsReview=false;
     private String previewToken="";
+    private Uri cachedGraphDeviceDir=null;
 
     CloudBackup(MainActivity a,File files,SyncStore sync,OneDriveCloud oneDrive){
         this.activity=a;this.appDir=files;this.sync=sync;this.oneDrive=oneDrive;
@@ -59,6 +60,7 @@ final class CloudBackup {
             }
         }
         if(!folder.equals(uriValue)){
+            cachedGraphDeviceDir=null;
             activated=false;autoNeedsReview=false;previewToken="";
             activity.getPreferences(Context.MODE_PRIVATE).edit().putBoolean("sync_activated_v2",false).apply();
         }
@@ -321,6 +323,28 @@ final class CloudBackup {
     synchronized JSONObject autoSynchronize(Backend backend)throws Exception{
         if(folder.isEmpty()||!activated)return status().put("changed",false).put("skipped","not_paired");
         try{
+            if(graphMode()){
+                if(cachedGraphDeviceDir==null){
+                    Uri current=existingBase();
+                    Uri currentSync=current==null?null:findChild(current,"sincronizacion");
+                    cachedGraphDeviceDir=currentSync==null?null:findChild(currentSync,"dispositivos");
+                }
+                if(cachedGraphDeviceDir!=null){
+                    try {
+                        if(!oneDrive.folderChanged(driveId(cachedGraphDeviceDir))){
+                            lastCheckMS=System.currentTimeMillis();
+                            return status().put("changed",false).put("skipped","no_changes");
+                        }
+                    }catch(Exception deltaError){
+                        // Unsupported/expired Graph delta token: fall back to the safe
+                        // complete merge. Never suppress a real OneDrive access failure.
+                        if(deltaError.getMessage()!=null&&(
+                            deltaError.getMessage().contains("(429)")||
+                            deltaError.getMessage().contains("limita temporalmente")||
+                            deltaError.getMessage().contains("iniciar sesión")))throw deltaError;
+                    }
+                }
+            }
             Plan plan=buildPlan(backend);
             lastCheckMS=System.currentTimeMillis();
             if(plan.conflicts.length()>0){
