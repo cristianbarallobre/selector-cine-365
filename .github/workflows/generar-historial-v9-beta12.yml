@@ -59,6 +59,8 @@ jobs:
           git add docs/Selector_Cine_365_Historial_v9_BETA12.docx docs/Selector_Cine_365_Historial_v9_BETA12.pdf
           if ! git diff --cached --quiet; then
             git commit -m 'docs(v9 Beta12): generar historial actualizado en Word y PDF'
+            git fetch origin docs/auditoria-v9-beta12-2026-11
+            git rebase origin/docs/auditoria-v9-beta12-2026-11
             git push origin HEAD:docs/auditoria-v9-beta12-2026-11
           fi
       - uses: actions/upload-artifact@v4
