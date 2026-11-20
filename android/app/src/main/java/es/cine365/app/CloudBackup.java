@@ -191,6 +191,7 @@ final class CloudBackup {
     }
     private Plan buildPlan(Backend backend)throws Exception{
         if(folder.isEmpty())throw new Exception("Selecciona antes una carpeta compartida");
+        final boolean strict=activated;
         Plan p=new Plan();p.library=new JSONObject(backend.readOrDefault("colecciones.json","{}"));
         if(!Backend.validLibrary(p.library))throw new Exception("Biblioteca local inválida");
         p.revisions=sync.revisions();p.known=sync.known();
@@ -201,13 +202,13 @@ final class CloudBackup {
         Uri root=existingBase();
         if(root!=null){
             Uri actual=findChild(root,"actual");
-            if(actual!=null){Uri file=findChild(actual,"colecciones.json");if(file!=null){
+            if(actual!=null&&!strict){Uri file=findChild(actual,"colecciones.json");if(file!=null){
                 byte[] bytes=read(file);digest.append("legacy:").append(hexHash(bytes)).append('|');
                 JSONObject remote=new JSONObject(new String(bytes,StandardCharsets.UTF_8));
                 if(!Backend.validLibrary(remote))throw new Exception("La copia Windows no es válida; no se han cambiado tus datos");
                 JSONObject snapshot=new JSONObject().put("protocol",1).put("device_id","windows-legacy")
                     .put("library",remote).put("revisions",new JSONObject());
-                SyncStore.Merge m=SyncStore.merge(p.library,p.revisions,p.known,snapshot);
+                SyncStore.Merge m=SyncStore.merge(p.library,p.revisions,p.known,snapshot,strict);
                 p.library=m.library;p.revisions=m.revisions;p.known=m.known;
                 p.sources++;p.hasLegacy=true;
             }}
@@ -219,7 +220,7 @@ final class CloudBackup {
                     byte[] bytes=read(uri);digest.append("peer:").append(uri.toString()).append(':').append(hexHash(bytes)).append('|');
                     JSONObject snapshot=new JSONObject(new String(bytes,StandardCharsets.UTF_8));
                     if(sync.deviceId().equals(snapshot.optString("device_id")))continue;
-                    SyncStore.Merge m=SyncStore.merge(p.library,p.revisions,p.known,snapshot);
+                    SyncStore.Merge m=SyncStore.merge(p.library,p.revisions,p.known,snapshot,strict);
                     p.library=m.library;p.revisions=m.revisions;p.known=m.known;p.sources++;
                     for(int i=0;i<m.conflicts.length();i++){
                         JSONObject item=m.conflicts.getJSONObject(i);
