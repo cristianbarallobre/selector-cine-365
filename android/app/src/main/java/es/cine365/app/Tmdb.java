@@ -84,6 +84,7 @@ final class Tmdb {
             if(id==0){
                 if(next.has(k)){next.remove(k);modified=true;}
                 if(records.has(k)){records.remove(k);modified=true;}
+                if(cache.has(k))modified=true;
                 cache.remove(k);
             }else if(next.optInt(k)!=id){
                 next.put(k,id);modified=true;
