@@ -1,10 +1,10 @@
 # Selector Cine 365 — Historial completo de versiones
 
-**Edición de referencia:** v9 Beta 12 · **Fecha de revisión:** 20 de noviembre de 2026  
+**Edición de referencia:** v9 Beta 12.2 Android; Beta 12 Windows/Mac · **Fecha de revisión:** 20 de noviembre de 2026  
 **Autor del software:** Cristian Barallobre Rúa  
 **Proyecto:** [cristianbarallobre/selector-cine-365](https://github.com/cristianbarallobre/selector-cine-365)
 
-> Documento de evolución funcional y técnica. La v9 Beta 12 es una **versión de pruebas**, no una versión estable. Esta fuente en Markdown genera las ediciones Word y PDF con el mismo contenido. El historial clásico v8.1.1 se conserva intacto por motivos históricos.
+> Documento de evolución funcional y técnica. La v9 Beta 12.2 es una **versión de pruebas**, no una versión estable. Esta fuente en Markdown genera las ediciones Word y PDF con el mismo contenido. El historial clásico v8.1.1 se conserva intacto por motivos históricos.
 
 ## 1. Situación actual y distribución
 
@@ -13,11 +13,25 @@
 | Windows 10/11, 64 bits | v9 Beta 12 | Go y WebView2; interfaz HTML compartida | Beta publicada |
 | macOS, Apple Silicon | v9 Beta 12 | Go y WKWebView; interfaz HTML compartida | Beta publicada, sin notarización |
 | macOS, Intel | v9 Beta 12 | Go y WKWebView; interfaz HTML compartida | Beta publicada, sin notarización |
-| Android 8.0 o posterior | v9 Beta 12 | Java, Gradle y WebView con interfaz táctil | Beta publicada, APK firmada |
+| Android 8.0 o posterior | v9 Beta 12.2 | Java, Gradle y WebView con interfaz táctil | Beta publicada, APK firmada |
 
-Los archivos verificables están reunidos en la [release v9 Beta 12](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12). La versión estable anterior destacada por GitHub sigue siendo v8.2: la palabra «Latest» no implica que contenga las funciones de Beta 12, ya que GitHub distingue versiones estables de las preliminares.
+Los archivos más recientes están reunidos en la [release v9 Beta 12.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.2), con Android actualizado y los ejecutables originales de Windows/Mac Beta 12. La versión estable anterior destacada por GitHub sigue siendo v8.2: la palabra «Latest» no implica que contenga las funciones de Beta 12, ya que GitHub distingue versiones estables de las preliminares.
 
 ## 2. Evolución de la serie v9
+
+### v9 Beta 12.2 — 20 de noviembre de 2026
+
+- Corrección del menú inferior de Android en dispositivos Redmi: la reserva del espacio seguro se aplicaba primero en `WindowInsets` y después de nuevo en CSS, elevando excesivamente las pestañas.
+- Se eliminó `env(safe-area-inset-bottom)` de los estilos móviles. El contenedor nativo sigue protegiendo el notch y las barras del sistema.
+- APK con versionCode **9014** y la misma firma e identificador `es.cine365.app` de Beta 11, 12 y 12.1; se instala encima sin desinstalar.
+- Se mantienen todas las funciones anteriores; Windows y Mac continúan en Beta 12.
+- Compilación y pruebas automáticas correctas; aún falta comprobación visual física de la zona inferior.
+
+### v9 Beta 12.1 — 20 de noviembre de 2026
+
+- El título dejó de quedar cubierto por la cámara frontal: Android mide `systemBars` y `displayCutout` mediante `WindowInsets`, sin márgenes genéricos.
+- APK Android versionCode 9013; mismo certificado y paquete estable que Beta 12.
+- La altura extra del menú inferior introducida por la doble reserva se corrigió después en Beta 12.2.
 
 ### v9 Beta 12 — 20 de noviembre de 2026
 
