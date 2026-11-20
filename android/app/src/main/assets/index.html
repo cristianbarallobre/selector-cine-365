@@ -2329,7 +2329,7 @@ function cloudBusyEnd(){
 }
 // Copia adicional de las listas en una carpeta local sincronizada con la nube.
 async function cloudRequest(path,method='GET',payload){
- const userStep=Object.hasOwn(cloudOperationTitles,path);
+ const userStep=Object.prototype.hasOwnProperty.call(cloudOperationTitles,path);
  if(userStep)cloudBusyStart(path);
  try{
    const opts={method,headers:{'X-Atlas-Token':token},cache:'no-store'};
