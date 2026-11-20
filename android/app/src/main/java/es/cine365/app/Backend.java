@@ -98,6 +98,14 @@ final class Backend {
                 onedrive.logout();
                 return ok(onedrive.status().toString());
             }
+            case "/api/sync/history":return ok(sync.history().toString());
+            case "/api/sync/recovery/list":{
+                synchronized(filesLock){return ok(new LocalRecovery(this).list().toString());}
+            }
+            case "/api/sync/recovery/restore":{
+                JSONObject req=new JSONObject(body.isEmpty()?"{}":body);
+                synchronized(filesLock){return ok(new LocalRecovery(this).restore(req.optString("id")).toString());}
+            }
             case "/api/cloud/status":return ok(cloud.status().toString());
             case "/api/cloud/browse":return ok(new JSONObject().put("folder",activity.selectFolder()).toString());
             case "/api/cloud/config":{
