@@ -9,7 +9,7 @@
 <meta name="author" content="__APP_AUTHOR__">
 <meta name="copyright" content="__APP_COPYRIGHT__">
 <meta name="application-name" content="Selector Cine 365">
-<title>Selector Cine 365 · v9 Beta 13</title>
+<title>Selector Cine 365 · v9 Beta 13.1</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1018;--panel:#171f2b;--panel2:#1b2735;--line:#314052;--subtle:#94a2b5;--light:#f4f6fa;--gold:#f3c66d;--gold2:#d59b40;--green:#a4e4bc;--red:#e5a6a6;--r:19px}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 960px 510px at 88% -10%,#263649 0%,transparent 76%),var(--bg);color:var(--light);font-family:'Segoe UI',system-ui,Arial,sans-serif;font-size:15px;min-height:100vh}button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
@@ -385,7 +385,7 @@ h2{font-size:19px}
     <div class="brand" aria-hidden="true"><img src="/icon.png" alt="" style="width:58px;height:58px;object-fit:contain"></div>
     <div><div class="eyebrow">Selector Cine 365</div><h1>¿Qué película veo hoy?</h1></div>
     <div class="header-side">
-      <div class="header-tag">🎞️ SELECTOR CINE 365 · v9 Beta 13</div>
+      <div class="header-tag">🎞️ SELECTOR CINE 365 · v9 Beta 13.1</div>
       <div class="saved" id="saveState" aria-live="polite">✓ Guardado</div>
       <div class="creator-credit" title="__APP_COPYRIGHT__">Hecho por <strong>__APP_AUTHOR__</strong></div>
     </div>
@@ -709,24 +709,38 @@ async function platformApi(path,body){
  return await res.json();
 }
 async function initPlatforms(){
+ // La clave guardada y la caché son operaciones independientes: si la segunda
+ // falla, nunca degradar una clave válida a «TMDB no disponible».
  try{
-  const r=await platformApi('/api/platforms/status');initPlatforms.retries=0;platformStatusUnavailable=false;platformConfigured=!!r.configured;
-  if(platformConfigured){
+  const r=await platformApi('/api/platforms/status');
+  initPlatforms.retries=0;
+  platformStatusUnavailable=false;
+  platformConfigured=!!r.configured;
+ }catch(err){
+  console.warn('Error al comprobar estado local TMDB:',err.message);
+  platformStatusUnavailable=true;
+  renderList();
+  const retries=(initPlatforms.retries=(initPlatforms.retries||0)+1);
+  $('platformProgress').textContent=retries<=4?
+    'Servicio local TMDB no disponible. Reintentando…':
+    'No se pudo consultar TMDB local. Pulsa Actualizar para reintentar; tu clave no se ha borrado.';
+  if(retries<=4)setTimeout(()=>{if(!document.hidden)void initPlatforms();},1200);
+  return false;
+ }
+ if(platformConfigured){
+  try{
    const cached=await platformApi('/api/platforms/cache');
    for(const [key,entry] of Object.entries(cached.entries||{}))platformData.set(key,entry);
+  }catch(err){
+   console.warn('No se pudo leer la caché TMDB; la clave sigue configurada:',err.message);
+   updateListPlatformOptions();renderList();renderStats();
+   $('platformProgress').textContent='TMDB configurado. Caché local no disponible; pulsa Actualizar para recuperar datos.';
+   return true;
   }
- }catch(err){
-  // Una respuesta fallida del backend NO significa que haya perdido la clave.
-  console.warn('No se ha podido leer la configuración TMDB:',err.message);
-  platformStatusUnavailable=true;renderList();
-  $('platformProgress').textContent='Conexión local TMDB no disponible. Reintentando…';
-  if((initPlatforms.retries=(initPlatforms.retries||0)+1)<=4)
-   setTimeout(()=>{if(!document.hidden)void initPlatforms();},1200);
-  return;
  }
- // Al abrir no hacemos búsquedas de red, ni siquiera si faltan fichas.
- // Las nuevas incorporaciones y «Actualizar» solicitan lo que haga falta.
+ // Sin consultas externas masivas al abrir; usar caché local si existe.
  updatePlatformProgress();updateListPlatformOptions();renderList();renderStats();
+ return true;
 }
 async function loadPlatforms(force){
  if(!platformConfigured){showPlatformModal();return;}
@@ -749,7 +763,7 @@ async function loadPlatforms(force){
 function showPlatformModal(){ $('platformOverlay').hidden=false;$('platformStatus').textContent='';$('apiKey').value='';$('apiKey').focus();}
 function closePlatformModal(){$('platformOverlay').hidden=true;}
 $('platformSetup').addEventListener('click',showPlatformModal);
-$('platformRefresh').addEventListener('click',()=>void loadPlatforms(true));
+$('platformRefresh').addEventListener('click',async()=>{await initPlatforms();if(platformConfigured&&!platformStatusUnavailable)await loadPlatforms(true);});
 $('closePlatforms').addEventListener('click',closePlatformModal);
 $('cancelPlatforms').addEventListener('click',closePlatformModal);
 $('platformOverlay').addEventListener('click',e=>{if(e.target===$('platformOverlay'))closePlatformModal();});
