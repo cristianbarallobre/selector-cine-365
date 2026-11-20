@@ -6,7 +6,7 @@
 
 | Publicación | Estado | Activos |
 |---|---|---|
-| [v9 Beta 13](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13) | Beta coordinada más reciente | Windows, Android, Mac Intel/Apple Silicon y notas de seguridad |
+| [v9 Beta 13.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13.1) | **Release coordinada actual** | Windows/Mac Beta 13.1, Android Beta 13 firmada, manuales PDF e historial Word/PDF |
 | [v9 Beta 12.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.2) | **Beta más reciente**, Android y escritorio sin cambios | APK Android 9014, Windows/Mac Beta 12 y documentación |
 | [v9 Beta 12.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.1) | Histórica: primer arreglo notch | APK Android 9013 y escritorio original |
 | [v9 Beta 12](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12) | Beta para pruebas | Windows, Android, Mac Apple Silicon, Mac Intel y dos manuales PDF |
@@ -67,3 +67,7 @@ Para Android, **Beta 9 y Beta 12 no comparten identidad ni firma**: requiere mig
 ## Consulta documental
 
 Los cambios de software de las etapas v1 a v9 Beta 12 están reunidos en [Historial completo v9 Beta 12](HISTORIAL_V9_BETA12.md), disponible también en Word y PDF. Se conserva por separado la edición histórica v8.1.1 sin reescribirla.
+
+## Publicación coordinada 13.1 (20-11-2026)
+
+Se publica una única release `v9.0.0-beta.13.1` con **Windows Beta 13.1**, **Mac Intel y Apple Silicon Beta 13.1** y **la APK Android Beta 13 original (código 9015)**. Android no incrementa versión porque la reparación de TMDB era exclusiva del servidor Go de escritorio. Se conservan los tags y las publicaciones previas; ninguna de las antiguas APK ni sus firmas se sobrescribe.
