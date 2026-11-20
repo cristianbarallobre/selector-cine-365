@@ -311,7 +311,9 @@ h2{font-size:19px}
 </style>
 <style id="cine-desktop-instructions-v9">
 #view-instructions{overflow:auto;max-height:calc(100dvh - 165px);padding:0 4px 20px}
-.cine-instructions-panel{width:100%;max-width:1180px;margin:0 auto;padding:23px 24px}
+.cine-instructions-panel{width:100%;max-width:none;margin:0;padding:23px 24px;min-width:0}
+#view-instructions{width:100%;max-width:none;margin:0;padding:0;overflow-x:hidden}
+#view-instructions>.panel{max-width:none;width:100%;margin:0}
 .cine-instructions-panel>p{color:#c5d7e7;line-height:1.65;margin:14px 0}
 .cine-instructions-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin:20px 0}
 .cine-instructions-grid article{background:#213045;border:1px solid #425875;padding:17px;border-radius:12px;min-width:0}
