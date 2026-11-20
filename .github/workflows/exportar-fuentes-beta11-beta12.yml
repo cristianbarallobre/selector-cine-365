@@ -1,0 +1,84 @@
+name: Exportar fuentes v9 Beta 11 y Beta 12
+on:
+  push:
+    branches: ['tool/export-v9-beta11-beta12-sources']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout fuentes Beta 11 exactas
+        uses: actions/checkout@v4
+        with:
+          ref: 62c63f3cadef924e8ad3390d70b8936f8f25a83b
+          path: source/beta11
+          persist-credentials: false
+      - name: Checkout fuentes Beta 12 exactas
+        uses: actions/checkout@v4
+        with:
+          ref: 5288d328d66b852abef79623e1dcdd9811585c8c
+          path: source/beta12
+          persist-credentials: false
+      - name: Empaquetar Windows, Android y repositorios completos, con SHA256
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess, zipfile, hashlib, json
+          versions = {
+            'BETA11': ('62c63f3cadef924e8ad3390d70b8936f8f25a83b', '9011'),
+            'BETA12': ('5288d328d66b852abef79623e1dcdd9811585c8c', '9012')
+          }
+          out = Path('dist')
+          out.mkdir(exist_ok=True)
+          for version, (expected_sha, expected_code) in versions.items():
+            base = Path('source') / version.lower()
+            actual_sha = subprocess.check_output(['git','-C',str(base),'rev-parse','HEAD'], text=True).strip()
+            assert actual_sha == expected_sha, f'{version} inesperado {actual_sha}'
+            tracked = [p.decode() for p in subprocess.check_output(['git','-C',str(base),'ls-files','-z']).split(b'\x00') if p]
+            assert len(tracked)>65, 'Archivo de fuentes incompleto'
+            assert f'versionCode {expected_code}' in (base/'android/app/build.gradle').read_text()
+            assert (base/'plantilla.html').exists()
+            assert (base/'android/app/src/main/java/es/cine365/app/MainActivity.java').exists()
+            assert not any(p.lower().endswith(('.keystore','.jks','.p12','.pem','.key')) for p in tracked), 'No incluir claves privadas'
+            for target in ['Windows','Android','Completo']:
+              if target=='Windows':
+                chosen=[p for p in tracked if not p.startswith('android/')]
+              elif target=='Android':
+                chosen=[p for p in tracked if p.startswith('android/') or p.startswith('docs/') or p.startswith('scripts/') or p.startswith('.github/') or p in ['README.md','BETA11_NOTAS.md','BETA12_NOTAS.md','.gitignore']]
+              else:
+                chosen=list(tracked)
+              assert len(chosen)>10
+              filename=f'Selector_Cine_365_{target}_v9_{version}_CODIGO_FUENTE.zip'
+              prefix=f'Selector_Cine_365_v9_{version}_{target}_Fuentes'
+              description=(f'Código fuente original de Selector Cine 365 v9 {version} ({target}).\n'
+                f'Repositorio: https://github.com/cristianbarallobre/selector-cine-365\n'
+                f'Commit exacto: {expected_sha}\n'
+                f'Este paquete contiene fuentes y recursos necesarios, NO ejecutables ni APK.\n'
+                f'Windows se compila desde la raíz con Go. Android se compila con Gradle dentro de android/.\n'
+                f'Firmas Android: NO se incluyen claves privadas. Para actualizar una aplicación ya instalada se requiere la misma firma.\n'
+                f'Fuentes capturadas directamente del commit correspondiente, sin modificaciones.\n')
+              manifest={'version':version,'target':target,'commit':expected_sha,'files':{}}
+              with zipfile.ZipFile(out/filename,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=7) as z:
+                z.writestr(prefix+'/LEEME_CODIGO_FUENTE.txt',description)
+                for path in chosen:
+                  data=(base/path).read_bytes()
+                  z.writestr(prefix+'/'+path,data)
+                  manifest['files'][path]=hashlib.sha256(data).hexdigest()
+                z.writestr(prefix+'/MANIFIESTO_SHA256.json',json.dumps(manifest,indent=2,ensure_ascii=False)+'\n')
+              with zipfile.ZipFile(out/filename) as z:
+                assert z.testzip() is None
+              print(version,target,'archivos:',len(chosen),'tamaño:',(out/filename).stat().st_size)
+          print('GENERADOS:',len(list(out.glob('*.zip'))),'ZIPs')
+          
+          PY
+      - name: Guardar los seis ZIP de código fuente
+        uses: actions/upload-artifact@v4
+        with:
+          name: Codigo_Fuente_Selector_Cine_365_BETA11_BETA12
+          path: dist/*.zip
+          if-no-files-found: error
+          compression-level: 0
