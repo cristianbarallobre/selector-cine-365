@@ -52,6 +52,10 @@ jobs:
           assert '"'+expected+'"' in manifest
           assert 'api/onedrive/poll' not in frontend
           assert 'odCopyCode' not in frontend
+          assert '/api/cloud/auto' in frontend
+          assert 'cloudAutoReceive' in frontend
+          cloud=Path('android/app/src/main/java/es/cine365/app/CloudBackup.java').read_text()
+          assert 'autoSynchronize' in cloud and 'plan.conflicts.length()>0' in cloud
           print('PKCE, retorno de navegador y eliminación de código manual: OK')
           PY
       - name: Verificar identificador Microsoft integrado en la APK
@@ -63,19 +67,19 @@ jobs:
       - name: Guardar APK como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: Selector_Cine_365_Android_v9_beta7_APK
+          name: Selector_Cine_365_Android_v9_beta8_APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
       - name: Publicar pre-release de Android
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk Selector_Cine_365_Android_v9_BETA7.apk
-          if gh release view v9.0.0-android-beta.7 >/dev/null 2>&1; then
-            gh release upload v9.0.0-android-beta.7 Selector_Cine_365_Android_v9_BETA7.apk --clobber
+          cp android/app/build/outputs/apk/debug/app-debug.apk Selector_Cine_365_Android_v9_BETA8.apk
+          if gh release view v9.0.0-android-beta.8 >/dev/null 2>&1; then
+            gh release upload v9.0.0-android-beta.8 Selector_Cine_365_Android_v9_BETA8.apk --clobber
           else
-            gh release create v9.0.0-android-beta.7 Selector_Cine_365_Android_v9_BETA7.apk \
+            gh release create v9.0.0-android-beta.8 Selector_Cine_365_Android_v9_BETA8.apk \
               --target "$GITHUB_SHA" --prerelease \
-              --title 'Selector Cine 365 - Android v9 beta 7' \
-              --notes 'BETA 7 Android: corregido inicio de sesión para OneDrive personal: navegador Microsoft y Authorization Code con PKCE, SIN copiar códigos temporales. REGISTRO NECESARIO: añadir a Microsoft Entra como URI móvil/escritorio msal696458fe-0672-47e5-9fdd-aa0332e9884b://auth. Se mantienen datos locales, caché TMDB y sincronización con revisión manual. APK separada de Beta 6: exportar/importar copia JSON. Autenticación real pendiente de validar en móvil.'
+              --title 'Selector Cine 365 - Android v9 beta 8' \
+              --notes 'BETA 8 Android: sincronización entrante automática después de emparejar la nube y confirmar la primera revisión. Se comprueba al abrir, al volver a la app y periódicamente (máximo una vez cada 150 segundos); los conflictos siguen requiriendo revisión manual. Mantiene OneDrive PKCE, caché TMDB local y modo sin nube. Paquete independiente de Beta 7: exportar e importar copia JSON antes de probar. No se ha validado en teléfono físico.'
           fi
