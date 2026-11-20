@@ -34,6 +34,8 @@ public class MainActivity extends Activity {
     private static final int EXPORT_FILE = 402;
     private static final int PICK_FOLDER = 403;
     private static final String APP_ORIGIN = "https://appassets.androidplatform.net";
+    private static final String MICROSOFT_LOGIN_HOST = "login.microsoftonline.com";
+    private static final String MICROSOFT_CALLBACK_SCHEME = "msal696458fe-0672-47e5-9fdd-aa0332e9884b";
     private WebView webView;
     private Backend backend;
     private final ExecutorService workers = Executors.newFixedThreadPool(4);
@@ -105,6 +107,39 @@ public class MainActivity extends Activity {
             }
         });
         webView.loadUrl(APP_ORIGIN + "/assets/index.html");
+        // Android may create a new activity after the browser returns.
+        handleMicrosoftRedirect(getIntent());
+    }
+    @Override protected void onNewIntent(Intent intent){
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleMicrosoftRedirect(intent);
+    }
+    private void handleMicrosoftRedirect(Intent intent){
+        if(intent==null||!Intent.ACTION_VIEW.equals(intent.getAction()))return;
+        Uri callback=intent.getData();
+        if(callback==null||!MICROSOFT_CALLBACK_SCHEME.equalsIgnoreCase(callback.getScheme())
+            ||!"auth".equalsIgnoreCase(callback.getHost()))return;
+        workers.submit(()->{
+            boolean ok=false;
+            String message;
+            try{
+                backend.onedrive.finish(callback);
+                ok=true;
+                message="Cuenta Microsoft conectada. Ya puedes elegir tu carpeta de OneDrive.";
+            }catch(Exception e){
+                message=e.getMessage()==null?"Microsoft no pudo completar el inicio de sesión.":e.getMessage();
+            }
+            final boolean success=ok;
+            final String notice=message;
+            runOnUiThread(()->{
+                if(webView!=null){
+                    webView.evaluateJavascript("if(window.cineMicrosoftAuthFinished)window.cineMicrosoftAuthFinished("
+                        +success+","+JSONObject.quote(notice)+")",null);
+                }
+                toast(notice);
+            });
+        });
     }
     private WebResourceResponse errorResponse() {return new WebResourceResponse("text/plain","utf-8",new ByteArrayInputStream(new byte[0]));}
     private class NativeBridge {
@@ -136,9 +171,15 @@ public class MainActivity extends Activity {
             try{Uri uri=Uri.parse(href);if("https".equals(uri.getScheme()))startActivity(new Intent(Intent.ACTION_VIEW,uri));}
             catch(Exception ignored){}
         });}
-        @JavascriptInterface public void openMicrosoftLogin(){runOnUiThread(()->{
-            try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://microsoft.com/devicelogin")));}
-            catch(Exception e){toast("No se pudo abrir la página de Microsoft");}
+        @JavascriptInterface public void openMicrosoftLogin(String authorizationUrl){runOnUiThread(()->{
+            try{
+                Uri uri=Uri.parse(authorizationUrl);
+                if(!"https".equals(uri.getScheme())||!MICROSOFT_LOGIN_HOST.equals(uri.getHost())
+                    ||!"/consumers/oauth2/v2.0/authorize".equals(uri.getPath())
+                    ||!BuildConfig.MICROSOFT_CLIENT_ID.equals(uri.getQueryParameter("client_id")))
+                    throw new Exception("Dirección de Microsoft no reconocida.");
+                startActivity(new Intent(Intent.ACTION_VIEW,uri));
+            }catch(Exception e){toast("No se pudo iniciar sesión en Microsoft: "+e.getMessage());}
         });}
         @JavascriptInterface public void copy(String text){runOnUiThread(()->{
             ClipboardManager c=(ClipboardManager)getSystemService(Context.CLIPBOARD_SERVICE);
