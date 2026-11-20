@@ -53,7 +53,7 @@ El binario para Apple Silicon se puede compilar desde un runner Intel cuando est
 ## Ayuda y referencias
 
 - [Manual Beta 12](docs/MANUAL_COMPLETO_SELECTOR_CINE_365.md).
-- [Historial de cambios](CHANGELOG.md) · [Historial integral Beta 13.1](docs/HISTORIAL_V9_BETA13_1.md) · [Historial v9 en Word y PDF](docs/HISTORIAL_V9_BETA12.md).
+- [Historial de cambios](CHANGELOG.md) · [Historial integral Beta 13.1](docs/HISTORIAL_V9_BETA13_1.md) · [Historial v9 en Word y PDF](docs/HISTORIAL_V9_BETA13_1.md).
 - [Guía OneDrive](docs/GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.md).
 
 No compartas ficheros locales `colecciones.json`, tokens ni claves de TMDB al informar de problemas públicamente.
