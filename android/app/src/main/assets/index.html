@@ -2379,6 +2379,7 @@ const cloudOperationTitles={
  '/api/cloud/backup':'Guardando una copia segura en OneDrive…',
  '/api/cloud/preview':'Revisando las bibliotecas y sus cambios…',
  '/api/cloud/sync':'Confirmando los cambios y creando copias…',
+ '/api/cloud/auto':'Sincronizando ahora con OneDrive…',
  '/api/sync/recovery/restore':'Restaurando una copia local de forma segura…'
 };
 function cloudBusyStart(path){
@@ -2406,7 +2407,7 @@ function cloudBusyEnd(){
 }
 // Copia adicional de las listas en una carpeta local sincronizada con la nube.
 async function cloudRequest(path,method='GET',payload){
- const userStep=Object.prototype.hasOwnProperty.call(cloudOperationTitles,path);
+ const userStep=path!=='/api/cloud/auto'&&Object.prototype.hasOwnProperty.call(cloudOperationTitles,path);
  if(userStep)cloudBusyStart(path);
  try{
    const opts={method,headers:{'X-Atlas-Token':token},cache:'no-store'};
@@ -2572,7 +2573,7 @@ $('mobileSyncNowFast').addEventListener('click',async()=>{
  const btn=$('mobileSyncNowFast');btn.disabled=true;
  $('mobileSyncManualResult').textContent='Comprobando los últimos cambios de OneDrive…';
  try{
-  await cloudAutoReceive(true);
+  await cloudAutoReceive(true,true);
   await cloudRefresh();await mobileRefreshHistory();
   $('mobileSyncManualResult').textContent=$('mobileAutoStatus').textContent;
  }finally{btn.disabled=false;}
@@ -2693,13 +2694,14 @@ $('syncConfirmButton')?.addEventListener('click',async()=>{
 // Tras la primera revisión manual, se fusionan automáticamente cambios seguros.
 // No se consulta TMDB para revisar OneDrive. Se limita la frecuencia de acceso a Graph.
 let cloudAutoBusy=false,cloudAutoCheckedAt=0;
-async function cloudAutoReceive(force=false){
+async function cloudAutoReceive(force=false,showBusy=false){
  if(cloudAutoBusy||cloudSyncBusy||cloudUserRequests>0||pendingSyncToken||!$('syncPreviewPanel').hidden)return;
  if(!force&&Date.now()-cloudAutoCheckedAt<25000)return;
  if(document.querySelector('.overlay:not([hidden])'))return;
  if(document.activeElement?.matches('input,textarea,select,[contenteditable="true"]'))return;
  if(saveTimer!==null)return;
  cloudAutoBusy=true;
+ if(showBusy)cloudBusyStart('/api/cloud/auto');
  const beforeEpoch=saveEpoch;
  const main=document.querySelector('main');
  try{
@@ -2723,7 +2725,7 @@ async function cloudAutoReceive(force=false){
    }finally{/* La recepción automática NUNCA bloquea la interfaz. */}
  }catch(e){
    $('mobileAutoStatus').textContent='⚠ No se pudo comprobar la nube: '+e.message+'. Puedes seguir utilizando tus listas sin conexión.';
- }finally{cloudAutoBusy=false;}
+ }finally{cloudAutoBusy=false;if(showBusy)cloudBusyEnd();}
 }
 window.cineSyncResume=()=>void cloudAutoReceive();
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)void cloudAutoReceive();});
