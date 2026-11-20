@@ -98,6 +98,7 @@ final class Backend {
                 onedrive.logout();
                 return ok(onedrive.status().toString());
             }
+            case "/api/sync/revisions":return ok(new JSONObject().put("revisions",sync.revisions()).toString());
             case "/api/sync/history":return ok(sync.history().toString());
             case "/api/sync/recovery/list":{
                 synchronized(filesLock){return ok(new LocalRecovery(this).list().toString());}
