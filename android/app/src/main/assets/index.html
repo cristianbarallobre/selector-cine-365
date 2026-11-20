@@ -1248,14 +1248,12 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
   <p class="mobile-help"><strong>¿Quieres sincronizar con Windows?</strong> Te recomendamos <strong>OneDrive</strong>. En el PC eliges una carpeta dentro de OneDrive; en Android conectas tu cuenta Microsoft y seleccionas esa misma carpeta. También puedes usar la app sin nube.</p>
   <div class="onedrive-box" id="onedriveBox">
    <h3>☁ Conectar OneDrive</h3>
-   <p class="mobile-help">No necesitas buscar OneDrive en las carpetas del teléfono. Conecta tu cuenta y selecciona una carpeta exclusiva para las pruebas, por ejemplo <strong>Pruebas_Selector_Cine_365</strong>. No se cambiarán tus listas hasta que revises y confirmes.</p>
+   <p class="mobile-help">No necesitas buscar OneDrive en las carpetas del teléfono ni copiar códigos. Pulsa «Conectar cuenta Microsoft», inicia sesión en el navegador y vuelve automáticamente aquí. Después elige una carpeta exclusiva para pruebas, por ejemplo <strong>Pruebas_Selector_Cine_365</strong>. Las listas no se cambiarán hasta que revises y confirmes.</p>
    <button type="button" class="primary" id="odConnect">Conectar cuenta Microsoft</button>
    <div id="odLoginCode" hidden>
-    <p class="mobile-help">Para iniciar sesión de forma segura, abre la página oficial de Microsoft e introduce este código temporal:</p>
-    <div class="onedrive-code" id="odCode" aria-live="polite"></div>
-    <button type="button" class="tool" id="odCopyCode">Copiar código</button>
-    <button type="button" class="tool" id="odOpenLogin">Abrir Microsoft para iniciar sesión</button>
-    <p class="mobile-help">Vuelve a esta pantalla tras introducir el código. Nunca escribas tu contraseña dentro de Selector Cine 365.</p>
+    <p class="mobile-help">Se ha abierto la página oficial de Microsoft en tu navegador. Inicia sesión y acepta el acceso. Microsoft te devolverá automáticamente a Selector Cine 365, <strong>sin copiar ningún código</strong>.</p>
+    <button type="button" class="tool" id="odOpenLogin">Volver a abrir el inicio de sesión de Microsoft</button>
+    <p class="mobile-help">Si Microsoft indica que la dirección de retorno no está registrada, el editor debe añadir <code>msal696458fe-0672-47e5-9fdd-aa0332e9884b://auth</code> como URI de redirección de aplicación móvil/escritorio en Microsoft Entra.</p>
    </div>
    <div id="odFolderArea" hidden>
     <label for="odFolders" class="mobile-help"><strong>Carpeta de OneDrive</strong></label>
@@ -2242,7 +2240,7 @@ async function cloudRequest(path,method='GET',payload){
  if(!r.ok)throw new Error(data.error||'No se pudo completar la operación');return data;
 }
 
-let odPollTimer=null;
+let odAuthorizationUrl="";
 async function odStatus(){
  try{
    const state=await cloudRequest('/api/onedrive/status');
@@ -2258,7 +2256,7 @@ async function odStatus(){
      $('odStatus').textContent='✓ Cuenta Microsoft conectada. Elige tu carpeta de OneDrive; después revisa la sincronización.';
      if(!area.dataset.loaded){area.dataset.loaded='1';await odLoadFolders();}
    }else if(!$('odLoginCode').hidden){
-     $('odStatus').textContent='Esperando a que autorices el inicio de sesión en Microsoft…';
+     $('odStatus').textContent='Esperando el regreso de Microsoft al móvil…';
    }else{
      connect.disabled=false;
      $('odStatus').textContent='OneDrive disponible. No se accederá a tus archivos hasta que inicies sesión y selecciones una carpeta.';
@@ -2278,33 +2276,33 @@ async function odLoadFolders(preselect=''){
    $('odStatus').textContent=selection.options.length?'Elige la carpeta de pruebas que también utilizarás en Windows.':'No hay carpetas en la raíz de OneDrive. Puedes crear una carpeta de pruebas.';
  }catch(e){$('odStatus').textContent='⚠ No se pudieron consultar las carpetas: '+e.message;}
 }
+window.cineMicrosoftAuthFinished=async(ok,message)=>{
+ $('odStatus').textContent=(ok?'✓ ':'⚠ ')+message;
+ if(ok){
+   odAuthorizationUrl='';
+   $('odLoginCode').hidden=true;
+   await odStatus();
+ }
+};
 $('odConnect').addEventListener('click',async()=>{
  const b=$('odConnect');b.disabled=true;
  try{
    const flow=await cloudRequest('/api/onedrive/connect','POST');
-   $('odCode').textContent=flow.code;
+   odAuthorizationUrl=flow.url;
    $('odLoginCode').hidden=false;
-   $('odStatus').textContent='Abre Microsoft para iniciar sesión e introduce el código indicado.';
-   if(odPollTimer)clearInterval(odPollTimer);
-   odPollTimer=setInterval(async()=>{
-     try{
-       const r=await cloudRequest('/api/onedrive/poll','POST');
-       if(r.connected){
-         clearInterval(odPollTimer);odPollTimer=null;await odStatus();
-       }
-     }catch(e){clearInterval(odPollTimer);odPollTimer=null;$('odStatus').textContent='⚠ '+e.message;}
-   },6500);
+   $('odStatus').textContent='Abriendo la pantalla oficial de Microsoft en tu navegador…';
+   if(!window.CineAndroid?.openMicrosoftLogin)
+     throw new Error('No se pudo abrir el navegador de Microsoft desde Android.');
+   window.CineAndroid.openMicrosoftLogin(flow.url);
  }catch(e){$('odStatus').textContent='⚠ '+e.message;}
  finally{b.disabled=false;}
 });
-$('odCopyCode').addEventListener('click',()=>{
- const code=$('odCode').textContent;
- if(window.CineAndroid&&window.CineAndroid.copy)window.CineAndroid.copy(code);
- else if(navigator.clipboard)void navigator.clipboard.writeText(code);
- $('odStatus').textContent='Código copiado. Pégalo en la página oficial de Microsoft.';
-});
 $('odOpenLogin').addEventListener('click',()=>{
- if(window.CineAndroid&&window.CineAndroid.openMicrosoftLogin)window.CineAndroid.openMicrosoftLogin();
+ if(!odAuthorizationUrl){
+   $('odStatus').textContent='Pulsa de nuevo «Conectar cuenta Microsoft» para crear una sesión de inicio.';
+   return;
+ }
+ if(window.CineAndroid?.openMicrosoftLogin)window.CineAndroid.openMicrosoftLogin(odAuthorizationUrl);
 });
 $('odRefresh').addEventListener('click',()=>void odLoadFolders());
 $('odCreateFolder').addEventListener('click',async()=>{
@@ -2339,7 +2337,7 @@ $('odUseFolder').addEventListener('click',async()=>{
 $('odDisconnect').addEventListener('click',async()=>{
  if(!confirm('¿Desconectar la cuenta Microsoft? Tus películas seguirán guardadas en este móvil y los archivos de OneDrive no se borrarán.'))return;
  try{
-   if(odPollTimer){clearInterval(odPollTimer);odPollTimer=null;}
+   odAuthorizationUrl='';
    await cloudRequest('/api/onedrive/disconnect','POST');
    delete $('odFolderArea').dataset.loaded;
    await cloudRefresh();await odStatus();
