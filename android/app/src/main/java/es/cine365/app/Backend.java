@@ -87,7 +87,7 @@ final class Backend {
             }
             case "/api/onedrive/status":return ok(onedrive.status().toString());
             case "/api/onedrive/connect":return ok(onedrive.begin().toString());
-            case "/api/onedrive/poll":return ok(onedrive.poll().toString());
+
             case "/api/onedrive/folders":return ok(onedrive.folders().toString());
             case "/api/onedrive/create":{
                 String name=new JSONObject(body).optString("name","Pruebas_Selector_Cine_365");
