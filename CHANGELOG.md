@@ -19,7 +19,7 @@ Para un historial exhaustivo preparado para Word y PDF consulta [Historial compl
 
 - Se introdujeron búsqueda global, listas numeradas y edición de pertenencias.
 - Se corrigió la posición de los controles de paginación en Estadísticas de Windows.
-- Android pasó al paquete permanente \`es.cine365.app\`, con \`versionCode=9011\`. La clave privada estable se conserva fuera de GitHub; versiones futuras necesitan la misma firma.
+- Android pasó al paquete permanente `es.cine365.app`, con `versionCode=9011`. La clave privada estable se conserva fuera de GitHub; versiones futuras necesitan la misma firma.
 
 ## v9 Beta 10 — Windows y Android (beta)
 
@@ -31,7 +31,7 @@ Para un historial exhaustivo preparado para Word y PDF consulta [Historial compl
 ## v9 Betas 1–9 — Windows y Android (experimental)
 
 - Primeras ediciones nativas de Android, caché TMDB, conexión OneDrive, sincronización automática, diseño móvil, controles de vista y documentación técnica.
-- Beta 9 usaba \`es.cine365.app.v9beta9\`; no puede actualizarse directamente sobre el paquete nuevo conservando datos privados sin exportación/importación.
+- Beta 9 usaba `es.cine365.app.v9beta9`; no puede actualizarse directamente sobre el paquete nuevo conservando datos privados sin exportación/importación.
 
 ## Archivo v8 y anterior
 
