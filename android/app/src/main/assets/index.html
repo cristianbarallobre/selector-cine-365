@@ -2497,6 +2497,7 @@ let pendingSyncToken='';
 async function syncDevices(){
  if(cloudSyncBusy||document.querySelector('.overlay:not([hidden])'))return;
  cloudSyncBusy=true;
+ cloudBusyStart('/api/cloud/preview');
  const message=$('syncResult'),button=$('cloudSyncNow');
  if(button)button.disabled=true;
  try{
@@ -2529,7 +2530,7 @@ async function syncDevices(){
    message.textContent='Revisa el resumen y confirma la importación. Ningún dato se ha cambiado todavía.';
    panel.scrollIntoView({block:'nearest',behavior:'smooth'});
  }catch(error){message.textContent='⚠ '+error.message;}
- finally{cloudSyncBusy=false;if(button)button.disabled=false;}
+ finally{cloudSyncBusy=false;if(button)button.disabled=false;cloudBusyEnd();}
 }
 $('cloudSyncNow')?.addEventListener('click',()=>void syncDevices());
 $('syncCancelButton')?.addEventListener('click',()=>{
@@ -2544,6 +2545,7 @@ $('syncConfirmButton')?.addEventListener('click',async()=>{
    if(!chosen){$('syncResult').textContent='Resuelve primero todas las decisiones señaladas.';button.disabled=false;return;}
    decisions[f.dataset.key]=chosen.value==='seen';
  }
+ cloudBusyStart('/api/cloud/sync');
  try{
    $('syncResult').textContent='Importando y guardando una copia segura…';
    const data=await cloudRequest('/api/cloud/sync','POST',{token:pendingSyncToken,decisions});
@@ -2552,7 +2554,7 @@ $('syncConfirmButton')?.addEventListener('click',async()=>{
    $('syncResult').textContent='✓ Biblioteca compartida · '+data.lists+' listas · '+data.seen+' películas vistas.\nPuedes volver a revisar cuando quieras.';
    await cloudRefresh();
  }catch(e){$('syncResult').textContent='⚠ '+e.message+' No se ha sobrescrito la copia de Windows.';}
- finally{button.disabled=false;}
+ finally{button.disabled=false;cloudBusyEnd();}
 });
 // Tras la primera revisión manual, se fusionan automáticamente cambios seguros.
 // No se consulta TMDB para revisar OneDrive. Se limita la frecuencia de acceso a Graph.
