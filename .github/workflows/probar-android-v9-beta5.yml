@@ -1,7 +1,7 @@
-name: Probar Android Beta 6 sin publicar
+name: Probar Android Beta 7 sin publicar
 on:
   push:
-    branches: [feature/v9-onedrive-android-beta5, feature/v9-onedrive-active-beta6]
+    branches: [feature/v9-onedrive-android-beta5, feature/v9-onedrive-active-beta6, feature/v9-android-onedrive-pkce-beta7]
     paths:
       - 'android/**'
       - '.github/workflows/probar-android-v9-beta5.yml'
@@ -42,7 +42,17 @@ jobs:
               path.write_text(js)
               subprocess.run(['node','--check',str(path)],check=True)
           PY
-      - name: Compilar APK con identificador Microsoft de registro
+      - name: Validar que ya no se usa código de dispositivo
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('android/app/src/main/java/es/cine365/app/OneDriveCloud.java').read_text()
+          m=Path('android/app/src/main/AndroidManifest.xml').read_text()
+          assert 'code_challenge_method=S256' in s and 'authorization_code' in s
+          assert 'devicecode' not in s and 'onedrive/poll' not in s
+          assert 'msal696458fe-0672-47e5-9fdd-aa0332e9884b' in m
+          PY
+      - name: Compilar APK Beta 7 con inicio Microsoft PKCE
         working-directory: android
         run: gradle --no-daemon --stacktrace assembleDebug
 
