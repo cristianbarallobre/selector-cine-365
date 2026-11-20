@@ -197,7 +197,7 @@ public class MainActivity extends Activity {
             });
         }
         @JavascriptInterface public void saveOnExit(String state){
-            try{JSONObject obj=new JSONObject(state);if(Backend.validLibrary(obj))backend.storeState(obj);}catch(Exception ignored){}
+            try{JSONObject obj=new JSONObject(state);backend.saveOnExit(obj);}catch(Exception ignored){}
         }
         @JavascriptInterface public void closeApp(){runOnUiThread(()->finish());}
         @JavascriptInterface public void openExternal(String href){runOnUiThread(()->{
