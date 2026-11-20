@@ -2,22 +2,26 @@
 
 Aplicación personal de cine para **Windows 10/11**, **macOS Apple Silicon e Intel** y **Android**, creada por **Cristian Barallobre Rúa**. Sirve para organizar listas, registrar películas vistas, decidir qué ver, consultar datos de TMDB y sincronizar bibliotecas entre dispositivos.
 
-**Versión más reciente:** **v9 Beta 13** (hotfix de Android, 20 de noviembre de 2026; Windows y Mac conservan los paquetes Beta 12). Es una *beta*, no una edición estable o validada en todos los dispositivos. Las versiones históricas principales permanecen visibles; los instaladores de las betas intermedias se han respaldado en un borrador privado, conservando las etiquetas Git y las ramas.
+**Edición actual para pruebas:** **v9 Beta 13.1 en Windows y macOS**, y **v9 Beta 13 en Android** (20 de noviembre de 2026). Es una *beta*, no una versión estable; las pruebas físicas de sincronización entre dispositivos siguen pendientes. Las cuatro plataformas se distribuyen juntas bajo una misma publicación.
 
 ## Descargar
 
-**[Releases y descargas de Selector Cine 365](https://github.com/cristianbarallobre/selector-cine-365/releases)**
+**[Release conjunta v9 Beta 13.1 — Windows, Android y Mac](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13.1)**
 
-La versión para instalar es [Beta 12.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.2) (Android corregido; Windows y Mac utilizan los binarios originales de Beta 12). La anterior es [Beta 12.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.1) (Android corregido, Windows y Mac sin cambios), además de las anteriores. Las **releases históricas** se organizan así: [Beta 12](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12) (versión anterior, cuatro plataformas), [Beta 9](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.9) (histórica, Windows y Android), [v8.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.2) y [v8.1.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.1.1). Las releases redundantes están archivadas; **no se han borrado sus fuentes ni sus tags**. Consulta la [política de publicaciones y recuperación](docs/POLITICA_DE_RELEASES.md).
-
-| Plataforma | Archivo de Beta 13 | Requisitos |
+| Plataforma | Archivo incluido | Requisitos |
 |---|---|---|
-| Windows | `Selector_Cine_365_Windows_v9_BETA13.zip` | Windows 10/11 de 64 bits y Microsoft WebView2 Runtime |
-| Mac Apple Silicon | `Selector_Cine_365_Mac_Apple_Silicon_v9_BETA13.zip` | macOS 12+; M1/M2/M3/M4 y posteriores |
-| Mac Intel | `Selector_Cine_365_Mac_Intel_v9_BETA13.zip` | macOS 12+; procesador Intel |
-| Android | `Selector_Cine_365_Android_v9_BETA13.apk` | Android 8.0+ (API 26); instalar únicamente la APK firmada publicada |
+| Windows | `Selector_Cine_365_Windows_v9_BETA13_1.zip` | Windows 10/11 de 64 bits, Microsoft WebView2 |
+| macOS Apple Silicon | `Selector_Cine_365_Mac_Apple_Silicon_v9_BETA13_1.zip` | macOS 12+, Apple Silicon |
+| macOS Intel | `Selector_Cine_365_Mac_Intel_v9_BETA13_1.zip` | macOS 12+, Intel |
+| Android | `Selector_Cine_365_Android_v9_BETA13.apk` | Android 8.0+, APK firmada y verificada |
 
-**Importante:** si una plataforma aún no figura entre los archivos de la release, no descargues una APK sin firma ni sustituyas otra versión como si fuera equivalente. Consulta las notas de la publicación.
+**Por qué Android pone Beta 13:** su última compilación ya contiene los arreglos de sincronización y notch. El cambio de **Beta 13.1 es exclusivo del servidor Go de Windows/Mac**; no se necesita recompilar ni cambiar el número interno 9015 de Android.
+
+**Novedad de escritorio Beta 13.1:** corregida la ruta local `/api/platforms/cache`, que devolvía HTTP 404 al abrir y dejaba la interfaz en «Conexión local TMDB no disponible. Reintentando…» aunque la clave TMDB existiera. Ahora la caché se carga correctamente; errores de caché y de estado se tratan por separado. El botón Actualizar permite comprobar de nuevo la conexión. No se incluyen claves privadas en los instaladores.
+
+**Antes de actualizar:** exporta copia JSON **desde cada dispositivo**, preferiblemente fuera de OneDrive; después instala las versiones nuevas sin desinstalar y revisa la primera sincronización. Si una lista se eliminó antes de Beta 13 y reapareció por una copia antigua, bórrala una vez con ambos dispositivos ya actualizados. La aplicación puede utilizarse sin sincronización.
+
+Histórico: [Beta 12.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.2), [Beta 12.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.1), [Beta 12](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12), [Beta 9](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.9), [v8.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.2) y [v8.1.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.1.1). Para recuperar instaladores de betas retiradas consulta [política de releases](docs/POLITICA_DE_RELEASES.md).
 
 ## Novedades v9 Beta 13 — listas y TMDB fiables
 
@@ -27,7 +31,7 @@ La versión para instalar es [Beta 12.2](https://github.com/cristianbarallobre/s
 - **Al reabrir:** una lectura fallida temporal de TMDB no borra la configuración y la app vuelve a intentar conectar con su motor local.
 - **Android:** mantiene el notch y el menú corregidos en Beta 12.2. Paquete `es.cine365.app`, versión interna 9015, firma de las Betas anteriores.
 
-**Antes de probar OneDrive:** exporta JSON en ambos dispositivos y actualiza los dos a Beta 13. Si una lista ya había reaparecido antes de esta revisión, elimínala una vez con ambos actualizados. [Ver la Beta 13](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13).
+**Antes de probar OneDrive:** exporta JSON en ambos dispositivos y actualiza los dos a Beta 13. Si una lista ya había reaparecido antes de esta revisión, elimínala una vez con ambos actualizados. [Ver la release conjunta Beta 13.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13.1).
 
 ## Android v9 Beta 12.2 — notch y menú inferior sin margen doble
 
