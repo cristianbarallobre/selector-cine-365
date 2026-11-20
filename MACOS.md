@@ -1,6 +1,12 @@
-# Selector Cine 365 — macOS v9 Beta 12
+# Selector Cine 365 — macOS v9 Beta 13
 
 **Autor: Cristian Barallobre Rúa.** Aplicación para macOS 12 o posterior, en dos variantes: **Apple Silicon (arm64)** e **Intel (x86_64)**.
+
+## Cambios de Beta 13
+
+Esta revisión conserva las funciones de Windows y corrige también en Mac el espacio de cuatro filas de Mis listas, el registro de borrados para evitar reapariciones por OneDrive, el intercambio de ID TMDB identificados manualmente y la relectura resistente de la configuración TMDB tras reiniciar. La clave de TMDB no sale del dispositivo.
+
+**Seguridad:** guarda un JSON antes de actualizar y actualiza también el Android vinculado a Beta 13 antes de probar eliminaciones.
 
 ## Paridad con Windows
 
@@ -13,8 +19,8 @@ Incluye la búsqueda en todas las listas, listas numeradas, indicadores «Listas
 ## Instalación y actualización
 
 1. Descarga en [Releases](https://github.com/cristianbarallobre/selector-cine-365/releases) el paquete de tu procesador:
-   - `Selector_Cine_365_Mac_Apple_Silicon_v9_BETA12.zip`.
-   - `Selector_Cine_365_Mac_Intel_v9_BETA12.zip`.
+   - `Selector_Cine_365_Mac_Apple_Silicon_v9_BETA13.zip`.
+   - `Selector_Cine_365_Mac_Intel_v9_BETA13.zip`.
 2. Guarda una copia JSON de tus listas antes de actualizar.
 3. Cierra la app anterior, descomprime el ZIP y reemplaza `Selector Cine 365.app` en **Aplicaciones**.
 4. Abre la aplicación. Si macOS bloquea el inicio de una app no notarizada, comprueba el origen y consulta **Ajustes del Sistema → Privacidad y seguridad → Abrir igualmente**.
@@ -40,7 +46,7 @@ MAC_ARCH=arm64 MAC_LABEL=Apple_Silicon bash scripts/build_macos_app.sh
 MAC_ARCH=amd64 MAC_LABEL=Intel bash scripts/build_macos_app.sh
 ```
 
-El script genera los dos ZIP nombrados con **v9 BETA12**, `CFBundleShortVersionString = 9.0.0-beta.12` y `CFBundleVersion = 9012`. Genera el icono `.icns` desde el `icon.png` actual, firma ad hoc y verifica la estructura de la app.
+El script genera los dos ZIP nombrados con **v9 BETA12**, `CFBundleShortVersionString = 9.0.0-beta.13` y `CFBundleVersion = 9015`. Genera el icono `.icns` desde el `icon.png` actual, firma ad hoc y verifica la estructura de la app.
 
 El binario para Apple Silicon se puede compilar desde un runner Intel cuando esté disponible el SDK correspondiente y un compilador C compatible; el flujo CI comprueba su arquitectura con `file`. Siempre que sea posible, ejecuta una prueba manual también en un Mac Apple Silicon.
 
