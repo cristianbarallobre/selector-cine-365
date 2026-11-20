@@ -2,12 +2,18 @@
 
 ## Manual completo de uso: Windows, macOS y Android
 
-**Edición:** v9 Beta 13 para Windows, Android y macOS (guía de pruebas, no versión estable)  
+**Edición:** v9 Beta 13.1 Windows/Mac y v9 Beta 13 Android (guía de pruebas, no versión estable)  
 **Fecha:** 20 de noviembre de 2026  
 **Autor del programa:** Cristian Barallobre Rúa  
 **Objeto de este manual:** biblioteca, películas vistas, listas, búsqueda global, sorteo, estadísticas, TMDB, copias y sincronización opcional con OneDrive.
 
-> Este manual describe la v9 Beta 12 para Windows, Android y Mac. La interfaz de escritorio se comparte entre Windows (WebView2) y Mac (WKWebView); Android tiene navegación propia. No se ha validado toda la funcionalidad en hardware Mac real. Antes de probar nuevas betas, exporta una copia JSON y conserva una versión anterior. La nube es opcional: la biblioteca también funciona sin Internet ni clave TMDB.
+> Este manual describe la release coordinada v9 Beta 13.1 para Windows y Mac y la APK Android Beta 13. La interfaz de escritorio se comparte entre Windows (WebView2) y Mac (WKWebView); Android tiene navegación propia. No se ha validado toda la funcionalidad en hardware Mac real. Antes de probar nuevas betas, exporta una copia JSON y conserva una versión anterior. La nube es opcional: la biblioteca también funciona sin Internet ni clave TMDB.
+
+## Corrección Beta 13.1 — TMDB al abrir Windows o Mac
+
+Al reabrir Beta 13, podía aparecer permanentemente «Conexión local TMDB no disponible. Reintentando…», incluso con una clave válida guardada. El problema no estaba en tu clave ni en OneDrive: el servidor local tenía la ruta de caché `/api/platforms/cache` implementada, pero no conectada al enrutador principal, por lo que respondía HTTP 404. **Beta 13.1** corrige esa ruta y distingue el estado de credenciales del estado de la caché. Si la caché falla, la clave local no se borra ni se marca erróneamente como ausente; el botón Actualizar permite volver a consultarla.
+
+El archivo de Windows es `Selector_Cine_365_Windows_v9_BETA13_1.zip` y los de Mac terminan en `v9_BETA13_1.zip`. **Android sigue en Beta 13 (9015)**; su backend es diferente y no necesita este ajuste. El programa puede usarse localmente sin TMDB ni nube.
 
 ## Correcciones de Beta 13 — listas, TMDB y sincronización
 
@@ -185,7 +191,7 @@ Las betas son versiones de prueba y pueden tener errores. La sincronización seg
 ## 15. Enlaces útiles
 
 - Proyecto y versiones: <https://github.com/cristianbarallobre/selector-cine-365>
-- Historial v9 Beta 12 en Markdown, Word y PDF: <https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/HISTORIAL_V9_BETA12.md>
+- Historial v9 Beta 12 en Markdown, Word y PDF: <https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/HISTORIAL_V9_BETA13_1.md>
 - Manual completo (esta guía): <https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/MANUAL_COMPLETO_SELECTOR_CINE_365.pdf>
 - Guía de Microsoft Azure, Entra y OneDrive: <https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.md>
 - TMDB: <https://www.themoviedb.org/>

@@ -2,6 +2,10 @@
 
 **Autor:** Cristian Barallobre Rúa. **Estado:** versión beta experimental para Android 8.0+ (API 26). Conserva funcionamiento local sin cuenta Microsoft y sin clave TMDB.
 
+## Compatibilidad con la release conjunta Beta 13.1
+
+La release `v9.0.0-beta.13.1` incluye **esta misma APK Android Beta 13**, `es.cine365.app`, versión interna **9015**, firmada con el mismo certificado persistente que Beta 11–12.2. No se ha cambiado Android para este hotfix: Beta 13.1 repara exclusivamente una ruta de caché TMDB del motor Go de Windows y Mac. **No desinstales Android si ya tienes Beta 13.** Para sincronizar listas eliminadas e identidades manuales utiliza Windows/Mac Beta 13.1 y Android Beta 13.
+
 ## Actualización Beta 13 — sincronización de listas e identidades
 
 - Ahora se guardan en la nube los ID de las listas eliminadas para que un snapshot antiguo no pueda recuperarlas involuntariamente.
@@ -16,7 +20,7 @@
 
 Beta 12.1 corrigió el título tapado por la cámara frontal/notch utilizando los `WindowInsets` nativos de `systemBars` y `displayCutout`. En algunos Redmi, la barra inferior quedaba demasiado arriba porque el HTML sumaba de nuevo `env(safe-area-inset-bottom)` a un espacio que Android ya había reservado. **Beta 12.2 elimina esa segunda reserva**, manteniendo el ajuste nativo en los cuatro lados; no se usa un margen fijo por modelo. Debe comprobarse visualmente en el Redmi con gestos, botones clásicos y rotación antes de considerarlo completamente validado.
 
-**Si tienes Beta 11, Beta 12 o Beta 12.1:** instala Beta 12.2 directamente encima, **sin desinstalar**. Conserva `es.cine365.app` y la misma firma; el código de versión pasa a `9014`. Recomendamos una copia JSON antes de actualizar.
+**Archivo histórico Beta 12.2:** desde Beta 11, Beta 12 o Beta 12.1 se podía instalar aquella APK encima, **sin desinstalar**. Conserva `es.cine365.app` y la misma firma; el código de versión pasa a `9014`. Recomendamos una copia JSON antes de actualizar.
 
 ## Instalación: elegir la situación correcta
 

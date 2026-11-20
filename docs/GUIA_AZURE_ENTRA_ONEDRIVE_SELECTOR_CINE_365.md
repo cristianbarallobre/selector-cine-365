@@ -1,9 +1,9 @@
 # Selector Cine 365
 ## Guía de configuración de Microsoft Azure, Entra ID y OneDrive
 
-**Edición:** actualizada para v9 Beta 12, 20 de noviembre de 2026  
+**Edición:** actualizada para la release v9 Beta 13.1 Windows/Mac y APK Android Beta 13, 20 de noviembre de 2026  
 **Alcance:** conexión de OneDrive personal con Selector Cine 365 para Android y escritorio Windows/macOS.  
-**Estado comprobado:** el inicio de sesión de Microsoft y la sincronización entre dispositivos llegaron a funcionar tras el cambio al inicio interactivo de Android Beta 7. La sincronización automática y las revisiones causales se conservan en Beta 12, pero deben seguir probándose con dispositivos reales.
+**Estado comprobado:** el inicio de sesión de Microsoft y la sincronización entre dispositivos llegaron a funcionar tras el cambio al inicio interactivo de Android Beta 7. La sincronización automática y las revisiones causales se conservan en Beta 13, pero deben seguir probándose con dispositivos reales.
 
 > **Idea principal:** no necesitas crear una aplicación de Azure por cada teléfono, ni usar códigos de dispositivo, ni contratar servidores. El registro de Microsoft Entra sirve para autorizar el acceso de Android a OneDrive. En Windows y macOS se utiliza la carpeta de OneDrive sincronizada por el cliente instalado en el ordenador.
 
@@ -180,10 +180,14 @@ Comprueba que Windows y Android apuntan a **la misma carpeta**, que el cliente O
 ---
 
 **Nota de conservación:** esta guía documenta la configuración que funcionó para Selector Cine 365 y los problemas reales encontrados en el proceso. La interfaz de Azure/Entra puede cambiar de nombre o ubicación; los valores técnicos (tipo de cuenta, permisos, Id. de cliente y URI de retorno) son la referencia principal mientras la app siga usando este registro.
-## Nota sobre la edición v9 Beta 12.2 (Android)
+## Nota sobre Beta 13.1 de escritorio y Beta 13 Android
 
 - El registro público de Microsoft Entra, los permisos delegados y la URI de redirección no han cambiado al avanzar de Beta 12 a Beta 12.2. La corrección de notch y menú inferior solo afecta al diseño Android y no modifica la sincronización.
 - No se necesitan credenciales de Azure para utilizar la biblioteca local. La sincronización es opcional.
 - Android almacena y protege sus tokens en su espacio de aplicación; **no** los exportes en capturas ni los publiques en GitHub.
 - La app solo revisa la carpeta OneDrive seleccionada para su biblioteca; conserva una copia JSON independiente antes de conectar otro dispositivo.
 - Esta guía documenta la configuración, no garantiza instantaneidad ni ausencia de conflictos en la sincronización real.
+
+## Nota de compatibilidad con Beta 13.1
+
+En esta publicación Windows y Mac incluyen la corrección de caché TMDB del servidor local Go. Android permanece en Beta 13 (versión interna 9015) con su firma persistente. **La corrección TMDB no requiere modificar Microsoft Entra ni volver a iniciar sesión en OneDrive**. Los IDs de películas identificadas manualmente y los marcadores de listas eliminadas se comparten en la biblioteca, pero **la clave privada API TMDB nunca se sincroniza**. Antes de compartir borrados entre dispositivos exporta una copia JSON independiente y actualiza Windows/Mac y Android a estas versiones.

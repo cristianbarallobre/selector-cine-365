@@ -1,8 +1,16 @@
 # Historial de cambios — Selector Cine 365
 
-**Versión más reciente v9 Beta 13 (Windows, Android y macOS; 20 de noviembre de 2026).** Los cambios recientes se basan en el código fuente v9, no en la rama antigua v8.2. Los paquetes Mac usan el mismo frontend y motor Go que Windows; no se afirma que se hayan validado manualmente en hardware real.
+**Edición más reciente: v9 Beta 13.1 (Windows y Mac) y v9 Beta 13 (Android), 20 de noviembre de 2026.** Los cambios recientes se basan en el código fuente v9, no en la rama antigua v8.2. Los paquetes Mac usan el mismo frontend y motor Go que Windows; no se afirma que se hayan validado manualmente en hardware real.
 
-Para un historial exhaustivo preparado para Word y PDF consulta [Historial completo v1–v9 Beta 12](docs/HISTORIAL_V9_BETA12.md). El registro detallado de v8.1.1 permanece como documento histórico independiente.
+Para un historial exhaustivo preparado para Word y PDF consulta [Historial completo v1–v9 Beta 13.1](docs/HISTORIAL_V9_BETA13_1.md). El registro detallado de v8.1.1 permanece como documento histórico independiente.
+
+## v9 Beta 13.1 — Windows y Mac (20 de noviembre de 2026)
+
+- Reparada la ruta local `GET /api/platforms/cache`, implementada en TMDB pero omitida del enrutador principal. Esto provocaba HTTP 404 y dejaba el mensaje «Conexión local TMDB no disponible. Reintentando…» al reabrir, aunque la clave estuviera guardada.
+- La lectura de estado y caché se realiza por separado. Si falla la caché, no se interpreta que falte la clave ni se sobrescribe la configuración; el botón Actualizar reintenta.
+- Añadidas pruebas automáticas de HTTP 200 para estado y caché, y HTTP 403 sin token; se conservaron las pruebas de listas y sincronización.
+- Windows y las dos arquitecturas de macOS comparten el mismo código corregido. Android **permanece en Beta 13 (9015)**; no necesitaba esta corrección del servidor Go.
+- Las cuatro plataformas y la documentación actualizada están incluidas en la release conjunta `v9.0.0-beta.13.1`.
 
 ## v9 Beta 13 — Windows, Mac y Android (20 de noviembre de 2026)
 
