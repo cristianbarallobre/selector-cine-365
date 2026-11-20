@@ -59,6 +59,7 @@ jobs:
           assert 'cloudActivityShield' in frontend
           assert 'MANUAL_COMPLETO_SELECTOR_CINE_365.pdf' in frontend
           assert 'mobileSyncNowFast' in frontend and 'mobileHistory' in frontend
+          assert 'cineRevisionCache' in frontend and 'cineLoadRevisions' in frontend
           assert 'mobileRecoveryRestore' in frontend and 'mobileLastCheck' in frontend
           assert 'Date.now()-cloudAutoCheckedAt<25000' in frontend
           graph=Path('android/app/src/main/java/es/cine365/app/OneDriveCloud.java').read_text()
