@@ -1,17 +1,19 @@
 # Selector Cine 365 — Plan funcional y técnico v9.0
 
-**Estado (20-11-2026):** **v9 Beta 12.2 Android y v9 Beta 12 Windows/macOS; implementación experimental en Windows y Android; la versión para Mac Intel y Apple Silicon comparte el código de Windows y está publicada como beta en GitHub Releases.** No está aprobada todavía como versión estable: faltan pruebas prolongadas de sincronización en dispositivos reales.  
+**Estado (20-11-2026):** **v9 Beta 13 Android y v9 Beta 13.1 Windows/macOS; implementación experimental en Windows y Android; la versión para Mac Intel y Apple Silicon comparte el código de Windows y está publicada como beta en GitHub Releases.** No está aprobada todavía como versión estable: faltan pruebas prolongadas de sincronización en dispositivos reales.  
 **Autor:** Cristian Barallobre Rúa.  
 **Plataformas previstas:** Windows, Android y macOS (Apple Silicon / Intel).  
-**Base actual:** código v9 Beta 12 de escritorio Go/HTML/WKWebView-WebView2 y código Android Java/Gradle dentro de este mismo repositorio. El plan recoge objetivos originales y puede incluir funciones todavía pendientes.
+**Base actual:** código v9 Beta 13.1 de escritorio Go/HTML/WKWebView-WebView2 y código Android Java/Gradle dentro de este mismo repositorio. El plan recoge objetivos originales y puede incluir funciones todavía pendientes.
 
-## Seguimiento del estado v9 Beta 12.2 (Android)
+## Seguimiento del estado v9 Beta 13.1 (Windows/Mac) y Beta 13 (Android)
 
 **Ya implementado en la beta (sujeto a pruebas reales):** modo local sin nube; Windows, Android y versiones Mac Intel/Apple Silicon publicadas; base compartida para Windows y Mac; búsqueda global/listas numeradas; estado Vista/Pendiente desde el tick; PKCE/OneDrive personal en Android; revisiones causales, detección periódica, historial y copias de recuperación; interfaz Android adaptada.
 
+**Implementado en Beta 13:** borrados de listas con tombstones persistentes, ID de TMDB corregidos manualmente compartidos sin compartir API key, cuatro huecos estables en paginación de listas. **Beta 13.1 de escritorio:** ruta local `/api/platforms/cache` reparada tras detectar HTTP 404 al abrir.
+
 **Pendiente o con límites importantes:** pruebas de uso real en Mac Intel y Apple Silicon (la compilación CI ya pasó); notarización y firma Apple Developer ID; automatización segura de firma Android para futuras publicaciones; comprobación física prolongada de propagación y conflictos de OneDrive; manejo de borrados/renombrados simultáneos; revisión exhaustiva de accesibilidad móvil.
 
-**Compatibilidad:** Android Beta 9 y Beta 12 no comparten identificador ni certificado, por lo que requieren migración única mediante JSON. Android Beta 11 y 12 sí comparten identificador permanente y deben firmarse con el mismo certificado. La versión estable v9.0 todavía **no** se ha publicado.
+**Compatibilidad:** Android Beta 9 y Beta 13 no comparten identificador ni certificado, por lo que requieren migración única mediante JSON. Android Beta 11, 12 y 13 comparten identificador permanente y deben firmarse con el mismo certificado. La versión estable v9.0 todavía **no** se ha publicado.
 
 ## 1. Objetivos y principios innegociables
 
