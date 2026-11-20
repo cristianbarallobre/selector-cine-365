@@ -485,6 +485,24 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
 #view-settings .mobile-sync-history-row strong{color:#f0dcad}
 #view-settings .mobile-sync-history-row:last-child{border-bottom:0}
 </style>
+<style id="cine-global-beta11">
+.search-scope{display:flex;align-items:center;gap:6px;flex:0 0 auto;min-height:31px;margin:0 0 7px}
+.search-scope-btn{flex:1;border:1px solid #53677c;background:#233245;color:#d4e5f4;border-radius:8px;padding:7px 8px;font-size:12px;font-weight:730}
+.search-scope-btn.active{color:#211908;background:#f3c66d;border-color:#dbad60}
+.film-filmmeta{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:3px;font-size:11px;color:#b8c7d8;min-width:0}
+.film-filmmeta .film-rating{font-size:10px;padding:2px 5px;white-space:nowrap}
+.film-memberships{display:inline-flex;align-items:center;gap:3px;min-width:0;max-width:100%;padding:2px 4px;border-radius:6px;background:#28394d;border:1px solid #50657e}
+.film-memberships-title{font-size:10px;color:#d7e7fa;font-weight:800;white-space:nowrap}
+.film-memberships-numbers{display:inline-flex;gap:2px;max-width:155px;overflow-x:auto;scrollbar-width:thin;min-width:0}
+.film-memberships-numbers button,.film-memberships-edit{border:1px solid #65748a;background:#37485d;color:#ffdf9f;border-radius:5px;min-width:19px;height:21px;padding:1px 3px;font-size:10px;font-weight:750;flex:0 0 auto}
+.film-memberships-numbers button:hover,.film-memberships-edit:hover{background:#53627a}
+.film-memberships-edit{color:#bce9ff}
+.membership-option{display:flex;align-items:center;gap:9px;cursor:pointer;padding:10px;border-radius:9px;border:1px solid #4c5a70;background:#243448;color:#eef4fa;font-size:13px}
+.membership-option input{width:17px;height:17px;accent-color:#f3c66d}
+.membership-options{display:flex;flex-direction:column;gap:6px;max-height:min(48dvh,340px);overflow:auto;padding:4px 2px}
+.membership-intro{font-size:13px;line-height:1.5;color:#c3cfdd}
+@media(max-width:650px){.film-memberships-numbers{max-width:114px}.film-filmmeta{gap:3px}.film-filmmeta .film-rating{font-size:9px}.film-memberships-title{font-size:9px}}
+</style>
 </head>
 <body>
 <textarea id="initialState" hidden>SELECTOR CINE 365 — 365 PELÍCULAS 
@@ -1240,6 +1258,7 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
     <section class="panel" aria-label="Biblioteca de películas">
       <div class="panel-heading"><h2>Tu colección</h2><div class="platform-controls"><button class="mini-ctrl" id="platformSetup" type="button">⚙ Plataformas</button><button class="mini-ctrl" id="platformRefresh" type="button" title="Actualizar disponibilidad en España">↻ Actualizar</button><span class="count-tag" id="libraryCount">365 películas</span></div></div>
       <input type="search" id="search" class="search" placeholder="Buscar película..." autocomplete="off" aria-label="Buscar película">
+<div class="search-scope" role="group" aria-label="Ámbito de búsqueda"><button type="button" class="search-scope-btn active" data-search-scope="current" aria-pressed="true">Lista actual</button><button type="button" class="search-scope-btn" data-search-scope="all" aria-pressed="false">Todas las listas</button></div>
       <div class="filters" role="group" aria-label="Filtrar películas">
         <button type="button" class="filter selected" data-filter="all">Todas</button>
         <button type="button" class="filter" data-filter="pending">Pendientes</button>
@@ -1534,6 +1553,15 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
     </div>
   </section>
 </div>
+<div class="overlay" id="membershipOverlay" hidden>
+ <section class="modal" role="dialog" aria-modal="true" aria-labelledby="membershipTitle">
+  <div class="modal-head"><h2 id="membershipTitle">Listas de la película</h2><button class="close" id="closeMembership" type="button" aria-label="Cerrar">✕</button></div>
+  <p class="membership-intro">Marca las listas donde debe aparecer esta película. El estado vista o pendiente se mantiene en todas.</p>
+  <div id="membershipOptions" class="membership-options" role="group" aria-label="Listas disponibles"></div>
+  <div id="membershipWarning" class="modal-status" aria-live="polite"></div>
+  <div class="modal-actions"><button class="close" id="cancelMembership" type="button">Cancelar</button><button class="primary" id="applyMembership" type="button">Guardar cambios</button></div>
+ </section>
+</div>
 <div class="overlay" id="pasteOverlay" hidden>
   <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-head"><h2 id="modalTitle">Pegar nueva lista</h2><button class="close" type="button" id="closeModal" aria-label="Cerrar">✕</button></div>
@@ -1595,7 +1623,7 @@ const $=id=>document.getElementById(id);
 const token='android-local';
 let rawText=$('initialState').value.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
 let parsed=null,filter='all',search='',chosen=null,lastChoice=null,saveTimer=null,saveQueue=Promise.resolve(),saveEpoch=0;
-let filmPage=0,collectionPage=0,statPages=new Map();
+let filmPage=0,collectionPage=0,statPages=new Map(),searchScope='current',membershipCache=null,membershipFilm=null;
 let platformConfigured=false, platformData=new Map(),platformRun=0,platformActive=false,platformFinished=0,platformTotal=0;
 let libraryState={version:1,active_id:'atlas',lists:[{id:'atlas',name:'Selector Cine 365 · 365',text:rawText}]};
 let editingListID=null,activeView='library',selectedSortPlatform='all';
@@ -1756,7 +1784,7 @@ function parse(text){
  for(let i=0;i<lines.length;i++){const f=lineInfo(lines[i],i);if(f)entries.push(f);}
  return {lines,entries,seen:entries.filter(f=>f.checked).length,pending:entries.filter(f=>!f.checked)};
 }
-function update(){parsed=parse(rawText);const n=parsed.entries.length;
+function update(){membershipCache=null;parsed=parse(rawText);const n=parsed.entries.length;
  $('total').textContent=n;$('watched').textContent=parsed.seen;$('remaining').textContent=parsed.pending.length;
  $('libraryCount').textContent=`${n} ${n===1?'película':'películas'}`;
  const pct=n?Math.round(100*parsed.seen/n):0;
@@ -1866,7 +1894,7 @@ $('filmPageGotoForm').addEventListener('submit',e=>{
  filmPage=page-1;renderList();input.value='';
 });
 function resetChoice(){chosen=null;$('resultPoster').hidden=true;$('resultPoster').removeAttribute('src');$('resultPlatforms').replaceChildren();$('resultTag').textContent='EL SORTEO TE ESPERA';$('resultTitle').textContent='Tu próxima película aparecerá aquí';$('resultDetails').textContent='';$('markWatched').disabled=true;$('copyChoice').disabled=true;}
-function scheduleSave(){ $('saveState').textContent='Guardando…';clearTimeout(saveTimer);saveTimer=setTimeout(()=>{saveTimer=null;void saveLocal();},240);}
+function scheduleSave(){membershipCache=null; $('saveState').textContent='Guardando…';clearTimeout(saveTimer);saveTimer=setTimeout(()=>{saveTimer=null;void saveLocal();},240);}
 async function saveLocal(){
  syncActiveText();const snapshot=JSON.stringify(libraryState);const epoch=++saveEpoch;
  saveQueue=saveQueue.catch(()=>{}).then(async()=>{
@@ -2113,6 +2141,7 @@ async function initLibrary(){
 }
 function validLibrary(s){return s&&s.version===1&&Array.isArray(s.lists)&&s.lists.length>0&&s.lists.length<=40&&typeof s.active_id==='string'&&s.lists.some(l=>l.id===s.active_id)&&s.lists.every(l=>typeof l.text==='string'&&typeof l.name==='string'&&typeof l.id==='string');}
 function restartList(){
+ searchScope='current';$('listPlatformButton').disabled=false;document.querySelectorAll('[data-search-scope]').forEach(b=>{const yes=b.dataset.searchScope==='current';b.classList.toggle('active',yes);b.setAttribute('aria-pressed',String(yes));});
  filmPage=0;collectionPage=0;statPages.clear();platformRun++;platformFinished=0;platformTotal=0;platformActive=false;lastChoice=null;resetChoice();filter='all';search='';$('search').value='';
  selectedSortPlatform='all';$('platformSelect').value='all';selectedListPlatforms.clear();closeListPlatformMenu();
  document.querySelectorAll('.filter').forEach(b=>b.classList.toggle('selected',b.dataset.filter==='all'));
@@ -2127,7 +2156,7 @@ function switchCollection(id){
  syncActiveText();virtualMode=false;libraryState.active_id=id;rawText=activeCollection().text||'';restartList();scheduleSave();showView('library');
 }
 function renderCollectionControls(){
- const sel=$('listSwitcher');sel.replaceChildren();for(const list of libraryState.lists){const o=document.createElement('option');o.value=list.id;o.textContent=list.name;sel.appendChild(o)}
+ const sel=$('listSwitcher');sel.replaceChildren();for(const list of libraryState.lists){const o=document.createElement('option');o.value=list.id;o.textContent=numberedListName(list);sel.appendChild(o)}
  if(hasComparison()){const o=document.createElement('option');o.value=virtualID;o.textContent='⚭ Películas coincidentes (solo lectura)';sel.appendChild(o);}
  sel.value=virtualMode?virtualID:libraryState.active_id;
  $('compareInfo').textContent=hasComparison()?'Coincidencias: '+comparisonLists().map(x=>x.name).join(' · '):'Coincidencias: sin configurar';$('compareInfo').title=$('compareInfo').textContent;
@@ -2143,7 +2172,7 @@ function renderCollectionControls(){
  $('collectionPrev').disabled=collectionPage===0;$('collectionNext').disabled=collectionPage>=pages-1;
  for(const item of libraryState.lists.slice(start,start+visible)){
    const parsedItem=parse(item.text);const row=document.createElement('div');row.className='collection-item'+(item.id===libraryState.active_id?' current':'');
-   const info=document.createElement('div');info.className='collection-info';const name=document.createElement('div');name.className='collection-name';name.textContent=item.name;
+   const info=document.createElement('div');info.className='collection-info';const name=document.createElement('div');name.className='collection-name';name.textContent=numberedListName(item);
    const meta=document.createElement('div');meta.className='collection-meta';meta.textContent=parsedItem.entries.length+' películas · '+parsedItem.seen+' vistas';info.append(name,meta);
    const buttons=document.createElement('div');buttons.className='collection-buttons';
    const enter=document.createElement('button');enter.className='mini-ctrl';enter.textContent=item.id===libraryState.active_id?'✓ Activa':'Abrir';enter.disabled=item.id===libraryState.active_id;enter.addEventListener('click',()=>switchCollection(item.id));
@@ -2183,7 +2212,7 @@ function openCompareModal(){
  for(const l of libraryState.lists){
    const label=document.createElement('label');label.className='compare-option';
    const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.value=l.id;checkbox.checked=active.has(l.id);
-   const name=document.createElement('span');name.textContent=l.name;
+   const name=document.createElement('span');name.textContent=numberedListName(l);
    label.append(checkbox,name);target.appendChild(label);
  }
  $('compareStatus').textContent='';$('compareOverlay').hidden=false;
@@ -2910,7 +2939,7 @@ $('exportBtn').addEventListener('click',()=>{
 const overlay=$('pasteOverlay');function closeModal(){overlay.hidden=true;$('pasteText').value='';$('pasteStatus').textContent='';}
 $('pasteBtn').addEventListener('click',()=>{overlay.hidden=false;$('pasteText').focus();});
 $('closeModal').addEventListener('click',closeModal);$('cancelPaste').addEventListener('click',closeModal);overlay.addEventListener('click',e=>{if(e.target===overlay)closeModal();});
-window.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!overlay.hidden)closeModal();if(!$('deleteFilmOverlay').hidden)closeDeleteFilmModal();if(!$('compareOverlay').hidden)closeCompareModal();if(!$('platformOverlay').hidden)closePlatformModal();if(!$('batchOverlay').hidden)closeBatchModal();closeListPlatformMenu();$('listOverlay').hidden=true;$('filmOverlay').hidden=true;}});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!overlay.hidden)closeModal();if(!$('deleteFilmOverlay').hidden)closeDeleteFilmModal();if(!$('compareOverlay').hidden)closeCompareModal();if(!$('membershipOverlay').hidden)closeMembershipModal();if(!$('platformOverlay').hidden)closePlatformModal();if(!$('batchOverlay').hidden)closeBatchModal();closeListPlatformMenu();$('listOverlay').hidden=true;$('filmOverlay').hidden=true;}});
 $('pasteText').addEventListener('input',()=>{const n=parse($('pasteText').value).entries.length;$('pasteStatus').textContent=n?`${n} ${n===1?'película detectada':'películas detectadas'}`:'';});
 $('applyPaste').addEventListener('click',()=>{if(replaceList($('pasteText').value)){closeModal();notify('Lista actualizada.');}else $('pasteStatus').textContent='No se encontraron películas.';});
 $('openFile').addEventListener('click',()=>$('fileInput').click());
