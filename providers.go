@@ -138,6 +138,7 @@ func (p *availabilityServer) importManualOverrides(mappings map[string]int) erro
   old,exists:=next[key]
   if id==0{
    if exists{delete(next,key);changed=true}
+   if _,ok:=p.identities[key];ok{changed=true};if _,ok:=p.cache[key];ok{changed=true}
    delete(p.identities,key);delete(p.cache,key)
   }else if !exists||old!=id{
    next[key]=id;changed=true
