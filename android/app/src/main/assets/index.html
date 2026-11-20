@@ -1873,7 +1873,9 @@ async function saveLocal(){
    if(!response.ok)throw new Error('HTTP '+response.status);
    return response.headers.get('X-Cine-Cloud');
  });
- try{const cloudResult=await saveQueue;if(epoch===saveEpoch){$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':'✓ Guardado';void cloudRefresh();setTimeout(()=>{if(!document.hidden)void cloudAutoReceive();},3500);}}
+ try{const cloudResult=await saveQueue;
+ await cineLoadRevisions();
+ if(epoch===saveEpoch){cineRecentIntents.clear();$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':'✓ Guardado';void cloudRefresh();setTimeout(()=>{if(!document.hidden)void cloudAutoReceive();},3500);}}
  catch(err){if(epoch===saveEpoch)$('saveState').textContent='⚠ Error al guardar';}
 }
 function replaceList(text){let clean=text.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');const test=parse(clean);if(!test.entries.length){$('message').textContent='No se encontraron películas.';return false;}
@@ -1934,17 +1936,61 @@ function propagateSeen(f,newChecked){
 // Se ejecuta al abrir, importar, añadir películas, recibir un nuevo ID TMDB
 // y cambiar identificaciones. Basta una marca ☑ en CUALQUIER lista para que
 // todas las apariciones de esa misma película también estén vistas.
+// Se consulta exclusivamente el historial causal LOCAL; nunca se descarga TMDB.
+let cineRevisionCache=new Map(),cineRevisionsLoaded=false;
+const cineRecentIntents=new Map();
+async function cineLoadRevisions(){
+ try{
+  const response=await fetch('/api/sync/revisions',{headers:{'X-Atlas-Token':token},cache:'no-store'});
+  if(!response.ok)throw new Error('Estado local no disponible');
+  const data=await response.json();
+  cineRevisionCache=new Map(Object.entries(data.revisions||{}));
+  cineRevisionsLoaded=true;
+ }catch(error){
+  // La opción segura es NO reconciliar, nunca volver a marcar por una copia.
+  cineRevisionsLoaded=false;
+ }
+}
+function cineRevisionKey(f){return filmIdentity(f)+'|'+String(f.year||'');}
+function cineClockDominance(a,b){
+ const x=a?.clock||{},y=b?.clock||{},keys=new Set([...Object.keys(x),...Object.keys(y)]);
+ let greater=false,less=false;
+ for(const k of keys){const av=Number(x[k])||0,bv=Number(y[k])||0;
+  if(av>bv)greater=true;else if(av<bv)less=true;}
+ return greater&&less?2:greater?1:less?-1:0;
+}
+function cinePreferRevision(a,b){
+ if(!a)return b;
+ if(a.conflict)return a;
+ if(a.device===b.device)return (Number(b.seq)||0)>(Number(a.seq)||0)?b:a;
+ const comparison=cineClockDominance(a,b);
+ if(comparison<0)return b;
+ if(comparison>0&&comparison!==2)return a;
+ return a.checked===b.checked?a:{conflict:true};
+}
 function reconcileWatched(){
- const groups=buildIdentityGroups(),watched=new Set();
- for(const list of libraryState.lists){for(const f of parse(list.text).entries){if(f.checked)watched.add(groupKey(f,groups));}}
+ // Reconciliation is never allowed until local causal revisions have loaded.
+ if(!cineRevisionsLoaded)return 0;
+ const groups=buildIdentityGroups(),legacySeen=new Set(),revised=new Map();
+ for(const list of libraryState.lists){
+  for(const f of parse(list.text).entries){
+   const group=groupKey(f,groups),revision=cineRevisionCache.get(cineRevisionKey(f));
+   if(f.checked)legacySeen.add(group);
+   if(revision)revised.set(group,cinePreferRevision(revised.get(group),revision));
+  }
+ }
  let changed=0;
  for(const list of libraryState.lists){
-   const data=parse(list.text),lines=data.lines.slice();let touched=false;
-   for(const f of data.entries){
-     if(f.checked||!watched.has(groupKey(f,groups)))continue;
-     lines[f.idx]=setMarkOnLine(lines[f.idx],true);changed++;touched=true;
-   }
-   if(touched)list.text=lines.join('\n');
+  const data=parse(list.text),lines=data.lines.slice();let touched=false;
+  for(const f of data.entries){
+   const group=groupKey(f,groups),intent=cineRecentIntents.get(group),revision=revised.get(group);
+   const desired=intent&&intent.until>Date.now()?intent.checked:
+      revision?.conflict?f.checked:
+      revision?!!revision.checked:legacySeen.has(group);
+   if(f.checked===desired)continue;
+   lines[f.idx]=setMarkOnLine(lines[f.idx],desired);changed++;touched=true;
+  }
+  if(touched)list.text=lines.join('\n');
  }
  return changed;
 }
@@ -2016,7 +2062,9 @@ $('identityRefresh').addEventListener('click',()=>{identityConfigured=platformCo
 function toggle(idx){
  if(virtualMode)return;
  const f=parsed.entries.find(e=>e.idx===idx);if(!f)return;
- syncActiveText();const next=!f.checked;const changed=propagateSeen(f,next);
+ syncActiveText();const next=!f.checked;
+ cineRecentIntents.set(groupKey(f,buildIdentityGroups()),{checked:next,until:Date.now()+90000});
+ const changed=propagateSeen(f,next);
  rawText=activeCollection().text||'';
  update();renderStats();renderCollectionControls();scheduleSave();
  if(chosen&&chosen.idx===idx){$('resultTag').textContent=next?'✓ MARCADA COMO VISTA':'PENDIENTE';$('markWatched').disabled=next;chosen=next?null:parsed.entries.find(e=>e.idx===idx);}
@@ -2056,6 +2104,7 @@ function sanitizeComparisonIDs(){
 }
 
 async function initLibrary(){
+ await cineLoadRevisions();
  try{const response=await fetch('/api/library',{headers:{'X-Atlas-Token':token},cache:'no-store'});
    if(response.ok){const state=await response.json();if(validLibrary(state))libraryState=state;}
  }catch(e){}
