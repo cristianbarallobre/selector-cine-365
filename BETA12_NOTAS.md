@@ -1,5 +1,5 @@
 # Selector Cine 365 — v9 Beta 12
-Basada en el código completo de v9 Beta 10, rama v9-android-beta, no en main/v8.2.
+Basada en el código completo de v9 Beta 10/11, con integración v9 Beta 12 en `main`. La publicación preliminar conjunta contiene Windows, Android, Mac Intel y Mac Apple Silicon.
 
 ## Cambios
 - Buscador: Lista actual / Todas las listas. Una sola ficha por identidad TMDB o título y año.
@@ -32,6 +32,11 @@ Queda pendiente comprobar en dispositivos reales el comportamiento visual y la p
 - Mis listas permanece visible con 3–4 filas por página, incluso cuando se activa la sección OneDrive e historial. Las filas ya no se encogen a altura cero ni quedan recortadas.
 - «Actualizar historial» consulta realmente /api/sync/history (historial local) e indica lectura en curso, hora de consulta y número de movimientos encontrados.
 - Un historial vacío aparece sin contenedor destacado; explica que solo existen eventos desde las versiones que registran actividad.
+
+## Publicación macOS
+- Mac Intel y Apple Silicon usan el mismo motor Go y la misma `plantilla.html` que Windows v9 Beta12.
+- Ambas apps Mac son nativas WKWebView, con versión 9012, icono propio y firma ad hoc sin notarización Apple.
+- Se han probado compilación/arquitectura y firmas en CI, no el uso prolongado en un Mac físico.
 
 ## Compatibilidad Android
 - Mismo identificador `es.cine365.app` y mismo certificado de firma que la APK Beta 11 generada en este proyecto. El código de versión 9012 actualiza 9011 sin cambiar la clave. Una instalación Beta 9 anterior con identificador distinto requiere la migración única del JSON descrita arriba.
