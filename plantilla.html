@@ -9,7 +9,7 @@
 <meta name="author" content="__APP_AUTHOR__">
 <meta name="copyright" content="__APP_COPYRIGHT__">
 <meta name="application-name" content="Selector Cine 365">
-<title>Selector Cine 365 · v9.0 beta</title>
+<title>Selector Cine 365 · v9 Beta 11</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1018;--panel:#171f2b;--panel2:#1b2735;--line:#314052;--subtle:#94a2b5;--light:#f4f6fa;--gold:#f3c66d;--gold2:#d59b40;--green:#a4e4bc;--red:#e5a6a6;--r:19px}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 960px 510px at 88% -10%,#263649 0%,transparent 76%),var(--bg);color:var(--light);font-family:'Segoe UI',system-ui,Arial,sans-serif;font-size:15px;min-height:100vh}button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
@@ -356,6 +356,11 @@ h2{font-size:19px}
 .membership-intro{font-size:13px;line-height:1.5;color:#c3cfdd}
 @media(max-width:650px){.film-memberships-numbers{max-width:114px}.film-filmmeta{gap:3px}.film-filmmeta .film-rating{font-size:9px}.film-memberships-title{font-size:9px}}
 </style>
+<style id="cine-beta11-stats-fixed">
+#view-statistics .stat-panel{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+#view-statistics .stat-body{display:flex;flex:1 1 auto;min-height:0;overflow-y:auto;flex-direction:column;scrollbar-width:thin;padding-right:2px}
+#view-statistics .stat-pager{flex:0 0 32px;min-height:32px;display:flex;align-items:center;justify-content:space-between;margin-top:auto}
+</style>
 </head>
 <body>
 <textarea id="initialState" hidden>__ATLAS_LISTA_INICIAL__</textarea>
@@ -364,7 +369,7 @@ h2{font-size:19px}
     <div class="brand" aria-hidden="true"><img src="/icon.png" alt="" style="width:58px;height:58px;object-fit:contain"></div>
     <div><div class="eyebrow">Selector Cine 365</div><h1>¿Qué película veo hoy?</h1></div>
     <div class="header-side">
-      <div class="header-tag">🎞️ SELECTOR CINE 365 · beta v9.0</div>
+      <div class="header-tag">🎞️ SELECTOR CINE 365 · v9 Beta 11</div>
       <div class="saved" id="saveState" aria-live="polite">✓ Guardado</div>
       <div class="creator-credit" title="__APP_COPYRIGHT__">Hecho por <strong>__APP_AUTHOR__</strong></div>
     </div>
@@ -1807,14 +1812,14 @@ const statRows=(title,entries,maxItems=8)=>{
  const panel=document.createElement('div');panel.className='stat-panel';const heading=document.createElement('h3');heading.textContent=title;panel.appendChild(heading);
  if(!entries.length){const empty=document.createElement('p');empty.className='stat-none';empty.textContent='Sin datos todavía';panel.appendChild(empty);return panel;}
  const sectionHeight=$('statsSections').clientHeight||400;
- const rowCount=Math.max(2,Math.min(maxItems,Math.floor((sectionHeight/2-67)/25)));
+ const rowCount=Math.max(2,Math.min(maxItems,Math.floor((sectionHeight/2-99)/26)));
  const pages=Math.max(1,Math.ceil(entries.length/rowCount));
  const page=Math.max(0,Math.min(statPages.get(title)||0,pages-1));statPages.set(title,page);
- const max=Math.max(...entries.map(x=>x[1]),1);
+ const max=Math.max(...entries.map(x=>x[1]),1);const body=document.createElement('div');body.className='stat-body';panel.appendChild(body);
  for(const [label,value] of entries.slice(page*rowCount,(page+1)*rowCount)){
    const line=document.createElement('div');line.className='stat-row';const name=document.createElement('div');name.className='stat-row-name';name.textContent=label;name.title=label;
    const bar=document.createElement('div');bar.className='stat-row-bar';const fill=document.createElement('div');fill.className='stat-row-fill';fill.style.width=(100*value/max).toFixed(1)+'%';bar.appendChild(fill);
-   const count=document.createElement('span');count.className='stat-row-count';count.textContent=String(value);line.append(name,bar,count);panel.appendChild(line);
+   const count=document.createElement('span');count.className='stat-row-count';count.textContent=String(value);line.append(name,bar,count);body.appendChild(line);
  }
  if(pages>1){
    const pager=document.createElement('div');pager.className='stat-pager';
