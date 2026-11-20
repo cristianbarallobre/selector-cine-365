@@ -3124,8 +3124,12 @@ window.addEventListener('resize',()=>{clearTimeout(layoutResizeTimer);layoutResi
 window.cineBackgroundFlush=()=>{
  if(saveTimer===null||cloudAutoBusy||cloudSyncBusy||pendingSyncToken)return;
  clearTimeout(saveTimer);saveTimer=null;
- try{syncActiveText();window.CineAndroid.saveOnExit(JSON.stringify(libraryState));}
- catch(err){console.warn('No se pudo guardar al pausar:',err.message);}
+ try{
+  syncActiveText();
+  // Commit locally immediately, then preserve normal cloud backup/revisions.
+  window.CineAndroid.saveOnExit(JSON.stringify(libraryState));
+  void saveLocal();
+ }catch(err){console.warn('No se pudo guardar al pausar:',err.message);}
 };
 window.addEventListener('pagehide',()=>{
  // Do not overwrite freshly imported data with a stale WebView snapshot.
