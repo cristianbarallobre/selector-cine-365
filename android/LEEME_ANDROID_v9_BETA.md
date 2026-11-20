@@ -1,6 +1,16 @@
-# Selector Cine 365 — Android v9 Beta 12.2
+# Selector Cine 365 — Android v9 Beta 13
 
 **Autor:** Cristian Barallobre Rúa. **Estado:** versión beta experimental para Android 8.0+ (API 26). Conserva funcionamiento local sin cuenta Microsoft y sin clave TMDB.
+
+## Actualización Beta 13 — sincronización de listas e identidades
+
+- Ahora se guardan en la nube los ID de las listas eliminadas para que un snapshot antiguo no pueda recuperarlas involuntariamente.
+- Los ID corregidos manualmente en TMDB con el lápiz se incluyen en la biblioteca y se aplican en el otro dispositivo cuando se sincroniza.
+- La clave de TMDB continúa siendo local y privada; no se sincroniza.
+- La app reintenta consultar el estado TMDB al inicio sin confundir un error de conexión con la pérdida de la clave.
+- Se mantienen las zonas seguras para notch y barra de gestos de Beta 12.2.
+
+**Instalación:** Beta 13 usa `es.cine365.app`, `versionCode 9015` y el mismo certificado de Beta 11/12/12.1/12.2. Instala encima sin desinstalar. Exporta JSON antes y actualiza también Windows/Mac antes de borrar listas; la Beta 9 antigua sigue necesitando importación de JSON.
 
 ## Actualización Beta 12.2: notch y barra inferior adaptables
 
