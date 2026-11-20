@@ -1789,7 +1789,7 @@ async function saveLocal(){
    if(!response.ok)throw new Error('HTTP '+response.status);
    return response.headers.get('X-Cine-Cloud');
  });
- try{const cloudResult=await saveQueue;if(epoch===saveEpoch){$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':'✓ Guardado';void cloudRefresh();}}
+ try{const cloudResult=await saveQueue;if(epoch===saveEpoch){$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':'✓ Guardado';void cloudRefresh();setTimeout(()=>{if(!document.hidden)void cloudAutoReceive();},3500);}}
  catch(err){if(epoch===saveEpoch)$('saveState').textContent='⚠ Error al guardar';}
 }
 function replaceList(text){let clean=text.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');const test=parse(clean);if(!test.entries.length){$('message').textContent='No se encontraron películas.';return false;}
