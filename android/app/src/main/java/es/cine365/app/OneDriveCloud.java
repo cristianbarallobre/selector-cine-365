@@ -15,6 +15,8 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Locale;
 import javax.crypto.Cipher;
@@ -24,8 +26,8 @@ import javax.crypto.spec.GCMParameterSpec;
 
 /**
  * Microsoft Graph connector for personal OneDrive accounts.
- * OAuth device-code flow needs only a PUBLIC client ID registered by the publisher.
- * No app secret, passwords or tokens pass through the embedded web UI.
+ * Authorization Code + PKCE flow for personal Microsoft accounts, launched in system browser.
+ * No device codes, app secrets, passwords or access tokens pass through the embedded web UI.
  * Persistent refresh tokens are encrypted with Android Keystore AES-GCM.
  */
 final class OneDriveCloud {
@@ -37,13 +39,22 @@ final class OneDriveCloud {
     private final String clientId;
     private String accessToken="",refreshToken="";
     private long expiresAt=0;
-    private String deviceCode="",userCode="",verificationUrl="";
-    private long deviceExpiresAt=0,nextPollAt=0;
-    private int pollInterval=5;
+    private String pendingState="",pendingVerifier="";
+    private long pendingExpiresAt=0;
+    private final String redirectUri;
 
     OneDriveCloud(Context context){
         this.context=context;
         clientId=BuildConfig.MICROSOFT_CLIENT_ID.trim();
+        redirectUri="msal"+clientId+"://auth";
+        try{
+            JSONObject pending=new JSONObject(decrypt(context.getSharedPreferences("onedrive",Context.MODE_PRIVATE).getString("pending_auth","")));
+            if(pending.optLong("expires_at",0)>System.currentTimeMillis()){
+                pendingState=pending.optString("state");
+                pendingVerifier=pending.optString("verifier");
+                pendingExpiresAt=pending.optLong("expires_at");
+            }
+        }catch(Exception ignored){}
         try {JSONObject saved=new JSONObject(decrypt(context.getSharedPreferences("onedrive",Context.MODE_PRIVATE).getString("secrets","")));
             accessToken=saved.optString("access_token");refreshToken=saved.optString("refresh_token");
             expiresAt=saved.optLong("expires_at");
@@ -53,49 +64,70 @@ final class OneDriveCloud {
     synchronized boolean connected(){return available() && (!refreshToken.isEmpty()||(!accessToken.isEmpty()&&System.currentTimeMillis()<expiresAt));}
     synchronized JSONObject status()throws Exception{
         return new JSONObject().put("available",available()).put("connected",connected())
-            .put("authentication","device_code").put("provider","onedrive");
+            .put("authentication","authorization_code_pkce").put("provider","onedrive")
+            .put("redirect_uri",redirectUri);
+    }
+    private static String randomUrlSafe() {
+        byte[] data=new byte[32];new SecureRandom().nextBytes(data);
+        return Base64.encodeToString(data,Base64.URL_SAFE|Base64.NO_WRAP|Base64.NO_PADDING);
+    }
+    private static String encode(String x)throws Exception{return URLEncoder.encode(x,"UTF-8");}
+    private static String challenge(String verifier)throws Exception{
+        byte[] sha=MessageDigest.getInstance("SHA-256").digest(verifier.getBytes(StandardCharsets.US_ASCII));
+        return Base64.encodeToString(sha,Base64.URL_SAFE|Base64.NO_WRAP|Base64.NO_PADDING);
+    }
+    private void clearPending(){
+        pendingState="";pendingVerifier="";pendingExpiresAt=0;
+        context.getSharedPreferences("onedrive",Context.MODE_PRIVATE).edit().remove("pending_auth").apply();
     }
     synchronized JSONObject begin()throws Exception{
-        if(!available())throw new Exception("OneDrive aún no está activado: falta registrar Selector Cine 365 en Microsoft.");
-        JSONObject answer=new JSONObject(new String(http(AUTH+"devicecode","POST",
-            form("client_id",clientId,"scope",SCOPE),null,"application/x-www-form-urlencoded"),StandardCharsets.UTF_8));
-        deviceCode=answer.getString("device_code");userCode=answer.getString("user_code");
-        verificationUrl=answer.getString("verification_uri");
-        if(!verificationUrl.startsWith("https://microsoft.com/")&&!verificationUrl.startsWith("https://www.microsoft.com/"))
-            throw new Exception("Dirección de inicio de sesión no reconocida");
-        deviceExpiresAt=System.currentTimeMillis()+answer.optInt("expires_in",900)*1000L;
-        pollInterval=Math.max(5,answer.optInt("interval",5));
-        nextPollAt=0;
-        return new JSONObject().put("code",userCode).put("url",verificationUrl)
-            .put("expires_in",answer.optInt("expires_in",900)).put("pending",true);
+        if(!available())throw new Exception("El identificador público de Microsoft no está configurado.");
+        clearPending();
+        pendingState=randomUrlSafe();
+        pendingVerifier=randomUrlSafe();
+        pendingExpiresAt=System.currentTimeMillis()+10*60_000L;
+        JSONObject pending=new JSONObject().put("state",pendingState).put("verifier",pendingVerifier).put("expires_at",pendingExpiresAt);
+        context.getSharedPreferences("onedrive",Context.MODE_PRIVATE).edit().putString("pending_auth",encrypt(pending.toString())).apply();
+        String auth=AUTH+"authorize?client_id="+encode(clientId)
+            +"&response_type=code&redirect_uri="+encode(redirectUri)
+            +"&response_mode=query&scope="+encode(SCOPE)
+            +"&code_challenge="+encode(challenge(pendingVerifier))
+            +"&code_challenge_method=S256&state="+encode(pendingState);
+        return new JSONObject().put("url",auth).put("redirect_uri",redirectUri).put("pending",true);
     }
-    synchronized JSONObject poll()throws Exception{
-        if(deviceCode.isEmpty())return new JSONObject().put("pending",false).put("connected",connected());
-        long now=System.currentTimeMillis();
-        if(now>deviceExpiresAt){deviceCode="";throw new Exception("El código de Microsoft ha caducado; vuelve a conectar.");}
-        if(now<nextPollAt)return new JSONObject().put("pending",true).put("retry_in",(nextPollAt-now+999)/1000);
-        nextPollAt=now+pollInterval*1000L;
-        try {
-            JSONObject tokens=tokenRequest(form("grant_type","urn:ietf:params:oauth:grant-type:device_code",
-                "client_id",clientId,"device_code",deviceCode));
-            store(tokens);
-            deviceCode="";userCode="";
-            return new JSONObject().put("pending",false).put("connected",true);
-        }catch(OAuthPending pending){
-            if("slow_down".equals(pending.code)){pollInterval+=5;nextPollAt=now+pollInterval*1000L;}
-            if("authorization_declined".equals(pending.code)||"expired_token".equals(pending.code)){
-                deviceCode="";throw new Exception("Inicio de sesión cancelado o caducado.");
-            }
-            return new JSONObject().put("pending",true).put("retry_in",pollInterval);
+    /** Called by Android when the real Microsoft browser redirects into the app. */
+    synchronized JSONObject finish(Uri returned)throws Exception{
+        if(returned==null||!redirectUri.equalsIgnoreCase(returned.getScheme()+"://"+returned.getAuthority())||
+            (returned.getPath()!=null&&!returned.getPath().isEmpty()&&!"/".equals(returned.getPath())))
+            throw new Exception("Se ha recibido una dirección de inicio de sesión no reconocida.");
+        if(pendingState.isEmpty()||System.currentTimeMillis()>pendingExpiresAt){
+            clearPending();throw new Exception("La sesión de Microsoft ya no está activa. Vuelve a pulsar Conectar.");
         }
+        String givenState=returned.getQueryParameter("state");
+        if(givenState==null||!MessageDigest.isEqual(givenState.getBytes(StandardCharsets.UTF_8),pendingState.getBytes(StandardCharsets.UTF_8))){
+            throw new Exception("La respuesta de Microsoft no coincide con esta sesión. No se ha conectado ninguna cuenta.");
+        }
+        String error=returned.getQueryParameter("error");
+        if(error!=null){
+            String description=returned.getQueryParameter("error_description");
+            clearPending();
+            throw new Exception("Microsoft canceló el inicio de sesión: "+(description==null?error:description));
+        }
+        String code=returned.getQueryParameter("code");
+        if(code==null||code.isEmpty()||code.length()>8192){
+            clearPending();throw new Exception("Microsoft no devolvió un código de autorización válido.");
+        }
+        String verifier=pendingVerifier;
+        clearPending(); // one-time OAuth response; cannot be replayed
+        JSONObject tokens=tokenRequest(form("grant_type","authorization_code",
+            "client_id",clientId,"code",code,"redirect_uri",redirectUri,
+            "code_verifier",verifier,"scope",SCOPE));
+        store(tokens);
+        return status();
     }
     synchronized void logout(){
-        accessToken="";refreshToken="";expiresAt=0;deviceCode="";
+        accessToken="";refreshToken="";expiresAt=0;clearPending();
         context.getSharedPreferences("onedrive",Context.MODE_PRIVATE).edit().remove("secrets").apply();
-    }
-    private static final class OAuthPending extends Exception {
-        final String code;
-        OAuthPending(String code){this.code=code;}
     }
     private JSONObject tokenRequest(byte[] body)throws Exception{
         HttpURLConnection c=null;
@@ -109,8 +141,7 @@ final class OneDriveCloud {
             JSONObject result=new JSONObject(new String(bytes,StandardCharsets.UTF_8));
             if(status>=400){
                 String error=result.optString("error");
-                if(Arrays.asList("authorization_pending","slow_down","authorization_declined","expired_token").contains(error))throw new OAuthPending(error);
-                if("invalid_grant".equals(error))throw new Exception("Tu sesión de OneDrive ha caducado. Conecta de nuevo tu cuenta Microsoft.");
+                if("invalid_grant".equals(error))throw new Exception("Microsoft no pudo validar la sesión. Vuelve a conectar OneDrive.");
                 throw new Exception("Microsoft no autorizó la conexión: "+result.optString("error_description",error));
             }
             return result;
