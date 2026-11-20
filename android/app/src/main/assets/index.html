@@ -9,7 +9,7 @@
 <meta name="author" content="Cristian Barallobre Rúa">
 <meta name="copyright" content="© 2026 Cristian Barallobre Rúa">
 <meta name="application-name" content="Selector de Cine 365">
-<title>Selector Cine 365 · Android v9 Beta 13</title>
+<title>Selector Cine 365 · Android v9 Beta 13.2</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1018;--panel:#171f2b;--panel2:#1b2735;--line:#314052;--subtle:#94a2b5;--light:#f4f6fa;--gold:#f3c66d;--gold2:#d59b40;--green:#a4e4bc;--red:#e5a6a6;--r:19px}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 960px 510px at 88% -10%,#263649 0%,transparent 76%),var(--bg);color:var(--light);font-family:'Segoe UI',system-ui,Arial,sans-serif;font-size:15px;min-height:100vh}button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
@@ -1249,7 +1249,7 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
     <div class="brand" aria-hidden="true"><img src="/assets/icon.png" class="brand-image" alt=""></div>
     <div><div class="eyebrow">SELECTOR CINE 365</div><h1>¿Qué película veo hoy?</h1></div>
     <div class="header-side">
-      <div class="header-tag">🎞️ CINE 365 · ANDROID BETA 13</div>
+      <div class="header-tag">🎞️ CINE 365 · ANDROID BETA 13.2</div>
       <div class="saved" id="saveState" aria-live="polite">✓ Guardado</div>
       <div class="creator-credit" title="© 2026 Cristian Barallobre Rúa">Hecho por <strong>Cristian Barallobre Rúa</strong></div>
     </div>
@@ -2881,8 +2881,9 @@ $('syncConfirmButton')?.addEventListener('click',async()=>{
 // No se consulta TMDB para revisar OneDrive. Se limita la frecuencia de acceso a Graph.
 let cloudAutoBusy=false,cloudAutoCheckedAt=0;
 async function cloudAutoReceive(force=false,showBusy=false){
+ if(document.hidden)return; // Invisible WebView must not poll OneDrive.
  if(cloudAutoBusy||cloudSyncBusy||cloudUserRequests>0||pendingSyncToken||!$('syncPreviewPanel').hidden)return;
- if(!force&&Date.now()-cloudAutoCheckedAt<25000)return;
+ if(!force&&Date.now()-cloudAutoCheckedAt<55000)return;
  if(document.querySelector('.overlay:not([hidden])'))return;
  if(document.activeElement?.matches('input,textarea,select,[contenteditable="true"]'))return;
  if(saveTimer!==null)return;
@@ -2896,7 +2897,10 @@ async function cloudAutoReceive(force=false,showBusy=false){
    cloudAutoCheckedAt=Date.now();
    try{
      const r=await cloudRequest('/api/cloud/auto','POST');
-     if(r.needs_review){
+     if(r.skipped==='background'){
+       // Minimized while a check was queued; allow a fresh check on resume.
+       cloudAutoCheckedAt=0;
+     }else if(r.needs_review){
        $('mobileAutoStatus').textContent=r.skipped==='not_paired'
          ?'Primera conexión pendiente: pulsa «Revisar sincronización».'
          :'⚠ Hay marcas contradictorias. Pulsa «Revisar sincronización» para elegir qué conservar.';
@@ -2916,7 +2920,7 @@ async function cloudAutoReceive(force=false,showBusy=false){
 window.cineSyncResume=()=>void cloudAutoReceive();
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)void cloudAutoReceive();});
 window.addEventListener('focus',()=>void cloudAutoReceive());
-setInterval(()=>{if(!document.hidden)void cloudAutoReceive();},30000);
+setInterval(()=>{if(!document.hidden)void cloudAutoReceive();},60000);
 void mobileRefreshHistory();
 void mobileRefreshRecovery();
 
@@ -3113,8 +3117,20 @@ $('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0
 
 let layoutResizeTimer=null;
 window.addEventListener('resize',()=>{clearTimeout(layoutResizeTimer);layoutResizeTimer=setTimeout(()=>{if(activeView==='library')renderList();else if(activeView==='statistics')renderStats();else if(activeView==='collections')renderCollectionControls();},100)});
-fetch('/api/ping',{cache:'no-store'}).catch(()=>{});
-setInterval(()=>{fetch('/api/ping',{cache:'no-store'}).catch(()=>{});},12000);
+// No HTTP ping is needed here: Android uses a native JavaScript bridge.
+// This removes the unnecessary 12-second CPU wake-up.
+// Commit an edit pending in the 240ms debounce before Android pauses JS.
+// Do not overwrite a concurrent cloud import with an outdated local snapshot.
+window.cineBackgroundFlush=()=>{
+ if(saveTimer===null||cloudAutoBusy||cloudSyncBusy||pendingSyncToken)return;
+ clearTimeout(saveTimer);saveTimer=null;
+ try{
+  syncActiveText();
+  // Commit locally immediately, then preserve normal cloud backup/revisions.
+  window.CineAndroid.saveOnExit(JSON.stringify(libraryState));
+  void saveLocal();
+ }catch(err){console.warn('No se pudo guardar al pausar:',err.message);}
+};
 window.addEventListener('pagehide',()=>{
  // Do not overwrite freshly imported data with a stale WebView snapshot.
  if(cloudAutoBusy)return;

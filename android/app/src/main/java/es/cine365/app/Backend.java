@@ -124,7 +124,14 @@ final class Backend {
             }
             case "/api/cloud/backup":return ok(cloud.backup().toString());
             case "/api/cloud/auto":{
-                synchronized(filesLock){return ok(cloud.autoSynchronize(this).toString());}
+                // No automated background network checks; manual sync remains unchanged.
+                if(!activity.isAppForeground())return ok(new JSONObject()
+                    .put("changed",false).put("skipped","background").toString());
+                synchronized(filesLock){
+                    if(!activity.isAppForeground())return ok(new JSONObject()
+                        .put("changed",false).put("skipped","background").toString());
+                    return ok(cloud.autoSynchronize(this).toString());
+                }
             }
             case "/api/cloud/preview":{
                 synchronized(filesLock){return ok(cloud.preview(this).toString());}
@@ -154,6 +161,16 @@ final class Backend {
             }
             return active;
         }catch(Exception e){return false;}
+    }
+    // A last-moment edit saved by the JS bridge must keep its causal revision:
+    // otherwise a later OneDrive snapshot could restore an older watched flag.
+    void saveOnExit(JSONObject state)throws Exception{
+        if(!validLibrary(state))return;
+        synchronized(filesLock){
+            JSONObject previous=new JSONObject(readOrDefault("colecciones.json","{}"));
+            sync.observe(validLibrary(previous)?previous:null,state);
+            storeState(state);
+        }
     }
     void storeStateImported(JSONObject state)throws Exception{
         if(!validLibrary(state))throw new Exception("Biblioteca remota no válida");

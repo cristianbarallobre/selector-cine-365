@@ -1,6 +1,18 @@
-# Selector Cine 365 — Android v9 Beta 13
+# Selector Cine 365 — Android v9 Beta 13.2
 
 **Autor:** Cristian Barallobre Rúa. **Estado:** versión beta experimental para Android 8.0+ (API 26). Conserva funcionamiento local sin cuenta Microsoft y sin clave TMDB.
+
+## Hotfix Android Beta 13.2 — consumo y actividad en segundo plano
+
+- Solo hay una inicialización del motor Java al arrancar, no dos.
+- Al minimizar, la WebView pausa sus temporizadores JavaScript; al volver, se reanudan.
+- Se quitan los pings internos cada 12 segundos, innecesarios en Android.
+- OneDrive se comprueba automáticamente cada **60 segundos mientras la app está visible**, además de al retomarla. El backend no inicia comprobaciones automáticas cuando está en segundo plano.
+- Si acabas de marcar una película y minimizas antes del guardado de 240 ms, se escribe localmente y se conserva su revisión de sincronización; la copia de nube se mantiene.
+- `versionCode 9016`, `versionName 9.0.0-beta.13.2`, mismo paquete y certificado que Beta 13. **Se instala encima sin desinstalar.** Las claves y ajustes permanecen.
+- Las mejoras de consumo deben medirse con varias horas de uso en un móvil físico; no hay una cifra de ahorro prometida.
+
+[Notas completas de Android Beta 13.2](../RELEASE_NOTES_v9_BETA13_2_ANDROID.md).
 
 ## Compatibilidad con la release conjunta Beta 13.1
 

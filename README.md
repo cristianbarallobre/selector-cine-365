@@ -23,6 +23,10 @@ Aplicación personal de cine para **Windows 10/11**, **macOS Apple Silicon e Int
 
 Histórico: [Beta 12.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.2), [Beta 12.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.1), [Beta 12](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12), [Beta 9](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.9), [v8.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.2) y [v8.1.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.1.1). Para recuperar instaladores de betas retiradas consulta [política de releases](docs/POLITICA_DE_RELEASES.md).
 
+## Hotfix Android Beta 13.2 — batería y segundo plano
+
+Android reduce comprobaciones automáticas de OneDrive de 30 a **60 segundos en primer plano**, deja de hacer el ping de 12 segundos, pausa la WebView al minimizar y elimina la inicialización doble del backend. Se conservan el guardado inmediato al minimizar con un cambio pendiente, las revisiones causales y la sincronización manual. **APK Android 9016**, mismo paquete y firma que Beta 13. Windows y Mac continúan en Beta 13.1. [Notas del hotfix](RELEASE_NOTES_v9_BETA13_2_ANDROID.md).
+
 ## Novedades v9 Beta 13 — listas y TMDB fiables
 
 - **Windows y Mac:** siempre se reserva espacio para cuatro listas en cada página; no cambia la altura al ir a la última.
