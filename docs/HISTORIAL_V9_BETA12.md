@@ -19,6 +19,15 @@ Los archivos más recientes están reunidos en la [release v9 Beta 12.2](https:/
 
 ## 2. Evolución de la serie v9
 
+### v9 Beta 13 — 20 de noviembre de 2026
+
+- Estabilidad visual: cuatro posiciones en Mis listas de escritorio, sin saltos entre páginas.
+- Sincronización: las listas eliminadas registran una marca persistente que impide su reintroducción desde snapshots antiguos de otros dispositivos.
+- Identificaciones TMDB corregidas manualmente: se guardan como ID en la biblioteca compartida; la clave API personal nunca se publica ni se sincroniza.
+- Se reintenta leer el estado de TMDB al reabrir, en vez de confundir errores temporales con pérdida de configuración.
+- Android versionCode 9015 y mismo certificado, sin pérdida de datos al actualizar desde Beta 11/12/12.1/12.2.
+- Regresiones y compilaciones verificadas para Windows y Android; falta validar sincronización real con ambos dispositivos simultáneamente.
+
 ### v9 Beta 12.2 — 20 de noviembre de 2026
 
 - Corrección del menú inferior de Android en dispositivos Redmi: la reserva del espacio seguro se aplicaba primero en `WindowInsets` y después de nuevo en CSS, elevando excesivamente las pestañas.
