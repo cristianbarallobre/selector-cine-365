@@ -30,6 +30,7 @@ final class CloudBackup {
     private final SyncStore sync;
     private final OneDriveCloud oneDrive;
     private String folder="",lastBackup="",lastSync="",lastError="";
+    private long lastCheckMS=0,lastReceivedMS=0;
     private boolean activated=false,autoNeedsReview=false;
     private String previewToken="";
 
@@ -68,7 +69,8 @@ final class CloudBackup {
         return new JSONObject().put("enabled",!folder.isEmpty()).put("activated",activated).put("needs_review",!folder.isEmpty()&&(!activated||autoNeedsReview)).put("folder",folder).put("target",folder)
             .put("last_backup",lastBackup).put("last_sync",lastSync).put("last_error",lastError)
             .put("provider",folder.startsWith("onedrive://")?"onedrive":folder.isEmpty()?"none":"folder")
-            .put("auto_sync",!folder.isEmpty()&&activated);
+            .put("auto_sync",!folder.isEmpty()&&activated)
+            .put("last_check_ms",lastCheckMS).put("last_received_ms",lastReceivedMS);
     }
     private Uri tree(){return Uri.parse(folder);}
     private boolean graphMode(){return folder.startsWith("onedrive://");}
@@ -281,6 +283,7 @@ final class CloudBackup {
                 plan.revisions=sync.revisions();plan.known=sync.known();
             }else sync.accept(plan.revisions,plan.known);
             activated=true;autoNeedsReview=false;
+            lastCheckMS=System.currentTimeMillis();lastReceivedMS=lastCheckMS;
             activity.getPreferences(Context.MODE_PRIVATE).edit().putBoolean("sync_activated_v2",true).apply();
             JSONObject backup=backup();
             if(!backup.optString("last_error").isEmpty())throw new Exception(backup.optString("last_error"));
@@ -319,6 +322,7 @@ final class CloudBackup {
         if(folder.isEmpty()||!activated)return status().put("changed",false).put("skipped","not_paired");
         try{
             Plan plan=buildPlan(backend);
+            lastCheckMS=System.currentTimeMillis();
             if(plan.conflicts.length()>0){
                 autoNeedsReview=true;
                 return status().put("changed",false).put("conflicts",plan.conflicts.length());
@@ -337,6 +341,7 @@ final class CloudBackup {
             if(changed){
                 rescueLocal(before);
                 backend.storeStateImported(plan.library);
+                lastReceivedMS=System.currentTimeMillis();
             }
             sync.accept(plan.revisions,plan.known);
             autoNeedsReview=false;
