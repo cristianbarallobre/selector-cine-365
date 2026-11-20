@@ -35,6 +35,7 @@ final class SyncStore {
             if(state.optString("device_id").isEmpty())state.put("device_id","android-"+UUID.randomUUID());
             if(state.optJSONObject("revisions")==null)state.put("revisions",new JSONObject());
             if(state.optJSONObject("known") ==null)state.put("known",new JSONObject());
+            if(state.optJSONArray("history")==null)state.put("history",new JSONArray());
             if(state.optInt("seq")<0)state.put("seq",0);
             save();
         }catch(Exception e){throw new IllegalStateException(e);}
@@ -42,7 +43,36 @@ final class SyncStore {
     synchronized String deviceId(){return state.optString("device_id");}
     synchronized JSONObject revisions()throws Exception {return new JSONObject(state.getJSONObject("revisions").toString());}
     synchronized JSONObject known()throws Exception {return new JSONObject(state.getJSONObject("known").toString());}
+    private synchronized void appendHistory(String key,JSONObject rev,String origin)throws Exception{
+        JSONArray history=state.optJSONArray("history");
+        if(history==null)history=new JSONArray();
+        history.put(new JSONObject()
+            .put("at",System.currentTimeMillis())
+            .put("changed_at",rev.optLong("changed_at"))
+            .put("key",key)
+            .put("checked",rev.optBoolean("checked"))
+            .put("device",rev.optString("device"))
+            .put("origin",origin));
+        if(history.length()>80){
+            JSONArray recent=new JSONArray();
+            for(int i=history.length()-80;i<history.length();i++)recent.put(history.get(i));
+            history=recent;
+        }
+        state.put("history",history);
+    }
+    synchronized JSONObject history()throws Exception{
+        JSONArray saved=state.optJSONArray("history"),events=new JSONArray();
+        if(saved!=null)for(int i=saved.length()-1;i>=0;i--)events.put(saved.getJSONObject(i));
+        return new JSONObject().put("device_id",deviceId()).put("events",events);
+    }
     synchronized void accept(JSONObject revisions, JSONObject known)throws Exception {
+        JSONObject previous=state.getJSONObject("revisions");
+        for(Iterator<String> keys=revisions.keys();keys.hasNext();){
+            String key=keys.next();JSONObject next=revisions.optJSONObject(key),old=previous.optJSONObject(key);
+            if(next!=null&&(old==null||old.optBoolean("checked")!=next.optBoolean("checked")
+                ||!old.optString("device").equals(next.optString("device"))
+                ||old.optLong("seq")!=next.optLong("seq")))appendHistory(key,next,"recibido");
+        }
         state.put("revisions",new JSONObject(revisions.toString()));
         state.put("known",new JSONObject(known.toString()));
         save();
@@ -111,7 +141,10 @@ final class SyncStore {
         boolean changed=false;
         for(Iterator<String>it=now.keys();it.hasNext();){String key=it.next(),ignored="";boolean next=now.optBoolean(key);
             if((old.has(key)&&old.optBoolean(key)!=next)||(!old.has(key)&&next&&before!=null)) {
-                revisions.put(key,newRevision(next));changed=true;
+                JSONObject revision=newRevision(next);
+                revisions.put(key,revision);
+                appendHistory(key,revision,"local");
+                changed=true;
             }
         }
         if(changed)save();
