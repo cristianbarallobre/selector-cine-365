@@ -172,9 +172,28 @@ final class SyncStore {
         JSONObject remote=peer.getJSONObject("library");
         if(!Backend.validLibrary(remote))throw new Exception("Biblioteca compartida dañada; no se han cambiado tus datos");
         JSONObject result=new JSONObject(local.toString()), remoteMarks=statuses(remote);
+        // Borrados que sobreviven a copias desactualizadas y a reinicios.
+        JSONObject deleted=result.optJSONObject("deleted_lists");
+        deleted=deleted==null?new JSONObject():new JSONObject(deleted.toString());
+        JSONObject remoteDeleted=remote.optJSONObject("deleted_lists");
+        if(remoteDeleted!=null)for(Iterator<String>it=remoteDeleted.keys();it.hasNext();){
+            String id=it.next();if(remoteDeleted.optBoolean(id))deleted.put(id,true);
+        }
+        result.put("deleted_lists",deleted);
+        // Se comparten solo IDs de película. Nunca claves API de TMDB.
+        JSONObject tmdb=result.optJSONObject("tmdb_overrides");
+        tmdb=tmdb==null?new JSONObject():new JSONObject(tmdb.toString());
+        JSONObject remoteTMDB=remote.optJSONObject("tmdb_overrides");
+        if(remoteTMDB!=null)for(Iterator<String>it=remoteTMDB.keys();it.hasNext();){
+            String key=it.next(),localID=tmdb.optString(key,"");
+            int id=remoteTMDB.optInt(key);
+            if(localID.isEmpty()&&id>0)tmdb.put(key,id);
+        }
+        result.put("tmdb_overrides",tmdb);
         JSONArray left=result.getJSONArray("lists"),right=remote.getJSONArray("lists");
         for(int i=0;i<right.length();i++){
             JSONObject other=right.getJSONObject(i),own=null;
+            if(deleted.optBoolean(other.optString("id")))continue;
             for(int j=0;j<left.length();j++)if(left.getJSONObject(j).getString("id").equals(other.getString("id"))){own=left.getJSONObject(j);break;}
             if(own==null){if(left.length()<40)left.put(new JSONObject(other.toString()));continue;}
             if(own.optString("name").startsWith("Selector Cine 365 ·")&&!other.optString("name").startsWith("Selector Cine 365 ·"))
@@ -189,8 +208,35 @@ final class SyncStore {
             }
             own.put("text",combined.toString());
         }
+        // Una tombstone local o remota se impone incluso si el otro dispositivo
+        // mantiene una copia anterior con el mismo ID de lista.
+        if(deleted.length()>0){
+            JSONArray keep=new JSONArray();
+            for(int i=0;i<left.length();i++){
+                JSONObject list=left.getJSONObject(i);
+                if(!deleted.optBoolean(list.optString("id")))keep.put(list);
+            }
+            if(keep.length()==0)throw new Exception("La fusión borraría todas las listas. Operación cancelada.");
+            left=keep;result.put("lists",left);
+            boolean active=false;
+            for(int i=0;i<left.length();i++)if(left.getJSONObject(i).optString("id").equals(result.optString("active_id")))active=true;
+            if(!active)result.put("active_id",left.getJSONObject(0).getString("id"));
+            JSONArray chosen=result.optJSONArray("comparison_ids"),cleaned=new JSONArray();
+            if(chosen!=null)for(int i=0;i<chosen.length();i++){
+                String id=chosen.optString(i);
+                for(int j=0;j<left.length();j++)if(id.equals(left.getJSONObject(j).optString("id"))){cleaned.put(id);break;}
+            }
+            if(cleaned.length()>=2)result.put("comparison_ids",cleaned);
+            else result.remove("comparison_ids");
+        }
         if(result.optJSONArray("comparison_ids")==null&&remote.optJSONArray("comparison_ids")!=null)
-            result.put("comparison_ids",remote.getJSONArray("comparison_ids"));
+            { JSONArray choices=remote.getJSONArray("comparison_ids"), valid=new JSONArray();
+              for(int i=0;i<choices.length();i++){
+                  String id=choices.optString(i);
+                  for(int j=0;j<left.length();j++)if(id.equals(left.getJSONObject(j).optString("id"))){valid.put(id);break;}
+              }
+              if(valid.length()>=2)result.put("comparison_ids",valid);
+            }
         JSONObject combinedKnown=joinClocks(known,peer.optJSONObject("known"));
         JSONObject joined=new JSONObject(revisions.toString()),incoming=peer.optJSONObject("revisions");
         JSONArray conflicts=new JSONArray();
