@@ -1,13 +1,7 @@
-name: v9 Beta12 - regenerar manuales PDF
+name: Manuales históricos de Beta12 (solo ejecución manual)
+# Flujo HISTÓRICO de Beta 12. No activarlo por push de nuevas versiones:
+# publicaría los manuales de Beta 12.2 dentro de la antigua release Beta 12.
 on:
-  push:
-    branches: ['release/v9-beta12-windows-android-macos', 'main']
-    paths:
-      - 'docs/MANUAL_COMPLETO_SELECTOR_CINE_365.md'
-      - 'docs/GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.md'
-      - 'scripts/generar_manual_completo.py'
-      - 'scripts/generar_guia_azure_entra_onedrive.py'
-      - '.github/workflows/v9-beta12-manuales.yml'
   workflow_dispatch:
 permissions:
   contents: write
