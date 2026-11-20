@@ -25,7 +25,16 @@ type syncRevision struct {
  Clock map[string]int64 `json:"clock"`
  ChangedAt int64 `json:"changed_at"`
 }
+type syncHistoryEntry struct {
+ At int64 `json:"at"`
+ ChangedAt int64 `json:"changed_at,omitempty"`
+ Key string `json:"key"`
+ Checked bool `json:"checked"`
+ Device string `json:"device"`
+ Origin string `json:"origin"`
+}
 type syncDeviceState struct {
+ History []syncHistoryEntry `json:"history,omitempty"`
  Protocol int `json:"protocol"`
  DeviceID string `json:"device_id"`
  Seq int64 `json:"seq"`
@@ -82,6 +91,20 @@ func newDesktopSyncStore(dir string) (*desktopSyncStore,error) {
 func (s *desktopSyncStore) saveLocked() error {
  b,e:=json.MarshalIndent(s.state,"","  ");if e!=nil{return e}
  return cloudWriteFile(s.path,b)
+}
+func (s *desktopSyncStore) appendHistoryLocked(key string,rev syncRevision,origin string) {
+ entry:=syncHistoryEntry{
+  At:time.Now().UnixMilli(),ChangedAt:rev.ChangedAt,
+  Key:key,Checked:rev.Checked,Device:rev.Device,Origin:origin,
+ }
+ s.state.History=append(s.state.History,entry)
+ if len(s.state.History)>80{s.state.History=s.state.History[len(s.state.History)-80:]}
+}
+func (s *desktopSyncStore) history() []syncHistoryEntry {
+ s.mu.Lock();defer s.mu.Unlock()
+ events:=make([]syncHistoryEntry,0,len(s.state.History))
+ for i:=len(s.state.History)-1;i>=0;i--{events=append(events,s.state.History[i])}
+ return events
 }
 func (s *desktopSyncStore) isPaired(folder string) bool {
  if s==nil{return false}
@@ -163,7 +186,9 @@ func (s *desktopSyncStore) observe(before,after libraryState) error {
   vector:=syncCopyMap(s.state.Known)
   vector[s.state.DeviceID]=s.state.Seq
   s.state.Known=syncJoin(s.state.Known,vector)
-  s.state.Revisions[key]=syncRevision{Checked:next,Device:s.state.DeviceID,Seq:s.state.Seq,Clock:vector,ChangedAt:time.Now().UnixMilli()}
+  revision:=syncRevision{Checked:next,Device:s.state.DeviceID,Seq:s.state.Seq,Clock:vector,ChangedAt:time.Now().UnixMilli()}
+  s.state.Revisions[key]=revision
+  s.appendHistoryLocked(key,revision,"local")
   dirty=true
  }
  if dirty{return s.saveLocked()};return nil
@@ -184,6 +209,12 @@ func (s *desktopSyncStore) accept(p syncPlan,decisions map[string]bool,folder st
   vector:=syncCopyMap(known);vector[s.state.DeviceID]=s.state.Seq
   known=syncJoin(known,vector)
   revisions[key]=syncRevision{Checked:seen,Device:s.state.DeviceID,Seq:s.state.Seq,Clock:vector,ChangedAt:time.Now().UnixMilli()}
+ }
+ for key,rev:=range revisions{
+  old,had:=s.state.Revisions[key]
+  if !had||old.Checked!=rev.Checked||old.Device!=rev.Device||old.Seq!=rev.Seq {
+   s.appendHistoryLocked(key,rev,"recibido")
+  }
  }
  s.state.Known=known
  s.state.Revisions=revisions
