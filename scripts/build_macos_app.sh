@@ -14,6 +14,11 @@ APP='dist/Selector Cine 365.app'
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 go build -trimpath -ldflags='-s -w' -o "$APP/Contents/MacOS/SelectorCine365" .
 file "$APP/Contents/MacOS/SelectorCine365"
+if [ "$MAC_ARCH" = arm64 ]; then
+  file "$APP/Contents/MacOS/SelectorCine365" | grep -E 'arm64|ARM64'
+else
+  file "$APP/Contents/MacOS/SelectorCine365" | grep -E 'x86_64|x86-64'
+fi
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -22,8 +27,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>CFBundleIdentifier</key><string>es.cristianbarallobre.selectorcine365</string>
   <key>CFBundleName</key><string>Selector Cine 365</string>
   <key>CFBundleDisplayName</key><string>Selector Cine 365</string>
-  <key>CFBundleShortVersionString</key><string>8.2</string>
-  <key>CFBundleVersion</key><string>820</string>
+  <key>CFBundleShortVersionString</key><string>9.0.0-beta.12</string>
+  <key>CFBundleVersion</key><string>9012</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>LSMinimumSystemVersion</key><string>12.0</string>
@@ -44,7 +49,7 @@ plutil -lint "$APP/Contents/Info.plist"
 codesign --force --deep --sign - "$APP"
 codesign --verify --deep --strict --verbose=2 "$APP"
 cat > dist/LEEME_MAC.txt <<'NOTE'
-Selector Cine 365 v9.0 beta
+Selector Cine 365 v9 Beta 12 (Mac Apple Silicon / Intel)
 Autor: Cristian Barallobre Rúa
 https://github.com/cristianbarallobre/selector-cine-365
 
@@ -56,6 +61,6 @@ Datos: ~/Library/Application Support/AtlasDelCine/
 NOTE
 (
   cd dist
-  zip -qry "Selector_Cine_365_v9_beta_Mac_$MAC_LABEL.zip" 'Selector Cine 365.app' LEEME_MAC.txt
-  unzip -t "Selector_Cine_365_v9_beta_Mac_$MAC_LABEL.zip" | tail -1
+  zip -qry "Selector_Cine_365_Mac_${MAC_LABEL}_v9_BETA12.zip" 'Selector Cine 365.app' LEEME_MAC.txt
+  unzip -t "Selector_Cine_365_Mac_${MAC_LABEL}_v9_BETA12.zip" | tail -1
 )
