@@ -92,6 +92,11 @@ func (a *runningApp) serveSyncSupport(w http.ResponseWriter,r *http.Request){
  if !a.auth(r){http.Error(w,"No autorizado",403);return}
  respond:=func(code int,obj any){w.WriteHeader(code);_ =json.NewEncoder(w).Encode(obj)}
  switch r.URL.Path {
+ case "/api/sync/revisions":
+  if r.Method!=http.MethodGet{respond(405,map[string]string{"error":"Método incorrecto"});return}
+  if a.syncStore==nil{respond(200,map[string]any{"revisions":map[string]syncRevision{}});return}
+  _,revisions,_:=a.syncStore.parts()
+  respond(200,map[string]any{"revisions":revisions})
  case "/api/sync/history":
   if r.Method!=http.MethodGet{respond(405,map[string]string{"error":"Método incorrecto"});return}
   if a.syncStore==nil{respond(200,map[string]any{"events":[]syncHistoryEntry{}});return}
