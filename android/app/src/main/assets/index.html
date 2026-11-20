@@ -2719,6 +2719,7 @@ async function cloudAutoReceive(force=false){
      }else if(!r.skipped){
        $('mobileAutoStatus').textContent='✓ Sincronización automática al día.';
      }
+   await cloudRefresh(); // Un GET local: actualiza la hora incluso sin cambios.
    }finally{/* La recepción automática NUNCA bloquea la interfaz. */}
  }catch(e){
    $('mobileAutoStatus').textContent='⚠ No se pudo comprobar la nube: '+e.message+'. Puedes seguir utilizando tus listas sin conexión.';
