@@ -42,6 +42,9 @@ public class MainActivity extends Activity {
     private static final String MICROSOFT_CALLBACK_SCHEME = "msal696458fe-0672-47e5-9fdd-aa0332e9884b";
     private WebView webView;
     private Backend backend;
+    // Do not allow automatic OneDrive polls to start while backgrounded.
+    private volatile boolean appForeground=false;
+    boolean isAppForeground(){return appForeground;}
     private final ExecutorService workers = Executors.newFixedThreadPool(4);
     private ValueCallback<Uri[]> fileCallback;
     private String exportText, exportName, exportMime;
@@ -53,7 +56,6 @@ public class MainActivity extends Activity {
         super.onCreate(state);
         getWindow().setStatusBarColor(Color.rgb(13,19,30));
         getWindow().setNavigationBarColor(Color.rgb(13,19,30));
-        backend = new Backend(this);
         // La ventana no debe poner el título bajo la cámara ni debajo de la barra inferior.
         // Android 15+ fuerza edge-to-edge al compilar con targetSdk 35. En Android 11+
         // medimos los insets reales (sistema + recorte), no una altura de notch fija.
@@ -253,11 +255,26 @@ public class MainActivity extends Activity {
         }
     }
     private void toast(String message){Toast.makeText(this,message,Toast.LENGTH_LONG).show();}
+    @Override protected void onPause(){
+        appForeground=false;
+        if(webView!=null){
+            // Flush an unsaved user edit before freezing JavaScript timers.
+            // Ignore this operation if cloud import is in progress (JS guard).
+            webView.evaluateJavascript(
+                "if(window.cineBackgroundFlush)window.cineBackgroundFlush()", value -> {
+                    if(webView!=null&&!appForeground){webView.onPause();webView.pauseTimers();}
+                });
+        }
+        super.onPause();
+    }
     @Override protected void onResume(){
         super.onResume();
-        // Check OneDrive when the user returns from another app, without any TMDB refresh.
-        if(webView!=null)webView.evaluateJavascript(
-            "if(window.cineSyncResume)window.cineSyncResume()",null);
+        appForeground=true;
+        if(webView!=null){
+            webView.onResume();webView.resumeTimers();
+            // Check OneDrive on return; JS throttling prevents redundant polls.
+            webView.evaluateJavascript("if(window.cineSyncResume)window.cineSyncResume()",null);
+        }
     }
     @Override public void onConfigurationChanged(Configuration newConfig){super.onConfigurationChanged(newConfig);}
     @Override public void onBackPressed(){
