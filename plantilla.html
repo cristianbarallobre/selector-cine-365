@@ -309,6 +309,18 @@ h2{font-size:19px}
 #view-collections #collectionPageGotoForm label,#view-collections #collectionPageTotal{color:#b5cbe0;font-size:11px}
 #view-collections #collectionPageNumbers[hidden],#view-collections #collectionPageGotoForm[hidden]{display:none!important}
 </style>
+<style id="cine-desktop-instructions-v9">
+#view-instructions{overflow:auto;max-height:calc(100dvh - 165px);padding:0 4px 20px}
+.cine-instructions-panel{width:100%;max-width:1180px;margin:0 auto;padding:23px 24px}
+.cine-instructions-panel>p{color:#c5d7e7;line-height:1.65;margin:14px 0}
+.cine-instructions-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin:20px 0}
+.cine-instructions-grid article{background:#213045;border:1px solid #425875;padding:17px;border-radius:12px;min-width:0}
+.cine-instructions-grid h3{font-size:15px;margin:0 0 8px;color:#f3ca7d}
+.cine-instructions-grid p{font-size:13px;line-height:1.65;color:#d7e2ee;margin:0}
+.cine-manual-link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;padding:13px 18px;background:#254c6c;color:#fff;font-weight:700}
+.cine-instructions-footnote{font-size:11px!important;overflow-wrap:anywhere}
+@media(max-width:700px){.cine-instructions-grid{grid-template-columns:1fr}.cine-instructions-panel{padding:15px}}
+</style>
 </head>
 <body>
 <textarea id="initialState" hidden>__ATLAS_LISTA_INICIAL__</textarea>
@@ -326,11 +338,12 @@ h2{font-size:19px}
     <button class="nav-btn active" type="button" data-view="library">🎞 Biblioteca</button>
     <button class="nav-btn" type="button" data-view="statistics">▥ Estadísticas</button>
     <button class="nav-btn" type="button" data-view="collections">▤ Mis listas</button>
+    <button class="nav-btn" type="button" data-view="instructions">❔ Instrucciones</button>
     <select id="listSwitcher" class="list-switch" aria-label="Seleccionar lista"></select>
   </nav>
   <div id="view-library" class="columns view">
     <section class="panel" aria-label="Biblioteca de películas">
-      <div class="panel-heading"><h2>Tu colección</h2><div class="platform-controls"><button class="mini-ctrl" id="platformSetup" type="button">⚙ Plataformas</button><button class="mini-ctrl" id="platformRefresh" type="button" title="Actualizar disponibilidad en España">↻ Actualizar</button><span class="count-tag" id="libraryCount">365 películas</span></div></div>
+      <div class="panel-heading"><h2>Tu colección</h2><div class="platform-controls"><button class="mini-ctrl" id="platformSetup" type="button">⚙ Conectar TMDB</button><button class="mini-ctrl" id="platformRefresh" type="button" title="Actualizar disponibilidad en España">↻ Actualizar</button><span class="count-tag" id="libraryCount">365 películas</span></div></div>
       <input type="search" id="search" class="search" placeholder="Buscar película..." autocomplete="off" aria-label="Buscar película">
       <div class="filters" role="group" aria-label="Filtrar películas">
         <button type="button" class="filter selected" data-filter="all">Todas</button>
@@ -443,6 +456,23 @@ h2{font-size:19px}
           </div>
         </div>
       </div>
+    </div>
+  </section>
+  <section id="view-instructions" class="view" hidden aria-label="Instrucciones de uso de Selector Cine 365">
+    <div class="panel cine-instructions-panel">
+      <div class="panel-heading"><h2>Instrucciones de uso</h2><span class="count-tag">Ayuda</span></div>
+      <p>Selector Cine 365 guarda tus listas y películas vistas en este ordenador. La nube y la clave TMDB son opcionales.</p>
+      <div class="cine-instructions-grid">
+        <article><h3>1. Biblioteca</h3><p>Escoge la lista superior. Busca títulos, filtra por Todas, Pendientes o Vistas, o selecciona plataformas. <strong>Para cambiar Vista/Pendiente pulsa únicamente la casilla del tick</strong>; el resto de la ficha no cambia su estado.</p></article>
+        <article><h3>2. Conectar TMDB</h3><p>Abre <strong>Conectar TMDB</strong>, escribe una clave personal de TMDB y guarda. Aparecerán carteles, puntuaciones y plataformas en España. Los datos ya consultados se guardan en caché; Actualizar vuelve a consultar cuando tú lo pidas.</p></article>
+        <article><h3>3. Sorteo y estadísticas</h3><p>En Sorteo eliges una película pendiente al azar. En Estadísticas encontrarás el progreso de tu colección, periodos, géneros, directores y otros datos disponibles.</p></article>
+        <article><h3>4. Mis listas</h3><p>Crea, renombra y abre listas. Utiliza los números de página para recorrerlas. Puedes comparar listas y consultar sus coincidencias en la biblioteca.</p></article>
+        <article><h3>5. OneDrive y sincronización</h3><p>Selecciona una carpeta de OneDrive sincronizada con el PC. Android debe usar <strong>la misma carpeta</strong>. Confirma la primera revisión en cada equipo. Después, los cambios seguros se importan automáticamente al abrir o volver a la aplicación; los conflictos siguen necesitando revisión manual.</p></article>
+        <article><h3>6. Copias y seguridad</h3><p>Antes de importar muchas películas o cambiar de versión, exporta una copia JSON. Puedes usar la app solo en local y desactivar la nube sin perder las películas guardadas en el PC. No abras simultáneamente dos versiones de Windows.</p></article>
+      </div>
+      <p><strong>¿Necesitas todos los detalles?</strong> El manual extenso incluye ejemplos, procedimientos paso a paso, sincronización, solución de problemas y recuperación.</p>
+      <a class="tool cine-manual-link" href="https://github.com/cristianbarallobre/selector-cine-365/blob/v9-android-beta/docs/MANUAL_COMPLETO_SELECTOR_CINE_365.pdf" target="_blank" rel="noopener noreferrer">📖 Abrir manual completo en PDF (GitHub)</a>
+      <p class="cine-instructions-footnote">También puedes copiar este enlace: <span>https://github.com/cristianbarallobre/selector-cine-365/blob/v9-android-beta/docs/MANUAL_COMPLETO_SELECTOR_CINE_365.pdf</span></p>
     </div>
   </section>
 </main>
@@ -1074,7 +1104,7 @@ function deleteList(id){if(libraryState.lists.length<2)return;const l=librarySta
  if(!virtualMode){rawText=activeCollection().text||'';restartList();}else{refreshVirtualContent();restartList();}
  renderCollectionControls();scheduleSave();
 }
-function showView(name){if(name==='collections'&&virtualMode){rawText=activeCollection().text||'';virtualMode=false;restartList();}activeView=name;for(const v of ['library','statistics','collections'])$('view-'+v).hidden=(v!==name);
+function showView(name){if(name==='collections'&&virtualMode){rawText=activeCollection().text||'';virtualMode=false;restartList();}activeView=name;for(const v of ['library','statistics','collections','instructions'])$('view-'+v).hidden=(v!==name);
  document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
  if(name==='library')renderList();if(name==='statistics')renderStats();if(name==='collections')renderCollectionControls();
 }
