@@ -9,7 +9,7 @@
 <meta name="author" content="__APP_AUTHOR__">
 <meta name="copyright" content="__APP_COPYRIGHT__">
 <meta name="application-name" content="Selector de Cine 365">
-<title>Selector de Cine 365 · v8.2</title>
+<title>Selector de Cine 365 · v8.3</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1018;--panel:#171f2b;--panel2:#1b2735;--line:#314052;--subtle:#94a2b5;--light:#f4f6fa;--gold:#f3c66d;--gold2:#d59b40;--green:#a4e4bc;--red:#e5a6a6;--r:19px}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 960px 510px at 88% -10%,#263649 0%,transparent 76%),var(--bg);color:var(--light);font-family:'Segoe UI',system-ui,Arial,sans-serif;font-size:15px;min-height:100vh}button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
@@ -277,6 +277,36 @@ h2{font-size:19px}
 .creator-credit strong{color:#f3c66d;font-weight:680}
 @media(max-width:650px){.creator-credit{font-size:9px;white-space:normal;max-width:150px;text-align:right}}
 @media(max-height:690px){.creator-credit{font-size:10px}}
+/* v8.3: búsqueda global y metadatos compactos, adaptados a Windows y pantallas pequeñas. */
+#view-library .search-scope{display:flex;align-items:center;gap:6px;min-height:31px;margin:0 0 7px;flex:0 0 auto}
+.search-scope-btn{flex:1;border:1px solid #45576d;background:#202e3d;color:#d4e0ec;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:740}
+.search-scope-btn.active{background:#3c3528;border-color:#dbad5d;color:#ffe0a2}
+.film-meta{display:flex;align-items:center;gap:5px;flex-wrap:nowrap;min-width:0;margin-top:4px;color:#acbed1;font-size:11px}
+.film-year,.film-number{flex:0 0 auto}
+.film-meta .film-rating{font-size:10px;padding:2px 5px}
+.film-memberships{border:1px solid #51627a;background:#263647;border-radius:7px;padding:2px 4px;min-width:0;display:inline-flex;align-items:center;gap:4px;max-width:100%;color:#d8e8fa;white-space:nowrap}
+.film-memberships-label{flex:0 0 auto;font-size:10px;font-weight:750}
+.film-memberships-scroll{display:inline-flex;gap:3px;min-width:0;max-width:170px;overflow-x:auto;scrollbar-width:none}
+.film-memberships-scroll::-webkit-scrollbar{display:none}
+.film-membership-number,.film-membership-edit{background:#33465a;color:#ffe0aa;border:1px solid #586b80;border-radius:4px;min-width:18px;height:19px;padding:0 3px;font-size:10px;font-weight:750;flex:none}
+.film-membership-number:hover,.film-membership-edit:hover{background:#4a5360;border-color:#eac374}
+.film-membership-edit{color:#b9dfef}
+.film-item .film-check{cursor:pointer;font-size:16px;display:grid;place-items:center;padding:0;line-height:1}
+.film-item .film-check:hover{border-color:#eac374}
+.film-toggle{cursor:default}
+.film-membership-options{display:flex;flex-direction:column;gap:7px;max-height:min(50dvh,360px);overflow-y:auto;padding:3px}
+.film-membership-option{display:flex;align-items:center;gap:9px;padding:9px;border-radius:9px;background:#243347;border:1px solid #3c5269;font-size:13px;cursor:pointer}
+.film-membership-option input{width:18px;height:18px;accent-color:#ecc275;flex:none}
+.film-membership-hint{font-size:12px;color:#bac8d7;line-height:1.5}
+#view-statistics .stat-body{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#516478 transparent;padding-right:2px}
+#view-statistics .stat-pager{flex:0 0 30px;margin-top:auto;min-height:30px;position:relative;align-items:center}
+@media(max-width:650px){
+ #view-library .film-item{height:91px;min-height:91px;max-height:91px;flex-basis:91px}
+ #view-library .film-meta{gap:4px}
+ #view-library .film-memberships-scroll{max-width:80px}
+ .film-memberships-label{font-size:9px}
+ .film-meta .film-rating{font-size:9px}
+}
 </style>
 </head>
 <body>
@@ -293,9 +323,9 @@ h2{font-size:19px}
         <circle cx="22" cy="43" r="3.5" fill="#F3C66D"/><path d="M31 43h16" stroke="#F3C66D" stroke-width="3" stroke-linecap="round"/>
       </svg>
     </div>
-    <div><div class="eyebrow">Atlas del cine</div><h1>¿Qué película veo hoy?</h1></div>
+    <div><div class="eyebrow">Selector de Cine 365</div><h1>¿Qué película veo hoy?</h1></div>
     <div class="header-side">
-      <div class="header-tag">🎞️ SELECTOR 365 · v8.2</div>
+      <div class="header-tag">🎞️ SELECTOR 365 · v8.3</div>
       <div class="saved" id="saveState" aria-live="polite">✓ Guardado</div>
       <div class="creator-credit" title="__APP_COPYRIGHT__">Hecho por <strong>__APP_AUTHOR__</strong></div>
     </div>
@@ -308,8 +338,9 @@ h2{font-size:19px}
   </nav>
   <div id="view-library" class="columns view">
     <section class="panel" aria-label="Biblioteca de películas">
-      <div class="panel-heading"><h2>Tu colección</h2><div class="platform-controls"><button class="mini-ctrl" id="platformSetup" type="button">⚙ Plataformas</button><button class="mini-ctrl" id="platformRefresh" type="button" title="Actualizar disponibilidad en España">↻ Actualizar</button><span class="count-tag" id="libraryCount">365 películas</span></div></div>
+      <div class="panel-heading"><h2>Tu colección</h2><div class="platform-controls"><button class="mini-ctrl" id="platformSetup" type="button">⚙ Conectar TMDB</button><button class="mini-ctrl" id="platformRefresh" type="button" title="Actualizar disponibilidad en España">↻ Actualizar</button><span class="count-tag" id="libraryCount">365 películas</span></div></div>
       <input type="search" id="search" class="search" placeholder="Buscar película..." autocomplete="off" aria-label="Buscar película">
+      <div class="search-scope" role="group" aria-label="Ámbito de búsqueda"><button type="button" class="search-scope-btn active" data-search-scope="current" aria-pressed="true">Lista actual</button><button type="button" class="search-scope-btn" data-search-scope="all" aria-pressed="false">Todas las listas</button></div>
       <div class="filters" role="group" aria-label="Filtrar películas">
         <button type="button" class="filter selected" data-filter="all">Todas</button>
         <button type="button" class="filter" data-filter="pending">Pendientes</button>
@@ -474,6 +505,15 @@ h2{font-size:19px}
       <button type="button" class="primary" id="saveMatch">Guardar identificación</button>
     </div>
   </section>
+</div>
+<div class="overlay" id="membershipOverlay" hidden>
+ <section class="modal" role="dialog" aria-modal="true" aria-labelledby="membershipTitle">
+  <div class="modal-head"><h2 id="membershipTitle">Listas de la película</h2><button type="button" class="close" id="closeMembership" aria-label="Cerrar">✕</button></div>
+  <p class="film-membership-hint">Marca las listas en las que quieres guardar la película. Su estado de vista o pendiente se mantiene en todas las listas.</p>
+  <div class="film-membership-options" id="membershipOptions" role="group" aria-label="Listas disponibles"></div>
+  <div class="modal-status" id="membershipStatus" aria-live="polite"></div>
+  <div class="modal-actions"><button class="close" id="cancelMembership" type="button">Cancelar</button><button class="primary" id="applyMembership" type="button">Guardar cambios</button></div>
+ </section>
 </div>
 <div class="overlay" id="pasteOverlay" hidden>
   <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -1324,21 +1364,23 @@ const statRows=(title,entries,maxItems=8)=>{
  const panel=document.createElement('div');panel.className='stat-panel';const heading=document.createElement('h3');heading.textContent=title;panel.appendChild(heading);
  if(!entries.length){const empty=document.createElement('p');empty.className='stat-none';empty.textContent='Sin datos todavía';panel.appendChild(empty);return panel;}
  const sectionHeight=$('statsSections').clientHeight||400;
- const rowCount=Math.max(2,Math.min(maxItems,Math.floor((sectionHeight/2-67)/25)));
+ const rowCount=Math.max(2,Math.min(maxItems,Math.floor((sectionHeight/2-95)/26)));
  const pages=Math.max(1,Math.ceil(entries.length/rowCount));
  const page=Math.max(0,Math.min(statPages.get(title)||0,pages-1));statPages.set(title,page);
  const max=Math.max(...entries.map(x=>x[1]),1);
+ const body=document.createElement('div');body.className='stat-body';
  for(const [label,value] of entries.slice(page*rowCount,(page+1)*rowCount)){
-   const line=document.createElement('div');line.className='stat-row';const name=document.createElement('div');name.className='stat-row-name';name.textContent=label;name.title=label;
-   const bar=document.createElement('div');bar.className='stat-row-bar';const fill=document.createElement('div');fill.className='stat-row-fill';fill.style.width=(100*value/max).toFixed(1)+'%';bar.appendChild(fill);
-   const count=document.createElement('span');count.className='stat-row-count';count.textContent=String(value);line.append(name,bar,count);panel.appendChild(line);
+  const line=document.createElement('div');line.className='stat-row';const name=document.createElement('div');name.className='stat-row-name';name.textContent=label;name.title=label;
+  const bar=document.createElement('div');bar.className='stat-row-bar';const fill=document.createElement('div');fill.className='stat-row-fill';fill.style.width=(100*value/max).toFixed(1)+'%';bar.appendChild(fill);
+  const count=document.createElement('span');count.className='stat-row-count';count.textContent=String(value);line.append(name,bar,count);body.appendChild(line);
  }
+ panel.appendChild(body);
  if(pages>1){
-   const pager=document.createElement('div');pager.className='stat-pager';
-   const prev=document.createElement('button');prev.textContent='‹';prev.disabled=page===0;prev.title='Datos anteriores';prev.addEventListener('click',()=>{statPages.set(title,page-1);renderStats();});
-   const counter=document.createElement('span');counter.textContent=(page+1)+' / '+pages;
-   const next=document.createElement('button');next.textContent='›';next.disabled=page>=pages-1;next.title='Datos siguientes';next.addEventListener('click',()=>{statPages.set(title,page+1);renderStats();});
-   pager.append(prev,counter,next);panel.appendChild(pager);
+  const pager=document.createElement('div');pager.className='stat-pager';
+  const prev=document.createElement('button');prev.textContent='‹';prev.disabled=page===0;prev.title='Datos anteriores';prev.setAttribute('aria-label','Página anterior de '+title);prev.addEventListener('click',()=>{statPages.set(title,page-1);renderStats();});
+  const counter=document.createElement('span');counter.textContent=(page+1)+' / '+pages;
+  const next=document.createElement('button');next.textContent='›';next.disabled=page>=pages-1;next.title='Datos siguientes';next.setAttribute('aria-label','Página siguiente de '+title);next.addEventListener('click',()=>{statPages.set(title,page+1);renderStats();});
+  pager.append(prev,counter,next);panel.appendChild(pager);
  }
  return panel;
 };
