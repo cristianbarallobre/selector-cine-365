@@ -394,6 +394,9 @@ func (a *runningApp) cloudSyncConfirm(token string,decisions map[string]bool) (m
  a.library=p.Library
  if err:=a.syncStore.accept(p,decisions,folder);err!=nil{a.mu.Unlock();return nil,err}
  a.syncPreviewToken=""
+ a.syncPendingConflict.Store(false)
+ a.syncLastCheck.Store(time.Now().UnixMilli())
+ a.syncLastReceived.Store(time.Now().UnixMilli())
  a.mu.Unlock()
  saved:=a.cloud.backup()
  if saved.LastError!=""{return nil,errors.New(saved.LastError)}
