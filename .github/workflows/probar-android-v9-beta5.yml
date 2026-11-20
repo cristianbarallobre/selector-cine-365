@@ -1,7 +1,7 @@
-name: Probar Android Beta 7 sin publicar
+name: Probar Android Beta 8 sin publicar
 on:
   push:
-    branches: [feature/v9-onedrive-android-beta5, feature/v9-onedrive-active-beta6, feature/v9-android-onedrive-pkce-beta7]
+    branches: [feature/v9-onedrive-android-beta5, feature/v9-onedrive-active-beta6, feature/v9-android-onedrive-pkce-beta7, feature/v9-auto-sync-beta8]
     paths:
       - 'android/**'
       - '.github/workflows/probar-android-v9-beta5.yml'
@@ -52,7 +52,7 @@ jobs:
           assert 'devicecode' not in s and 'onedrive/poll' not in s
           assert 'msal696458fe-0672-47e5-9fdd-aa0332e9884b' in m
           PY
-      - name: Compilar APK Beta 7 con inicio Microsoft PKCE
+      - name: Compilar APK Beta 8 con inicio Microsoft PKCE
         working-directory: android
         run: gradle --no-daemon --stacktrace assembleDebug
 
