@@ -454,6 +454,26 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
 #view-library .film-toggle .film-check-action .checkbox{pointer-events:none}
 @media(max-width:650px){.film-item .film-check-action{width:30px;height:44px}}
 </style>
+<style id="cine-cloud-steps-progress-v9">
+#view-settings .mobile-settings-panel{position:relative;min-width:0;overflow:visible}
+#view-settings .mobile-settings-panel>*{max-width:100%;min-width:0}
+#view-settings .mobile-help,#view-settings .mobile-sync-caution,#view-settings .cloud-box,#view-settings .cloud-wizard-step{overflow-wrap:anywhere;word-break:normal;white-space:normal;min-width:0;max-width:100%}
+#view-settings .mobile-sync-caution{overflow:hidden!important;line-height:1.62!important}
+#view-settings .mobile-sync-caution code,#view-settings .mobile-help code{white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important;max-width:100%}
+#view-settings .cloud-wizard-step{border:1px solid #3b6488;border-radius:14px;background:#172a42;padding:14px;margin:14px 0;color:#dceafb}
+#view-settings .cloud-wizard-step h3,#view-settings .cloud-wizard-heading{font-size:16px;color:#f9d381;line-height:1.35;margin:0 0 10px}
+#view-settings .cloud-wizard-step p{font-size:13px;line-height:1.65;margin:0}
+#view-settings #cloudSettingsHome{padding-top:13px}
+#view-settings #onedriveBox{max-width:100%;min-width:0}
+#view-settings .cloud-activity-shield{position:fixed;inset:120px 7px 94px;z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(6,14,26,.89);border:2px solid #6e9bce;border-radius:14px}
+#view-settings .cloud-activity-shield[hidden]{display:none!important}
+#view-settings .cloud-activity-message{display:flex;align-items:center;flex-direction:column;gap:14px;max-width:320px;text-align:center;color:#fff;line-height:1.5}
+#view-settings .cloud-activity-message strong{font-size:17px;color:#f8d387}
+#view-settings .cloud-activity-message span{font-size:13px}
+#view-settings .cloud-activity-spinner{width:36px;height:36px;border-radius:50%;border:4px solid #456784;border-top-color:#ffce70;animation:cine-cloud-spin 1s linear infinite}
+@keyframes cine-cloud-spin{to{transform:rotate(360deg)}}
+#view-help .help-card a.tool{display:block;overflow-wrap:anywhere;white-space:normal;text-align:center;text-decoration:none;margin-top:12px}
+</style>
 </head>
 <body>
 <textarea id="initialState" hidden>SELECTOR CINE 365 — 365 PELÍCULAS 
@@ -1258,8 +1278,8 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
  <div class="panel mobile-settings-panel"><h2>Ajustes y sincronización</h2>
   <p class="mobile-help"><strong>¿Quieres sincronizar con Windows?</strong> Te recomendamos <strong>OneDrive</strong>. En el PC eliges una carpeta dentro de OneDrive; en Android conectas tu cuenta Microsoft y seleccionas esa misma carpeta. También puedes usar la app sin nube.</p>
   <div class="onedrive-box" id="onedriveBox">
-   <h3>☁ Conectar OneDrive</h3>
-   <p class="mobile-help">No necesitas buscar OneDrive en las carpetas del teléfono ni copiar códigos. Pulsa «Conectar cuenta Microsoft», inicia sesión en el navegador y vuelve automáticamente aquí. Después elige una carpeta exclusiva para pruebas, por ejemplo <strong>Pruebas_Selector_Cine_365</strong>. Las listas no se cambiarán hasta que revises y confirmes.</p>
+   <h3>1 · Conecta tu cuenta Microsoft</h3>
+   <p class="mobile-help">No necesitas buscar OneDrive en las carpetas del teléfono ni copiar códigos. Pulsa «Conectar cuenta Microsoft», inicia sesión en el navegador y vuelve automáticamente aquí. Después selecciona o crea una carpeta llamada <strong>Selector_Cine_365</strong>. No se modificarán tus listas hasta que confirmes la primera revisión.</p>
    <button type="button" class="primary" id="odConnect">Conectar cuenta Microsoft</button>
    <div id="odLoginCode" hidden>
     <p class="mobile-help">Se ha abierto la página oficial de Microsoft en tu navegador. Inicia sesión y acepta el acceso. Microsoft te devolverá automáticamente a Selector Cine 365, <strong>sin copiar ningún código</strong>.</p>
@@ -1267,20 +1287,26 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
     <p class="mobile-help">Si Microsoft indica que la dirección de retorno no está registrada, el editor debe añadir <code>msal696458fe-0672-47e5-9fdd-aa0332e9884b://auth</code> como URI de redirección de aplicación móvil/escritorio en Microsoft Entra.</p>
    </div>
    <div id="odFolderArea" hidden>
+    <h3>2 · Selecciona la carpeta de OneDrive</h3>
     <label for="odFolders" class="mobile-help"><strong>Carpeta de OneDrive</strong></label>
     <select id="odFolders" class="input-key" aria-label="Carpeta de OneDrive"></select>
     <button type="button" class="tool" id="odRefresh">Actualizar carpetas</button>
     <button type="button" class="primary" id="odUseFolder">Utilizar esta carpeta</button>
-    <p class="mobile-help">Si aún no tienes una carpeta para pruebas, crea una nueva en la raíz de tu OneDrive:</p>
-    <input id="odNewFolder" class="input-key" type="text" maxlength="70" value="Pruebas_Selector_Cine_365" aria-label="Nombre de nueva carpeta de OneDrive">
-    <button type="button" class="tool" id="odCreateFolder">Crear carpeta de pruebas</button>
+    <p class="mobile-help">Si la carpeta no existe, créala en la raíz de OneDrive; no hace falta utilizar una carpeta de pruebas antigua:</p>
+    <input id="odNewFolder" class="input-key" type="text" maxlength="70" value="Selector_Cine_365" aria-label="Nombre de nueva carpeta de OneDrive">
+    <button type="button" class="tool" id="odCreateFolder">Crear carpeta Selector_Cine_365</button>
     <button type="button" class="tool" id="odDisconnect">Desconectar cuenta Microsoft</button>
    </div>
    <p class="mobile-help" id="odStatus" aria-live="polite">Comprobando disponibilidad de OneDrive…</p>
   </div>
-  <div id="tmdbSettingsTools" class="mobile-setting-actions"></div>
-  <div id="cloudSettingsHome"></div>
-  <p class="mobile-help"><strong>Otra opción:</strong> «Elegir carpeta local» solo sirve para carpetas que Android permita leer y escribir. <strong>No conecta automáticamente con OneDrive.</strong></p>
+  <div class="cloud-wizard-step">
+    <h3>3 · Selecciona la misma carpeta en Windows</h3>
+    <p>En Windows abre OneDrive y elige la carpeta <strong>Selector_Cine_365</strong> dentro de la sección de nube de Selector Cine 365. Comprueba que OneDrive haya terminado de sincronizar sus archivos.</p>
+  </div>
+  <div id="cloudSettingsHome"><h3 class="cloud-wizard-heading">4 · Revisa y confirma la primera sincronización</h3>
+    <p class="mobile-help">En la primera conexión, pulsa <strong>Revisar sincronización</strong>, comprueba el resumen y confirma en ambos dispositivos. Después recibirás los cambios seguros automáticamente.</p>
+  </div>
+  <p class="mobile-help"><strong>Modo sin nube:</strong> puedes conservar todas tus películas en el móvil. «Elegir carpeta local» no conecta automáticamente con OneDrive.</p>
   <div class="sync-preview-panel" id="syncPreviewPanel" hidden>
    <h3>Revisar antes de sincronizar</h3>
    <p id="syncPreviewSummary" class="mobile-help"></p>
@@ -1289,7 +1315,19 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
    <button id="syncConfirmButton" type="button" class="primary">✓ Importar y activar sincronización</button>
    <button id="syncCancelButton" type="button" class="tool">Cancelar</button>
   </div>
-  <div class="mobile-help mobile-sync-caution">En OneDrive la estructura es <code>Pruebas_Selector_Cine_365/Selector_Cine_365_Copias/</code> (o la carpeta que hayas elegido). La app usa un archivo por dispositivo. <strong>Primero pulsa «Revisar sincronización» en cada equipo y confirma la vista previa.</strong> No borres <code>actual</code> ni <code>sincronizacion</code>.</div>
+  <div class="cloud-wizard-step">
+    <h3>5 · Sincronización automática y conflictos</h3>
+    <p>Después de la primera revisión, recibirás automáticamente los cambios compatibles al abrir la app y mientras la uses. <strong>Si aparecen marcas contradictorias, pulsa Revisar sincronización</strong> y decide qué conservar.</p>
+  </div>
+  <div class="mobile-help mobile-sync-caution">La app guarda sus archivos de intercambio dentro de la carpeta que hayas elegido, en <code>Selector_Cine_365_Copias</code>, con copias separadas para cada dispositivo. <strong>No borres las subcarpetas actual ni sincronizacion.</strong> Si ya usabas otra carpeta con listas sincronizadas, no la renombres ni la muevas sin hacer antes una copia JSON.</div>
+  <div id="tmdbSettingsTools" class="mobile-setting-actions" aria-label="Ajustes opcionales de TMDB"></div>
+  <div id="cloudActivityShield" class="cloud-activity-shield" hidden aria-live="assertive" role="status">
+    <div class="cloud-activity-message">
+      <span class="cloud-activity-spinner" aria-hidden="true"></span>
+      <strong id="cloudActivityTitle">Trabajando con OneDrive…</strong>
+      <span id="cloudActivityDetail">Espera a que termine. No pulses otros controles de Nube.</span>
+    </div>
+  </div>
   <p id="syncResult" class="mobile-help" aria-live="polite"></p>
  </div>
 </section>
@@ -1300,7 +1338,7 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
   <p class="help-intro">Lo esencial para usar Selector Cine 365. Puedes guardar películas sin clave API y sin conectar una nube.</p>
   <div class="help-card">
    <h3>1 · Biblioteca</h3>
-   <p>Elige una lista arriba, busca películas y filtra por <strong>Todas, Pendientes o Vistas</strong>. Pulsa una ficha para cambiarla entre vista y pendiente. «Cargar más» añade películas sin perder tu posición.</p>
+   <p>Elige una lista arriba, busca películas y filtra por <strong>Todas, Pendientes o Vistas</strong>. <strong>Solo pulsa la casilla del tick</strong> para cambiar su estado; tocar el resto de la ficha no lo modifica. «Cargar más» añade películas sin perder tu posición.</p>
   </div>
   <div class="help-card">
    <h3>2 · Carteles y plataformas: clave TMDB</h3>
@@ -1327,8 +1365,13 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
   </div>
   <div class="help-card">
    <h3>5 · Sincronización automática con OneDrive</h3>
-   <p>La nube es <strong>opcional</strong>. Sin conectarla, tus películas siguen guardadas en el móvil. Para compartirlas, en el PC crea una carpeta exclusiva como <strong>Pruebas_Selector_Cine_365</strong> dentro de OneDrive y selecciónala en los ajustes de Selector Cine 365 Windows. En Android pulsa <strong>Conectar cuenta Microsoft</strong>, inicia sesión desde la página oficial y elige esa misma carpeta. La <strong>primera vez</strong> pulsa <strong>Revisar sincronización</strong> en ambos dispositivos y confirma la combinación. Después, los cambios normales se importan automáticamente al abrir la app, volver a ella y periódicamente mientras esté en uso.</p>
+   <p>La nube es <strong>opcional</strong>. Sin conectarla, tus películas siguen guardadas en el móvil. Para compartirlas, en el PC crea una carpeta exclusiva como <strong>Selector_Cine_365</strong> dentro de OneDrive y selecciónala en los ajustes de Selector Cine 365 Windows. En Android pulsa <strong>Conectar cuenta Microsoft</strong>, inicia sesión desde la página oficial y elige esa misma carpeta. La <strong>primera vez</strong> pulsa <strong>Revisar sincronización</strong> en ambos dispositivos y confirma la combinación. Después, los cambios normales se importan automáticamente al abrir la app, volver a ella y periódicamente mientras esté en uso.</p>
    <p>Solo debes revisar manualmente cuando sea la <strong>primera conexión</strong> o cuando la app detecte un <strong>conflicto</strong>. Las modificaciones recibidas sin conflicto se incorporan automáticamente. Es posible que haya una demora por la subida de OneDrive. No hace falta dejar la app abierta en segundo plano. «Elegir carpeta local» <strong>no equivale</strong> a entrar en OneDrive; otras nubes requieren carpetas compatibles.</p>
+  </div>
+  <div class="help-card">
+    <h3>6 · Manual completo</h3>
+    <p>Esta pantalla es una guía rápida. Para consultar procedimientos detallados sobre listas, TMDB, OneDrive, conflictos, copias y errores, abre el <strong>manual extenso en PDF</strong>, guardado en GitHub.</p>
+    <a class="tool" href="https://github.com/cristianbarallobre/selector-cine-365/blob/v9-android-beta/docs/MANUAL_COMPLETO_SELECTOR_CINE_365.pdf" target="_blank" rel="noopener noreferrer">📖 Abrir manual completo (PDF en GitHub)</a>
   </div>
   <p class="help-note">Este producto utiliza la API de TMDB, pero no está respaldado ni certificado por TMDB.</p>
  </div>
