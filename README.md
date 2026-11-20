@@ -2,20 +2,22 @@
 
 Aplicación personal de cine para **Windows 10/11**, **macOS Apple Silicon e Intel** y **Android**, creada por **Cristian Barallobre Rúa**. Sirve para organizar listas, registrar películas vistas, decidir qué ver, consultar datos de TMDB y sincronizar bibliotecas entre dispositivos.
 
-**Edición actual para pruebas:** **v9 Beta 13.1 en Windows y macOS**, y **v9 Beta 13 en Android** (20 de noviembre de 2026). Es una *beta*, no una versión estable; las pruebas físicas de sincronización entre dispositivos siguen pendientes. Las cuatro plataformas se distribuyen juntas bajo una misma publicación.
+**Edición actual para pruebas:** **v9 Beta 13.1 en Windows y macOS**, y **v9 Beta 13.2 en Android** (20 de noviembre de 2026). Es una *beta*, no una versión estable; las pruebas físicas de sincronización entre dispositivos siguen pendientes. Las cuatro plataformas se distribuyen juntas bajo una misma publicación.
 
 ## Descargar
 
-**[Release conjunta v9 Beta 13.1 — Windows, Android y Mac](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13.1)**
+**[Android Beta 13.2 — batería y segundo plano](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13.2)** (APK firmada, instalable encima de Beta 13)
+
+**[Windows y Mac Beta 13.1 — descarga de escritorio](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13.1)**
 
 | Plataforma | Archivo incluido | Requisitos |
 |---|---|---|
 | Windows | `Selector_Cine_365_Windows_v9_BETA13_1.zip` | Windows 10/11 de 64 bits, Microsoft WebView2 |
 | macOS Apple Silicon | `Selector_Cine_365_Mac_Apple_Silicon_v9_BETA13_1.zip` | macOS 12+, Apple Silicon |
 | macOS Intel | `Selector_Cine_365_Mac_Intel_v9_BETA13_1.zip` | macOS 12+, Intel |
-| Android | `Selector_Cine_365_Android_v9_BETA13.apk` | Android 8.0+, APK firmada y verificada |
+| Android | `Selector_Cine_365_Android_v9_BETA13_2.apk` | Android 8.0+, APK firmada y verificada |
 
-**Por qué Android pone Beta 13:** su última compilación ya contiene los arreglos de sincronización y notch. El cambio de **Beta 13.1 es exclusivo del servidor Go de Windows/Mac**; no se necesita recompilar ni cambiar el número interno 9015 de Android.
+**Por qué cambian los números:** Windows y Mac siguen en Beta 13.1. Android incorpora ahora Beta 13.2 (código 9016) por la reducción de tareas en segundo plano y el guardado protegido. La clave de firma y el paquete Android no cambian.
 
 **Novedad de escritorio Beta 13.1:** corregida la ruta local `/api/platforms/cache`, que devolvía HTTP 404 al abrir y dejaba la interfaz en «Conexión local TMDB no disponible. Reintentando…» aunque la clave TMDB existiera. Ahora la caché se carga correctamente; errores de caché y de estado se tratan por separado. El botón Actualizar permite comprobar de nuevo la conexión. No se incluyen claves privadas en los instaladores.
 
@@ -25,7 +27,7 @@ Histórico: [Beta 12.2](https://github.com/cristianbarallobre/selector-cine-365/
 
 ## Hotfix Android Beta 13.2 — batería y segundo plano
 
-Android reduce comprobaciones automáticas de OneDrive de 30 a **60 segundos en primer plano**, deja de hacer el ping de 12 segundos, pausa la WebView al minimizar y elimina la inicialización doble del backend. Se conservan el guardado inmediato al minimizar con un cambio pendiente, las revisiones causales y la sincronización manual. **APK Android 9016**, mismo paquete y firma que Beta 13. Windows y Mac continúan en Beta 13.1. [Notas del hotfix](RELEASE_NOTES_v9_BETA13_2_ANDROID.md).
+Android reduce comprobaciones automáticas de OneDrive de 30 a **60 segundos en primer plano**, deja de hacer el ping de 12 segundos, pausa la WebView al minimizar y elimina la inicialización doble del backend. Se conservan el guardado inmediato al minimizar con un cambio pendiente, las revisiones causales y la sincronización manual. **APK Android 9016**, mismo paquete y firma que Beta 13. [Descargar Beta 13.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13.2). Windows y Mac continúan en Beta 13.1. [Notas del hotfix](RELEASE_NOTES_v9_BETA13_2_ANDROID.md).
 
 ## Novedades v9 Beta 13 — listas y TMDB fiables
 
