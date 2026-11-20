@@ -12,6 +12,9 @@ permissions:
 
 jobs:
   apk:
+    # Flujo de publicación antiguo deshabilitado tras consolidar v9 Beta 12.
+    # Conservar las fuentes históricas; NO recrear releases beta por separado.
+    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
