@@ -406,7 +406,8 @@ h2{font-size:19px}
           <button class="tool" type="button" id="cloudDisable">Desactivar</button>
         </div>
         <div class="cloud-status" id="cloudStatus" aria-live="polite">Comprobando copias…</div>
-        <button class="tool" type="button" id="cloudSyncReview" style="width:100%;margin-top:8px">⇄ Revisar sincronización con otros dispositivos</button>
+        <button class="tool" type="button" id="cloudSyncReview" style="width:100%;margin-top:8px">⇄ Revisar sincronización / resolver conflictos</button>
+        <div id="cloudAutoStatus" class="cloud-status" aria-live="polite" style="margin-top:9px">Al vincular por primera vez, se recibirán automáticamente los cambios sin conflictos. Se revisan al abrir y periódicamente.</div>
         <div class="sync-desktop-panel" id="cloudSyncPanel" hidden>
           <h3>Revisar antes de importar</h3>
           <p id="cloudSyncSummary"></p><div id="cloudSyncConflicts"></div>
@@ -767,7 +768,7 @@ $('filmPageGotoForm').addEventListener('submit',e=>{
  filmPage=page-1;renderList();input.value='';
 });
 function resetChoice(){chosen=null;$('resultPoster').hidden=true;$('resultPoster').removeAttribute('src');$('resultPlatforms').replaceChildren();$('resultTag').textContent='EL SORTEO TE ESPERA';$('resultTitle').textContent='Tu próxima película aparecerá aquí';$('resultDetails').textContent='';$('markWatched').disabled=true;$('copyChoice').disabled=true;}
-function scheduleSave(){ $('saveState').textContent='Guardando…';clearTimeout(saveTimer);saveTimer=setTimeout(()=>{void saveLocal();},240);}
+function scheduleSave(){ $('saveState').textContent='Guardando…';clearTimeout(saveTimer);saveTimer=setTimeout(()=>{saveTimer=null;void saveLocal();},240);}
 async function saveLocal(){
  syncActiveText();const snapshot=JSON.stringify(libraryState);const epoch=++saveEpoch;
  saveQueue=saveQueue.catch(()=>{}).then(async()=>{
@@ -1226,7 +1227,7 @@ function cloudShow(s){
    if(document.activeElement!==$('cloudFolder'))$('cloudFolder').value=s.folder;
    box.textContent=s.needs_review?'⚠ Hay otros dispositivos en esta carpeta. Pulsa «Revisar sincronización» antes de publicar cambios.':
      s.last_error?'⚠ Copia en nube fallida: '+s.last_error:
-     s.sync_paired?'✓ Sincronización activada · copias independientes':
+     s.sync_paired?'✓ Sincronización automática activada · copias independientes':
      s.last_backup?'✓ Copia en nube actualizada · '+new Date(s.last_backup).toLocaleString('es-ES'):'✓ Carpeta configurada; revisa antes de combinar';
  }else{
    box.textContent='Sin carpeta de nube configurada';
@@ -1297,6 +1298,43 @@ $('cloudSyncConfirm').addEventListener('click',async()=>{
  }catch(e){$('cloudSyncSummary').textContent='⚠ '+e.message+' Comprueba la copia local de recuperación.';}
  finally{button.disabled=false;}
 });
+// Se activa solo tras la primera revisión manual. No consulta TMDB ni sube fichas.
+let cloudAutoBusy=false,cloudAutoCheckedAt=0;
+async function cloudAutoReceive(force=false){
+ if(cloudAutoBusy||syncPreviewToken||!$('cloudSyncPanel').hidden)return;
+ if(!force&&Date.now()-cloudAutoCheckedAt<120000)return;
+ if(document.querySelector('.overlay:not([hidden])'))return;
+ if(document.activeElement?.matches('input,textarea,select,[contenteditable="true"]'))return;
+ if(saveTimer!==null)return;
+ cloudAutoBusy=true;
+ const beforeEpoch=saveEpoch;
+ try{
+   await saveQueue.catch(()=>{});
+   if(beforeEpoch!==saveEpoch||saveTimer!==null)return;
+   cloudAutoCheckedAt=Date.now();
+   const main=document.querySelector('main'),wasInert=main?.inert;
+   if(main)main.inert=true;
+   try{
+     const result=await cloudRequest('/api/cloud/auto','POST');
+     if(result.needs_review){
+       $('cloudAutoStatus').textContent=result.skipped==='not_paired'
+         ?'Primera vinculación pendiente: pulsa «Revisar sincronización».'
+         :'⚠ Se han encontrado cambios incompatibles. Pulsa «Revisar sincronización» para decidir.';
+     }else if(result.changed){
+       await initLibrary();restartList();
+       $('cloudAutoStatus').textContent='✓ Cambios recibidos automáticamente de otro dispositivo.';
+       await cloudRefresh();
+     }else if(!result.skipped){
+       $('cloudAutoStatus').textContent='✓ Sincronización automática al día.';
+     }
+   }finally{if(main)main.inert=wasInert;}
+ }catch(error){
+   $('cloudAutoStatus').textContent='⚠ No se pudo comprobar la nube: '+error.message+' · Puedes usar «Revisar sincronización».';
+ }finally{cloudAutoBusy=false;}
+}
+window.addEventListener('focus',()=>void cloudAutoReceive());
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)void cloudAutoReceive();});
+setInterval(()=>{if(!document.hidden)void cloudAutoReceive();},150000);
 void cloudRefresh();
 
 // Subscription/free/ad-supported services only; rental and purchase never
@@ -1494,7 +1532,7 @@ window.addEventListener('pagehide',()=>{
  try{syncActiveText();navigator.sendBeacon('/api/library?token='+encodeURIComponent(token),new Blob([JSON.stringify(libraryState)],{type:'application/json'}));}catch(err){}
  try{navigator.sendBeacon('/api/quit?token='+encodeURIComponent(token),'cerrar');}catch(err){}
 });
-updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void initLibrary().then(async()=>{await initIdentities();await initPlatforms();});
+updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void cloudAutoReceive(true).then(()=>initLibrary()).then(async()=>{await initIdentities();await initPlatforms();});
 })();
 </script>
 </body>
