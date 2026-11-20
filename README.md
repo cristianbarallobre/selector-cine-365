@@ -2,28 +2,28 @@
 
 Aplicación personal de cine para **Windows 10/11**, **macOS Apple Silicon e Intel** y **Android**, creada por **Cristian Barallobre Rúa**. Sirve para organizar listas, registrar películas vistas, decidir qué ver, consultar datos de TMDB y sincronizar bibliotecas entre dispositivos.
 
-**Versión más reciente:** **v9 Beta 12.1** (hotfix de Android, 20 de noviembre de 2026; Windows y Mac conservan los paquetes Beta 12). Es una *beta*, no una edición estable o validada en todos los dispositivos. Las versiones históricas principales permanecen visibles; los instaladores de las betas intermedias se han respaldado en un borrador privado, conservando las etiquetas Git y las ramas.
+**Versión más reciente:** **v9 Beta 12.2** (hotfix de Android, 20 de noviembre de 2026; Windows y Mac conservan los paquetes Beta 12). Es una *beta*, no una edición estable o validada en todos los dispositivos. Las versiones históricas principales permanecen visibles; los instaladores de las betas intermedias se han respaldado en un borrador privado, conservando las etiquetas Git y las ramas.
 
 ## Descargar
 
 **[Releases y descargas de Selector Cine 365](https://github.com/cristianbarallobre/selector-cine-365/releases)**
 
-Tras el hotfix, las versiones se organizan así: [Beta 12.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.1) (Android corregido, Windows y Mac sin cambios), además de las anteriores. Las **releases históricas** se organizan así: [Beta 12](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12) (actual, cuatro plataformas), [Beta 9](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.9) (histórica, Windows y Android), [v8.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.2) y [v8.1.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.1.1). Las releases redundantes están archivadas; **no se han borrado sus fuentes ni sus tags**. Consulta la [política de publicaciones y recuperación](docs/POLITICA_DE_RELEASES.md).
+La versión para instalar es [Beta 12.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.2) (Android corregido; Windows y Mac utilizan los binarios originales de Beta 12). La anterior es [Beta 12.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.1) (Android corregido, Windows y Mac sin cambios), además de las anteriores. Las **releases históricas** se organizan así: [Beta 12](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12) (actual, cuatro plataformas), [Beta 9](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.9) (histórica, Windows y Android), [v8.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.2) y [v8.1.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.1.1). Las releases redundantes están archivadas; **no se han borrado sus fuentes ni sus tags**. Consulta la [política de publicaciones y recuperación](docs/POLITICA_DE_RELEASES.md).
 
 | Plataforma | Archivo de la Beta 12 | Requisitos |
 |---|---|---|
 | Windows | `Selector_Cine_365_Windows_v9_BETA12.zip` | Windows 10/11 de 64 bits y Microsoft WebView2 Runtime |
 | Mac Apple Silicon | `Selector_Cine_365_Mac_Apple_Silicon_v9_BETA12.zip` | macOS 12+; M1/M2/M3/M4 y posteriores |
 | Mac Intel | `Selector_Cine_365_Mac_Intel_v9_BETA12.zip` | macOS 12+; procesador Intel |
-| Android | `Selector_Cine_365_Android_v9_BETA12.apk` | Android 8.0+ (API 26); instalar únicamente la APK firmada publicada |
+| Android | `Selector_Cine_365_Android_v9_BETA12_2.apk` | Android 8.0+ (API 26); instalar únicamente la APK firmada publicada |
 
 **Importante:** si una plataforma aún no figura entre los archivos de la release, no descargues una APK sin firma ni sustituyas otra versión como si fuera equivalente. Consulta las notas de la publicación.
 
-## Android v9 Beta 12.1 — zona segura para notch
+## Android v9 Beta 12.2 — notch y menú inferior sin margen doble
 
-En móviles con cámara frontal recortada, Android 15+ y barras de gestos, la interfaz utiliza los espacios seguros medidos por el sistema en lugar de un margen fijo. La **APK 9013** actualiza Beta 12 sin desinstalar ni borrar listas porque conserva el mismo ID y la misma firma. En Android Beta 9 sigue siendo necesaria una migración mediante JSON.
+Beta 12.1 solucionó el título tapado por el notch, pero en algunos móviles Redmi el menú inferior quedaba elevado y aparecía una franja vacía. **Beta 12.2** corrige la doble reserva del espacio de navegación: Android aplica los márgenes seguros reales y el CSS ya no los suma otra vez. La APK firmada **9014** actualiza Beta 11, 12 y 12.1 sin desinstalar ni perder datos; conserva el mismo identificador y certificado. Desde Beta 9 sigue siendo necesaria una migración por JSON.
 
-[Descargar Android Beta 12.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.1). Windows y Mac utilizan los **mismos ZIP** de Beta 12.
+[Descargar Android Beta 12.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.2). Windows y Mac utilizan los **mismos ZIP** de Beta 12.
 
 ## Novedades v9 Beta 12
 
