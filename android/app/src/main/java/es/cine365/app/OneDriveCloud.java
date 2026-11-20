@@ -18,6 +18,8 @@ import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Locale;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -42,6 +44,9 @@ final class OneDriveCloud {
     private String pendingState="",pendingVerifier="";
     private long pendingExpiresAt=0;
     private final String redirectUri;
+    // Delta links are session-local: after restart a full incremental baseline is
+    // checked once, never trusting stale cursors from a different account.
+    private final Map<String,String> changeCursors=new HashMap<>();
 
     OneDriveCloud(Context context){
         this.context=context;
@@ -126,7 +131,7 @@ final class OneDriveCloud {
         return status();
     }
     synchronized void logout(){
-        accessToken="";refreshToken="";expiresAt=0;clearPending();
+        accessToken="";refreshToken="";expiresAt=0;clearPending();changeCursors.clear();
         context.getSharedPreferences("onedrive",Context.MODE_PRIVATE).edit().remove("secrets").apply();
     }
     private JSONObject tokenRequest(byte[] body)throws Exception{
@@ -189,6 +194,36 @@ final class OneDriveCloud {
             }
             return result;
         }finally{if(c!=null)c.disconnect();}
+    }
+    /**
+     * One inexpensive Graph delta request when unchanged, instead of listing and
+     * downloading every per-device snapshot on every foreground poll.
+     * The first request per launch always returns true and is fully reconciled.
+     */
+    synchronized boolean folderChanged(String folderId)throws Exception{
+        if(folderId==null||folderId.isEmpty())return true;
+        String previous=changeCursors.get(folderId);
+        String path=previous==null
+            ?"me/drive/items/"+encode(folderId)+"/delta"
+            :previous;
+        boolean changed=previous==null;
+        for(int page=0;page<12;page++){
+            JSONObject response=new JSONObject(new String(graph(path,"GET",null,null),StandardCharsets.UTF_8));
+            JSONArray values=response.optJSONArray("value");
+            if(values!=null&&values.length()>0)changed=true;
+            String next=response.optString("@odata.nextLink","");
+            if(!next.isEmpty()){
+                if(!next.startsWith(GRAPH+"me/drive/"))throw new Exception("Paginación Delta de OneDrive no reconocida");
+                path=next.substring(GRAPH.length());
+                continue;
+            }
+            String cursor=response.optString("@odata.deltaLink","");
+            if(cursor.isEmpty()||!cursor.startsWith(GRAPH+"me/drive/"))
+                throw new Exception("OneDrive no pudo confirmar su comprobación incremental");
+            changeCursors.put(folderId,cursor.substring(GRAPH.length()));
+            return changed;
+        }
+        throw new Exception("OneDrive devolvió demasiadas páginas de cambios; no se ha aplicado ninguna modificación");
     }
     synchronized JSONObject folders()throws Exception{
         JSONArray array=new JSONArray();
