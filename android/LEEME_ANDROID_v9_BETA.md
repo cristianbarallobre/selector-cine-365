@@ -25,7 +25,7 @@ No añadas ninguna contraseña ni secreto de cliente. No se necesita habilitar s
 - **Atención con el navegador:** Beta 7 y Beta 8 usan la misma dirección de retorno de Microsoft. Si Android te pregunta qué aplicación debe abrir, elige **Selector Cine 365 · Beta 8**. Si regresa automáticamente a Beta 7, borra los valores predeterminados de apertura de Beta 7 en Ajustes de Android antes de repetir el inicio de sesión; no borres sus datos sin conservar antes un JSON.
 - Pulsa **Nube → Conectar cuenta Microsoft**. La app abre la página oficial de Microsoft automáticamente en el navegador del móvil.
 - Inicia sesión y acepta los permisos de Microsoft Graph. Al finalizar, el navegador debería **volver directamente a Selector Cine 365** sin solicitar ningún código manual.
-- Selecciona o crea una carpeta de pruebas (por ejemplo `Pruebas_Selector_Cine_365`) en OneDrive y pulsa **Utilizar esta carpeta**. Eso **no publica** datos por sí solo.
+- Selecciona o crea una carpeta de pruebas (por ejemplo `Selector_Cine_365`) en OneDrive y pulsa **Utilizar esta carpeta**. Eso **no publica** datos por sí solo.
 - En Windows Beta 8, selecciona esa misma carpeta local sincronizada dentro de OneDrive.
 - Pulsa **Revisar sincronización** en los dos dispositivos; inspecciona los datos y confirma. Para recibir nuevos cambios del otro dispositivo, **hay que revisar de nuevo**.
 
