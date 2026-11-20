@@ -1,7 +1,7 @@
 name: Probar sincronización v9 (escritorio)
 on:
   push:
-    branches: [feature/v9-sync-and-stats-beta4, feature/v9-onedrive-android-beta5, v9-android-beta]
+    branches: [feature/v9-sync-and-stats-beta4, feature/v9-onedrive-android-beta5, feature/v9-auto-sync-beta8, v9-android-beta]
     paths:
       - '**.go'
       - 'go.mod'
@@ -23,4 +23,4 @@ jobs:
       - name: Pruebas de las bibliotecas y sincronización
         run: go test ./...
       - name: Compilar Windows (sin publicar ni reemplazar versión estable)
-        run: GOOS=windows GOARCH=amd64 go build -o /tmp/Selector_Cine_365_v9_prueba.exe .
+        run: GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags='-H windowsgui -s -w' -o /tmp/Selector_Cine_365_v9_prueba.exe .
