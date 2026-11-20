@@ -443,6 +443,17 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
 .onedrive-code{font-size:24px;font-weight:800;letter-spacing:.1em;word-break:break-all;text-align:center;border:1px dashed #d3ac75;background:#101925;padding:16px;border-radius:10px;color:#ffe3a2}
 .onedrive-box #odStatus{white-space:pre-line}
 </style>
+<style id="cine-tick-only-v9">
+/* La tarjeta no cambia el estado; solo lo hace el botón de la casilla. */
+.film-item .film-toggle{cursor:default!important}
+.film-item .film-toggle:hover{background:transparent!important}
+.film-item .film-check-action{display:grid;place-items:center;align-self:center;flex:0 0 34px;width:34px;height:40px;padding:0;border:0;border-radius:8px;color:inherit;background:transparent;cursor:pointer}
+.film-item .film-check-action:hover{background:rgba(124,201,172,.12)}
+.film-item .film-check-action:focus-visible{outline:3px solid #f3c56a;outline-offset:2px}
+.film-item .film-check-action.readonly{cursor:default;pointer-events:none}
+#view-library .film-toggle .film-check-action .checkbox{pointer-events:none}
+@media(max-width:650px){.film-item .film-check-action{width:30px;height:44px}}
+</style>
 </head>
 <body>
 <textarea id="initialState" hidden>SELECTOR CINE 365 — 365 PELÍCULAS 
@@ -1703,8 +1714,11 @@ function renderList(append=false){
  const visible=matches.slice(start,start+pageSize);
  for(const f of window.CineAndroid&&append?visible.slice(existingCount):visible){
    const b=document.createElement('div');b.className='film-item'+(f.checked?' seen':'');b.dataset.idx=f.idx;b.setAttribute('role','listitem');if(virtualMode)b.classList.add('readonly');
-   const togg=document.createElement(virtualMode?'span':'button');if(!virtualMode)togg.type='button';togg.className='film-toggle'+(virtualMode?' readonly':'');if(!virtualMode){togg.dataset.idx=f.idx;togg.setAttribute('aria-pressed',f.checked?'true':'false');togg.title='Marcar como '+(f.checked?'pendiente':'vista');}
-   const chk=document.createElement('span');chk.className='checkbox';chk.textContent=f.checked?'✓':'';
+   const togg=document.createElement('div');togg.className='film-toggle'+(virtualMode?' readonly':'');
+   const tick=document.createElement(virtualMode?'span':'button');
+   tick.className='film-check-action'+(virtualMode?' readonly':'');
+   if(!virtualMode){tick.type='button';tick.dataset.idx=f.idx;tick.setAttribute('aria-pressed',f.checked?'true':'false');tick.setAttribute('aria-label','Marcar «'+f.title+'» como '+(f.checked?'pendiente':'vista'));tick.title='Cambiar estado solo desde esta casilla';}
+   const chk=document.createElement('span');chk.className='checkbox';chk.textContent=f.checked?'✓':'';tick.appendChild(chk);
    const r=platformData.get(providerKey(f));
    const poster=posterElement(r);
    const main=document.createElement('span');main.className='film-main';
@@ -1715,7 +1729,7 @@ function renderList(append=false){
    if(f.year||f.number){const sub=document.createElement('span');sub.className='film-sub';sub.textContent=[f.number?'N.º '+f.number:'',f.year].filter(Boolean).join(' · ');main.appendChild(sub);}
    const badge=document.createElement('span');badge.className='film-platforms';const [name,css]=platformBadge(f);if(css)badge.classList.add(css);badge.textContent=name;
    badge.title=platformTitle(r);main.appendChild(badge);
-   togg.append(chk,poster,main);
+   togg.append(tick,poster,main);
    const pill=document.createElement('span');pill.className='pill';pill.textContent=f.checked?'Vista':'Pendiente';
    const link=document.createElement('a');link.className='wherelink';link.href=(r?.film_url||jwSearch(f));link.target='_blank';link.rel='noopener noreferrer';link.title='Consultar en JustWatch / TMDB';link.setAttribute('aria-label','Consultar dónde ver '+f.title);link.textContent='↗';
    const fix=document.createElement('button');fix.type='button';fix.className='matchlink';fix.title='Corregir identificación de TMDB';fix.setAttribute('aria-label','Corregir identificación de '+f.title);fix.textContent='✎';fix.addEventListener('click',()=>{if(!virtualMode)openMatchModal(f);});fix.disabled=virtualMode;fix.hidden=virtualMode;
