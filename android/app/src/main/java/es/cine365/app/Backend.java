@@ -162,6 +162,16 @@ final class Backend {
             return active;
         }catch(Exception e){return false;}
     }
+    // A last-moment edit saved by the JS bridge must keep its causal revision:
+    // otherwise a later OneDrive snapshot could restore an older watched flag.
+    void saveOnExit(JSONObject state)throws Exception{
+        if(!validLibrary(state))return;
+        synchronized(filesLock){
+            JSONObject previous=new JSONObject(readOrDefault("colecciones.json","{}"));
+            sync.observe(validLibrary(previous)?previous:null,state);
+            storeState(state);
+        }
+    }
     void storeStateImported(JSONObject state)throws Exception{
         if(!validLibrary(state))throw new Exception("Biblioteca remota no válida");
         storeState(state);
