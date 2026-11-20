@@ -106,6 +106,9 @@ final class Backend {
                 return ok(cloud.status().toString());
             }
             case "/api/cloud/backup":return ok(cloud.backup().toString());
+            case "/api/cloud/auto":{
+                synchronized(filesLock){return ok(cloud.autoSynchronize(this).toString());}
+            }
             case "/api/cloud/preview":{
                 synchronized(filesLock){return ok(cloud.preview(this).toString());}
             }
