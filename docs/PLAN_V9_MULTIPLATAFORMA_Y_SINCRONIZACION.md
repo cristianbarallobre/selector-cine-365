@@ -1,11 +1,11 @@
 # Selector Cine 365 — Plan funcional y técnico v9.0
 
-**Estado (20-11-2026):** **v9 Beta 12 implementada de forma experimental en Windows y Android; la versión para Mac Intel y Apple Silicon comparte el código de Windows y está publicada como beta en GitHub Releases.** No está aprobada todavía como versión estable: faltan pruebas prolongadas de sincronización en dispositivos reales.  
+**Estado (20-11-2026):** **v9 Beta 12.2 Android y v9 Beta 12 Windows/macOS; implementación experimental en Windows y Android; la versión para Mac Intel y Apple Silicon comparte el código de Windows y está publicada como beta en GitHub Releases.** No está aprobada todavía como versión estable: faltan pruebas prolongadas de sincronización en dispositivos reales.  
 **Autor:** Cristian Barallobre Rúa.  
 **Plataformas previstas:** Windows, Android y macOS (Apple Silicon / Intel).  
 **Base actual:** código v9 Beta 12 de escritorio Go/HTML/WKWebView-WebView2 y código Android Java/Gradle dentro de este mismo repositorio. El plan recoge objetivos originales y puede incluir funciones todavía pendientes.
 
-## Seguimiento del estado v9 Beta 12
+## Seguimiento del estado v9 Beta 12.2 (Android)
 
 **Ya implementado en la beta (sujeto a pruebas reales):** modo local sin nube; Windows, Android y versiones Mac Intel/Apple Silicon publicadas; base compartida para Windows y Mac; búsqueda global/listas numeradas; estado Vista/Pendiente desde el tick; PKCE/OneDrive personal en Android; revisiones causales, detección periódica, historial y copias de recuperación; interfaz Android adaptada.
 
