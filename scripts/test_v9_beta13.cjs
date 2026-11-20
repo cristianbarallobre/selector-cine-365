@@ -83,7 +83,7 @@ assert.ok(!mainActivity.includes('setPadding(0, 35,'),'No introducir margen fijo
 assert.ok(android.html.includes('Android v9 Beta 13'));
 assert.ok(gradle.includes("applicationId 'es.cine365.app'"),'Mantener package');
 assert.ok(gradle.includes("versionName '9.0.0-beta.13'"),'Versión');
-assert.ok(manifest.includes('Selector Cine 365 · Beta 12.2'));
+assert.ok(manifest.includes('Selector Cine 365 · Beta 13'));
 console.log('OK: safe area dinámica para notch, navegación gestual y compatibilidad Android antiguos');
 
 
