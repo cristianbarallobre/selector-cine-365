@@ -124,7 +124,14 @@ final class Backend {
             }
             case "/api/cloud/backup":return ok(cloud.backup().toString());
             case "/api/cloud/auto":{
-                synchronized(filesLock){return ok(cloud.autoSynchronize(this).toString());}
+                // No automated background network checks; manual sync remains unchanged.
+                if(!activity.isAppForeground())return ok(new JSONObject()
+                    .put("changed",false).put("skipped","background").toString());
+                synchronized(filesLock){
+                    if(!activity.isAppForeground())return ok(new JSONObject()
+                        .put("changed",false).put("skipped","background").toString());
+                    return ok(cloud.autoSynchronize(this).toString());
+                }
             }
             case "/api/cloud/preview":{
                 synchronized(filesLock){return ok(cloud.preview(this).toString());}
