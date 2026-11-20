@@ -1,0 +1,33 @@
+name: Mantenimiento único - archivar betas y consolidar releases v9
+on:
+  push:
+    branches: ['maintenance/organizar-releases-v9-2026-11']
+    paths:
+      - '.github/workflows/mantener-releases-v9.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: cine-mantenimiento-releases-v9
+  cancel-in-progress: false
+jobs:
+  conservar-y-limpiar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Revisar la rama y el script de conservación
+        run: |
+          test "$GITHUB_REF_NAME" = 'maintenance/organizar-releases-v9-2026-11'
+          python3 -m py_compile scripts/maintenance/organizar_releases_v9.py
+          git status --porcelain
+      - name: Guardar copias verificadas, consolidar Beta9 y retirar duplicadas
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: cristianbarallobre/selector-cine-365
+        run: python3 -u scripts/maintenance/organizar_releases_v9.py
+      - name: Confirmar que no se publicaron claves ni datos privados
+        run: |
+          test ! -e debug.keystore
+          test ! -e signing.jks
+          echo 'El archivo se conserva como borrador de la release y no se añade al código fuente.'
