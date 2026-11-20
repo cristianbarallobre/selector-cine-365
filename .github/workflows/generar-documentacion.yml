@@ -1,11 +1,7 @@
 name: Generar historial oficial Word y PDF
 
+# Archivo histórico v8.1.1: regeneración MANUAL para evitar publicaciones concurrentes y correos de fallo.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "docs/HISTORIAL_VERSIONES.md"
-      - ".github/workflows/generar-documentacion.yml"
   workflow_dispatch:
 
 permissions:
@@ -52,5 +48,7 @@ jobs:
           git add docs/Selector_de_Cine_365_Historial_de_versiones_v8.1.1.docx docs/Selector_de_Cine_365_Historial_de_versiones_v8.1.1.pdf
           if ! git diff --cached --quiet; then
             git commit -m "docs: publicar historial Word y PDF de v8.1.1"
+            git fetch origin main
+            git rebase origin/main
             git push origin HEAD:main
           fi
