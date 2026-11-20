@@ -12,3 +12,6 @@ Estas marcas son informativas, no técnicas anticopia: un tercero con acceso al 
 Este proyecto utiliza datos de terceros como TMDB; la declaración de autoría se refiere al software propio, no a sus catálogos, imágenes, marcas o datos externos.
 
 **Licencia:** el repositorio actualmente no incluye una licencia explícita para redistribución de código. No se concede mediante esta nota permiso adicional para reutilizar la obra.
+## Alcance actual del proyecto (v9 Beta 12)
+
+El repositorio integra el código fuente de escritorio compartido para Windows y macOS (Intel / Apple Silicon) y un proyecto Android nativo. Las cuatro descargas se publican como beta en [Releases](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12). El registro de cambios y el historial de commits documentan la evolución, pero ninguna publicación constituye un certificado jurídico de autoría.
