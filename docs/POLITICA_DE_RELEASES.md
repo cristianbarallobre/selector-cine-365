@@ -66,7 +66,7 @@ Para Android, **Beta 9 y Beta 12 no comparten identidad ni firma**: requiere mig
 
 ## Consulta documental
 
-Los cambios de software de las etapas v1 a v9 Beta 12 están reunidos en [Historial completo v9 Beta 12](HISTORIAL_V9_BETA12.md), disponible también en Word y PDF. Se conserva por separado la edición histórica v8.1.1 sin reescribirla.
+Los cambios de software de las etapas v1 a v9 Beta 12 están reunidos en [Historial completo v9 Beta 12](HISTORIAL_V9_BETA13_1.md), disponible también en Word y PDF. Se conserva por separado la edición histórica v8.1.1 sin reescribirla.
 
 ## Publicación coordinada 13.1 (20-11-2026)
 
