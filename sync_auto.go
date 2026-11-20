@@ -46,6 +46,7 @@ func (a *runningApp) cloudAutoSync() (map[string]any,error) {
   if err=cloudWriteFile(recovery,previous);err!=nil{a.mu.Unlock();return nil,err}
   if err=saveLibrary(a.libraryPath,a.savePath,plan.Library);err!=nil{a.mu.Unlock();return nil,err}
   a.library=plan.Library
+  a.syncLastReceived.Store(time.Now().UnixMilli())
  }
  if err=a.syncStore.accept(plan,nil,folder);err!=nil{a.mu.Unlock();return nil,err}
  a.syncPreviewToken=""
