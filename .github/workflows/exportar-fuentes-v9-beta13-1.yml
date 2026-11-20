@@ -1,0 +1,49 @@
+name: Exportar código fuente de las 4 apps — v9 Beta13.1
+on:
+  push:
+    branches: ['tools/exportar-fuentes-v9-beta13-1']
+    paths:
+      - '.github/workflows/exportar-fuentes-v9-beta13-1.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  generar-zip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout herramienta de empaquetado
+        uses: actions/checkout@v4
+      - name: Checkout commit exacto de las apps publicadas
+        uses: actions/checkout@v4
+        with:
+          ref: dc56af0c6243da2baf425c1914dc6885aae38238
+          path: source
+          persist-credentials: false
+      - name: Checkout documentación más reciente de main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: latest-docs
+          persist-credentials: false
+      - name: Empaquetar fuentes y verificar sus SHA256
+        run: |
+          python3 scripts/maintenance/exportar_fuentes_beta13_1.py
+          ls -lh dist/*.zip
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          files=json.loads(Path('dist/RESUMEN_ZIPS_FUENTES.json').read_text())['archives']
+          assert len(files)==5
+          assert all(Path('dist', f['name']).is_file() and f['bytes']>25000 for f in files)
+          print('5 archivos de código fuente comprobados')
+          PY
+      - name: Guardar los cinco ZIP listos para descargar
+        uses: actions/upload-artifact@v4
+        with:
+          name: Fuentes_Selector_Cine_365_4_Plataformas_BETA13_1
+          path: |
+            dist/*.zip
+            dist/RESUMEN_ZIPS_FUENTES.json
+          if-no-files-found: error
+          compression-level: 0
