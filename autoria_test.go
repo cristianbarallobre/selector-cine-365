@@ -12,7 +12,7 @@ func TestAutorVisibleYMetadatos(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, must := range []string{appAuthor, "Hecho por", appCopyright, "<meta name=\"author\"", "v8.2"} {
+	for _, must := range []string{appAuthor, "Hecho por", appCopyright, "<meta name=\"author\"", "v8.3"} {
 		if !strings.Contains(page, must) {
 			t.Errorf("marca de autor ausente: %s", must)
 		}
