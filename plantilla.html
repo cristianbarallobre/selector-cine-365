@@ -1312,8 +1312,6 @@ async function cloudAutoReceive(force=false){
    await saveQueue.catch(()=>{});
    if(beforeEpoch!==saveEpoch||saveTimer!==null)return;
    cloudAutoCheckedAt=Date.now();
-   const main=document.querySelector('main'),wasInert=main?.inert;
-   if(main)main.inert=true;
    try{
      const result=await cloudRequest('/api/cloud/auto','POST');
      if(result.needs_review){
@@ -1327,7 +1325,7 @@ async function cloudAutoReceive(force=false){
      }else if(!result.skipped){
        $('cloudAutoStatus').textContent='✓ Sincronización automática al día.';
      }
-   }finally{if(main)main.inert=wasInert;}
+   }finally{/* La recepción automática NUNCA bloquea la interfaz. */}
  }catch(error){
    $('cloudAutoStatus').textContent='⚠ No se pudo comprobar la nube: '+error.message+' · Puedes usar «Revisar sincronización».';
  }finally{cloudAutoBusy=false;}
