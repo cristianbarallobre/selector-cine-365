@@ -54,6 +54,11 @@ jobs:
           assert 'odCopyCode' not in frontend
           assert '/api/cloud/auto' in frontend
           assert 'cloudAutoReceive' in frontend
+          assert 'main.inert=true' not in frontend
+          assert 'film-check-action' in frontend and 'togg.append(tick,poster,main)' in frontend
+          assert 'cloudActivityShield' in frontend
+          assert 'MANUAL_COMPLETO_SELECTOR_CINE_365.pdf' in frontend
+          assert 'Pruebas_Selector_Cine_365' not in frontend
           cloud=Path('android/app/src/main/java/es/cine365/app/CloudBackup.java').read_text()
           assert 'autoSynchronize' in cloud and 'plan.conflicts.length()>0' in cloud
           print('PKCE, retorno de navegador y eliminación de código manual: OK')
@@ -67,19 +72,19 @@ jobs:
       - name: Guardar APK como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: Selector_Cine_365_Android_v9_beta8_APK
+          name: Selector_Cine_365_Android_v9_beta9_APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
       - name: Publicar pre-release de Android
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk Selector_Cine_365_Android_v9_BETA8.apk
-          if gh release view v9.0.0-android-beta.8 >/dev/null 2>&1; then
-            gh release upload v9.0.0-android-beta.8 Selector_Cine_365_Android_v9_BETA8.apk --clobber
+          cp android/app/build/outputs/apk/debug/app-debug.apk Selector_Cine_365_Android_v9_BETA9.apk
+          if gh release view v9.0.0-android-beta.9 >/dev/null 2>&1; then
+            gh release upload v9.0.0-android-beta.9 Selector_Cine_365_Android_v9_BETA9.apk --clobber
           else
-            gh release create v9.0.0-android-beta.8 Selector_Cine_365_Android_v9_BETA8.apk \
+            gh release create v9.0.0-android-beta.9 Selector_Cine_365_Android_v9_BETA9.apk \
               --target "$GITHUB_SHA" --prerelease \
-              --title 'Selector Cine 365 - Android v9 beta 8' \
+              --title 'Selector Cine 365 - Android v9 beta 9' \
               --notes 'BETA 8 Android: sincronización entrante automática después de emparejar la nube y confirmar la primera revisión. Se comprueba al abrir, al volver a la app y periódicamente (máximo una vez cada 150 segundos); los conflictos siguen requiriendo revisión manual. Mantiene OneDrive PKCE, caché TMDB local y modo sin nube. Paquete independiente de Beta 7: exportar e importar copia JSON antes de probar. No se ha validado en teléfono físico.'
           fi
