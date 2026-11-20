@@ -276,4 +276,4 @@ Windows y macOS pueden trabajar con la carpeta local sincronizada de OneDrive. E
 
 **Referencia histórica:** cuando se redactó el primer plan, **v8.2** era la última edición estable de escritorio y se ensayaban prototipos v8.3. Esos datos ya no describen la implementación actual; se conservan como contexto de diseño, no como instrucciones de instalación o diagnóstico.
 
-La próxima **v9 estable** debe aprobarse solo después de superar los casos de prueba funcionales, sincronización, restauración y actualización sin pérdida de datos descritos en esta especificación. Consulta el [historial reciente](../CHANGELOG.md) y el [historial detallado de v9](HISTORIAL_V9_BETA12.md).
+La próxima **v9 estable** debe aprobarse solo después de superar los casos de prueba funcionales, sincronización, restauración y actualización sin pérdida de datos descritos en esta especificación. Consulta el [historial reciente](../CHANGELOG.md) y el [historial detallado de v9](HISTORIAL_V9_BETA13_1.md).
