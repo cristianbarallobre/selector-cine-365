@@ -7,6 +7,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.os.Build;
+import android.view.WindowInsets;
+import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.DocumentsContract;
@@ -50,9 +54,36 @@ public class MainActivity extends Activity {
         getWindow().setStatusBarColor(Color.rgb(13,19,30));
         getWindow().setNavigationBarColor(Color.rgb(13,19,30));
         backend = new Backend(this);
+        // La ventana no debe poner el título bajo la cámara ni debajo de la barra inferior.
+        // Android 15+ fuerza edge-to-edge al compilar con targetSdk 35. En Android 11+
+        // medimos los insets reales (sistema + recorte), no una altura de notch fija.
+        FrameLayout safeArea = new FrameLayout(this);
+        safeArea.setBackgroundColor(Color.rgb(13,19,30));
+        if (Build.VERSION.SDK_INT >= 30) {
+            getWindow().setDecorFitsSystemWindows(false);
+            safeArea.setOnApplyWindowInsetsListener((view, insets) -> {
+                android.graphics.Insets bounds = insets.getInsets(
+                    WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+                // El FrameLayout recorta el viewport de la WebView a la zona segura.
+                // Padding = máximo implícito de systemBars/cutout, no suma de ambos.
+                view.setPadding(bounds.left, bounds.top, bounds.right, bounds.bottom);
+                return insets;
+            });
+        } else if (Build.VERSION.SDK_INT >= 28) {
+            // Android 9-10: el ajuste nativo por defecto conserva las barras del sistema.
+            // Evita que fabricantes dibujen la WebView dentro del recorte.
+            WindowManager.LayoutParams params = getWindow().getAttributes();
+            params.layoutInDisplayCutoutMode =
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER;
+            getWindow().setAttributes(params);
+        }
+        backend = new Backend(this);
         webView = new WebView(this);
         webView.setBackgroundColor(Color.rgb(13,19,30));
-        setContentView(webView);
+        safeArea.addView(webView, new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        setContentView(safeArea);
+        if (Build.VERSION.SDK_INT >= 30) safeArea.requestApplyInsets();
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
