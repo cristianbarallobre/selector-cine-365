@@ -90,7 +90,7 @@ final class Backend {
 
             case "/api/onedrive/folders":return ok(onedrive.folders().toString());
             case "/api/onedrive/create":{
-                String name=new JSONObject(body).optString("name","Pruebas_Selector_Cine_365");
+                String name=new JSONObject(body).optString("name","Selector_Cine_365");
                 return ok(onedrive.createRoot(name).toString());
             }
             case "/api/onedrive/disconnect":{
