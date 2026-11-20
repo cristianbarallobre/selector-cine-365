@@ -101,6 +101,7 @@ jobs:
             --metadata=lang:es-ES \
             --metadata=title:'Selector Cine 365 - Historial hasta v9 Beta 13.1' \
             -o docs/Selector_Cine_365_Historial_v9_BETA13_1.docx
+          python scripts/release/compactar_historial_v9.py docs/Selector_Cine_365_Historial_v9_BETA13_1.docx
           mkdir -p /tmp/cine365-beta131-lo
           libreoffice -env:UserInstallation=file:///tmp/cine365-beta131-lo/profile --headless --convert-to pdf --outdir docs docs/Selector_Cine_365_Historial_v9_BETA13_1.docx
           python - <<'PY'
