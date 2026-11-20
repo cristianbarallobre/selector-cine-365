@@ -2,9 +2,10 @@
 const assert=require('node:assert/strict'),fs=require('node:fs');
 function source(p){
  const s=fs.readFileSync(p,'utf8');
- const script=s.match(/<script>([\s\S]*?)<\/script>/)?.[1];
- assert.ok(script,'JS existente en '+p);
- assert.doesNotThrow(()=>new Function(script),'JS debe compilar '+p);
+ const scripts=[...s.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
+ assert.ok(scripts.length,'JS existente en '+p);
+ for(const code of scripts)assert.doesNotThrow(()=>new Function(code),'Cada script JS debe compilar '+p);
+ const script=scripts[scripts.length-1];
  for(const needle of ['cloudAutoReceive','cineRecentIntents','cineLoadRevisions','film-check-action','togg.append(tick,poster,main)','data-search-scope="all"','filmMembershipIndex','applyFilmMembershipLists','membershipOverlay','Conectar TMDB']){
   assert.ok(s.includes(needle),'Falta en '+p+': '+needle);
  }
