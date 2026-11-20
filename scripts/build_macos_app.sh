@@ -27,8 +27,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>CFBundleIdentifier</key><string>es.cristianbarallobre.selectorcine365</string>
   <key>CFBundleName</key><string>Selector Cine 365</string>
   <key>CFBundleDisplayName</key><string>Selector Cine 365</string>
-  <key>CFBundleShortVersionString</key><string>9.0.0-beta.13</string>
-  <key>CFBundleVersion</key><string>9015</string>
+  <key>CFBundleShortVersionString</key><string>9.0.0-beta.13.1</string>
+  <key>CFBundleVersion</key><string>9016</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>LSMinimumSystemVersion</key><string>12.0</string>
@@ -49,7 +49,7 @@ plutil -lint "$APP/Contents/Info.plist"
 codesign --force --deep --sign - "$APP"
 codesign --verify --deep --strict --verbose=2 "$APP"
 cat > dist/LEEME_MAC.txt <<'NOTE'
-Selector Cine 365 v9 Beta 13 (Mac Apple Silicon / Intel)
+Selector Cine 365 v9 Beta 13.1 (Mac Apple Silicon / Intel)
 Autor: Cristian Barallobre Rúa
 https://github.com/cristianbarallobre/selector-cine-365
 
@@ -61,6 +61,6 @@ Datos: ~/Library/Application Support/AtlasDelCine/
 NOTE
 (
   cd dist
-  zip -qry "Selector_Cine_365_Mac_${MAC_LABEL}_v9_BETA13.zip" 'Selector Cine 365.app' LEEME_MAC.txt
-  unzip -t "Selector_Cine_365_Mac_${MAC_LABEL}_v9_BETA13.zip" | tail -1
+  zip -qry "Selector_Cine_365_Mac_${MAC_LABEL}_v9_BETA13_1.zip" 'Selector Cine 365.app' LEEME_MAC.txt
+  unzip -t "Selector_Cine_365_Mac_${MAC_LABEL}_v9_BETA13_1.zip" | tail -1
 )
