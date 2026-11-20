@@ -9,7 +9,7 @@
 <meta name="author" content="__APP_AUTHOR__">
 <meta name="copyright" content="__APP_COPYRIGHT__">
 <meta name="application-name" content="Selector Cine 365">
-<title>Selector Cine 365 · v9 Beta 11</title>
+<title>Selector Cine 365 · v9 Beta 12</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1018;--panel:#171f2b;--panel2:#1b2735;--line:#314052;--subtle:#94a2b5;--light:#f4f6fa;--gold:#f3c66d;--gold2:#d59b40;--green:#a4e4bc;--red:#e5a6a6;--r:19px}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 960px 510px at 88% -10%,#263649 0%,transparent 76%),var(--bg);color:var(--light);font-family:'Segoe UI',system-ui,Arial,sans-serif;font-size:15px;min-height:100vh}button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
@@ -364,6 +364,15 @@ h2{font-size:19px}
 #view-library .film-toggle{min-height:90px}
 .film-memberships-numbers{max-width:140px}
 </style>
+<style id="cine-beta12-lists-history">
+/* Las listas deben ocupar altura real. La nube se encuentra DESPUÉS y se desplaza con el panel. */
+#view-collections .collection-rows{display:grid;grid-template-columns:minmax(0,1fr);flex:0 0 auto!important;height:auto!important;min-height:0!important;overflow:visible!important;align-content:start!important;gap:8px}
+#view-collections .collection-item{flex:0 0 auto;min-height:60px}
+#view-collections .panel{min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;overscroll-behavior-y:contain}
+#view-collections .collection-paging{flex:0 0 auto}
+.cine-sync-history.is-empty{border:0;background:transparent;min-height:0;max-height:none;overflow:visible;padding:3px 0;font-size:13px;color:#b8cbe0;line-height:1.55}
+.cine-history-checked{font-size:11px!important;color:#9fb3c7!important;line-height:1.5!important;margin:4px 0 10px!important}
+</style>
 </head>
 <body>
 <textarea id="initialState" hidden>__ATLAS_LISTA_INICIAL__</textarea>
@@ -372,7 +381,7 @@ h2{font-size:19px}
     <div class="brand" aria-hidden="true"><img src="/icon.png" alt="" style="width:58px;height:58px;object-fit:contain"></div>
     <div><div class="eyebrow">Selector Cine 365</div><h1>¿Qué película veo hoy?</h1></div>
     <div class="header-side">
-      <div class="header-tag">🎞️ SELECTOR CINE 365 · v9 Beta 11</div>
+      <div class="header-tag">🎞️ SELECTOR CINE 365 · v9 Beta 12</div>
       <div class="saved" id="saveState" aria-live="polite">✓ Guardado</div>
       <div class="creator-credit" title="__APP_COPYRIGHT__">Hecho por <strong>__APP_AUTHOR__</strong></div>
     </div>
@@ -497,8 +506,9 @@ h2{font-size:19px}
             <span id="cloudLastReceive">Últimos cambios recibidos: ninguno en esta sesión</span>
           </div>
           <p id="cloudSyncManualResult" class="cloud-status" aria-live="polite"></p>
-          <div class="cine-sync-title"><strong>Actividad reciente de películas</strong><button class="tool" type="button" id="cloudHistoryRefresh">Actualizar historial</button></div>
-          <div id="cloudHistory" class="cine-sync-history" aria-live="polite">Sin movimientos registrados todavía.</div>
+          <div class="cine-sync-title"><strong>Actividad reciente de películas</strong><button class="tool" type="button" id="cloudHistoryRefresh" title="Consultar cambios locales y recibidos de otros dispositivos">Actualizar historial</button></div>
+          <div id="cloudHistory" class="cine-sync-history is-empty" aria-live="polite">Aún no hay movimientos registrados. Aquí aparecerán las películas que marques, desmarques o recibas desde otro dispositivo.</div>
+          <p id="cloudHistoryChecked" class="cine-history-checked" role="status" aria-live="polite">El historial empieza a registrarse desde las versiones que incluyen esta función; no recupera acciones anteriores.</p>
           <p>Las horas son orientativas. Para decidir qué cambio prevalece se comprueban las revisiones y el orden causal, no solo el reloj.</p>
           <div class="cine-sync-title"><strong>Copias locales de recuperación</strong><button class="tool" type="button" id="cloudRecoveryRefresh">Buscar copias</button></div>
           <p>Restaurar una copia es opcional y siempre requiere confirmación. Antes se guarda otra copia del estado actual.</p>
@@ -1276,7 +1286,8 @@ function renderCollectionControls(){
  $('addFilmBtn').disabled=false;
  const rows=$('collectionRows');rows.replaceChildren();
  $('manageListName').textContent=activeCollection()?.name||'';
- const rowHeight=65, visible=Math.max(1,Math.floor(((rows.clientHeight||160)+7)/rowHeight));
+ // La altura del panel incluye la nube; calcular páginas desde su altura oculta las listas.
+ const visible=window.innerWidth<=760?3:4;
  const pages=Math.max(1,Math.ceil(libraryState.lists.length/visible));
  collectionPage=Math.max(0,Math.min(collectionPage,pages-1));
  const start=collectionPage*visible;
@@ -1578,21 +1589,35 @@ $('cloudDisable').addEventListener('click',async()=>{
 const cineSyncDeviceLabel=(id)=>id.startsWith('android-')?'Android':id.startsWith('desktop-')?'Windows':'Otro dispositivo';
 const cineSyncAt=(ms)=>ms?new Date(ms).toLocaleString('es-ES'):'sin fecha';
 async function cineRefreshHistory(){
- const target=$('cloudHistory');
+ const target=$('cloudHistory'),button=$('cloudHistoryRefresh'),info=$('cloudHistoryChecked');
+ button.disabled=true;button.textContent='Consultando…';
+ info.textContent='Leyendo la actividad guardada en este dispositivo…';
  try{
   const data=await cloudRequest('/api/sync/history');
   const items=(data.events||[]).slice(0,14);
   target.replaceChildren();
-  if(!items.length){target.textContent='Todavía no hay cambios registrados por estas versiones.';return;}
-  for(const item of items){
-   const row=document.createElement('div');row.className='cine-sync-history-row';
-   const film=document.createElement('strong');film.textContent=(item.key||'Película').replace('|',' · ');
-   const detail=document.createElement('span');
-   detail.textContent=(item.checked?'✓ Vista':'○ Pendiente')+' · '+(item.origin==='local'?'Cambiado aquí':'Recibido de '+cineSyncDeviceLabel(item.device||''))
-     +' · '+cineSyncAt(item.at);
-   row.append(film,detail);target.append(row);
+  target.classList.toggle('is-empty',items.length===0);
+  if(!items.length){
+   target.textContent='Aún no hay movimientos registrados. Aquí aparecerán los cambios de Vista/Pendiente realizados o recibidos desde otros dispositivos.';
+  }else{
+   for(const item of items){
+    const row=document.createElement('div');row.className='cine-sync-history-row';
+    const film=document.createElement('strong');film.textContent=(item.key||'Película').replace('|',' · ');
+    const detail=document.createElement('span');
+    detail.textContent=(item.checked?'✓ Vista':'○ Pendiente')+' · '+(item.origin==='local'?'Cambiado aquí':'Recibido de '+cineSyncDeviceLabel(item.device||''))
+      +' · '+cineSyncAt(item.at);
+    row.append(film,detail);target.append(row);
+   }
   }
- }catch(e){target.textContent='No se pudo leer el historial local: '+e.message;}
+  info.textContent='Consulta completada a las '+new Date().toLocaleTimeString('es-ES')+' · '+items.length+' '+(items.length===1?'movimiento mostrado':'movimientos mostrados')+'.'+
+    (items.length?'':' Las versiones anteriores a este historial no registraron sus acciones.');
+ }catch(e){
+  target.classList.add('is-empty');
+  target.textContent='No se pudo consultar el historial local.';
+  info.textContent='⚠ '+e.message;
+ }finally{
+  button.disabled=false;button.textContent='Actualizar historial';
+ }
 }
 async function cineRefreshRecovery(){
  const selector=$('cloudRecoveryList');
