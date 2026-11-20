@@ -27,6 +27,7 @@ func (a *runningApp) cloudAutoSync() (map[string]any,error) {
   a.mu.Unlock()
   return map[string]any{"changed":false,"needs_review":true,"conflicts":len(plan.Conflicts)},nil
  }
+ a.syncPendingConflict.Store(false)
  if plan.Sources==0{
   a.mu.Unlock()
   return map[string]any{"changed":false,"skipped":"no_remote_sources"},nil
