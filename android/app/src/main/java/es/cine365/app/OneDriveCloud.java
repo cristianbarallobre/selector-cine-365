@@ -167,7 +167,7 @@ final class OneDriveCloud {
         return accessToken;
     }
     private byte[] graph(String path,String method,byte[] body,String type)throws Exception{
-        if(!path.startsWith("me/drive/"))throw new Exception("Ruta de OneDrive no autorizada");
+        if(!path.startsWith("me/drive/")&&!path.startsWith("drives/"))throw new Exception("Ruta de OneDrive no autorizada");
         String bearer=token();
         String url=GRAPH+path;
         HttpURLConnection c=null;
@@ -213,12 +213,12 @@ final class OneDriveCloud {
             if(values!=null&&values.length()>0)changed=true;
             String next=response.optString("@odata.nextLink","");
             if(!next.isEmpty()){
-                if(!next.startsWith(GRAPH+"me/drive/"))throw new Exception("Paginación Delta de OneDrive no reconocida");
+                if(!next.startsWith(GRAPH+"me/drive/")&&!next.startsWith(GRAPH+"drives/"))throw new Exception("Paginación Delta de OneDrive no reconocida");
                 path=next.substring(GRAPH.length());
                 continue;
             }
             String cursor=response.optString("@odata.deltaLink","");
-            if(cursor.isEmpty()||!cursor.startsWith(GRAPH+"me/drive/"))
+            if(cursor.isEmpty()||(!cursor.startsWith(GRAPH+"me/drive/")&&!cursor.startsWith(GRAPH+"drives/")))
                 throw new Exception("OneDrive no pudo confirmar su comprobación incremental");
             changeCursors.put(folderId,cursor.substring(GRAPH.length()));
             return changed;
