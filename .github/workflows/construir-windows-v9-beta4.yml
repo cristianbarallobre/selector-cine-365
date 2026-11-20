@@ -1,10 +1,12 @@
-name: Publicar Selector Cine 365 Windows v9 beta 5.1
+name: Publicar Selector Cine 365 Windows v9 beta 8
 on:
   push:
     branches: [v9-android-beta]
     paths:
       - 'sync_desktop.go'
       - 'sync_desktop_test.go'
+      - 'sync_auto.go'
+      - 'sync_auto_test.go'
       - 'cloud.go'
       - 'collections.go'
       - 'main.go'
@@ -27,12 +29,12 @@ jobs:
       - name: Pruebas Go (incluida sincronización)
         run: go test ./...
       - name: Compilar Windows 64 bits
-        run: GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags='-H windowsgui -s -w' -o Selector_Cine_365_Windows_v9_BETA5_1.exe .
+        run: GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags='-H windowsgui -s -w' -o Selector_Cine_365_Windows_v9_BETA8.exe .
       - name: Comprobar que el ejecutable no abre consola CMD
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          binary=Path("Selector_Cine_365_Windows_v9_BETA5_1.exe").read_bytes()
+          binary=Path("Selector_Cine_365_Windows_v9_BETA8.exe").read_bytes()
           assert binary[:2]==b"MZ", "No es un ejecutable Windows"
           pe=int.from_bytes(binary[0x3c:0x40], "little")
           assert binary[pe:pe+4]==b"PE\x00\x00", "Cabecera PE incorrecta"
@@ -43,36 +45,38 @@ jobs:
           PY
       - name: Preparar ZIP de pruebas
         run: |
-          cat > LEEME_BETA5_1.txt <<'EOF'
-          SELECTOR CINE 365 - WINDOWS v9 BETA 5.1 (CORRECCION CONSOLA)
+          cat > LEEME_BETA8.txt <<'EOF'
+          SELECTOR CINE 365 - WINDOWS v9 BETA 8 (CORRECCION CONSOLA)
           Antes de usar con datos reales, exporta una copia JSON y conserva la v8.2.
           No ejecutes dos versiones de escritorio al mismo tiempo.
           La copia local sigue funcionando sin nube ni clave TMDB.
-          Para recibir cambios de Android, elige la misma carpeta sincronizada,
-          pulsa Revisar sincronizacion con otros dispositivos y confirma.
+          PRIMERA CONEXION: selecciona la misma carpeta sincronizada,
+          pulsa Revisar sincronizacion en ambos dispositivos y confirma.
+          DESPUES: los cambios sin conflicto se reciben automaticamente
+          al abrir o volver a la app y durante su uso.
           Cada escritorio escribe su snapshot independiente despues de confirmar.
-          El intercambio entrante debe revisarse manualmente por ahora.
+          Solo los conflictos necesitan revision manual. Mantener copias JSON.
           Para compartir con Android, usar carpeta exclusiva de OneDrive
           y conectar esa misma carpeta desde Selector Cine 365 Android.
           Otras nubes solo si ambas apps admiten las carpetas.
-          Correccion Beta 5.1: interfaz grafica sin ventana CMD.
+          Se conserva la correccion de arranque: ventana grafica sin CMD.
           Aplicacion beta no firmada ni verificada en dispositivos reales.
           EOF
-          zip -q Selector_Cine_365_Windows_v9_BETA5_1.zip Selector_Cine_365_Windows_v9_BETA5_1.exe LEEME_BETA5_1.txt
+          zip -q Selector_Cine_365_Windows_v9_BETA8.zip Selector_Cine_365_Windows_v9_BETA8.exe LEEME_BETA8.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: Selector_Cine_365_Windows_v9_BETA5_1
-          path: Selector_Cine_365_Windows_v9_BETA5_1.zip
+          name: Selector_Cine_365_Windows_v9_BETA8
+          path: Selector_Cine_365_Windows_v9_BETA8.zip
           if-no-files-found: error
       - name: Publicar version preliminar Windows
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view v9.0.0-windows-beta.5.1 >/dev/null 2>&1; then
-            gh release upload v9.0.0-windows-beta.5.1 Selector_Cine_365_Windows_v9_BETA5_1.zip --clobber
+          if gh release view v9.0.0-windows-beta.8 >/dev/null 2>&1; then
+            gh release upload v9.0.0-windows-beta.8 Selector_Cine_365_Windows_v9_BETA8.zip --clobber
           else
-            gh release create v9.0.0-windows-beta.5.1 Selector_Cine_365_Windows_v9_BETA5_1.zip \
+            gh release create v9.0.0-windows-beta.8 Selector_Cine_365_Windows_v9_BETA8.zip \
               --target "$GITHUB_SHA" --prerelease \
-              --title "Selector Cine 365 - Windows v9 Beta 5.1" \
-              --notes "BETA 5.1: corregida aparición de ventana negra CMD al iniciar. Mantiene la guía clara para compartir mediante OneDrive y Android; vista previa y resolución de conflictos, snapshots separados, copia de recuperación y caché TMDB sin caducidad automática. No es una versión estable. Guarda copias JSON de tus listas y no ejecutes Windows v8.2 y v9 a la vez."
+              --title "Selector Cine 365 - Windows v9 Beta 8" \
+              --notes "BETA 8: importación automática desde OneDrive al abrir, reanudar y periódicamente tras primera conexión manual. Los conflictos requieren revisión. Se mantiene compilación Windows GUI sin CMD y validación de cabecera PE. No es estable: guarda una copia JSON antes de probar y no ejecutes dos versiones de Windows a la vez."
           fi
