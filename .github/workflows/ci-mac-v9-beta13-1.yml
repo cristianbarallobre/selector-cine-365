@@ -1,0 +1,48 @@
+name: CI v9 Beta 13.1 Mac Intel y Apple Silicon
+on:
+  push:
+    branches: ['release/v9-beta13-1-all-platforms']
+    paths: ['.github/workflows/ci-mac-v9-beta13-1.yml', 'plantilla.html', 'providers.go', 'sync_desktop.go']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mac:
+    runs-on: macos-15-intel
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            label: Apple_Silicon
+            cc: 'clang -arch arm64'
+          - arch: amd64
+            label: Intel
+            cc: clang
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Pruebas y compilación Mac v9 Beta 13.1
+        env:
+          MAC_ARCH: ${{ matrix.arch }}
+          MAC_LABEL: ${{ matrix.label }}
+          CC: ${{ matrix.cc }}
+        run: |
+          node scripts/test_v9_beta13.cjs
+          bash scripts/build_macos_app.sh
+          APP="dist/Selector Cine 365.app"
+          test -s "$APP/Contents/MacOS/SelectorCine365"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Contents/Info.plist" | grep -Fx '9016'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist" | grep -Fx '9.0.0-beta.13.1'
+          codesign --verify --deep --strict "$APP"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Selector_Cine_365_Mac_${{ matrix.label }}_v9_BETA13_1
+          path: dist/Selector_Cine_365_Mac_*_v9_BETA13_1.zip
+          if-no-files-found: error
