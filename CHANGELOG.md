@@ -4,6 +4,14 @@
 
 Para un historial exhaustivo preparado para Word y PDF consulta [Historial completo v1–v9 Beta 13.1](docs/HISTORIAL_V9_BETA13_1.md). El registro detallado de v8.1.1 permanece como documento histórico independiente.
 
+## v9 Beta 13.2 — Android (21 de noviembre de 2026)
+
+- Optimización específica de batería: corregida doble inicialización del backend en Android.
+- WebView suspendida cuando la actividad se minimiza; se reanuda al volver. Guardado local inmediato para ediciones pendientes y preservación de revisiones.
+- Eliminado ping de 12 segundos; sincronización automática OneDrive cada 60 segundos mientras visible, además de al regresar, sin nuevas comprobaciones automáticas en segundo plano.
+- Compilación Android con versionCode 9016 y mismo paquete/certificado de las Betas 11–13. Windows/Mac permanecen Beta 13.1; siguen operativas las sincronizaciones manuales.
+- La mejora real de batería requiere comprobarse en el móvil durante más tiempo; las capturas de ocho minutos no bastan para cuantificarla.
+
 ## v9 Beta 13.1 — Windows y Mac (20 de noviembre de 2026)
 
 - Reparada la ruta local `GET /api/platforms/cache`, implementada en TMDB pero omitida del enrutador principal. Esto provocaba HTTP 404 y dejaba el mensaje «Conexión local TMDB no disponible. Reintentando…» al reabrir, aunque la clave estuviera guardada.
