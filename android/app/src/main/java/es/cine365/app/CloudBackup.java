@@ -298,6 +298,17 @@ final class CloudBackup {
         }catch(Exception e){lastError=e.getMessage();throw e;}
     }
     /** Compare library content, not JSONObject insertion order, to avoid needless OneDrive uploads. */
+    private static boolean sameMetadata(JSONObject a,JSONObject b,String field){
+        JSONObject x=a.optJSONObject(field),y=b.optJSONObject(field);
+        int nx=x==null?0:x.length(),ny=y==null?0:y.length();
+        if(nx!=ny)return false;
+        if(nx==0)return true;
+        for(java.util.Iterator<String>it=x.keys();it.hasNext();){
+            String key=it.next();
+            if(!y.has(key)||!x.optString(key).equals(y.optString(key)))return false;
+        }
+        return true;
+    }
     private static boolean sameLibrary(JSONObject a,JSONObject b){
         if(a.optInt("version")!=b.optInt("version")||!a.optString("active_id").equals(b.optString("active_id")))
             return false;
@@ -313,7 +324,7 @@ final class CloudBackup {
         int na=ca==null?0:ca.length(),nb=cb==null?0:cb.length();
         if(na!=nb)return false;
         for(int i=0;i<na;i++)if(!ca.optString(i).equals(cb.optString(i)))return false;
-        return true;
+        return sameMetadata(a,b,"deleted_lists")&&sameMetadata(a,b,"tmdb_overrides");
     }
     /**
      * Automatic inbound merge is deliberately opt-in by first manual pairing.

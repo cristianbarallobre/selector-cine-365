@@ -135,7 +135,7 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		a.servePosterHTTP(w, r)
 	case "/api/identities", "/api/identities/resolve":
 		a.serveIdentitiesHTTP(w, r)
-	case "/api/platforms/status", "/api/platforms/config", "/api/platforms/lookup", "/api/platforms/match":
+	case "/api/platforms/status", "/api/platforms/cache", "/api/platforms/config", "/api/platforms/lookup", "/api/platforms/match", "/api/platforms/overrides", "/api/platforms/overrides/import":
 		a.servePlatformHTTP(w, r)
 	case "/api/ping":
 		a.pageHeartbeat.Store(true)

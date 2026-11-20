@@ -1,8 +1,17 @@
 # Historial de cambios — Selector Cine 365
 
-**Versión más reciente v9 Beta 12.2 (Android, 20 de noviembre de 2026); Windows y macOS conservan sus ejecutables v9 Beta 12.** Los cambios recientes se basan en el código fuente v9, no en la rama antigua v8.2. Los paquetes Mac usan el mismo frontend y motor Go que Windows; no se afirma que se hayan validado manualmente en hardware real.
+**Versión más reciente v9 Beta 13 (Windows, Android y macOS; 20 de noviembre de 2026).** Los cambios recientes se basan en el código fuente v9, no en la rama antigua v8.2. Los paquetes Mac usan el mismo frontend y motor Go que Windows; no se afirma que se hayan validado manualmente en hardware real.
 
 Para un historial exhaustivo preparado para Word y PDF consulta [Historial completo v1–v9 Beta 12](docs/HISTORIAL_V9_BETA12.md). El registro detallado de v8.1.1 permanece como documento histórico independiente.
+
+## v9 Beta 13 — Windows, Mac y Android (20 de noviembre de 2026)
+
+- «Mis listas» en Windows/Mac reserva cuatro filas de altura constante por página, incluso si hay menos listas.
+- Eliminaciones persistentes de listas mediante `deleted_lists` compartido: evita que una copia antigua de Android/Windows las vuelva a crear.
+- Sincronización de los IDs manuales de TMDB (`tmdb_overrides`) dentro de la biblioteca. La clave API no se exporta y permanece privada en cada dispositivo.
+- Reintento al leer configuración TMDB al abrir; una caída temporal no cambia el estado a «Sin configurar». Se comprueba persistencia de la clave en disco tras reiniciar.
+- Android: versionCode 9015 con el mismo identificador/certificado, conservando notch y barra de gestos de Beta 12.2.
+- Pruebas causales de marcas, borrados en ambos sentidos, restauración de identificación e integridad de biblioteca; copias locales antes de fusiones.
 
 ## v9 Beta 12.2 — Android (20 de noviembre de 2026)
 

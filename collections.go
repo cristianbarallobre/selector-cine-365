@@ -26,6 +26,10 @@ type libraryState struct {
 	ActiveID      string           `json:"active_id"`
 	Lists         []filmCollection `json:"lists"`
 	ComparisonIDs []string         `json:"comparison_ids,omitempty"`
+	// Tombstones compartidas: una lista borrada NO puede volver de una copia atrasada.
+	DeletedLists map[string]bool   `json:"deleted_lists,omitempty"`
+	// Identificaciones TMDB compartibles, nunca la clave API privada.
+	TMDBOverrides map[string]int   `json:"tmdb_overrides,omitempty"`
 }
 
 var listIDPattern = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,60}$`)
@@ -50,6 +54,14 @@ func validateLibrary(l libraryState) error {
 	}
 	if !active {
 		return errors.New("La lista activa no existe")
+	}
+	for id,deleted:=range l.DeletedLists {
+		if !listIDPattern.MatchString(id)||!deleted||ids[id] {return errors.New("Registro de listas borradas incompatible")}
+	}
+	if len(l.DeletedLists)>1000 {return errors.New("Demasiadas eliminaciones registradas")}
+	if len(l.TMDBOverrides)>10000 {return errors.New("Demasiadas identificaciones TMDB")}
+	for key,id:=range l.TMDBOverrides {
+		if len(key)>275||!utf8.ValidString(key)||!strings.Contains(key,"|")||id<0||id>999999999 {return errors.New("Identificación TMDB inválida")}
 	}
 	if len(l.ComparisonIDs) == 1 || len(l.ComparisonIDs) > len(l.Lists) {
 		return errors.New("La comparación requiere al menos dos listas")

@@ -6,6 +6,7 @@
 
 | Publicación | Estado | Activos |
 |---|---|---|
+| [v9 Beta 13](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13) | Beta coordinada más reciente | Windows, Android, Mac Intel/Apple Silicon y notas de seguridad |
 | [v9 Beta 12.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.2) | **Beta más reciente**, Android y escritorio sin cambios | APK Android 9014, Windows/Mac Beta 12 y documentación |
 | [v9 Beta 12.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.1) | Histórica: primer arreglo notch | APK Android 9013 y escritorio original |
 | [v9 Beta 12](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12) | Beta para pruebas | Windows, Android, Mac Apple Silicon, Mac Intel y dos manuales PDF |

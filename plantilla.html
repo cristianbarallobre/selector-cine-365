@@ -9,7 +9,7 @@
 <meta name="author" content="__APP_AUTHOR__">
 <meta name="copyright" content="__APP_COPYRIGHT__">
 <meta name="application-name" content="Selector Cine 365">
-<title>Selector Cine 365 · v9 Beta 12</title>
+<title>Selector Cine 365 · v9 Beta 13.1</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1018;--panel:#171f2b;--panel2:#1b2735;--line:#314052;--subtle:#94a2b5;--light:#f4f6fa;--gold:#f3c66d;--gold2:#d59b40;--green:#a4e4bc;--red:#e5a6a6;--r:19px}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 960px 510px at 88% -10%,#263649 0%,transparent 76%),var(--bg);color:var(--light);font-family:'Segoe UI',system-ui,Arial,sans-serif;font-size:15px;min-height:100vh}button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
@@ -373,6 +373,10 @@ h2{font-size:19px}
 .cine-sync-history.is-empty{border:0;background:transparent;min-height:0;max-height:none;overflow:visible;padding:3px 0;font-size:13px;color:#b8cbe0;line-height:1.55}
 .cine-history-checked{font-size:11px!important;color:#9fb3c7!important;line-height:1.5!important;margin:4px 0 10px!important}
 </style>
+<style id="cine-v9-stable-collection-pages">
+@media(min-width:761px){#view-collections .collection-rows{grid-auto-rows:70px!important;min-height:301px!important}#view-collections .collection-item{height:70px;min-height:70px!important}}
+#view-collections .cine-list-placeholder{visibility:hidden;pointer-events:none;border-color:transparent;background:transparent}
+</style>
 </head>
 <body>
 <textarea id="initialState" hidden>__ATLAS_LISTA_INICIAL__</textarea>
@@ -381,7 +385,7 @@ h2{font-size:19px}
     <div class="brand" aria-hidden="true"><img src="/icon.png" alt="" style="width:58px;height:58px;object-fit:contain"></div>
     <div><div class="eyebrow">Selector Cine 365</div><h1>¿Qué película veo hoy?</h1></div>
     <div class="header-side">
-      <div class="header-tag">🎞️ SELECTOR CINE 365 · v9 Beta 12</div>
+      <div class="header-tag">🎞️ SELECTOR CINE 365 · v9 Beta 13.1</div>
       <div class="saved" id="saveState" aria-live="polite">✓ Guardado</div>
       <div class="creator-credit" title="__APP_COPYRIGHT__">Hecho por <strong>__APP_AUTHOR__</strong></div>
     </div>
@@ -650,7 +654,7 @@ const token='__ATLAS_TOKEN__';
 let rawText=$('initialState').value.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
 let parsed=null,filter='all',search='',chosen=null,lastChoice=null,saveTimer=null,saveQueue=Promise.resolve(),saveEpoch=0;
 let filmPage=0,collectionPage=0,statPages=new Map(),searchScope='current',membershipCache=null,membershipFilm=null;
-let platformConfigured=false, platformData=new Map(),platformRun=0,platformActive=false,platformFinished=0,platformTotal=0;
+let platformConfigured=false, platformStatusUnavailable=false, platformData=new Map(),platformRun=0,platformActive=false,platformFinished=0,platformTotal=0;
 let libraryState={version:1,active_id:'atlas',lists:[{id:'atlas',name:'Selector Cine 365 · 365',text:rawText}]};
 let editingListID=null,activeView='library',selectedSortPlatform='all';
 const identityMap=new Map(); // clave título-año -> ID TMDB guardado
@@ -666,7 +670,7 @@ const jwSearch=f=>'https://www.justwatch.com/es/buscar?q='+encodeURIComponent(f.
 function friendlyName(s){return s.replace(/Movistar Plus\+ Ficción Total/i,'Movistar+ Ficción Total').replace(/Movistar Plus\+/i,'Movistar+').replace(/Amazon Prime Video/i,'Prime Video').replace(/Netflix Standard with Ads/i,'Netflix con anuncios').replace(/HBO Max/i,'Max');}
 function platformBadge(f){
  const r=platformData.get(providerKey(f));
- if(!platformConfigured)return ['Configurar plataformas','muted'];
+ if(!platformConfigured)return [platformStatusUnavailable?'TMDB: comprobación pendiente':'Configurar plataformas','muted'];
  if(!r)return ['Por consultar…','muted'];
  if(r.state==='error')return ['Sin conexión','offline'];
  if(r.state==='not-found')return ['Título sin identificar','muted'];
@@ -705,16 +709,38 @@ async function platformApi(path,body){
  return await res.json();
 }
 async function initPlatforms(){
+ // La clave guardada y la caché son operaciones independientes: si la segunda
+ // falla, nunca degradar una clave válida a «TMDB no disponible».
  try{
-  const r=await platformApi('/api/platforms/status');platformConfigured=!!r.configured;
-  if(platformConfigured){
+  const r=await platformApi('/api/platforms/status');
+  initPlatforms.retries=0;
+  platformStatusUnavailable=false;
+  platformConfigured=!!r.configured;
+ }catch(err){
+  console.warn('Error al comprobar estado local TMDB:',err.message);
+  platformStatusUnavailable=true;
+  renderList();
+  const retries=(initPlatforms.retries=(initPlatforms.retries||0)+1);
+  $('platformProgress').textContent=retries<=4?
+    'Servicio local TMDB no disponible. Reintentando…':
+    'No se pudo consultar TMDB local. Pulsa Actualizar para reintentar; tu clave no se ha borrado.';
+  if(retries<=4)setTimeout(()=>{if(!document.hidden)void initPlatforms();},1200);
+  return false;
+ }
+ if(platformConfigured){
+  try{
    const cached=await platformApi('/api/platforms/cache');
    for(const [key,entry] of Object.entries(cached.entries||{}))platformData.set(key,entry);
+  }catch(err){
+   console.warn('No se pudo leer la caché TMDB; la clave sigue configurada:',err.message);
+   updateListPlatformOptions();renderList();renderStats();
+   $('platformProgress').textContent='TMDB configurado. Caché local no disponible; pulsa Actualizar para recuperar datos.';
+   return true;
   }
- }catch(err){platformConfigured=false;}
- // Al abrir no hacemos búsquedas de red, ni siquiera si faltan fichas.
- // Las nuevas incorporaciones y «Actualizar» solicitan lo que haga falta.
+ }
+ // Sin consultas externas masivas al abrir; usar caché local si existe.
  updatePlatformProgress();updateListPlatformOptions();renderList();renderStats();
+ return true;
 }
 async function loadPlatforms(force){
  if(!platformConfigured){showPlatformModal();return;}
@@ -737,7 +763,7 @@ async function loadPlatforms(force){
 function showPlatformModal(){ $('platformOverlay').hidden=false;$('platformStatus').textContent='';$('apiKey').value='';$('apiKey').focus();}
 function closePlatformModal(){$('platformOverlay').hidden=true;}
 $('platformSetup').addEventListener('click',showPlatformModal);
-$('platformRefresh').addEventListener('click',()=>void loadPlatforms(true));
+$('platformRefresh').addEventListener('click',async()=>{await initPlatforms();if(platformConfigured&&!platformStatusUnavailable)await loadPlatforms(true);});
 $('closePlatforms').addEventListener('click',closePlatformModal);
 $('cancelPlatforms').addEventListener('click',closePlatformModal);
 $('platformOverlay').addEventListener('click',e=>{if(e.target===$('platformOverlay'))closePlatformModal();});
@@ -760,6 +786,11 @@ async function applyManualMatch(id){
  $('matchStatus').textContent=id?'Comprobando película…':'Reintentando búsqueda automática…';
  try {
    await platformApi('/api/platforms/match',{title:film.title,year:film.year,id});
+   // Persistir en biblioteca compartida además de las preferencias privadas.
+   libraryState.tmdb_overrides=libraryState.tmdb_overrides||{};
+   libraryState.tmdb_overrides[key]=id;
+   if(id>0)identityMap.set(filmKey(film),id);else identityMap.delete(filmKey(film));
+   scheduleSave();
    const info=await platformApi('/api/platforms/lookup',{title:film.title,year:film.year,force:true});
    platformData.set(key,info);
    if(info?.tmdb_id>0)registerIdentity(film,info.tmdb_id);else{identityMap.delete(filmKey(film));queueIdentityReconcile();}
@@ -1163,10 +1194,38 @@ function queueIdentityReconcile(){
  },350);
 }
 function identityStatus(text){$('identityStatus').textContent=text;}
+// Intercambiar solo identificadores TMDB, nunca la clave de la API.
+async function reconcileTMDBLibrary(){
+ const remote=libraryState.tmdb_overrides||{};
+ try{
+  const data=await platformApi('/api/platforms/overrides');
+  const stored=data.overrides||{};
+  const merged={...stored,...remote};
+  if(Object.keys(merged).length){
+   const changed=Object.keys(merged).some(key=>!Object.prototype.hasOwnProperty.call(remote,key)||remote[key]!==merged[key]);
+   libraryState.tmdb_overrides=merged;
+   const needsImport=Object.keys(merged).some(key=>stored[key]!==merged[key]);
+   if(needsImport){
+    await platformApi('/api/platforms/overrides/import',{overrides:merged});
+    for(const key of Object.keys(merged))if(stored[key]!==merged[key])platformData.delete(key);
+   }
+   for(const [key,id] of Object.entries(merged)){
+    if(id>0)identityMap.set(key,id);else identityMap.delete(key);
+   }
+   if(changed)scheduleSave();
+  }
+ }catch(error){
+  // Un fallo puntual no elimina una configuración válida.
+  console.warn('Identificaciones TMDB locales no disponibles:',error.message);
+ }
+}
 async function initIdentities(){
  try{
    const data=await platformApi('/api/identities');identityConfigured=Boolean(data.configured);
    for(const [key,id] of Object.entries(data.entries||{})){if(id>0)identityMap.set(key,id);}
+   for(const [key,id] of Object.entries(libraryState.tmdb_overrides||{})){
+    if(id>0)identityMap.set(key,id);else identityMap.delete(key);
+   }
    queueIdentityReconcile();
    if(identityConfigured)identityStatus('TMDB: identidades locales cargadas · Revisar TMDB para buscar más');
    else identityStatus('TMDB sin configurar · coincidencias por título y año');
@@ -1259,7 +1318,7 @@ async function initLibrary(){
  try{const response=await fetch('/api/library',{headers:{'X-Atlas-Token':token},cache:'no-store'});
    if(response.ok){const state=await response.json();if(validLibrary(state))libraryState=state;}
  }catch(e){}
- sanitizeComparisonIDs();const reconciled=reconcileWatched();rawText=activeCollection().text||'';renderCollectionControls();update();renderStats();if(reconciled)scheduleSave();
+ sanitizeComparisonIDs();await reconcileTMDBLibrary();const reconciled=reconcileWatched();rawText=activeCollection().text||'';renderCollectionControls();update();renderStats();if(reconciled)scheduleSave();
 }
 function validLibrary(s){return s&&s.version===1&&Array.isArray(s.lists)&&s.lists.length>0&&s.lists.length<=40&&typeof s.active_id==='string'&&s.lists.some(l=>l.id===s.active_id)&&s.lists.every(l=>typeof l.text==='string'&&typeof l.name==='string'&&typeof l.id==='string');}
 function restartList(){
@@ -1304,6 +1363,11 @@ function renderCollectionControls(){
    const del=document.createElement('button');del.className='mini-ctrl';del.textContent='Eliminar';del.disabled=libraryState.lists.length<2;del.addEventListener('click',()=>deleteList(item.id));
    buttons.append(enter,rename,del);row.append(info,buttons);rows.appendChild(row);
  }
+ // Cuatro posiciones de igual altura incluso cuando quedan menos listas.
+ for(let n=Math.min(visible,libraryState.lists.length-start);n<visible;n++){
+  const blank=document.createElement('div');blank.className='collection-item cine-list-placeholder';
+  blank.setAttribute('aria-hidden','true');rows.appendChild(blank);
+ }
 }
 function renderCollectionNumberedPages(total){
  const numbers=$('collectionPageNumbers');numbers.replaceChildren();
@@ -1339,7 +1403,7 @@ function openListModal(id=null){editingListID=id;const target=libraryState.lists
 function closeListModal(){$('listOverlay').hidden=true;}
 function deleteList(id){if(libraryState.lists.length<2)return;const l=libraryState.lists.find(x=>x.id===id);if(!l)return;
  if(!confirm('¿Eliminar «'+l.name+'»? Esta lista dejará de aparecer en la aplicación.'))return;
- syncActiveText();libraryState.lists=libraryState.lists.filter(x=>x.id!==id);
+ syncActiveText();libraryState.deleted_lists=libraryState.deleted_lists||{};libraryState.deleted_lists[id]=true;libraryState.lists=libraryState.lists.filter(x=>x.id!==id);
  if(libraryState.active_id===id){libraryState.active_id=libraryState.lists[0].id;}
  sanitizeComparisonIDs();
  if(!virtualMode){rawText=activeCollection().text||'';restartList();}else{refreshVirtualContent();restartList();}

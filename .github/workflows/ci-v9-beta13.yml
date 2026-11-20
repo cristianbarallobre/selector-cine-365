@@ -1,0 +1,94 @@
+name: CI v9 Beta 13 - listas, TMDB y sincronización
+on:
+  push:
+    branches: ['fix/v9-beta13-sync-lists-tmdb-persistence']
+    paths:
+      - '.github/workflows/ci-v9-beta13.yml'
+      - 'scripts/test_v9_beta13.cjs'
+      - 'sync_*.go'
+      - 'plantilla.html'
+      - 'android/app/src/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Go tests incluyendo borrados y persistencia TMDB
+        run: go test ./... -count=1
+      - name: Pruebas JS de interfaz Windows y Android
+        run: node scripts/test_v9_beta13.cjs
+      - name: Compilación Windows GUI
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: '0'
+        run: |
+          mkdir -p dist
+          go build -trimpath -ldflags='-H windowsgui -s -w' -o dist/Selector_Cine_365_Windows_v9_BETA13.exe .
+          python3 - <<'PY'
+          from pathlib import Path
+          b=Path('dist/Selector_Cine_365_Windows_v9_BETA13.exe').read_bytes()
+          assert b[:2]==b'MZ'
+          pe=int.from_bytes(b[0x3c:0x40],'little')
+          assert b[pe:pe+4]==b'PE\x00\x00'
+          assert int.from_bytes(b[pe+24+68:pe+24+70],'little')==2
+          PY
+          cd dist && zip -9 Selector_Cine_365_Windows_v9_BETA13.zip Selector_Cine_365_Windows_v9_BETA13.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Selector_Cine_365_Windows_v9_BETA13
+          path: dist/Selector_Cine_365_Windows_v9_BETA13.zip
+          if-no-files-found: error
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      MICROSOFT_CLIENT_ID: '696458fe-0672-47e5-9fdd-aa0332e9884b'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Preparar SDK 35
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -path '*/bin/sdkmanager' -type f | sort -V | tail -1)"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Regresiones JavaScript y Kotlin/Java
+        run: node scripts/test_v9_beta13.cjs
+      - name: Test de sync JSON y generar APK sin firma
+        working-directory: android
+        run: gradle --no-daemon testDebugUnitTest assembleRelease
+      - name: Preparar artefactos para firmar fuera de GitHub
+        run: |
+          test -s android/app/build/outputs/apk/release/app-release-unsigned.apk
+          grep -F "applicationId 'es.cine365.app'" android/app/build.gradle
+          grep -F "versionCode 9015" android/app/build.gradle
+          mkdir -p dist/android-tools/lib
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk dist/Selector_Cine_365_Android_v9_BETA13_UNSIGNED.apk
+          cp "$ANDROID_HOME/build-tools/35.0.0/apksigner" dist/android-tools/apksigner
+          cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" dist/android-tools/lib/apksigner.jar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Selector_Cine_365_Android_v9_BETA13_unsigned
+          path: |
+            dist/Selector_Cine_365_Android_v9_BETA13_UNSIGNED.apk
+            dist/android-tools/**
+          if-no-files-found: error

@@ -1,0 +1,48 @@
+name: CI v9 Beta 13.1 escritorio — recuperar TMDB
+on:
+  push:
+    branches: ['fix/v9-beta13-1-desktop-tmdb-cache']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Probar rutas TMDB y persistencia de listas
+        run: |
+          go test -run 'TestDesktopTMDB' ./... -count=1 -v
+          go test ./... -count=1
+          node scripts/test_v9_beta13.cjs
+      - name: Compilar Windows GUI x64 Beta 13.1
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: '0'
+        run: |
+          mkdir -p dist
+          go build -trimpath -ldflags='-H windowsgui -s -w' -o dist/Selector_Cine_365_Windows_v9_BETA13_1.exe .
+          python3 - <<'PY'
+          from pathlib import Path
+          b=Path('dist/Selector_Cine_365_Windows_v9_BETA13_1.exe').read_bytes()
+          assert b[:2]==b'MZ'
+          off=int.from_bytes(b[0x3c:0x40],'little')
+          assert b[off:off+4]==b'PE\x00\x00'
+          assert int.from_bytes(b[off+24+68:off+24+70],'little')==2
+          print('EXE Windows GUI verificado, sin consola')
+          PY
+          cp RELEASE_NOTES_v9_BETA13.md dist/LEEME_BETA13_1.md
+          cd dist && zip -9 Selector_Cine_365_Windows_v9_BETA13_1.zip Selector_Cine_365_Windows_v9_BETA13_1.exe LEEME_BETA13_1.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Selector_Cine_365_Windows_v9_BETA13_1
+          path: dist/Selector_Cine_365_Windows_v9_BETA13_1.zip
+          if-no-files-found: error

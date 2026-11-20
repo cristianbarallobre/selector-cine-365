@@ -2,12 +2,18 @@
 
 ## Manual completo de uso: Windows, macOS y Android
 
-**Edición:** v9 Beta 12.2 para Android; Windows y macOS mantienen v9 Beta 12 (guía de pruebas, no versión estable)  
+**Edición:** v9 Beta 13 para Windows, Android y macOS (guía de pruebas, no versión estable)  
 **Fecha:** 20 de noviembre de 2026  
 **Autor del programa:** Cristian Barallobre Rúa  
 **Objeto de este manual:** biblioteca, películas vistas, listas, búsqueda global, sorteo, estadísticas, TMDB, copias y sincronización opcional con OneDrive.
 
 > Este manual describe la v9 Beta 12 para Windows, Android y Mac. La interfaz de escritorio se comparte entre Windows (WebView2) y Mac (WKWebView); Android tiene navegación propia. No se ha validado toda la funcionalidad en hardware Mac real. Antes de probar nuevas betas, exporta una copia JSON y conserva una versión anterior. La nube es opcional: la biblioteca también funciona sin Internet ni clave TMDB.
+
+## Correcciones de Beta 13 — listas, TMDB y sincronización
+
+En Windows/Mac, la sección Mis listas mantiene cuatro filas por página para que la parte inferior no se mueva en páginas cortas. Al borrar una lista, se registra su ID en `deleted_lists` y se comparte con los otros dispositivos; una copia anterior no debe recuperarla. Las identificaciones manuales TMDB se guardan como IDs en `tmdb_overrides` y se reciben por OneDrive, pero la clave API no se comparte. Al abrir de nuevo, un fallo temporal de la interfaz no debe hacer que la clave configurada parezca perdida.
+
+**Antes de probar:** exporta un JSON en ambos dispositivos y actualiza todos a Beta 13. Los borrados antiguos no llevaban marcador: si una lista reapareció antes de esta beta, elimínala de nuevo cuando ambos estén actualizados. Una copia de recuperación conserva el contenido para restaurar intencionadamente en una nueva lista.
 
 ## Correcciones de pantalla de Android Beta 12.1 y 12.2
 

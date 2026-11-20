@@ -52,4 +52,41 @@ public final class SyncStoreTest {
                 new JSONObject().put("android",1)),true);
         assertEquals(1,merged.conflicts.length());
     }
+    private static JSONObject multipleLists()throws Exception{
+        return new JSONObject().put("version",1).put("active_id","a")
+            .put("lists",new JSONArray()
+                .put(new JSONObject().put("id","a").put("name","Películas A")
+                    .put("text","☐ Casablanca (1942)"))
+                .put(new JSONObject().put("id","b").put("name","Películas B")
+                    .put("text","☑ Ciudadano Kane (1941)")));
+    }
+    @Test public void deletedListNeverResurrectsAcrossOldSnapshots()throws Exception{
+        JSONObject old=multipleLists(),deleted=multipleLists();
+        deleted.put("lists",new JSONArray().put(deleted.getJSONArray("lists").getJSONObject(0)));
+        deleted.put("deleted_lists",new JSONObject().put("b",true));
+        SyncStore.Merge fromOld=SyncStore.merge(deleted,new JSONObject(),new JSONObject(),
+            peer(old,"staleWindows",new JSONObject(),new JSONObject()),true);
+        assertEquals(1,fromOld.library.getJSONArray("lists").length());
+        assertTrue(fromOld.library.getJSONObject("deleted_lists").getBoolean("b"));
+        SyncStore.Merge fromNew=SyncStore.merge(old,new JSONObject(),new JSONObject(),
+            peer(deleted,"newWindows",new JSONObject(),new JSONObject()),true);
+        assertEquals(1,fromNew.library.getJSONArray("lists").length());
+        SyncStore.Merge repeat=SyncStore.merge(fromNew.library,new JSONObject(),new JSONObject(),
+            peer(old,"staleAndroid",new JSONObject(),new JSONObject()),true);
+        assertEquals(1,repeat.library.getJSONArray("lists").length());
+    }
+    @Test public void manualTMDBOverrideAndExplicitResetCrossDevices()throws Exception{
+        JSONObject a=multipleLists(),b=multipleLists();
+        a.put("tmdb_overrides",new JSONObject()
+            .put("ciudadano kane|1941",111).put("casablanca|1942",0));
+        b.put("tmdb_overrides",new JSONObject().put("vertigo|1958",222));
+        SyncStore.Merge merged=SyncStore.merge(b,new JSONObject(),new JSONObject(),
+            peer(a,"windows",new JSONObject(),new JSONObject()),true);
+        JSONObject manual=merged.library.getJSONObject("tmdb_overrides");
+        assertEquals(111,manual.getInt("ciudadano kane|1941"));
+        assertEquals(222,manual.getInt("vertigo|1958"));
+        assertTrue(manual.has("casablanca|1942"));
+        assertEquals(0,manual.getInt("casablanca|1942"));
+    }
+
 }
