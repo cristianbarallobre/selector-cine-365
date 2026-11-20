@@ -127,6 +127,8 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write(data)
 	case "/api/library":
 		a.serveLibraryHTTP(w, r)
+	case "/api/sync/history", "/api/sync/recovery/list", "/api/sync/recovery/restore":
+		a.serveSyncSupport(w,r)
 	case "/api/cloud/status", "/api/cloud/config", "/api/cloud/backup", "/api/cloud/browse", "/api/cloud/preview", "/api/cloud/sync", "/api/cloud/auto":
 		a.serveCloudHTTP(w, r)
 	case "/api/poster":
