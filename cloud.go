@@ -263,6 +263,11 @@ func (a *runningApp) serveCloudHTTP(w http.ResponseWriter, r *http.Request) {
             respond(500,map[string]string{"error":err.Error()});return
         }
 		respond(200, a.cloudDisplayStatus())
+    case "/api/cloud/auto":
+        if r.Method!=http.MethodPost {http.Error(w,"Método no permitido",405);return}
+        data,err:=a.cloudAutoSync()
+        if err!=nil{respond(409,map[string]string{"error":err.Error()});return}
+        respond(200,data)
     case "/api/cloud/preview":
         if r.Method!=http.MethodPost {http.Error(w,"Método no permitido",405);return}
         data,err:=a.cloudSyncPreview()
