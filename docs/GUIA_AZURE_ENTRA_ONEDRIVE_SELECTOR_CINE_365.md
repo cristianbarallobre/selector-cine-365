@@ -1,11 +1,11 @@
 # Selector Cine 365
 ## Guía de configuración de Microsoft Azure, Entra ID y OneDrive
 
-**Edición:** noviembre de 2026  
-**Alcance:** conexión de OneDrive personal con Selector Cine 365 para Android y Windows.  
-**Estado comprobado:** el inicio de sesión de Microsoft y la sincronización entre dispositivos llegaron a funcionar tras el cambio al inicio interactivo de Android Beta 7. La sincronización automática añadida en Beta 8 debe seguir probándose en dispositivos reales.
+**Edición:** actualizada para v9 Beta 12, 20 de noviembre de 2026  
+**Alcance:** conexión de OneDrive personal con Selector Cine 365 para Android y escritorio Windows/macOS.  
+**Estado comprobado:** el inicio de sesión de Microsoft y la sincronización entre dispositivos llegaron a funcionar tras el cambio al inicio interactivo de Android Beta 7. La sincronización automática y las revisiones causales se conservan en Beta 12, pero deben seguir probándose con dispositivos reales.
 
-> **Idea principal:** no necesitas crear una aplicación de Azure por cada teléfono, ni usar códigos de dispositivo, ni contratar servidores. El registro de Microsoft Entra sirve para autorizar el acceso de Android a OneDrive. En Windows se utiliza la carpeta de OneDrive sincronizada en el ordenador.
+> **Idea principal:** no necesitas crear una aplicación de Azure por cada teléfono, ni usar códigos de dispositivo, ni contratar servidores. El registro de Microsoft Entra sirve para autorizar el acceso de Android a OneDrive. En Windows y macOS se utiliza la carpeta de OneDrive sincronizada por el cliente instalado en el ordenador.
 
 ## 1. Lo que finalmente funcionó
 
@@ -95,7 +95,7 @@ La aplicación solicita además el ámbito `offline_access` para poder renovar l
 
 ## 7. Conectar OneDrive desde Android (método que funcionó)
 
-1. Instala una versión de Selector Cine 365 Android con inicio de sesión **PKCE** (introducido en **Beta 7** y mantenido en **Beta 8**).
+1. Instala una versión de Selector Cine 365 Android con inicio de sesión **PKCE** (introducido en **Beta 7** y mantenido hasta **Beta 12**).
 2. Abre la aplicación y entra en **Nube → Conectar cuenta Microsoft**.
 3. Se abre **automáticamente el navegador del móvil** con la página oficial de Microsoft. **No copies ni pegues códigos temporales**.
 4. Inicia sesión con la cuenta personal de Microsoft que contiene el OneDrive que vas a usar.
@@ -104,9 +104,9 @@ La aplicación solicita además el ámbito `offline_access` para poder renovar l
 7. En la aplicación selecciona o crea la carpeta **`Selector_Cine_365`** y pulsa **Utilizar esta carpeta**.
 8. Seleccionar la carpeta **no fusiona todavía las bibliotecas**. La primera vez pulsa **Revisar sincronización**, comprueba los datos y confirma.
 
-Si tienes instaladas varias betas, Android puede preguntarte **qué versión** debe abrir al regresar desde Microsoft. Elige la versión que estás probando. Las betas tienen datos locales separados; guarda una copia JSON antes de desinstalarlas o cambiar de versión.
+Si conservas una beta antigua instalada en paralelo, Android puede preguntar qué aplicación abre el retorno de Microsoft. **Beta 11 y 12** comparten `es.cine365.app`, por lo que Beta 12 firmada con el mismo certificado actualiza Beta 11 sin duplicarla. **Beta 9** usa otro paquete y no puede reemplazarse conservando sus datos privados: exporta e importa JSON antes de retirarla.
 
-## 8. Conectar Windows a la misma carpeta
+## 8. Conectar Windows o macOS a la misma carpeta
 
 1. Instala o abre el cliente de **OneDrive para Windows** y comprueba que sincroniza tu cuenta personal.
 2. Dentro de tu OneDrive crea, si aún no existe, **`Selector_Cine_365`**. Mantenla separada de tus carpetas de trabajo y copias habituales.
@@ -180,3 +180,10 @@ Comprueba que Windows y Android apuntan a **la misma carpeta**, que el cliente O
 ---
 
 **Nota de conservación:** esta guía documenta la configuración que funcionó para Selector Cine 365 y los problemas reales encontrados en el proceso. La interfaz de Azure/Entra puede cambiar de nombre o ubicación; los valores técnicos (tipo de cuenta, permisos, Id. de cliente y URI de retorno) son la referencia principal mientras la app siga usando este registro.
+## Nota sobre la edición v9 Beta 12
+
+- El registro público de Microsoft Entra, los permisos delegados y la URI de redirección no han cambiado al avanzar a Beta 12.
+- No se necesitan credenciales de Azure para utilizar la biblioteca local. La sincronización es opcional.
+- Android almacena y protege sus tokens en su espacio de aplicación; **no** los exportes en capturas ni los publiques en GitHub.
+- La app solo revisa la carpeta OneDrive seleccionada para su biblioteca; conserva una copia JSON independiente antes de conectar otro dispositivo.
+- Esta guía documenta la configuración, no garantiza instantaneidad ni ausencia de conflictos en la sincronización real.
