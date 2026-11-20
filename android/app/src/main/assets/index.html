@@ -1256,7 +1256,7 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
   </nav>
   <div id="view-library" class="columns view">
     <section class="panel" aria-label="Biblioteca de películas">
-      <div class="panel-heading"><h2>Tu colección</h2><div class="platform-controls"><button class="mini-ctrl" id="platformSetup" type="button">⚙ Plataformas</button><button class="mini-ctrl" id="platformRefresh" type="button" title="Actualizar disponibilidad en España">↻ Actualizar</button><span class="count-tag" id="libraryCount">365 películas</span></div></div>
+      <div class="panel-heading"><h2>Tu colección</h2><div class="platform-controls"><button class="mini-ctrl" id="platformSetup" type="button">⚙ Conectar TMDB</button><button class="mini-ctrl" id="platformRefresh" type="button" title="Actualizar disponibilidad en España">↻ Actualizar</button><span class="count-tag" id="libraryCount">365 películas</span></div></div>
       <input type="search" id="search" class="search" placeholder="Buscar película..." autocomplete="off" aria-label="Buscar película">
 <div class="search-scope" role="group" aria-label="Ámbito de búsqueda"><button type="button" class="search-scope-btn active" data-search-scope="current" aria-pressed="true">Lista actual</button><button type="button" class="search-scope-btn" data-search-scope="all" aria-pressed="false">Todas las listas</button></div>
       <div class="filters" role="group" aria-label="Filtrar películas">
@@ -1533,7 +1533,7 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
 </div>
 <div class="overlay" id="platformOverlay" hidden>
  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="platformModalTitle">
-  <div class="modal-head"><h2 id="platformModalTitle">Plataformas en España</h2><button class="close" type="button" id="closePlatforms" aria-label="Cerrar">✕</button></div>
+  <div class="modal-head"><h2 id="platformModalTitle">Conectar TMDB</h2><button class="close" type="button" id="closePlatforms" aria-label="Cerrar">✕</button></div>
   <div class="api-text">Para mostrar Netflix, Movistar Plus+, Filmin y las demás plataformas junto a cada película, introduce una clave personal gratuita de TMDB. Se configura una vez.<br><a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer">Conseguir clave API de TMDB ↗</a><div style="margin-top:14px;font-size:12px;color:#899aab">Fuente de disponibilidad: JustWatch. Este producto utiliza la API de TMDB, pero no está respaldado ni certificado por TMDB.</div></div>
   <input class="input-key" id="apiKey" type="password" autocomplete="off" placeholder="Pega aquí tu API Key (v3) o token de lectura (v4)">
   <div class="key-inline"><button type="button" id="saveKey" class="primary" style="width:auto;padding:10px 20px;font-size:14px">Guardar y consultar</button><button type="button" class="close" id="cancelPlatforms">Cancelar</button></div>
@@ -1852,7 +1852,7 @@ function renderList(append=false){
  if(!matches.length){
    const div=document.createElement('div');div.className='empty-list';
    div.textContent=global&&!needle?'Escribe para buscar en todas las listas':!global&&!parsed.entries.length?'Tu lista está vacía':
-     selectedListPlatforms.size&&!platformConfigured?'Configura las plataformas en ⚙ Plataformas para utilizar este filtro':
+     selectedListPlatforms.size&&!platformConfigured?'Conecta TMDB para utilizar este filtro':
      selectedListPlatforms.size&&platformActive?'Buscando películas de las plataformas seleccionadas…':
      selectedListPlatforms.size?'No hay películas que coincidan con las plataformas seleccionadas':'No se encontraron películas';
    frag.appendChild(div);
