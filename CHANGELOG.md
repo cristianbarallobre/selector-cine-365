@@ -1,4 +1,37 @@
-# Historial de cambios — Selector de Cine 365
+# Historial de cambios — Selector Cine 365
+
+**Versión coordinada v9 Beta 12 (20 de noviembre de 2026).** Los cambios recientes se basan en el código fuente v9, no en la rama antigua v8.2. Los paquetes Mac usan el mismo frontend y motor Go que Windows; no se afirma que se hayan validado manualmente en hardware real.
+
+## v9 Beta 12 — Windows, macOS, Android (beta)
+
+- Búsqueda global entre listas, sin duplicados por identidad TMDB o título/año; opción «Lista actual».
+- Numeración dinámica de listas; fichas con «Listas: 1, 2…» y navegación/edición de pertenencia.
+- Año y valoración **TMDB** (no IMDb) en las fichas. Únicamente el tick cambia el estado visto.
+- Windows y Mac: paginador de estadísticas anclado al fondo; Mac conserva interfaz y lógica Go de Windows.
+- Windows y Mac: filas de «Mis listas» visibles aunque la nube e historial ocupen el panel.
+- «Actualizar historial» lee el historial local, informa de la consulta y no dibuja una caja extra al estar vacío.
+- Android: mismo proyecto nativo de v9 con UI para móvil; mantiene cabecera fija, carga incremental y estadísticas sin paginar.
+- No se modifica el motor de sincronización causal de Beta 10: se conservan revisiones, recuperación, copia local, historial y PKCE.
+
+## v9 Beta 11 — Windows y Android (beta)
+
+- Se introdujeron búsqueda global, listas numeradas y edición de pertenencias.
+- Se corrigió la posición de los controles de paginación en Estadísticas de Windows.
+- Android pasó al paquete permanente \`es.cine365.app\`, con \`versionCode=9011\`. La clave privada estable se conserva fuera de GitHub; versiones futuras necesitan la misma firma.
+
+## v9 Beta 10 — Windows y Android (beta)
+
+- Revisión de sincronización causal, protección contra la «resurrección» de marcas antiguas, historial y restauración.
+- «Sincronizar ahora» y fecha de última comprobación; OneDrive Android mediante PKCE y Microsoft Graph Delta Query.
+- Alineación de la sección Instrucciones y conservación de la interacción por tick.
+- Android Beta 10 y betas anteriores usaban un identificador con sufijo distinto: requerían migración de datos al saltar al paquete permanente.
+
+## v9 Betas 1–9 — Windows y Android (experimental)
+
+- Primeras ediciones nativas de Android, caché TMDB, conexión OneDrive, sincronización automática, diseño móvil, controles de vista y documentación técnica.
+- Beta 9 usaba \`es.cine365.app.v9beta9\`; no puede actualizarse directamente sobre el paquete nuevo conservando datos privados sin exportación/importación.
+
+## Archivo v8 y anterior
 
 Este registro recoge las principales funciones incorporadas a lo largo del desarrollo. Es un resumen; no pretende representar un historial de commits anteriores.
 
