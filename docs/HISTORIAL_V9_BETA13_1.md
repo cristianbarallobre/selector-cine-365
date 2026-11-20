@@ -160,7 +160,7 @@ No se incluyen en GitHub claves privadas Android, contraseñas ni tokens de nube
 
 ## 6. Publicación, archivo y recuperación histórica
 
-Al finalizar la limpieza de las releases se mantienen **cuatro publicaciones públicas**: Beta 12, Beta 9 (Windows y Android reunidos), v8.2 y v8.1.1.
+En la limpieza inicial se conservaron cuatro publicaciones públicas. Posteriormente se publicaron las betas correctivas; la [release v9 Beta 13.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13.1) es la edición coordinada actual. Los instaladores históricos y las releases anteriores siguen disponibles en GitHub.
 
 Los instaladores de 17 releases redundantes se guardaron byte por byte en una **release borrador** accesible para los mantenedores, con manifiesto SHA-256, y se verificó la copia remota antes de retirar los enlaces públicos. Las ramas, etiquetas Git y commits originales permanecen conservados.
 
@@ -170,7 +170,7 @@ Consulta [Política de publicaciones y recuperación](POLITICA_DE_RELEASES.md) p
 
 - [README — versión actual y descargas](../README.md).
 - [CHANGELOG — evolución compacta](../CHANGELOG.md).
-- [Manual completo v9 Beta 12](MANUAL_COMPLETO_SELECTOR_CINE_365.md).
+- [Manual completo v9 Beta 13.1](MANUAL_COMPLETO_SELECTOR_CINE_365.md).
 - [Guía Android y migración de firma](../android/LEEME_ANDROID_v9_BETA.md).
 - [Guía macOS](../MACOS.md).
 - [Guía Microsoft Entra y OneDrive](GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.md).
@@ -180,4 +180,4 @@ Consulta [Política de publicaciones y recuperación](POLITICA_DE_RELEASES.md) p
 
 **Autor y titular indicado en el proyecto:** Cristian Barallobre Rúa. © 2026. TMDB y Microsoft OneDrive son servicios externos; el proyecto no está certificado ni patrocinado por TMDB. 
 
-*Fin del historial completo · v9 Beta 12.*
+*Fin del historial completo · v9 Beta 13.1.*
