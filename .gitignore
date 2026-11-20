@@ -33,3 +33,23 @@ build/
 Thumbs.db
 
 # Nota: se conserva rsrc_amd64.syso deliberadamente, aporta recursos de icono para Windows.
+
+# Android: firma y credenciales privadas. NUNCA subir ni adjuntar a un commit.
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.pem
+*.key
+*.asc
+key.properties
+local.properties
+*.apk
+*.aab
+
+# Variables y secretos de desarrollo (mantener fuera de Git).
+.env
+.env.*
+*.secrets
+secrets/
+credentials/
