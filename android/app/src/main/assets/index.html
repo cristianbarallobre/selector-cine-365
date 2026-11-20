@@ -1798,10 +1798,12 @@ function renderList(append=false){
  const existingCount=append&&window.CineAndroid?parent.querySelectorAll(':scope > .film-item').length:0;
  if(!append)parent.replaceChildren();
  const needle=search.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
- const matches=parsed.entries.filter(f=>{
+ const global=searchScope==='all';
+ const source=global?(needle?filmMembershipIndex().rows:[]):parsed.entries;
+ const matches=source.filter(f=>{
    if(filter==='seen'&&!f.checked||filter==='pending'&&f.checked)return false;
-   if(needle&&!f.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(needle))return false;
-   if(selectedListPlatforms.size){const available=platformData.get(providerKey(f));if(!available||available.state!=='ok'||!subscriptions(available).some(p=>selectedListPlatforms.has(p)))return false;}
+   if(needle&&!(global?f._searchNames:[f.name]).some(x=>x.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(needle)))return false;
+   if(!global&&selectedListPlatforms.size){const available=platformData.get(providerKey(f));if(!available||available.state!=='ok'||!subscriptions(available).some(p=>selectedListPlatforms.has(p)))return false;}
    return true;
  });
  const areaHeight=parent.clientHeight||370;
@@ -1812,32 +1814,44 @@ function renderList(append=false){
  const frag=document.createDocumentFragment();
  const visible=matches.slice(start,start+pageSize);
  for(const f of window.CineAndroid&&append?visible.slice(existingCount):visible){
-   const b=document.createElement('div');b.className='film-item'+(f.checked?' seen':'');b.dataset.idx=f.idx;b.setAttribute('role','listitem');if(virtualMode)b.classList.add('readonly');
-   const togg=document.createElement('div');togg.className='film-toggle'+(virtualMode?' readonly':'');
-   const tick=document.createElement(virtualMode?'span':'button');
-   tick.className='film-check-action'+(virtualMode?' readonly':'');
-   if(!virtualMode){tick.type='button';tick.dataset.idx=f.idx;tick.setAttribute('aria-pressed',f.checked?'true':'false');tick.setAttribute('aria-label','Marcar «'+f.title+'» como '+(f.checked?'pendiente':'vista'));tick.title='Cambiar estado solo desde esta casilla';}
+   const readonly=virtualMode&&!global;
+   const b=document.createElement('div');b.className='film-item'+(f.checked?' seen':'');b.dataset.idx=f.idx;b.setAttribute('role','listitem');if(readonly)b.classList.add('readonly');
+   const togg=document.createElement('div');togg.className='film-toggle'+(readonly?' readonly':'');
+   const tick=document.createElement(readonly?'span':'button');
+   tick.className='film-check-action'+(readonly?' readonly':'');
+   if(!readonly){tick.type='button';if(f._global)tick.dataset.globalGroup=f._group;else tick.dataset.idx=f.idx;tick.setAttribute('aria-pressed',f.checked?'true':'false');tick.setAttribute('aria-label','Marcar «'+f.title+'» como '+(f.checked?'pendiente':'vista'));tick.title='Cambiar estado solo desde esta casilla';}
    const chk=document.createElement('span');chk.className='checkbox';chk.textContent=f.checked?'✓':'';tick.appendChild(chk);
    const r=platformData.get(providerKey(f));
    const poster=posterElement(r);
    const main=document.createElement('span');main.className='film-main';
    const titleLine=document.createElement('span');titleLine.className='title-line';
    const title=document.createElement('span');title.className='film-name';title.textContent=f.title;titleLine.appendChild(title);
-   if(r?.vote_count>0){const rating=document.createElement('span');rating.className='film-rating';rating.textContent='★ '+Number(r.vote_average).toFixed(1)+' TMDB';rating.title='Valoración de usuarios de TMDB ('+r.vote_count+' votos)';titleLine.appendChild(rating);}
    main.appendChild(titleLine);
-   if(f.year||f.number){const sub=document.createElement('span');sub.className='film-sub';sub.textContent=[f.number?'N.º '+f.number:'',f.year].filter(Boolean).join(' · ');main.appendChild(sub);}
+   const meta=document.createElement('span');meta.className='film-filmmeta';
+   if(f.year){const year=document.createElement('span');year.textContent=f.year;meta.appendChild(year);}
+   if(r?.vote_count>0){const rating=document.createElement('span');rating.className='film-rating';rating.textContent='★ '+Number(r.vote_average).toFixed(1)+' TMDB';rating.title='Nota TMDB ('+r.vote_count+' votos), no equivale a IMDb';meta.appendChild(rating);}
+   const membership=document.createElement('span');membership.className='film-memberships';
+   const caption=document.createElement('span');caption.className='film-memberships-title';caption.textContent='Listas:';
+   const nums=document.createElement('span');nums.className='film-memberships-numbers';
+   for(const m of f._global?f._lists:filmMemberships(f)){
+    const num=document.createElement('button');num.type='button';num.textContent=String(m.n);num.title=m.name;num.setAttribute('aria-label','Abrir lista '+m.n+': '+m.name);num.addEventListener('click',()=>openFilmInList(m));nums.appendChild(num);
+   }
+   const edit=document.createElement('button');edit.type='button';edit.className='film-memberships-edit';edit.textContent='✎';edit.title='Añadir o quitar de otras listas';edit.setAttribute('aria-label','Gestionar listas de '+f.title);edit.addEventListener('click',()=>editMembership(f));
+   membership.append(caption,nums,edit);meta.appendChild(membership);
+   if(f.number){const number=document.createElement('span');number.textContent='N.º '+f.number;meta.appendChild(number);}
+   main.appendChild(meta);
    const badge=document.createElement('span');badge.className='film-platforms';const [name,css]=platformBadge(f);if(css)badge.classList.add(css);badge.textContent=name;
    badge.title=platformTitle(r);main.appendChild(badge);
    togg.append(tick,poster,main);
    const pill=document.createElement('span');pill.className='pill';pill.textContent=f.checked?'Vista':'Pendiente';
    const link=document.createElement('a');link.className='wherelink';link.href=(r?.film_url||jwSearch(f));link.target='_blank';link.rel='noopener noreferrer';link.title='Consultar en JustWatch / TMDB';link.setAttribute('aria-label','Consultar dónde ver '+f.title);link.textContent='↗';
-   const fix=document.createElement('button');fix.type='button';fix.className='matchlink';fix.title='Corregir identificación de TMDB';fix.setAttribute('aria-label','Corregir identificación de '+f.title);fix.textContent='✎';fix.addEventListener('click',()=>{if(!virtualMode)openMatchModal(f);});fix.disabled=virtualMode;fix.hidden=virtualMode;
+   const fix=document.createElement('button');fix.type='button';fix.className='matchlink';fix.title='Corregir identificación de TMDB';fix.setAttribute('aria-label','Corregir identificación de '+f.title);fix.textContent='✎';fix.addEventListener('click',()=>{if(!readonly)openMatchModal(f);});fix.disabled=readonly;fix.hidden=readonly;
    const actions=document.createElement('div');actions.className='film-actions';actions.append(pill,fix,link);
    b.append(togg,actions);frag.appendChild(b);
  }
  if(!matches.length){
    const div=document.createElement('div');div.className='empty-list';
-   div.textContent=!parsed.entries.length?'Tu lista está vacía':
+   div.textContent=global&&!needle?'Escribe para buscar en todas las listas':!global&&!parsed.entries.length?'Tu lista está vacía':
      selectedListPlatforms.size&&!platformConfigured?'Configura las plataformas en ⚙ Plataformas para utilizar este filtro':
      selectedListPlatforms.size&&platformActive?'Buscando películas de las plataformas seleccionadas…':
      selectedListPlatforms.size?'No hay películas que coincidan con las plataformas seleccionadas':'No se encontraron películas';
@@ -1846,7 +1860,8 @@ function renderList(append=false){
  parent.appendChild(frag);
  // Las actualizaciones de TMDB no deben mover el scroll existente.
  if(window.CineAndroid&&!append)scrollView.scrollTop=scrollBefore;
- $('listPlatformCount').textContent='Filtradas: '+matches.length+' de '+parsed.entries.length;
+ $('listPlatformCount').textContent=global?'Búsqueda global · '+matches.length+' resultados':'Filtradas: '+matches.length+' de '+parsed.entries.length;
+ $('libraryCount').textContent=global?matches.length+' resultados':parsed.entries.length+' películas';
  $('filmPageLabel').textContent=matches.length?((start+1)+'–'+Math.min(matches.length,start+pageSize)+' de '+matches.length):'0 películas';
  if(!window.CineAndroid)renderNumberedPages(pageCount,filmPage,matches.length);
  $('filmPrev').disabled=filmPage===0; $('filmNext').disabled=filmPage>=pageCount-1;
@@ -3003,7 +3018,7 @@ function renderStats(){
 
 $('filmPrev').addEventListener('click',()=>{filmPage=Math.max(0,filmPage-1);renderList();});
 $('filmNext').addEventListener('click',()=>{filmPage++;renderList(!!window.CineAndroid);});
-$('filmList').addEventListener('click',e=>{const b=e.target.closest('button[data-idx]');if(b)toggle(Number(b.dataset.idx));});
+$('filmList').addEventListener('click',e=>{const b=e.target.closest('button.film-check-action');if(!b)return;if(b.dataset.globalGroup){const f=filmMembershipIndex().byKey.get(b.dataset.globalGroup);if(f)toggleSearchedFilm(f);}else if(b.dataset.idx!==undefined)toggle(Number(b.dataset.idx));});
 $('search').addEventListener('input',e=>{search=e.target.value;filmPage=0;renderList();});
 document.querySelectorAll('.filter').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;filmPage=0;document.querySelectorAll('.filter').forEach(x=>x.classList.toggle('selected',x===b));renderList();}));
 $('choose').addEventListener('click',()=>{
