@@ -222,6 +222,12 @@ public class MainActivity extends Activity {
         }
     }
     private void toast(String message){Toast.makeText(this,message,Toast.LENGTH_LONG).show();}
+    @Override protected void onResume(){
+        super.onResume();
+        // Check OneDrive when the user returns from another app, without any TMDB refresh.
+        if(webView!=null)webView.evaluateJavascript(
+            "if(window.cineSyncResume)window.cineSyncResume()",null);
+    }
     @Override public void onConfigurationChanged(Configuration newConfig){super.onConfigurationChanged(newConfig);}
     @Override public void onBackPressed(){
         // Do not discard an in-progress list edit when pressing Android Back.
