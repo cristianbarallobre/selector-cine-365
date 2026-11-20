@@ -233,8 +233,19 @@ func syncMergeVersioned(local libraryState,revisions map[string]syncRevision,kno
  payload,_:=json.Marshal(local)
  var result libraryState
  if err:=json.Unmarshal(payload,&result);err!=nil{return local,nil,nil,nil,err}
+ // Los borrados se conservan como tombstones. Una copia vieja sin el campo
+ // deleted_lists no puede resucitar una lista que el usuario ya eliminó.
+ if result.DeletedLists==nil{result.DeletedLists=map[string]bool{}}
+ for id,deleted:=range peer.Library.DeletedLists{if deleted{result.DeletedLists[id]=true}}
+ // Solo los IDs de TMDB confirmados; jamás incluir o sincronizar la clave API.
+ if result.TMDBOverrides==nil{result.TMDBOverrides=map[string]int{}}
+ for key,id:=range peer.Library.TMDBOverrides{
+  if id>0&&result.TMDBOverrides[key]==0{result.TMDBOverrides[key]=id}
+ }
  remoteMarks:=syncStatuses(peer.Library)
  for _,other:=range peer.Library.Lists {
+  if result.DeletedLists[other.ID]{continue}
+
   idx:=-1
   for j:=range result.Lists{if result.Lists[j].ID==other.ID{idx=j;break}}
   if idx<0 {
@@ -251,6 +262,23 @@ func syncMergeVersioned(local libraryState,revisions map[string]syncRevision,kno
     own.Text+=line;keys[f.key]=true
    }
   }
+ }
+ // Eliminar del resultado las listas marcadas como borradas, aunque
+ // ya estuvieran presentes localmente; resolver la selección sin perder listas.
+ if len(result.DeletedLists)>0{
+  kept:=make([]filmCollection,0,len(result.Lists))
+  for _,list:=range result.Lists{if !result.DeletedLists[list.ID]{kept=append(kept,list)}}
+  if len(kept)==0{return local,nil,nil,nil,errors.New("No se puede fusionar: todas las listas aparecen borradas")}
+  result.Lists=kept
+  active:=false
+  for _,list:=range kept{if list.ID==result.ActiveID{active=true}}
+  if !active{result.ActiveID=kept[0].ID}
+  ids:=map[string]bool{}
+  for _,list:=range kept{ids[list.ID]=true}
+  filtered:=make([]string,0,len(result.ComparisonIDs))
+  for _,id:=range result.ComparisonIDs{if ids[id]{filtered=append(filtered,id)}}
+  if len(filtered)<2{filtered=nil}
+  result.ComparisonIDs=filtered
  }
  if len(result.ComparisonIDs)==0&&len(peer.Library.ComparisonIDs)>0{
   valid:=map[string]bool{};for _,l:=range result.Lists{valid[l.ID]=true}
