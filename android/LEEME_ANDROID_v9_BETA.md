@@ -1,27 +1,28 @@
 # Selector Cine 365 · Android v9 Beta 8
 
-**Beta experimental para OneDrive PERSONAL.** Se ha sustituido el inicio de sesión con código temporal por el inicio interactivo desde navegador Microsoft mediante **OAuth 2.0 Authorization Code con PKCE**. La Beta 7 anterior no debe usarse para probar el login: su método de código fallaba en las pruebas reales.
+**Beta experimental para OneDrive PERSONAL.** Se mantiene el inicio de sesión en el navegador Microsoft mediante **OAuth 2.0 Authorization Code con PKCE**, que ya funcionaba en Beta 7. La novedad de Beta 8 es la recepción automática de cambios tras confirmar la primera conexión, manteniendo la resolución manual de conflictos.
 
-## Requisito de Microsoft Entra: configurar una sola dirección de retorno
+## Configuración de Microsoft Entra (sin cambios respecto a Beta 7)
 
-La aplicación ya tiene registrado el ID público de cliente de Microsoft. Antes del primer inicio interactivo, hay que **añadir** en el mismo registro de Microsoft Entra de Selector Cine 365 esta dirección de retorno exacta:
+**Si ya conectaste OneDrive con Beta 7, no necesitas cambiar nada en Azure.** La aplicación mantiene el mismo identificador público y la misma dirección de retorno:
 
 ```text
 msal696458fe-0672-47e5-9fdd-aa0332e9884b://auth
 ```
 
-1. En **Azure → Microsoft Entra ID → Registros de aplicaciones → Selector Cine 365 → Autenticación** (o Authentication Preview).
-2. En **Configuración de URI de redirección**, pulsa **Agregar una plataforma** y elige **Aplicaciones móviles y de escritorio** (*Mobile and desktop applications*).
-3. Si permite URI personalizados, pega exactamente **msal696458fe-0672-47e5-9fdd-aa0332e9884b://auth** y pulsa Guardar. Microsoft documenta este formato `msal{client_id}://auth` para aplicaciones móviles/escritorio.
-4. Mantén **Tipos de cuenta compatibles → Solo cuentas personales**, **Permitir flujos de cliente público → Sí** y en **Permisos de API** los permisos delegados `Files.ReadWrite` y `User.Read`.
-5. No añadas ninguna contraseña ni secreto de cliente. No se necesita habilitar servicios de Azure de pago.
+Si necesitas verificar la configuración en otro móvil, el registro de Microsoft Entra se encuentra en **Registros de aplicaciones → Selector Cine 365 → Autenticación**.
+Debe estar seleccionada la plataforma **Aplicaciones móviles y de escritorio**.
+La dirección anterior debe estar guardada como URI de redirección.
+Mantén **Tipos de cuenta compatibles → Solo cuentas personales**, **Permitir flujos de cliente público → Sí** y en **Permisos de API** los permisos delegados `Files.ReadWrite` y `User.Read`.
+No añadas ninguna contraseña ni secreto de cliente. No se necesita habilitar servicios de Azure de pago.
 
-**Si la página no permite registrar esa URI o muestra un error, no improvises otra.** Copia el mensaje de Azure y revisaremos la plataforma que utiliza el portal antes de distribuir otra APK.
+**No vuelvas a registrar la aplicación** si ya funcionaba la conexión en Beta 7.
 
 ## Instalación y prueba en Android
 
 - APK Beta 8: paquete `es.cine365.app.v9beta8`, separado de la Beta 7, por lo que **no sobrescribe datos anteriores**.
 - **Antes de las pruebas**, exporta un archivo JSON desde tu instalación actual y restáuralo en Beta 8 si quieres trasladar tus películas. **No desinstales la Beta 7** hasta confirmar las listas.
+- **Atención con el navegador:** Beta 7 y Beta 8 usan la misma dirección de retorno de Microsoft. Si Android te pregunta qué aplicación debe abrir, elige **Selector Cine 365 · Beta 8**. Si regresa automáticamente a Beta 7, borra los valores predeterminados de apertura de Beta 7 en Ajustes de Android antes de repetir el inicio de sesión; no borres sus datos sin conservar antes un JSON.
 - Pulsa **Nube → Conectar cuenta Microsoft**. La app abre la página oficial de Microsoft automáticamente en el navegador del móvil.
 - Inicia sesión y acepta los permisos de Microsoft Graph. Al finalizar, el navegador debería **volver directamente a Selector Cine 365** sin solicitar ningún código manual.
 - Selecciona o crea una carpeta de pruebas (por ejemplo `Pruebas_Selector_Cine_365`) en OneDrive y pulsa **Utilizar esta carpeta**. Eso **no publica** datos por sí solo.
