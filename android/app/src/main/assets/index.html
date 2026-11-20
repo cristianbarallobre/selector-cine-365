@@ -2697,7 +2697,7 @@ window.addEventListener('pagehide',()=>{
  try{syncActiveText();if(window.CineAndroid)window.CineAndroid.saveOnExit(JSON.stringify(libraryState));else navigator.sendBeacon('/api/library?token='+encodeURIComponent(token),new Blob([JSON.stringify(libraryState)],{type:'application/json'}));}catch(err){}
  try{navigator.sendBeacon('/api/quit?token='+encodeURIComponent(token),'cerrar');}catch(err){}
 });
-updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void cloudAutoReceive(true).then(()=>initLibrary()).then(async()=>{await initIdentities();await initPlatforms();});
+updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void initLibrary().then(async()=>{await initIdentities();await initPlatforms();void cloudAutoReceive(true);});
 })();
 </script>
 </body>
