@@ -46,6 +46,20 @@ jobs:
               assert term in txt, f'{name} no contiene {term}'
             print(name,len(doc.pages),'páginas',p.stat().st_size,'bytes')
           PY
+      - name: Publicar manuales y el nuevo historial v9 junto a Beta 12
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test -s docs/Selector_Cine_365_Historial_v9_BETA12.pdf
+          test -s docs/Selector_Cine_365_Historial_v9_BETA12.docx
+          gh release upload v9.0.0-beta.12 \
+            docs/MANUAL_COMPLETO_SELECTOR_CINE_365.pdf \
+            docs/GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.pdf \
+            docs/Selector_Cine_365_Historial_v9_BETA12.pdf \
+            docs/Selector_Cine_365_Historial_v9_BETA12.docx \
+            --clobber
+          gh release edit v9.0.0-beta.12 --notes-file RELEASE_NOTES_v9_BETA12.md --prerelease
+          echo 'Manual, guía y el historial v9 en Word/PDF publicados en Beta 12.'
       - name: Registrar PDF actualizados sin tocar el histórico
         run: |
           git config user.name 'github-actions[bot]'
