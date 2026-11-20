@@ -21,7 +21,9 @@ func (a *runningApp) cloudAutoSync() (map[string]any,error) {
  a.mu.Lock()
  plan,err:=a.cloudPlanFor(a.library,folder)
  if err!=nil{a.mu.Unlock();return nil,err}
+ a.syncLastCheck.Store(time.Now().UnixMilli())
  if len(plan.Conflicts)!=0{
+  a.syncPendingConflict.Store(true)
   a.mu.Unlock()
   return map[string]any{"changed":false,"needs_review":true,"conflicts":len(plan.Conflicts)},nil
  }
