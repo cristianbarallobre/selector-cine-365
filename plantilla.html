@@ -360,6 +360,9 @@ h2{font-size:19px}
 #view-statistics .stat-panel{display:flex;flex-direction:column;min-height:0;overflow:hidden}
 #view-statistics .stat-body{display:flex;flex:1 1 auto;min-height:0;overflow-y:auto;flex-direction:column;scrollbar-width:thin;padding-right:2px}
 #view-statistics .stat-pager{flex:0 0 32px;min-height:32px;display:flex;align-items:center;justify-content:space-between;margin-top:auto}
+#view-library .film-item{height:96px;min-height:96px;max-height:96px;flex-basis:96px}
+#view-library .film-toggle{min-height:90px}
+.film-memberships-numbers{max-width:140px}
 </style>
 </head>
 <body>
@@ -812,7 +815,7 @@ function renderList(){
    return true;
  });
  const areaHeight=parent.clientHeight||370;
- const pageSize=Math.max(1,Math.floor((areaHeight+7)/92));
+ const pageSize=Math.max(1,Math.floor((areaHeight+7)/103));
  const pageCount=Math.max(1,Math.ceil(matches.length/pageSize));
  filmPage=Math.max(0,Math.min(filmPage,pageCount-1));
  const start=filmPage*pageSize;
