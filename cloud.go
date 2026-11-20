@@ -183,7 +183,9 @@ func cloudHasDeviceSnapshots(folder string) bool {
 func (a *runningApp) cloudDisplayStatus() cloudStatus {
  s:=a.cloud.status()
  s.SyncPaired=a.syncStore!=nil&&a.syncStore.isPaired(s.Folder)
- s.NeedsReview=s.Enabled&&!s.SyncPaired&&cloudHasDeviceSnapshots(s.Folder)
+ s.NeedsReview=(s.Enabled&&!s.SyncPaired&&cloudHasDeviceSnapshots(s.Folder))||a.syncPendingConflict.Load()
+ s.LastCheckMS=a.syncLastCheck.Load()
+ s.LastReceivedMS=a.syncLastReceived.Load()
  return s
 }
 func (a *runningApp) serveCloudHTTP(w http.ResponseWriter, r *http.Request) {
