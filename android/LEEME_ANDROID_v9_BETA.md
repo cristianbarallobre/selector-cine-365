@@ -1,69 +1,64 @@
-# Selector Cine 365 · Android v9 Beta 10
+# Selector Cine 365 — Android v9 Beta 12
 
-**Beta experimental para OneDrive PERSONAL.** Se mantiene el inicio de sesión en el navegador Microsoft mediante **OAuth 2.0 Authorization Code con PKCE**, que ya funcionaba en Beta 7. La novedad de Beta 10 es la recepción automática de cambios tras confirmar la primera conexión, manteniendo la resolución manual de conflictos.
+**Autor:** Cristian Barallobre Rúa. **Estado:** versión beta experimental para Android 8.0+ (API 26). Conserva funcionamiento local sin cuenta Microsoft y sin clave TMDB.
 
-## Configuración de Microsoft Entra (sin cambios respecto a Beta 7)
+## Instalación: elegir la situación correcta
 
-**Si ya conectaste OneDrive con Beta 7, no necesitas cambiar nada en Azure.** La aplicación mantiene el mismo identificador público y la misma dirección de retorno:
+**Si ya utilizas Beta 11 con el paquete \`es.cine365.app\`:** exporta por precaución un JSON, instala la APK **firmada** Beta 12 (versionCode \`9012\`) como actualización de \`9011\`. Debe conservar tus datos siempre que el certificado sea el **mismo que Beta 11**. No desinstales previamente.
 
-```text
+**Si todavía tienes Beta 9 (\`es.cine365.app.v9beta9\`)**: su identificador y firma son diferentes, por lo que **no se puede actualizar directamente** conservando el almacenamiento privado. Antes de desinstalar, exporta un JSON fuera de la app, comprueba su existencia, desinstala Beta 9 si no quieres dos apps, instala la Beta 12 firmada, importa el JSON y revisa listas y marcas **sin conectar OneDrive aún**. Solo después reconecta y confirma una primera revisión de sincronización.
+
+**Las APK de \`assembleRelease\` de GitHub Actions salen SIN FIRMA cuando la clave privada no se ha configurado allí. No las instales ni publiques como versión oficial.** La clave de firma debe guardarse aparte, fuera de GitHub, y reutilizarse para las siguientes betas. Mantener \`applicationId 'es.cine365.app'\` y aumentar \`versionCode\` en cada actualización.
+
+## Lo que incluye Beta 12
+
+- Búsqueda en lista actual y **todas las listas**, con coincidencias agrupadas por identidad TMDB o título/año.
+- Listas numeradas en selector y gestión; cada ficha indica a cuáles pertenece y permite navegar o editar pertenencia.
+- Año junto a nota **TMDB** (no IMDb). Estado Vista/Pendiente sincronizado entre listas; **solo el tick lo cambia**.
+- Póster, disponibilidad en España, filtros por plataformas, sorteo y corrección manual de identificaciones.
+- Cabecera y navegación propias para móvil, contenido desplazable, carga progresiva de películas y estadísticas desplazables sin paginación.
+- Nube opcional, acceso a OneDrive personal mediante navegador Microsoft con **OAuth2 + PKCE**, guardado local, copias, revisiones causales, historial y recuperación.
+- Correcciones Beta 10 mantenidas: protección contra «resurrección» de ticks antiguos, Sincronizar ahora, estado de última comprobación, y sin bloqueo general de la interfaz por una consulta automática.
+
+## Configuración de Microsoft Entra
+
+El cliente público registrado usa el ID \`696458fe-0672-47e5-9fdd-aa0332e9884b\` y la URI de retorno exacta:
+
+\`\`\`text
 msal696458fe-0672-47e5-9fdd-aa0332e9884b://auth
-```
+\`\`\`
 
-Si necesitas verificar la configuración en otro móvil, el registro de Microsoft Entra se encuentra en **Registros de aplicaciones → Selector Cine 365 → Autenticación**.
-Debe estar seleccionada la plataforma **Aplicaciones móviles y de escritorio**.
-La dirección anterior debe estar guardada como URI de redirección.
-Mantén **Tipos de cuenta compatibles → Solo cuentas personales**, **Permitir flujos de cliente público → Sí** y en **Permisos de API** los permisos delegados `Files.ReadWrite` y `User.Read`.
-No añadas ninguna contraseña ni secreto de cliente. No se necesita habilitar servicios de Azure de pago.
+Permisos delegados: \`Files.ReadWrite\` y \`User.Read\`, cuentas personales de Microsoft. No se necesita contraseña de cliente ni crear un registro nuevo en Azure para cada usuario. Si la cuenta se conectaba correctamente en betas anteriores, conserva esta configuración.
 
-**No vuelvas a registrar la aplicación** si ya funcionaba la conexión en Beta 7.
+Para usar OneDrive: entra en **Nube → Conectar cuenta Microsoft**, autoriza en el navegador externo, escoge la **misma carpeta de OneDrive** que utiliza Windows/Mac y pulsa **Revisar sincronización** antes de aceptar cambios. Seleccionar una carpeta no publica datos por sí solo.
 
-## Instalación y prueba en Android
+## Cómo se sincronizan las marcas
 
-- APK Beta 10: paquete `es.cine365.app.v9beta10`, separado de la Beta 7, por lo que **no sobrescribe datos anteriores**.
-- **Antes de las pruebas**, exporta un archivo JSON desde tu instalación actual y restáuralo en Beta 10 si quieres trasladar tus películas. **No desinstales la Beta 7** hasta confirmar las listas.
-- **Atención con el navegador:** Beta 7 y Beta 10 usan la misma dirección de retorno de Microsoft. Si Android te pregunta qué aplicación debe abrir, elige **Selector Cine 365 · Beta 10**. Si regresa automáticamente a Beta 7, borra los valores predeterminados de apertura de Beta 7 en Ajustes de Android antes de repetir el inicio de sesión; no borres sus datos sin conservar antes un JSON.
-- Pulsa **Nube → Conectar cuenta Microsoft**. La app abre la página oficial de Microsoft automáticamente en el navegador del móvil.
-- Inicia sesión y acepta los permisos de Microsoft Graph. Al finalizar, el navegador debería **volver directamente a Selector Cine 365** sin solicitar ningún código manual.
-- Selecciona o crea una carpeta de pruebas (por ejemplo `Selector_Cine_365`) en OneDrive y pulsa **Utilizar esta carpeta**. Eso **no publica** datos por sí solo.
-- En Windows Beta 10, selecciona esa misma carpeta local sincronizada dentro de OneDrive.
-- Pulsa **Revisar sincronización** en los dos dispositivos; inspecciona los datos y confirma. Después de la primera revisión, los cambios compatibles entrantes se reciben automáticamente. Solo se revisan los conflictos.
+- Las acciones sobre una película llevan identificador de dispositivo y revisiones causales. Un cambio nuevo que conoce al anterior prevalece, aunque los relojes locales no coincidan.
+- Si dos dispositivos modifican el mismo estado **sin conocer mutuamente el cambio**, la app pide intervención. No se elige silenciosamente el estado del dispositivo con el reloj más adelantado.
+- La app comprueba OneDrive periódicamente mientras se utiliza y al recuperar el primer plano. Los cambios pueden tardar en propagarse; no es un servicio en segundo plano permanente.
+- Tras confirmar la primera asociación, el sistema no debe tratar copias históricas sin revisión como autoridad sobre marcas más recientes. Guarda copias JSON antes de restauraciones.
+- La simultaneidad de borrados/renombrados de listas y la sincronización con archivos a medio subir siguen siendo áreas experimentales.
 
-**La autenticación completa y el retorno del navegador aún deben validarse en un móvil real.** El éxito de compilación no demuestra que Azure haya aceptado la URI o que Microsoft permita el consentimiento.
+## Historial y restauración
 
-## Beta 10: sincronización causal, actividad y recuperación
+**Actualizar historial** vuelve a leer los eventos **registrados localmente** por las versiones que incluyen este registro. No importa películas, no sincroniza y no reconstruye acciones realizadas en versiones antiguas. Para comprobar cambios entre dispositivos utiliza **Sincronizar ahora** o **Revisar sincronización**.
 
-- **No basta con comparar fechas:** cada marca Vista/Pendiente contiene un identificador de dispositivo, número de secuencia y reloj causal. Una acción que conocía la anterior tiene prioridad, aunque sus equipos tengan relojes distintos. Cuando dos acciones opuestas son concurrentes, el sistema solicita revisión manual.
-- Tras vincular OneDrive por primera vez, **las copias históricas sin revisión ya no pueden volver a marcar películas por sí solas**. El motor también deja de considerar el archivo antiguo `actual/colecciones.json` como autoridad sobre las marcas una vez vinculado.
-- Las listas con películas repetidas respetan las revisiones causales al reconciliar las marcas (se evita que aparezca de nuevo un tick anterior).
-- **Sincronizar ahora** fuerza una comprobación sin acceder a TMDB y muestra un aviso de progreso mientras opera.
-- En Android la detección incremental de archivos usa Microsoft Graph Delta Query cuando está disponible; si falla por incompatibilidad del servicio se realiza una revisión completa segura. En primer plano se solicita una comprobación aproximadamente cada 30 segundos, con un mínimo de 25 entre comprobaciones. La propagación real de OneDrive puede tardar más.
-- En Windows se comprueba la carpeta local sincronizada aproximadamente cada 25 segundos. No se promete una latencia exacta ni se mantiene actividad cuando las aplicaciones están cerradas.
-- **Historial** muestra las decisiones que registra esa instalación y los cambios recibidos desde otros dispositivos. Los horarios se muestran como referencia; el orden causal NO depende exclusivamente de los relojes.
-- **Copias de recuperación:** se pueden explorar copias locales, confirmar la restauración y rescatar primero el estado previo. Restaurar un estado anterior implica nuevas modificaciones locales que podrían compartirse si la nube está activada.
-- Las credenciales de Microsoft y la configuración del registro de Azure **no cambian**; solo se reinstala la nueva Beta y se selecciona la misma carpeta de nube.
-- **Precaución Beta10:** APK diferente de Beta9 (`es.cine365.app.v9beta10`). Antes de probar exporta una copia JSON, instálala sin desinstalar la anterior e importa los datos. Android puede preguntar qué Beta abrir al volver del navegador de Microsoft; escoge Beta10.
-- **No hay verificación física todavía:** los tests cubren la secuencia Windows visto → Android recibe → Android pendiente → Windows recibe, pero debe confirmarse en el móvil Xiaomi y el PC reales.
+Si restableces una copia, confirma que el contenido sea correcto antes de dejar que vuelva a compartir cambios con la nube.
 
-## Sincronización automática después de la primera revisión y bloqueos de Nube
+## Compilación
 
-- **Primera vez:** confirma la sincronización en Windows y Android con «Revisar sincronización», usando la misma carpeta de OneDrive.
-- **Estabilidad Android Beta 10:** ya no se desactiva toda la interfaz durante una consulta automática a OneDrive; solo se protegen los controles de Nube mientras una operación manual está ejecutándose, con un aviso visible.\n- **Siguientes veces:** en ambos dispositivos los cambios seguros se reciben automáticamente **al abrir, volver a la app y mientras se mantiene abierta**. La comprobación es periódica, no instantánea: OneDrive necesita tiempo para subir los archivos.
-- **Conflictos:** si se ha marcado y desmarcado la misma película en dos dispositivos sin haber recibido el cambio del otro, **NO se decide automáticamente**. Pulsa «Revisar sincronización» para escoger qué conservar.
-- **Sin nube:** todos los cambios se guardan en cada dispositivo de forma local, sin requerir OneDrive ni TMDB.
-- **Uso de datos:** no se consulta TMDB para sincronizar. La aplicación revisa los archivos de OneDrive con intervalos limitados; no funciona como un servicio permanente en segundo plano.
-- **Límites todavía experimentales:** renombrados o eliminaciones de listas hechos simultáneamente en dos dispositivos, o archivos que no hayan terminado de subirse a OneDrive. Conservar copias JSON de recuperación.
+Con Java 17, Gradle 8.7 y Android SDK 35:
 
-## Windows Beta 10
+\`\`\`bash
+cd android
+gradle testDebugUnitTest assembleRelease
+\`\`\`
 
-Compilada específicamente con el subsistema **Windows GUI**, con comprobación automática de la cabecera PE. **No abre una ventana CMD**, a diferencia del viejo ejecutable Beta 5. Si en el título de una ventana aparece BETA5, cierra esa versión y abre exactamente el EXE `Selector_Cine_365_Windows_v9_BETA8.exe`. No ejecutes dos versiones simultáneamente: ambas comparten datos locales.
+Después firma y verifica el APK usando el certificado persistente del paquete \`es.cine365.app\`. No incluyas el keystore ni su contraseña en el repositorio, commits, releases ni logs. Una firma diferente impediría instalar como actualización aunque el \`versionCode\` aumente.
 
-## Seguridad y funcionamiento
+## Limitaciones de pruebas
 
-- PKCE S256, estado aleatorio verificado y válido una sola vez, redirect comprobado en la actividad Android, login en navegador externo; no se envían contraseñas ni tokens a la WebView.
-- Tokens cifrados con **Android Keystore** y almacenados en memoria interna de la app; «Desconectar» borra la sesión local.
-- Los datos se guardan localmente incluso sin nube. Las solicitudes a TMDB solo ocurren para películas nuevas no guardadas o cuando se pide actualizar; se mantiene la caché.
-- Cada dispositivo conserva su propio snapshot de sincronización. Los cambios entrantes no son todavía automáticos y hay límites experimentales con renombrados/eliminaciones de listas.
-- «Elegir carpeta local» utiliza Android SAF y **no significa conectar directamente OneDrive**. Otras nubes son opcionales si ofrecen carpetas de lectura y escritura reales.
+Las pruebas de compilación, JavaScript y motor causal superadas no garantizan por sí solas el comportamiento en todos los modelos de teléfono ni la aceptación de Microsoft Entra en una sesión real. Recomendamos comprobar la actualización y la sincronización antes de considerar esta versión estable.
 
-**Autor:** Cristian Barallobre Rúa. Selector Cine 365 utiliza datos de TMDB sin patrocinio ni certificación de TMDB.
+El programa utiliza datos de TMDB sin patrocinio ni certificación de TMDB. © 2026 Cristian Barallobre Rúa.
