@@ -30,9 +30,9 @@ jobs:
           node-version: '22'
       - name: Pruebas y compilación Mac v9 Beta 13
         env:
-          MAC_ARCH: \${{ matrix.arch }}
-          MAC_LABEL: \${{ matrix.label }}
-          CC: \${{ matrix.cc }}
+          MAC_ARCH: ${{ matrix.arch }}
+          MAC_LABEL: ${{ matrix.label }}
+          CC: ${{ matrix.cc }}
         run: |
           node scripts/test_v9_beta13.cjs
           bash scripts/build_macos_app.sh
@@ -43,6 +43,6 @@ jobs:
           codesign --verify --deep --strict "$APP"
       - uses: actions/upload-artifact@v4
         with:
-          name: Selector_Cine_365_Mac_\${{ matrix.label }}_v9_BETA13
+          name: Selector_Cine_365_Mac_${{ matrix.label }}_v9_BETA13
           path: dist/Selector_Cine_365_Mac_*_v9_BETA13.zip
           if-no-files-found: error
