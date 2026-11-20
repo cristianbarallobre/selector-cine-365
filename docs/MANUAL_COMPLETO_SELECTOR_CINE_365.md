@@ -175,6 +175,7 @@ Las betas son versiones de prueba y pueden tener errores. La sincronización seg
 ## 15. Enlaces útiles
 
 - Proyecto y versiones: <https://github.com/cristianbarallobre/selector-cine-365>
+- Historial v9 Beta 12 en Markdown, Word y PDF: <https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/HISTORIAL_V9_BETA12.md>
 - Manual completo (esta guía): <https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/MANUAL_COMPLETO_SELECTOR_CINE_365.pdf>
 - Guía de Microsoft Azure, Entra y OneDrive: <https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.md>
 - TMDB: <https://www.themoviedb.org/>
