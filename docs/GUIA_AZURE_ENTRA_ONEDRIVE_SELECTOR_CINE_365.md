@@ -101,7 +101,7 @@ La aplicación solicita además el ámbito `offline_access` para poder renovar l
 4. Inicia sesión con la cuenta personal de Microsoft que contiene el OneDrive que vas a usar.
 5. Acepta los permisos solicitados si estás de acuerdo con ellos.
 6. Al completar la autorización, el navegador te devuelve a **Selector Cine 365**.
-7. En la aplicación selecciona o crea la carpeta **`Pruebas_Selector_Cine_365`** y pulsa **Utilizar esta carpeta**.
+7. En la aplicación selecciona o crea la carpeta **`Selector_Cine_365`** y pulsa **Utilizar esta carpeta**.
 8. Seleccionar la carpeta **no fusiona todavía las bibliotecas**. La primera vez pulsa **Revisar sincronización**, comprueba los datos y confirma.
 
 Si tienes instaladas varias betas, Android puede preguntarte **qué versión** debe abrir al regresar desde Microsoft. Elige la versión que estás probando. Las betas tienen datos locales separados; guarda una copia JSON antes de desinstalarlas o cambiar de versión.
@@ -109,9 +109,9 @@ Si tienes instaladas varias betas, Android puede preguntarte **qué versión** d
 ## 8. Conectar Windows a la misma carpeta
 
 1. Instala o abre el cliente de **OneDrive para Windows** y comprueba que sincroniza tu cuenta personal.
-2. Dentro de tu OneDrive crea, si aún no existe, **`Pruebas_Selector_Cine_365`**. Mantenla separada de tus carpetas de trabajo y copias habituales.
+2. Dentro de tu OneDrive crea, si aún no existe, **`Selector_Cine_365`**. Mantenla separada de tus carpetas de trabajo y copias habituales.
 3. Abre **Selector Cine 365 para Windows → Nube / Copias y sincronización**.
-4. Pulsa **Elegir carpeta** y selecciona en el disco la carpeta de OneDrive **`Pruebas_Selector_Cine_365`**.
+4. Pulsa **Elegir carpeta** y selecciona en el disco la carpeta de OneDrive **`Selector_Cine_365`**.
 5. Comprueba que en Android has seleccionado **esa misma carpeta de OneDrive**, no una carpeta local cualquiera del teléfono.
 6. En la **primera vinculación** pulsa **Revisar sincronización** en ambos dispositivos, verifica las listas y los estados, y confirma.
 
