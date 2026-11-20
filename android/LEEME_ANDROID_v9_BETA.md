@@ -4,11 +4,11 @@
 
 ## Instalación: elegir la situación correcta
 
-**Si ya utilizas Beta 11 con el paquete \`es.cine365.app\`:** exporta por precaución un JSON, instala la APK **firmada** Beta 12 (versionCode \`9012\`) como actualización de \`9011\`. Debe conservar tus datos siempre que el certificado sea el **mismo que Beta 11**. No desinstales previamente.
+**Si ya utilizas Beta 11 con el paquete `es.cine365.app`:** exporta por precaución un JSON, instala la APK **firmada** Beta 12 (versionCode `9012`) como actualización de `9011`. Debe conservar tus datos siempre que el certificado sea el **mismo que Beta 11**. No desinstales previamente.
 
-**Si todavía tienes Beta 9 (\`es.cine365.app.v9beta9\`)**: su identificador y firma son diferentes, por lo que **no se puede actualizar directamente** conservando el almacenamiento privado. Antes de desinstalar, exporta un JSON fuera de la app, comprueba su existencia, desinstala Beta 9 si no quieres dos apps, instala la Beta 12 firmada, importa el JSON y revisa listas y marcas **sin conectar OneDrive aún**. Solo después reconecta y confirma una primera revisión de sincronización.
+**Si todavía tienes Beta 9 (`es.cine365.app.v9beta9`)**: su identificador y firma son diferentes, por lo que **no se puede actualizar directamente** conservando el almacenamiento privado. Antes de desinstalar, exporta un JSON fuera de la app, comprueba su existencia, desinstala Beta 9 si no quieres dos apps, instala la Beta 12 firmada, importa el JSON y revisa listas y marcas **sin conectar OneDrive aún**. Solo después reconecta y confirma una primera revisión de sincronización.
 
-**Las APK de \`assembleRelease\` de GitHub Actions salen SIN FIRMA cuando la clave privada no se ha configurado allí. No las instales ni publiques como versión oficial.** La clave de firma debe guardarse aparte, fuera de GitHub, y reutilizarse para las siguientes betas. Mantener \`applicationId 'es.cine365.app'\` y aumentar \`versionCode\` en cada actualización.
+**Las APK de `assembleRelease` de GitHub Actions salen SIN FIRMA cuando la clave privada no se ha configurado allí. No las instales ni publiques como versión oficial.** La clave de firma debe guardarse aparte, fuera de GitHub, y reutilizarse para las siguientes betas. Mantener `applicationId 'es.cine365.app'` y aumentar `versionCode` en cada actualización.
 
 ## Lo que incluye Beta 12
 
@@ -22,13 +22,13 @@
 
 ## Configuración de Microsoft Entra
 
-El cliente público registrado usa el ID \`696458fe-0672-47e5-9fdd-aa0332e9884b\` y la URI de retorno exacta:
+El cliente público registrado usa el ID `696458fe-0672-47e5-9fdd-aa0332e9884b` y la URI de retorno exacta:
 
-\`\`\`text
+```text
 msal696458fe-0672-47e5-9fdd-aa0332e9884b://auth
-\`\`\`
+```
 
-Permisos delegados: \`Files.ReadWrite\` y \`User.Read\`, cuentas personales de Microsoft. No se necesita contraseña de cliente ni crear un registro nuevo en Azure para cada usuario. Si la cuenta se conectaba correctamente en betas anteriores, conserva esta configuración.
+Permisos delegados: `Files.ReadWrite` y `User.Read`, cuentas personales de Microsoft. No se necesita contraseña de cliente ni crear un registro nuevo en Azure para cada usuario. Si la cuenta se conectaba correctamente en betas anteriores, conserva esta configuración.
 
 Para usar OneDrive: entra en **Nube → Conectar cuenta Microsoft**, autoriza en el navegador externo, escoge la **misma carpeta de OneDrive** que utiliza Windows/Mac y pulsa **Revisar sincronización** antes de aceptar cambios. Seleccionar una carpeta no publica datos por sí solo.
 
@@ -50,12 +50,12 @@ Si restableces una copia, confirma que el contenido sea correcto antes de dejar 
 
 Con Java 17, Gradle 8.7 y Android SDK 35:
 
-\`\`\`bash
+```bash
 cd android
 gradle testDebugUnitTest assembleRelease
-\`\`\`
+```
 
-Después firma y verifica el APK usando el certificado persistente del paquete \`es.cine365.app\`. No incluyas el keystore ni su contraseña en el repositorio, commits, releases ni logs. Una firma diferente impediría instalar como actualización aunque el \`versionCode\` aumente.
+Después firma y verifica el APK usando el certificado persistente del paquete `es.cine365.app`. No incluyas el keystore ni su contraseña en el repositorio, commits, releases ni logs. Una firma diferente impediría instalar como actualización aunque el `versionCode` aumente.
 
 ## Limitaciones de pruebas
 

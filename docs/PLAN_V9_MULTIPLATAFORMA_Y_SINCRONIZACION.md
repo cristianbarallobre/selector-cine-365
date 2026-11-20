@@ -264,9 +264,14 @@ Windows y macOS pueden trabajar con la carpeta local sincronizada de OneDrive. E
 
 **v9.0 estable:** solo tras verificar los escenarios anteriores y conservar copia y posibilidad de volver a la versión estable anterior.
 
-## 9. Estado real de partida
+## 9. Estado de implementación y referencia histórica
 
-- **v8.2:** última versión estable de escritorio publicada anteriormente.
-- **Android v8.3 beta:** dispone de interfaz táctil inicial y mecanismo experimental de instantáneas. **No implementa todavía** el protocolo causal, la detección de conflictos ni el acceso garantizado a OneDrive.
-- **Windows v8.3 beta:** experimental; no sustituir instalaciones con datos personales hasta superar pruebas.
-- **Este archivo:** especificación de trabajo, no prueba de que las prestaciones ya estén implementadas.
+**Situación actual — 20 de noviembre de 2026:** la última beta coordinada publicada es **v9 Beta 12** para Windows, Android y macOS Intel/Apple Silicon. El motor Go y la interfaz de escritorio son compartidos entre Windows y Mac; Android mantiene su proyecto Java/Gradle y una interfaz táctil diferenciada.
+
+**Implementado en Beta 12, pendiente de validación prolongada en hardware real:** funcionamiento local, TMDB opcional, listas numeradas, búsqueda global, manejo de pertenencia, sincronización causal y copias de seguridad, historial, OneDrive personal con PKCE en Android y aplicaciones Mac empaquetadas.
+
+**Limitaciones actuales:** sincronización OneDrive no instantánea, posibles conflictos concurrentes que requieren revisión, pruebas reales de Mac y Android pendientes, Mac sin notarización Developer ID, clave privada Android conservada fuera del repositorio y necesidad de migrar JSON desde Android Beta 9.
+
+**Referencia histórica:** cuando se redactó el primer plan, **v8.2** era la última edición estable de escritorio y se ensayaban prototipos v8.3. Esos datos ya no describen la implementación actual; se conservan como contexto de diseño, no como instrucciones de instalación o diagnóstico.
+
+La próxima **v9 estable** debe aprobarse solo después de superar los casos de prueba funcionales, sincronización, restauración y actualización sin pérdida de datos descritos en esta especificación. Consulta el [historial reciente](../CHANGELOG.md) y el [historial detallado de v9](HISTORIAL_V9_BETA12.md).

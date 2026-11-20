@@ -60,3 +60,7 @@ Para Android, **Beta 9 y Beta 12 no comparten identidad ni firma**: requiere mig
 - Archivados los 17 conjuntos de activos antiguos en un borrador de GitHub con hashes SHA-256.
 - Los PDF actualizados de Manual completo y Guía Microsoft Entra/OneDrive están disponibles en el repositorio y en la release Beta 12.
 - El script utilizado se conserva en la rama **maintenance/organizar-releases-v9-2026-11**, dentro de scripts/maintenance.
+
+## Consulta documental
+
+Los cambios de software de las etapas v1 a v9 Beta 12 están reunidos en [Historial completo v9 Beta 12](HISTORIAL_V9_BETA12.md), disponible también en Word y PDF. Se conserva por separado la edición histórica v8.1.1 sin reescribirla.

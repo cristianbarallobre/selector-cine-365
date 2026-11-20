@@ -82,6 +82,7 @@ En Windows y Mac puedes seleccionar una carpeta local sincronizada por el provee
 ## Documentación
 
 - [Manual completo v9 Beta 12](docs/MANUAL_COMPLETO_SELECTOR_CINE_365.md) (también PDF).
+- [Historial de versiones completo v1–v9 Beta 12](docs/HISTORIAL_V9_BETA12.md) — Markdown, Word y PDF.
 - [Guía Mac: Intel y Apple Silicon](MACOS.md).
 - [Guía Android: instalación, firma y OneDrive](android/LEEME_ANDROID_v9_BETA.md).
 - [Azure / Entra ID / OneDrive](docs/GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.md).
@@ -89,7 +90,7 @@ En Windows y Mac puedes seleccionar una carpeta local sincronizada por el provee
 - [Cambios recientes](CHANGELOG.md) y [archivo histórico hasta v8.1.1](docs/HISTORIAL_VERSIONES.md).
 - [Autoría](AUTORIA.md).
 
-Los PDF y Word de `v8.1.1` documentan **esa versión histórica**, no constituyen el manual de v9.
+Los Word y PDF de `v8.1.1` documentan **esa versión histórica**. El nuevo historial v9 se encuentra en `docs/HISTORIAL_V9_BETA12.md` y sus ediciones Word y PDF; no sustituyen el manual de uso.
 
 ## Derechos y atribuciones
 
