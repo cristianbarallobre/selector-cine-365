@@ -7,8 +7,8 @@ android {
         applicationId 'es.cine365.app'
         minSdk 26
         targetSdk 35
-        versionCode 9007
-        versionName '9.0.0-beta.7'
+        versionCode 9008
+        versionName '9.0.0-beta.8'
     }
     buildFeatures { buildConfig true }
     // Public identifier, NOT a secret. Configured by repository owner in GitHub Actions Variables.
@@ -17,7 +17,7 @@ android {
     buildTypes {
         debug {
             // Install alongside the old Android test app; never uninstall user data.
-            applicationIdSuffix '.v9beta7'
+            applicationIdSuffix '.v9beta8'
             versionNameSuffix '-test'
         }
     }
