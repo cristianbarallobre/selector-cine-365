@@ -1945,6 +1945,100 @@ function buildIdentityGroups(){
  const out=new Map();for(const key of records.keys())out.set(key,find(key));return out;
 }
 function groupKey(f,groups){return groups.get(filmKey(f))||filmKey(f);}
+
+// INICIO FUNCIONES DE BÚSQUEDA GLOBAL BETA11
+function filmMembershipIndex(){
+ if(membershipCache)return membershipCache;
+ const groups=buildIdentityGroups(),byKey=new Map();
+ for(const [index,list] of libraryState.lists.entries()){
+  for(const film of parse(list.text).entries){
+   const key=groupKey(film,groups);
+   let record=byKey.get(key);
+   if(!record){record={...film,_global:true,_group:key,_lists:[],_searchNames:[]};byKey.set(key,record);}
+   record.checked=record.checked||film.checked;record._searchNames.push(film.name);
+   if(!record._lists.some(m=>m.id===list.id))record._lists.push({id:list.id,n:index+1,name:list.name,title:film.title,year:film.year});
+  }
+ }
+ membershipCache={rows:[...byKey.values()],byKey,groups};return membershipCache;
+}
+function filmMemberships(f){
+ const index=filmMembershipIndex();
+ return index.byKey.get(groupKey(f,index.groups))?._lists||[];
+}
+function numberedListName(l){
+ const index=libraryState.lists.findIndex(x=>x.id===l.id);
+ return (index<0?'':(index+1)+'. ')+l.name;
+}
+function selectSearchScope(scope){
+ searchScope=scope==='all'?'all':'current';filmPage=0;
+ for(const b of document.querySelectorAll('[data-search-scope]')){
+  const active=b.dataset.searchScope===searchScope;
+  b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));
+ }
+ if(searchScope==='all'){selectedListPlatforms.clear();closeListPlatformMenu();updateListPlatformOptions();}
+ $('listPlatformButton').disabled=searchScope==='all';
+ renderList();
+}
+function openFilmInList(m){
+ if(!m)return;
+ if(m.id!==libraryState.active_id||virtualMode)switchCollection(m.id);
+ selectSearchScope('current');search=m.title;$('search').value=search;
+ filmPage=0;showView('library');renderList();
+}
+function closeMembershipModal(){membershipFilm=null;$('membershipOverlay').hidden=true;}
+function editMembership(f){
+ membershipFilm=f;
+ $('membershipTitle').textContent='Listas de '+f.title+(f.year?' ('+f.year+')':'');
+ const present=new Set(filmMemberships(f).map(m=>m.id)),holder=$('membershipOptions');holder.replaceChildren();
+ for(const list of libraryState.lists){
+  const label=document.createElement('label');label.className='membership-option';
+  const check=document.createElement('input');check.type='checkbox';check.value=list.id;check.checked=present.has(list.id);
+  const title=document.createElement('span');title.textContent=numberedListName(list);
+  label.append(check,title);holder.appendChild(label);
+ }
+ $('membershipWarning').textContent='';$('membershipOverlay').hidden=false;
+}
+// Función pura comprobable mediante tests: conserva IDs y líneas ajenas.
+function applyFilmMembershipLists(lists,f,chosen,groups,parseFn=parse,keyFn=groupKey){
+ const target=keyFn(f,groups);let edits=0;
+ for(const list of lists){
+  const data=parseFn(list.text),found=data.entries.filter(item=>keyFn(item,groups)===target);
+  if(chosen.has(list.id)&&!found.length){
+   const line=(f.checked?'☑ ':'☐ ')+f.title+(f.year?' ('+f.year+')':'');
+   list.text+=(list.text&&!list.text.endsWith('\n')?'\n':'')+line;edits++;
+  }else if(!chosen.has(list.id)&&found.length){
+   const remove=new Set(found.map(x=>x.idx));
+   list.text=data.lines.filter((_,i)=>!remove.has(i)).join('\n');edits+=found.length;
+  }
+ }
+ return edits;
+}
+function toggleSearchedFilm(f){
+ if(!f)return;
+ syncActiveText();const next=!f.checked;
+ cineRecentIntents.set(groupKey(f,buildIdentityGroups()),{checked:next,until:Date.now()+90000});
+ const changed=propagateSeen(f,next);
+ if(virtualMode)refreshVirtualContent();else rawText=activeCollection().text||'';
+ update();renderStats();renderCollectionControls();scheduleSave();
+ $('message').textContent=(next?'Marcada como vista':'Marcada como pendiente')+' en '+changed+' '+(changed===1?'registro':'registros')+' de tus listas.';
+}
+$('closeMembership').addEventListener('click',closeMembershipModal);
+$('cancelMembership').addEventListener('click',closeMembershipModal);
+$('membershipOverlay').addEventListener('click',e=>{if(e.target===$('membershipOverlay'))closeMembershipModal();});
+$('applyMembership').addEventListener('click',()=>{
+ if(!membershipFilm)return;
+ const chosen=new Set([...$('membershipOptions').querySelectorAll('input:checked')].map(x=>x.value));
+ if(!chosen.size&&!confirm('¿Quitar esta película de todas las listas?'))return;
+ syncActiveText();const groups=filmMembershipIndex().groups;
+ const edits=applyFilmMembershipLists(libraryState.lists,membershipFilm,chosen,groups);
+ closeMembershipModal();if(!edits)return;
+ membershipCache=null;if(virtualMode)refreshVirtualContent();else rawText=activeCollection().text||'';
+ resetChoice();update();renderStats();renderCollectionControls();scheduleSave();
+ notify('Listas actualizadas: '+edits+' '+(edits===1?'registro':'registros')+'.');
+});
+document.querySelectorAll('[data-search-scope]').forEach(b=>b.addEventListener('click',()=>selectSearchScope(b.dataset.searchScope)));
+// FIN FUNCIONES DE BÚSQUEDA GLOBAL BETA11
+
 function setMarkOnLine(line,seen){
  const mark=seen?'☑':'☐';
  if(/^\s*[☐□☑☒✓✔✅]/u.test(line))return line.replace(/^(\s*)[☐□☑☒✓✔✅]/u,'$1'+mark);
