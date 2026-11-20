@@ -247,6 +247,13 @@ final class CloudBackup {
                 .put("conflicts",plan.conflicts).put("requires_confirmation",true);
         }catch(Exception e){lastError=e.getMessage();throw e;}
     }
+    /** One independent local recovery file before every automatic or manual import. */
+    private void rescueLocal(JSONObject state)throws Exception{
+        File dir=new File(appDir,"sync_recuperacion");
+        if(!dir.exists()&&!dir.mkdirs())throw new Exception("No se pudo preparar la copia local de recuperación");
+        File target=new File(dir,System.currentTimeMillis()+"_"+System.nanoTime()+".json");
+        Backend.atomicWrite(target,state.toString(2));
+    }
     synchronized JSONObject synchronize(Backend backend,String expected,JSONObject decisions)throws Exception{
         if(folder.isEmpty())throw new Exception("Configura primero una carpeta compartida");
         if(previewToken.isEmpty()||!previewToken.equals(expected))throw new Exception("Revisa primero los datos para sincronizar");
@@ -263,8 +270,10 @@ final class CloudBackup {
             if(resolved.length()>0){
                 plan.library=SyncStore.applyStatuses(plan.library,resolved);
             }
-            // Guardar la biblioteca con copia de recuperación antes de modificar
-            // el historial causal o publicar cambios en otra nube.
+            // Copia local independiente antes de importar o compartir.
+            JSONObject previousLocal=new JSONObject(backend.readOrDefault("colecciones.json","{}"));
+            if(!Backend.validLibrary(previousLocal))throw new Exception("Biblioteca local no válida");
+            rescueLocal(previousLocal);
             backend.storeStateImported(plan.library);
             if(resolved.length()>0){
                 sync.resolve(plan.revisions,plan.known,resolved);
@@ -324,7 +333,10 @@ final class CloudBackup {
                 return status().put("changed",false);
             }
             // Creates the same daily local recovery point as a manual import.
-            if(changed)backend.storeStateImported(plan.library);
+            if(changed){
+                rescueLocal(before);
+                backend.storeStateImported(plan.library);
+            }
             sync.accept(plan.revisions,plan.known);
             autoNeedsReview=false;
             JSONObject result=backup();
