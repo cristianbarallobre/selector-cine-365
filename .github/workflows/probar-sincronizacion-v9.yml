@@ -22,5 +22,20 @@ jobs:
           go-version: '1.23'
       - name: Pruebas de las bibliotecas y sincronización
         run: go test ./...
+      - name: Revisar JavaScript de Windows antes de publicar
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess, tempfile
+          html=Path('plantilla.html').read_text()
+          for i,m in enumerate(re.finditer(r'<script(?P<attrs>[^>]*)>(?P<js>.*?)</script>',html,re.S|re.I)):
+              if 'src=' in m['attrs'] or 'application/json' in m['attrs']:continue
+              temp=Path(tempfile.gettempdir())/f'cine_beta10_{i}.js'
+              temp.write_text(m['js'])
+              subprocess.run(['node','--check',str(temp)],check=True)
+          assert 'cloudSyncNowFast' in html and 'cloudRecoveryRestore' in html
+          assert 'cineRevisionCache' in html
+          print('JavaScript Windows Beta10 validado')
+          PY
       - name: Compilar Windows (sin publicar ni reemplazar versión estable)
         run: GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags='-H windowsgui -s -w' -o /tmp/Selector_Cine_365_v9_prueba.exe .
