@@ -129,6 +129,11 @@ final class SyncStore {
         Merge(JSONObject l,JSONObject r,JSONObject k,JSONArray issues,boolean c){library=l;revisions=r;known=k;conflicts=issues;changed=c;}
     }
     static Merge merge(JSONObject local,JSONObject revisions,JSONObject known,JSONObject peer)throws Exception {
+        return merge(local,revisions,known,peer,false);
+    }
+    // Once paired, only explicit per-film revisions may change the viewed flag.
+    // Raw old snapshot flags are NOT changes, and may not resurrect an old ✓.
+    static Merge merge(JSONObject local,JSONObject revisions,JSONObject known,JSONObject peer,boolean strict)throws Exception {
         if(peer.optInt("protocol")!=1&&peer.optInt("protocol")!=PROTOCOL)
             throw new Exception("Formato de sincronización no reconocido");
         JSONObject remote=peer.getJSONObject("library");
@@ -176,8 +181,8 @@ final class SyncStore {
                 .put("remote",theirs.optBoolean("checked"))
                 .put("local_device",ours.optString("device")).put("remote_device",theirs.optString("device")));
         }
-        JSONObject allSeen=statuses(result);
-        for(Iterator<String>it=remoteMarks.keys();it.hasNext();){String key=it.next();
+        JSONObject allSeen=strict?statuses(local):statuses(result);
+        if(!strict)for(Iterator<String>it=remoteMarks.keys();it.hasNext();){String key=it.next();
             if(remoteMarks.optBoolean(key))allSeen.put(key,true);
         }
         for(int i=0;i<left.length();i++){
