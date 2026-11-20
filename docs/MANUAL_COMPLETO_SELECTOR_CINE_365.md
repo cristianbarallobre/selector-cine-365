@@ -1,29 +1,30 @@
 # Selector Cine 365
 
-## Manual completo de uso: Windows y Android
+## Manual completo de uso: Windows, macOS y Android
 
-**Edición:** Beta 9 (guía de pruebas)  
+**Edición:** v9 Beta 12 (guía de pruebas, no versión estable)  
 **Fecha:** 20 de noviembre de 2026  
 **Autor del programa:** Cristian Barallobre Rúa  
-**Objeto de este manual:** biblioteca, películas vistas, listas, sorteo, estadísticas, TMDB, copias y sincronización con OneDrive.
+**Objeto de este manual:** biblioteca, películas vistas, listas, búsqueda global, sorteo, estadísticas, TMDB, copias y sincronización opcional con OneDrive.
 
-> Este manual se aplica al funcionamiento previsto de Selector Cine 365 en sus betas de Windows y Android. Puede haber diferencias entre versiones. Antes de probar nuevas betas, exporta una copia JSON y conserva una versión anterior. La nube es opcional: la biblioteca también funciona sin Internet ni clave TMDB.
+> Este manual describe la v9 Beta 12 para Windows, Android y Mac. La interfaz de escritorio se comparte entre Windows (WebView2) y Mac (WKWebView); Android tiene navegación propia. No se ha validado toda la funcionalidad en hardware Mac real. Antes de probar nuevas betas, exporta una copia JSON y conserva una versión anterior. La nube es opcional: la biblioteca también funciona sin Internet ni clave TMDB.
 
 ## 1. Primeros pasos y conceptos básicos
 
 Selector Cine 365 permite guardar colecciones de películas, identificar cuáles has visto, filtrar las pendientes, elegir una película al azar y consultar estadísticas. Cada lista tiene sus propios títulos. Las marcas de visto pueden reconciliarse entre listas cuando se reconoce la misma película.
 
-En Windows las secciones principales son **Biblioteca**, **Estadísticas**, **Mis listas** e **Instrucciones**. En Android se utilizan las pestañas **Biblioteca**, **Sorteo**, **Estadísticas**, **Listas**, **Nube** y **Ayuda**. La navegación puede variar por el tamaño de la pantalla.
+En Windows y Mac las secciones principales son **Biblioteca**, **Estadísticas**, **Mis listas** e **Instrucciones**. En Android se utilizan las pestañas **Biblioteca**, **Sorteo**, **Estadísticas**, **Listas**, **Nube** y **Ayuda**. La navegación puede variar por el tamaño de la pantalla.
 
 **No es obligatorio configurar todo al empezar.** Puedes crear listas y marcar películas como vistas sin conectar OneDrive y sin añadir una clave de TMDB. Si más adelante activas la nube, revisa primero los cambios antes de unir dispositivos.
 
 ## 2. Biblioteca y películas vistas
 
 1. Elige arriba la lista que quieras consultar.
-2. Usa **Buscar película** para encontrar un título. Los filtros **Todas**, **Pendientes** y **Vistas** limitan lo que aparece, sin borrar películas.
+2. Usa **Buscar película** con **Lista actual** o **Todas las listas**. En la búsqueda global solo se muestran fichas cuando se escribe un título; se agrupan entradas equivalentes por TMDB o título/año, sin duplicados. Los filtros **Todas**, **Pendientes** y **Vistas** limitan lo que aparece, sin borrar películas.
 3. Para marcar como vista una película, pulsa **únicamente la casilla cuadrada con el tick**, situada en su ficha. Pulsa de nuevo esa casilla para volver a pendiente.
 4. Tocar el cartel, el título o el resto de la ficha **no debe cambiar** su estado. Los otros botones pueden abrir información o permitir corregir la identificación.
-5. En Windows puedes pasar entre páginas con números, flechas y, cuando se muestre, el campo para ir a una página concreta. En Android la biblioteca puede mostrar **Cargar más** para ampliar el listado sin perder la posición.
+5. En Windows y Mac puedes pasar entre páginas con números, flechas y, cuando se muestre, el campo para ir a una página concreta. En Android la biblioteca puede mostrar **Cargar más** para ampliar el listado sin perder la posición.
+6. Cada ficha muestra **año y valoración TMDB** cuando existen datos (no es IMDb), además de **Listas: 1, 2, …**. Pulsa un número para ir a esa lista o el icono de edición para añadir o quitar esa película de otras listas. La numeración se actualiza cuando cambia el orden de las listas; sus IDs internos permanecen iguales.
 
 Si una marca cambia también en otra lista, comprueba que se trate realmente de la misma película, especialmente cuando existan títulos iguales y años distintos. Antes de importar muchas películas, guarda una copia JSON.
 
@@ -41,7 +42,7 @@ Para añadir películas puedes escribirlas individualmente o importar una relaci
 
 La casilla vacía significa pendiente; la marcada, vista. Se admite numeración en muchas listas. Revisa títulos y años antes de confirmar, especialmente si la app detecta duplicados. Si dos listas incluyen una película identificada como la misma, la marca puede aplicarse a ambas.
 
-En Windows, **Mis listas** incorpora números de página para moverte por todas las colecciones, además de **Anterior**, **Siguiente** y el salto directo por número. Si comparas listas, las coincidencias se muestran como consulta en la biblioteca; esa vista puede ser de solo lectura.
+En Windows y Mac, **Mis listas** incorpora números de página para moverte por todas las colecciones, además de **Anterior**, **Siguiente** y el salto directo por número. Si comparas listas, las coincidencias se muestran como consulta en la biblioteca; esa vista puede ser de solo lectura.
 
 **Antes de eliminar una lista**, exporta una copia JSON. La sincronización experimental puede conservar datos de otros dispositivos cuando se realizan eliminaciones o cambios de nombre simultáneos.
 
@@ -60,7 +61,7 @@ El sorteo no elimina la película de tu lista. Si filtras por plataforma, recuer
 
 La sección **Estadísticas** resume títulos totales, vistas y pendientes. Según los datos de tus listas y de TMDB, también puede mostrar décadas, años, géneros, países, directores, progreso y otros apartados.
 
-En Android las estadísticas se recorren mediante desplazamiento vertical; no hace falta ir abriendo paneles con flechas. Una estadística puede faltar cuando la película no tiene suficientes datos identificados. No es necesario volver a consultar TMDB cada vez que se abre la aplicación.
+En **Windows y Mac**, los paneles de estadísticas con paginación mantienen los controles en la parte inferior aunque la última página tenga menos filas. En **Android** se recorren mediante desplazamiento vertical; no hace falta ir abriendo paneles con flechas. Una estadística puede faltar cuando la película no tiene suficientes datos identificados. No es necesario volver a consultar TMDB cada vez que se abre la aplicación.
 
 ## 6. Conectar TMDB: carteles, valoraciones y plataformas
 
@@ -82,8 +83,9 @@ Las listas se guardan localmente en cada dispositivo. El guardado no depende de 
 
 **Consejo de seguridad:** exporta una copia antes de importar muchas películas, eliminar listas, conectar un dispositivo por primera vez o instalar una beta nueva. Conserva el archivo en un lugar distinto de la carpeta de sincronización. Comprueba que puedes leerlo antes de borrar una instalación anterior.
 
-**Windows:** las betas pueden compartir el mismo almacén local con versiones previas. No abras dos ejecutables de Windows simultáneamente.  
-**Android:** algunas betas se instalan como aplicaciones distintas para proteger las anteriores. Para trasladar listas, usa exportación e importación JSON; puede que debas conectar Microsoft y TMDB otra vez.
+**Windows:** las betas comparten el mismo almacén local con versiones previas. No abras dos ejecutables simultáneamente.  
+**macOS:** reemplaza la aplicación anterior en Aplicaciones; conserva las listas de `~/Library/Application Support/AtlasDelCine/`. Mac usa el mismo frontend que Windows y firma ad hoc no notarizada.  
+**Android:** Beta 11 y 12 usan el paquete `es.cine365.app` y requieren la misma clave de firma, por lo que Beta 12 actualiza Beta 11. Beta 9 (`es.cine365.app.v9beta9`) necesita **una migración mediante exportar/importar JSON**, porque su firma e identificador son distintos. No desinstales Beta 9 antes de verificar el JSON fuera de la app.
 
 Si desactivas la nube, las películas siguen guardadas localmente. Desconectar una cuenta de OneDrive no significa borrar sus archivos remotos.
 
@@ -91,9 +93,9 @@ Si desactivas la nube, las películas siguen guardadas localmente. Desconectar u
 
 **Recomendación para una instalación nueva:** utiliza una carpeta de OneDrive llamada `Selector_Cine_365`. Ese nombre es solo una sugerencia; si ya sincronizas con otra carpeta, **no la renombres ni la muevas** sin realizar antes una copia JSON y volver a configurar los dos dispositivos.
 
-### Paso 1. Prepara Windows
+### Paso 1. Prepara Windows o macOS
 
-Instala el cliente de OneDrive en el PC e inicia sesión. Dentro de OneDrive crea o elige la carpeta `Selector_Cine_365`. En Selector Cine 365 Windows abre la configuración de nube, usa **Elegir carpeta**, selecciona la ruta local sincronizada y activa la copia. Espera a que OneDrive complete su sincronización.
+Instala el cliente de OneDrive en el equipo de escritorio e inicia sesión. Dentro de OneDrive crea o elige la carpeta `Selector_Cine_365`. En Selector Cine 365 Windows o Mac abre la configuración de nube, usa **Elegir carpeta**, selecciona la ruta local sincronizada y activa la copia. Espera a que OneDrive complete su sincronización.
 
 ### Paso 2. Conecta Android
 
@@ -101,11 +103,11 @@ En el móvil entra en **Nube → Conectar cuenta Microsoft**. Se abrirá la pág
 
 ### Paso 3. Elige la misma carpeta
 
-En Android actualiza o consulta la lista de carpetas de OneDrive. Selecciona `Selector_Cine_365` o crea esa carpeta si todavía no existe. Pulsa **Utilizar esta carpeta**. **La carpeta debe ser exactamente la misma que usa Windows**, aunque Android la vea mediante Microsoft Graph y Windows como una ruta local.
+En Android actualiza o consulta la lista de carpetas de OneDrive. Selecciona `Selector_Cine_365` o crea esa carpeta si todavía no existe. Pulsa **Utilizar esta carpeta**. **La carpeta debe ser exactamente la misma que usa Windows o Mac**, aunque Android la vea mediante Microsoft Graph y Windows como una ruta local.
 
 ### Paso 4. Primera revisión manual
 
-En **los dos dispositivos**, pulsa **Revisar sincronización**. Lee el resumen de listas, películas vistas y cambios detectados; resuelve cualquier conflicto y confirma. Esta revisión inicial es obligatoria para evitar que una biblioteca antigua sobrescriba otra.
+En **los dispositivos vinculados**, pulsa **Revisar sincronización**. Lee el resumen de listas, películas vistas y cambios detectados; resuelve cualquier conflicto y confirma. Esta revisión inicial es obligatoria para evitar que una biblioteca antigua sobrescriba otra.
 
 ### Paso 5. Uso habitual
 
@@ -141,20 +143,28 @@ Para conectar OneDrive en Android, el desarrollador registró **Selector Cine 36
 
 Para rehacer la configuración del desarrollador o resolver incidencias de autorización, consulta el documento específico del repositorio: **Guía de Azure, Microsoft Entra y OneDrive de Selector Cine 365**. No publiques contraseñas, secretos, claves de sesión ni tokens en GitHub.
 
-## 12. Problemas habituales y soluciones
+## 12. Historial local, sincronizar ahora y recuperar copias
+
+**Actualizar historial** no pide nuevos datos a OneDrive. Consulta el registro local de cambios realizados o recibidos por las versiones que implementan esa función, indica la hora de comprobación y cuántos movimientos muestra. Si está vacío, un mensaje sencillo explica que no existen eventos registrados: **no** implica que tus listas estén vacías ni que haya ocurrido un fallo. Las versiones antiguas no pueden aportar retrospectivamente cambios que nunca registraron.
+
+**Sincronizar ahora** fuerza la comprobación de cambios de la nube cuando ya está configurada. **Revisar sincronización** permite inspeccionar los cambios y resolver conflictos antes de confirmar. Son funciones diferentes.
+
+Las **copias de recuperación** permiten restaurar estados anteriores con confirmación. Antes de restaurar, exporta un JSON adicional: restaurar puede generar revisiones nuevas que se compartirán si la nube está activada.
+
+## 13. Problemas habituales y soluciones
 
 | Síntoma | Qué comprobar |
 |---|---|
-| Android no responde al tocar o deslizar | Comprueba qué versión beta estás usando. La Beta 9 elimina el bloqueo general de interfaz durante la recepción automática. No toques controles de Nube mientras se muestra un progreso; si se repite, anota los pasos y el tiempo de bloqueo. |
+| Android no responde al tocar o deslizar | Comprueba qué versión beta estás usando. La v9 conserva la corrección que elimina el bloqueo general de interfaz durante la recepción automática. No toques controles de Nube mientras se muestra un progreso; si se repite, anota los pasos y el tiempo de bloqueo. |
 | No aparece la carpeta de OneDrive en Android | Conecta primero tu cuenta Microsoft dentro de Nube. El selector local de Android no equivale a OneDrive. Pulsa Actualizar carpetas. |
 | Windows y Android no ven los mismos datos | Verifica que ambos apuntan a la misma carpeta y que OneDrive ha terminado de copiarla. Comprueba que la primera sincronización se confirmó. |
 | La app pide revisar un conflicto | Entra en Revisar sincronización, examina las películas indicadas y elige un estado. No borres copias para forzar la operación. |
 | No aparecen carteles o plataformas | Comprueba la clave de TMDB, la conexión y la disponibilidad de esos títulos. Revisa TMDB manualmente; no borres las listas. |
 | Android solicita iniciar sesión de nuevo | Vuelve a conectar Microsoft en la app. Los tokens de acceso pueden caducar o revocarse. |
-| Se abre CMD al ejecutar Windows | Comprueba que arrancas el EXE de Beta 8 o posterior; las versiones antiguas Beta 5 tuvieron un empaquetado de consola. |
+| Se abre CMD al ejecutar Windows | Comprueba que arrancas el EXE Beta 12 con subsistema Windows GUI. Algunas betas antiguas abrían consola. |
 | No se reconocen películas tras importar | Revisa el formato de texto, los títulos y los años. Importa desde una copia JSON válida cuando quieras recuperar toda la biblioteca. |
 
-## 13. Privacidad, límites y buenas prácticas
+## 14. Privacidad, límites y buenas prácticas
 
 Selector Cine 365 guarda tus colecciones localmente. Si activas OneDrive, publicará archivos de sincronización en la carpeta autorizada de tu cuenta Microsoft para compartirlos entre tus dispositivos. TMDB se utiliza para obtener información cinematográfica y plataformas, no para guardar tu biblioteca.
 
@@ -162,10 +172,12 @@ No compartas la carpeta de sincronización con terceros, no publiques tu bibliot
 
 Las betas son versiones de prueba y pueden tener errores. La sincronización segura intenta preservar las marcas y avisar en conflictos, pero ninguna aplicación sustituye las copias de seguridad independientes. Si se presenta un fallo, conserva los archivos, anota el dispositivo y la versión, y consulta el historial del repositorio antes de actualizar.
 
-## 14. Enlaces útiles
+## 15. Enlaces útiles
 
 - Proyecto y versiones: <https://github.com/cristianbarallobre/selector-cine-365>
-- Manual completo (esta guía): <https://github.com/cristianbarallobre/selector-cine-365/blob/v9-android-beta/docs/MANUAL_COMPLETO_SELECTOR_CINE_365.pdf>
-- Guía de Microsoft Azure, Entra y OneDrive: <https://github.com/cristianbarallobre/selector-cine-365/blob/v9-android-beta/docs/GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.md>
+- Manual completo (esta guía): <https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/MANUAL_COMPLETO_SELECTOR_CINE_365.pdf>
+- Guía de Microsoft Azure, Entra y OneDrive: <https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.md>
 - TMDB: <https://www.themoviedb.org/>
 - Portal Microsoft Azure: <https://portal.azure.com/>
+- Instrucciones Mac: <https://github.com/cristianbarallobre/selector-cine-365/blob/main/MACOS.md>
+- Guía Android: <https://github.com/cristianbarallobre/selector-cine-365/blob/main/android/LEEME_ANDROID_v9_BETA.md>
