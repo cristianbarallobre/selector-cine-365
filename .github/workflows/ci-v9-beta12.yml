@@ -1,7 +1,7 @@
 name: CI Selector Cine 365 v9 Beta 12 Windows y Android
 on:
   push:
-    branches: ['feature/v9-beta12-search-statistics']
+    branches: ['feature/v9-beta12-listas-historial-android']
   workflow_dispatch:
 permissions:
   contents: read
