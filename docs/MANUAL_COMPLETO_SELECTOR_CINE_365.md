@@ -2,12 +2,16 @@
 
 ## Manual completo de uso: Windows, macOS y Android
 
-**Edición:** v9 Beta 12 (guía de pruebas, no versión estable)  
+**Edición:** v9 Beta 12.2 para Android; Windows y macOS mantienen v9 Beta 12 (guía de pruebas, no versión estable)  
 **Fecha:** 20 de noviembre de 2026  
 **Autor del programa:** Cristian Barallobre Rúa  
 **Objeto de este manual:** biblioteca, películas vistas, listas, búsqueda global, sorteo, estadísticas, TMDB, copias y sincronización opcional con OneDrive.
 
 > Este manual describe la v9 Beta 12 para Windows, Android y Mac. La interfaz de escritorio se comparte entre Windows (WebView2) y Mac (WKWebView); Android tiene navegación propia. No se ha validado toda la funcionalidad en hardware Mac real. Antes de probar nuevas betas, exporta una copia JSON y conserva una versión anterior. La nube es opcional: la biblioteca también funciona sin Internet ni clave TMDB.
+
+## Correcciones de pantalla de Android Beta 12.1 y 12.2
+
+En móviles con notch o cámara frontal recortada, **Beta 12.1** adaptó el contenido a las zonas seguras de Android mediante `WindowInsets`, `systemBars` y `displayCutout`. Algunos Redmi dejaron una franja vacía bajo el menú porque el CSS sumaba nuevamente el margen inferior. **Beta 12.2 (versionCode 9014)** elimina esa doble reserva para que las pestañas queden encima de la navegación del sistema, conservando la protección del notch. Se puede instalar sobre Beta 11, 12 y 12.1 con la misma firma, sin desinstalar y preservando los datos locales. Desde Beta 9 se necesita exportar e importar JSON. Windows/Mac no requieren cambios. Falta validación visual definitiva en el móvil real.
 
 ## 1. Primeros pasos y conceptos básicos
 

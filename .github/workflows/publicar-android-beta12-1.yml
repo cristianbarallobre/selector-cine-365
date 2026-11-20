@@ -1,0 +1,92 @@
+name: Publicar v9 Beta 12.1 - notch Android y Windows/Mac sin cambios
+on:
+  push:
+    branches: ['fix/android-safe-area-cutout-v9-beta12-1']
+    paths:
+      - '.github/workflows/publicar-android-beta12-1.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: cine-beta12-1-release
+  cancel-in-progress: false
+jobs:
+  distribuir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Recuperar APK UNSIGNED exacta de CI aprobada
+        uses: actions/download-artifact@v4
+        with:
+          name: Selector_Cine_365_Android_v9_BETA12_1_unsigned
+          repository: cristianbarallobre/selector-cine-365
+          run-id: 44805453998
+          github-token: ${{ github.token }}
+          path: unsigned
+      - name: Regresiones e integridad del delta público
+        run: |
+          node scripts/test_android_safe_area_beta12_1.cjs
+          echo "261447339e03dd0f9688f9f26f4f14688919c5bfb1c3214654ed59df9263f457  scripts/release/beta12_1_android_signed_delta.b64" | sha256sum -c
+          test -s unsigned/Selector_Cine_365_Android_v9_BETA12_1_UNSIGNED.apk
+      - name: Reconstruir APK firmada original y verificar certificado y firma v2-v3
+        run: |
+          mkdir -p dist
+          python3 scripts/release/reconstruct_signed_beta12_1.py \
+            unsigned/Selector_Cine_365_Android_v9_BETA12_1_UNSIGNED.apk \
+            scripts/release/beta12_1_android_signed_delta.b64 \
+            dist/Selector_Cine_365_Android_v9_BETA12_1.apk
+          java -jar unsigned/android-tools/lib/apksigner.jar verify --verbose --print-certs \
+            dist/Selector_Cine_365_Android_v9_BETA12_1.apk | tee /tmp/cine-apksigner.txt
+          grep -Fx 'Verified using v2 scheme (APK Signature Scheme v2): true' /tmp/cine-apksigner.txt
+          grep -Fx 'Verified using v3 scheme (APK Signature Scheme v3): true' /tmp/cine-apksigner.txt
+          grep -Fx 'Signer #1 certificate SHA-256 digest: b8a17f39e4fa24d7c110d452161425c7524412c3a5a4d7459b1132ffd0825fb6' /tmp/cine-apksigner.txt
+          echo '16b833b71d67139a5fdf4c4c91f107195e56ac6420f5b00ad648652d7d9e106b  dist/Selector_Cine_365_Android_v9_BETA12_1.apk' | sha256sum -c
+      - name: Reutilizar EXACTAMENTE los paquetes Windows/Mac originales de Beta12
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download v9.0.0-beta.12 \
+            --pattern 'Selector_Cine_365_Windows_v9_BETA12.zip' --dir dist
+          gh release download v9.0.0-beta.12 \
+            --pattern 'Selector_Cine_365_Mac_Apple_Silicon_v9_BETA12.zip' --dir dist
+          gh release download v9.0.0-beta.12 \
+            --pattern 'Selector_Cine_365_Mac_Intel_v9_BETA12.zip' --dir dist
+          echo '80afe9f2ee9e0dba29aa5d3cd90efe3f435b2931a127dee5da1375bbf5b5a35f  dist/Selector_Cine_365_Windows_v9_BETA12.zip' | sha256sum -c
+          echo '201020f325b972ca44207812bbe3bbc3f77ba9b4b0048e837cb226e5c0ee9ec3  dist/Selector_Cine_365_Mac_Apple_Silicon_v9_BETA12.zip' | sha256sum -c
+          echo 'dfa1c29753367c91cc8906957057960fe2b2fec6509fe5a5ec30a1d6908345ec  dist/Selector_Cine_365_Mac_Intel_v9_BETA12.zip' | sha256sum -c
+          unzip -t dist/Selector_Cine_365_Windows_v9_BETA12.zip | tail -1
+          unzip -t dist/Selector_Cine_365_Mac_Apple_Silicon_v9_BETA12.zip | tail -1
+          unzip -t dist/Selector_Cine_365_Mac_Intel_v9_BETA12.zip | tail -1
+          cp docs/MANUAL_COMPLETO_SELECTOR_CINE_365.pdf dist/
+          cp docs/GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.pdf dist/
+          cp docs/Selector_Cine_365_Historial_v9_BETA12.pdf dist/
+          cp docs/Selector_Cine_365_Historial_v9_BETA12.docx dist/
+      - name: Publicar release coordinada v9 Beta 12.1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=v9.0.0-beta.12.1
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+            gh release edit "$TAG" --notes-file RELEASE_NOTES_v9_BETA12_1.md --prerelease
+          else
+            gh release create "$TAG" dist/* \
+              --target "$GITHUB_SHA" --prerelease \
+              --title 'Selector Cine 365 v9 Beta 12.1 — Android notch hotfix' \
+              --notes-file RELEASE_NOTES_v9_BETA12_1.md
+          fi
+          echo "Release: https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Selector_Cine_365_v9_BETA12_1_Distribucion
+          path: dist/*
+          if-no-files-found: error

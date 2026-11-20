@@ -1,16 +1,22 @@
-# Selector Cine 365 — Android v9 Beta 12
+# Selector Cine 365 — Android v9 Beta 12.2
 
 **Autor:** Cristian Barallobre Rúa. **Estado:** versión beta experimental para Android 8.0+ (API 26). Conserva funcionamiento local sin cuenta Microsoft y sin clave TMDB.
 
+## Actualización Beta 12.2: notch y barra inferior adaptables
+
+Beta 12.1 corrigió el título tapado por la cámara frontal/notch utilizando los `WindowInsets` nativos de `systemBars` y `displayCutout`. En algunos Redmi, la barra inferior quedaba demasiado arriba porque el HTML sumaba de nuevo `env(safe-area-inset-bottom)` a un espacio que Android ya había reservado. **Beta 12.2 elimina esa segunda reserva**, manteniendo el ajuste nativo en los cuatro lados; no se usa un margen fijo por modelo. Debe comprobarse visualmente en el Redmi con gestos, botones clásicos y rotación antes de considerarlo completamente validado.
+
+**Si tienes Beta 11, Beta 12 o Beta 12.1:** instala Beta 12.2 directamente encima, **sin desinstalar**. Conserva `es.cine365.app` y la misma firma; el código de versión pasa a `9014`. Recomendamos una copia JSON antes de actualizar.
+
 ## Instalación: elegir la situación correcta
 
-**Si ya utilizas Beta 11 con el paquete `es.cine365.app`:** exporta por precaución un JSON, instala la APK **firmada** Beta 12 (versionCode `9012`) como actualización de `9011`. Debe conservar tus datos siempre que el certificado sea el **mismo que Beta 11**. No desinstales previamente.
+**Si ya utilizas Beta 11 con el paquete `es.cine365.app`:** exporta por precaución un JSON, instala la APK **firmada** Beta 12.2 (versionCode `9014`) como actualización de `9011`, `9012` o `9013`. Debe conservar tus datos siempre que el certificado sea el **mismo que Beta 11**. No desinstales previamente.
 
-**Si todavía tienes Beta 9 (`es.cine365.app.v9beta9`)**: su identificador y firma son diferentes, por lo que **no se puede actualizar directamente** conservando el almacenamiento privado. Antes de desinstalar, exporta un JSON fuera de la app, comprueba su existencia, desinstala Beta 9 si no quieres dos apps, instala la Beta 12 firmada, importa el JSON y revisa listas y marcas **sin conectar OneDrive aún**. Solo después reconecta y confirma una primera revisión de sincronización.
+**Si todavía tienes Beta 9 (`es.cine365.app.v9beta9`)**: su identificador y firma son diferentes, por lo que **no se puede actualizar directamente** conservando el almacenamiento privado. Antes de desinstalar, exporta un JSON fuera de la app, comprueba su existencia, desinstala Beta 9 si no quieres dos apps, instala la Beta 12.2 firmada, importa el JSON y revisa listas y marcas **sin conectar OneDrive aún**. Solo después reconecta y confirma una primera revisión de sincronización.
 
 **Las APK de `assembleRelease` de GitHub Actions salen SIN FIRMA cuando la clave privada no se ha configurado allí. No las instales ni publiques como versión oficial.** La clave de firma debe guardarse aparte, fuera de GitHub, y reutilizarse para las siguientes betas. Mantener `applicationId 'es.cine365.app'` y aumentar `versionCode` en cada actualización.
 
-## Lo que incluye Beta 12
+## Lo que incluye Beta 12.2
 
 - Búsqueda en lista actual y **todas las listas**, con coincidencias agrupadas por identidad TMDB o título/año.
 - Listas numeradas en selector y gestión; cada ficha indica a cuáles pertenece y permite navegar o editar pertenencia.

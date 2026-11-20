@@ -2,10 +2,12 @@
 
 **Selector Cine 365 · Actualizada el 20 de noviembre de 2026**
 
-## Cuatro releases públicas
+## Releases públicas y versiones históricas
 
 | Publicación | Estado | Activos |
 |---|---|---|
+| [v9 Beta 12.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.2) | **Beta más reciente**, Android y escritorio sin cambios | APK Android 9014, Windows/Mac Beta 12 y documentación |
+| [v9 Beta 12.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.1) | Histórica: primer arreglo notch | APK Android 9013 y escritorio original |
 | [v9 Beta 12](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12) | Beta para pruebas | Windows, Android, Mac Apple Silicon, Mac Intel y dos manuales PDF |
 | [v9 Beta 9](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.9) | Histórica | APK y ZIP de Windows originales |
 | [v8.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.2) | Histórica | Windows y dos variantes de Mac |

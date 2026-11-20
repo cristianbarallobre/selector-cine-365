@@ -9,7 +9,7 @@
 <meta name="author" content="Cristian Barallobre Rúa">
 <meta name="copyright" content="© 2026 Cristian Barallobre Rúa">
 <meta name="application-name" content="Selector de Cine 365">
-<title>Selector Cine 365 · Android v9 Beta 12</title>
+<title>Selector Cine 365 · Android v9 Beta 12.2</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1018;--panel:#171f2b;--panel2:#1b2735;--line:#314052;--subtle:#94a2b5;--light:#f4f6fa;--gold:#f3c66d;--gold2:#d59b40;--green:#a4e4bc;--red:#e5a6a6;--r:19px}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 960px 510px at 88% -10%,#263649 0%,transparent 76%),var(--bg);color:var(--light);font-family:'Segoe UI',system-ui,Arial,sans-serif;font-size:15px;min-height:100vh}button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
@@ -281,7 +281,7 @@ h2{font-size:19px}
 <style>
 /* Android v8.3. UI mobile-first: touch targets >= 44px and vertical scrolling. */
 html,body{height:auto!important;min-height:100%!important;overflow:visible!important;-webkit-text-size-adjust:100%!important;overscroll-behavior-y:contain}
-body{font-size:16px!important;padding-bottom:calc(94px + env(safe-area-inset-bottom,0px))!important;background:#0c131e!important}
+body{font-size:16px!important;padding-bottom:94px!important;background:#0c131e!important}
 main{width:100%!important;max-width:none!important;padding:18px 14px 22px!important;min-height:0!important;height:auto!important;overflow:visible!important}
 .header{gap:10px!important;margin-bottom:12px!important}.brand{width:48px!important;height:48px!important;flex:0 0 48px}.brand svg{width:37px!important;height:37px!important}
 .eyebrow{font-size:11px!important;letter-spacing:.08em!important}
@@ -310,7 +310,7 @@ h2{font-size:20px!important}.platform-controls{margin-left:0!important;justify-c
 .page-controls{display:flex!important;justify-content:center!important;align-items:center!important;min-height:54px!important;margin:12px 0!important}
 #filmPrev,#filmPageNumbers,#filmPageGotoForm,.pager-details{display:none!important}.film-page-center{display:none!important}
 #filmNext{width:100%!important;min-height:49px!important;font-size:15px!important}
-.mobile-bottom-nav{position:fixed;display:grid;grid-template-columns:repeat(5,1fr);bottom:0;left:0;right:0;z-index:90;background:#111d2bf5;backdrop-filter:blur(16px);border-top:1px solid #4a607c;padding:6px 3px calc(7px + env(safe-area-inset-bottom,0px))!important;box-shadow:0 -10px 32px #0008}
+.mobile-bottom-nav{position:fixed;display:grid;grid-template-columns:repeat(5,1fr);bottom:0;left:0;right:0;z-index:90;background:#111d2bf5;backdrop-filter:blur(16px);border-top:1px solid #4a607c;padding:6px 3px 7px!important;box-shadow:0 -10px 32px #0008}
 .mobile-tab{background:transparent;border:0;color:#9aaec4;min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10px;font-weight:750;padding:3px 1px;border-radius:11px}
 .mobile-tab-icon{font-size:24px!important;line-height:29px!important}.mobile-tab.active{color:#ffe0a1;background:#302f2e}.mobile-tab:active{background:#3c4149}
 #view-sort .panel,#view-statistics .panel,#view-collections .panel,#view-settings .panel{margin:0!important}
@@ -354,7 +354,7 @@ input,textarea,select{font-size:16px!important}textarea{min-height:150px!importa
 /* v9: fixed branding, fixed collection selector and fixed tab bar; only the active view scrolls. */
 html,body{height:100%!important;min-height:0!important;overflow:hidden!important;margin:0!important;overscroll-behavior:none!important}
 body{height:100dvh!important;padding:0!important;display:flex!important;flex-direction:column!important}
-main{width:100%!important;height:100dvh!important;max-height:100dvh!important;min-height:0!important;max-width:700px!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;flex:1 1 auto!important;padding:12px 13px calc(76px + env(safe-area-inset-bottom,0px))!important;margin:0 auto!important;box-sizing:border-box!important}
+main{width:100%!important;height:100dvh!important;max-height:100dvh!important;min-height:0!important;max-width:700px!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;flex:1 1 auto!important;padding:12px 13px 76px!important;margin:0 auto!important;box-sizing:border-box!important}
 .header{flex:0 0 auto!important;min-height:69px!important;margin:0!important;padding:4px 0 12px!important;border-bottom:1px solid #51637d!important;align-items:center!important;gap:8px!important}
 .header .brand{background:none!important;border:0!important;box-shadow:none!important;width:55px!important;height:55px!important;flex:0 0 55px!important;border-radius:12px!important;overflow:hidden!important}
 .brand-image{width:100%!important;height:100%!important;display:block!important;object-fit:contain!important}
@@ -502,6 +502,12 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
 .membership-options{display:flex;flex-direction:column;gap:6px;max-height:min(48dvh,340px);overflow:auto;padding:4px 2px}
 .membership-intro{font-size:13px;line-height:1.5;color:#c3cfdd}
 @media(max-width:650px){.film-memberships-numbers{max-width:114px}.film-filmmeta{gap:3px}.film-filmmeta .film-rating{font-size:9px}.film-memberships-title{font-size:9px}}
+</style>
+<style id="cine-android-beta12-2-safe-nav">
+/* El FrameLayout nativo YA descuenta los insets reales de Android. Un padding
+   adicional con la variable CSS de área segura desplaza la barra demasiado arriba.
+   Un único responsable para cada inset: nativo, no CSS. */
+.mobile-bottom-nav{padding-bottom:7px!important;bottom:0!important}
 </style>
 </head>
 <body>
@@ -1243,7 +1249,7 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
     <div class="brand" aria-hidden="true"><img src="/assets/icon.png" class="brand-image" alt=""></div>
     <div><div class="eyebrow">SELECTOR CINE 365</div><h1>¿Qué película veo hoy?</h1></div>
     <div class="header-side">
-      <div class="header-tag">🎞️ CINE 365 · ANDROID BETA 12</div>
+      <div class="header-tag">🎞️ CINE 365 · ANDROID BETA 12.2</div>
       <div class="saved" id="saveState" aria-live="polite">✓ Guardado</div>
       <div class="creator-credit" title="© 2026 Cristian Barallobre Rúa">Hecho por <strong>Cristian Barallobre Rúa</strong></div>
     </div>
