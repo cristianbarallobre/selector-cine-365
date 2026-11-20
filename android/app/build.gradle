@@ -7,19 +7,18 @@ android {
         applicationId 'es.cine365.app'
         minSdk 26
         targetSdk 35
-        versionCode 9010
-        versionName '9.0.0-beta.10'
+        versionCode 9011
+        versionName '9.0.0-beta.11'
     }
     buildFeatures { buildConfig true }
     // Public identifier, NOT a secret. Configured by repository owner in GitHub Actions Variables.
     def microsoftClientId = (System.getenv('MICROSOFT_CLIENT_ID') ?: '').trim()
     defaultConfig { buildConfigField 'String', 'MICROSOFT_CLIENT_ID', '"' + microsoftClientId.replace('"','') + '"' }
+    // Identificador permanente, también para futuras actualizaciones firmadas.
+    // No utilizar sufijos de versión en applicationId.
     buildTypes {
-        debug {
-            // Install alongside the old Android test app; never uninstall user data.
-            applicationIdSuffix '.v9beta10'
-            versionNameSuffix '-test'
-        }
+        debug { }
+        release { }
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
 }
