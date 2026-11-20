@@ -4,6 +4,10 @@ on:
     branches: ['fix/v9-beta13-sync-lists-tmdb-persistence']
     paths:
       - '.github/workflows/ci-v9-beta13.yml'
+      - 'scripts/test_v9_beta13.cjs'
+      - 'sync_*.go'
+      - 'plantilla.html'
+      - 'android/app/src/**'
   workflow_dispatch:
 permissions:
   contents: read
