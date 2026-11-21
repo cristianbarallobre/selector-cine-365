@@ -56,4 +56,19 @@ public final class ListIdentityIsolationTest {
         assertEquals("Colección de cine",merged.library.getJSONArray("lists").getJSONObject(0).getString("name"));
         assertEquals(2,SyncStore.statuses(merged.library).length());
     }
+    @Test public void pollutedSupersetCannotExpandCorrectList()throws Exception{
+        StringBuilder clean=new StringBuilder();
+        StringBuilder contaminated=new StringBuilder();
+        for(int i=0;i<40;i++){
+            String line="☐ Película "+i+" (2000)";
+            clean.append(line).append("\n");contaminated.append(line).append("\n");
+        }
+        for(int i=0;i<40;i++)contaminated.append("☐ Película ajena "+i+" (2010)\n");
+        JSONObject windows=library(list("lista","Favoritas",clean.toString()));
+        JSONObject android=library(list("lista","Favoritas",contaminated.toString()));
+        try{merge(windows,android);fail("A polluted superset must not be accepted as a larger legitimate list");}
+        catch(Exception e){assertTrue(e.getMessage(),e.getMessage().contains("Sincronización detenida"));}
+        assertEquals(40,SyncStore.statuses(windows).length());
+    }
+
 }
