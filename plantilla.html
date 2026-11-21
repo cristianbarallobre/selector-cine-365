@@ -47,6 +47,10 @@ main{max-width:1250px;padding:28px 28px 32px;margin:auto}.header{display:flex;al
 .view[hidden]{display:none!important}.tool-wide{grid-column:span 2}
 .film-reorder-handle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 28px;width:28px;height:28px;min-height:28px;padding:0;border:1px solid #43546a;border-radius:7px;background:#29394a;color:#b9c8db;cursor:grab;touch-action:none;font-size:19px;line-height:1}
 .film-reorder-handle:active{cursor:grabbing}
+/* Tirador vertical, separado del título y con espacio propio a la izquierda. */
+#view-library .film-item{position:relative;padding-left:37px}
+#view-library .film-reorder-handle{position:absolute;left:6px;top:7px;bottom:7px;width:25px;height:auto;min-height:0;flex:none;border-radius:8px;font-size:20px;z-index:2}
+
 .film-item.reorder-moving{opacity:.58;border-color:var(--gold);background:#243244}
 .film-item.reorder-target{outline:2px solid var(--gold);outline-offset:-2px}
 
@@ -1031,7 +1035,7 @@ function renderList(){
    if(!global&&!virtualMode){
     const grip=document.createElement('button');grip.type='button';grip.className='film-reorder-handle';grip.textContent='⠿';
     grip.title='Arrastrar para cambiar el orden';grip.setAttribute('aria-label','Mover «'+f.title+'» a otra posición');
-    titleLine.appendChild(grip);attachFilmReorder(b,grip,f);
+    b.appendChild(grip);attachFilmReorder(b,grip,f);
    }
    main.appendChild(titleLine);
    const meta=document.createElement('span');meta.className='film-filmmeta';
