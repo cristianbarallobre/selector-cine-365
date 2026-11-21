@@ -59,7 +59,7 @@ main{max-width:1250px;padding:28px 28px 32px;margin:auto}.header{display:flex;al
 .title-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.film-name{min-width:0;flex:0 1 auto}.film-rating{border:1px solid #826941;color:#ffda91;border-radius:7px;padding:3px 6px;font-size:11px;font-weight:780;white-space:nowrap;background:#3a2f24}
 .film-toggle{gap:10px;min-width:0}.film-item{min-height:86px}.film-platforms{margin-top:4px}.film-sub{margin-top:4px}
 .select-label{display:block;color:#d2c197;font-size:11px;font-weight:800;letter-spacing:.12em;margin:13px 0 7px}
-.platform-select{display:block;width:100%;border:1px solid #6d614d;border-radius:11px;background:#282b31;color:#f2e0c1;padding:12px 12px;font-size:14px;font-weight:720;outline:none}
+.platform-select{cursor:pointer;display:block;width:100%;border:1px solid #6d614d;border-radius:11px;background:#282b31;color:#f2e0c1;padding:12px 12px;font-size:14px;font-weight:720;outline:none}
 .sort-count{font-size:12px;color:#b6c5d3;margin:7px 0 13px;min-height:16px}
 .pick{flex-direction:row;align-items:center;justify-content:flex-start;gap:17px}.result-copy{flex:1;min-width:0}.chosen-poster{height:154px;width:103px;border:1px solid #887253;border-radius:9px;object-fit:cover;flex:none}.chosen-poster[hidden]{display:none}
 .stats-hero{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
@@ -2151,6 +2151,28 @@ async function saveLocal(quiet=false){
   }
  }catch(err){if(epoch===saveEpoch)$('saveState').textContent='⚠ Error al guardar en el móvil';}
 }
+// Abrir TXT crea una colección independiente; nunca reemplaza la lista actual.
+function importTxtAsNewCollection(text,fileName){
+ const clean=String(text||'').replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
+ if(!parse(clean).entries.length)return {ok:false,message:'No se encontraron películas reconocibles en el TXT.'};
+ if(libraryState.lists.length>=40)return {ok:false,message:'Límite de 40 listas alcanzado. No se ha modificado ninguna lista.'};
+ const base=(String(fileName||'').replace(/\.txt$/i,'').trim()||'Lista importada').slice(0,100);
+ let name=base,number=2;
+ const occupied=new Set(libraryState.lists.map(x=>x.name.toLocaleLowerCase('es')));
+ while(occupied.has(name.toLocaleLowerCase('es'))){const suffix=' ('+(number++)+')';name=base.slice(0,100-suffix.length)+suffix;}
+ syncActiveText();
+ const id='lista_'+Date.now().toString(36)+'_'+Math.floor(Math.random()*100000).toString(36);
+ libraryState.lists.push({id,name,text:clean});
+ libraryState.active_id=id;
+ virtualMode=false;
+ rawText=clean;
+ reconcileWatched();
+ rawText=activeCollection().text||'';
+ restartList();
+ scheduleSave();
+ showView('library');
+ return {ok:true,name,count:parse(rawText).entries.length};
+}
 function replaceList(text){let clean=text.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');const test=parse(clean);if(!test.entries.length){$('message').textContent='No se encontraron películas.';return false;}
  rawText=clean;syncActiveText();reconcileWatched();rawText=activeCollection().text||'';restartList();scheduleSave();return true;
 }
@@ -3331,7 +3353,8 @@ $('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0
  if(bytes.length>=2 && bytes[0]===0xff && bytes[1]===0xfe)txt=new TextDecoder('utf-16le').decode(bytes);
  else if(bytes.length>=2 && bytes[0]===0xfe && bytes[1]===0xff)txt=new TextDecoder('utf-16be').decode(bytes);
  else {try{txt=new TextDecoder('utf-8',{fatal:true}).decode(bytes);}catch(err){txt=new TextDecoder('windows-1252').decode(bytes);}}
- notify(replaceList(txt)?`Lista cargada: ${file.name}`:'No se encontraron películas.');
+ const imported=importTxtAsNewCollection(txt,file.name);
+  notify(imported.ok?`Lista «${imported.name}» creada: ${imported.count} películas.`:imported.message);
  }
  catch(err){notify('No se pudo abrir el archivo.');}
  e.target.value='';
