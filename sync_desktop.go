@@ -270,7 +270,12 @@ func syncListIdentityError(local,remote filmCollection) error {
  starterCollision:=starterA!=starterB&&differentSets
  smaller:=len(ours);if len(theirs)<smaller{smaller=len(theirs)}
  unrelated:=matches*2<smaller
- if starterCollision||unrelated{
+ // An already contaminated peer can contain the whole true list plus
+ // hundreds of films from other lists. Overlap alone does not prove identity.
+ extraLeft,extraRight:=len(ours)-matches,len(theirs)-matches
+ excess:=extraLeft;if extraRight>excess{excess=extraRight}
+ unexpectedExpansion:=excess>=24&&excess*5>=smaller
+ if starterCollision||unrelated||unexpectedExpansion{
   return fmt.Errorf("Sincronización detenida: «%s» y «%s» comparten el ID %s pero parecen listas diferentes. No se han mezclado ni enviado datos. Conserva las copias antes de continuar",local.Name,remote.Name,local.ID)
  }
  return nil
