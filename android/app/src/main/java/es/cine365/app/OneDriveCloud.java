@@ -265,14 +265,16 @@ final class OneDriveCloud {
         String path="me/drive/items/"+Uri.encode(parentId)+"/children?$select=id,name,folder,file&$top=200";
         for(int page=0;page<25;page++){
             JSONObject result=toJson(graph(path,"GET",null,null));
-            JSONArray list=result.optJSONArray("value");if(list==null)break;
+            JSONArray list=result.optJSONArray("value");
+            if(list==null)throw new Exception("OneDrive devolvió un listado de archivos incompleto");
             for(int i=0;i<list.length();i++)all.put(list.getJSONObject(i));
             String next=result.optString("@odata.nextLink","");
-            if(next.isEmpty())break;
+            if(next.isEmpty())return all;
             if(!next.startsWith(GRAPH+"me/drive/"))throw new Exception("Paginación no reconocida de Microsoft Graph");
             path=next.substring(GRAPH.length());
         }
-        return all;
+        // Never merge a partial directory listing as if it were complete.
+        throw new Exception("OneDrive devolvió demasiadas páginas de archivos; sincronización cancelada para proteger tus datos");
     }
     synchronized JSONObject newDirectory(String parentId,String name)throws Exception{
         JSONObject existing=find(parentId,name);
