@@ -28,6 +28,10 @@ func (a *runningApp) serveGraphAuthHTTP(w http.ResponseWriter,r *http.Request){
   if a.cloud.status().Enabled {
    respond(409,map[string]string{"error":"Ya hay una carpeta configurada. Para cambiar a Graph, exporta primero una copia JSON y desactiva explícitamente la configuración anterior."});return
   }
+  if a.graph.active(){
+   respond(409,map[string]string{"error":"Ya hay una cuenta Microsoft conectada. Desconéctala explícitamente antes de cambiar de cuenta."});return
+  }
+  a.mu.Lock();a.syncPreviewToken="";a.mu.Unlock()
   data,err:=a.graph.begin()
   if err!=nil{respond(409,map[string]string{"error":err.Error()});return}
   respond(200,data)
