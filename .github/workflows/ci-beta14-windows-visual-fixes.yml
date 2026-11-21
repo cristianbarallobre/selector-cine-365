@@ -19,6 +19,7 @@ jobs:
       - run: go test ./... -count=1
       - run: node scripts/test_v9_beta13.cjs
       - run: node scripts/test_export_txt_name_beta14.cjs
+      - run: node scripts/test_txt_import_creates_list_beta14.cjs plantilla.html
       - run: |
           GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags='-H windowsgui -s -w' -o Selector_Cine_365_Windows_Beta14_preview.exe .
           GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -o Selector_Cine_365_Mac_arm64_Beta14_preview .
