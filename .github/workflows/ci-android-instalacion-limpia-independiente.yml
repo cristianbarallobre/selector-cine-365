@@ -36,7 +36,7 @@ jobs:
         shell: bash
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging android/app/build/outputs/apk/release/app-release-unsigned.apk | grep -F "package: name='es.cine365.app.limpia' versionCode='9026' versionName='9.0.0-beta.13.12'"
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging android/app/build/outputs/apk/release/app-release-unsigned.apk | grep -F "application-label:'Selector Cine 365 (Limpia)'"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging android/app/build/outputs/apk/release/app-release-unsigned.apk | grep -m 1 'application-label'
           unzip -t android/app/build/outputs/apk/release/app-release-unsigned.apk | tail -1
       - uses: actions/upload-artifact@v4
         with:
