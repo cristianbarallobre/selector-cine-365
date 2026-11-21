@@ -18,7 +18,7 @@ func TestDiscoverWindowsOneDriveWithoutManualFolder(t *testing.T) {
  if err!=nil{t.Fatal(err)}
  want:=filepath.Join(root,"Selector_Cine_365")
  if folder!=want{t.Fatalf("folder=%q want %q",folder,want)}
- if _,err=os.Stat(want);!os.IsNotExist(err){t.Fatalf("discovery must never create or upload: %v",err)}
+ if _,err:=os.Stat(want);!os.IsNotExist(err){t.Fatalf("discovery must never create or upload: %v",err)}
 }
 
 func TestDiscoverPreservesExistingFolder(t *testing.T) {
