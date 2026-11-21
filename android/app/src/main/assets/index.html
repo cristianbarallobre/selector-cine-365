@@ -1432,9 +1432,9 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
    <p>En <strong>Listas</strong> puedes crear, importar y exportar colecciones. Usa <strong>Copia de seguridad</strong> para guardar un JSON con tus listas y marcas.</p>
   </div>
   <div class="help-card">
-   <h3>5 · Sincronización automática con OneDrive</h3>
-   <p>La nube es <strong>opcional</strong>. Sin conectarla, tus películas siguen guardadas en el móvil. Para compartirlas, en el PC crea una carpeta exclusiva como <strong>Selector_Cine_365</strong> dentro de OneDrive y selecciónala en los ajustes de Selector Cine 365 Windows. En Android pulsa <strong>Conectar cuenta Microsoft</strong>, inicia sesión desde la página oficial y elige esa misma carpeta. La <strong>primera vez</strong> pulsa <strong>Revisar sincronización</strong> en ambos dispositivos y confirma la combinación. Después, los cambios normales se importan automáticamente al abrir la app, volver a ella y periódicamente mientras esté en uso.</p>
-   <p>Solo debes revisar manualmente cuando sea la <strong>primera conexión</strong> o cuando la app detecte un <strong>conflicto</strong>. Las modificaciones recibidas sin conflicto se incorporan automáticamente. Es posible que haya una demora por la subida de OneDrive. No hace falta dejar la app abierta en segundo plano. «Elegir carpeta local» <strong>no equivale</strong> a entrar en OneDrive; otras nubes requieren carpetas compatibles.</p>
+   <h3>5 · Sincronización manual con OneDrive</h3>
+   <p>La nube es <strong>opcional</strong>. Sin conectarla, tus películas siguen guardadas en el móvil. Para compartirlas, en el PC crea una carpeta exclusiva como <strong>Selector_Cine_365</strong> dentro de OneDrive y selecciónala en los ajustes de Selector Cine 365 Windows. En Android pulsa <strong>Conectar cuenta Microsoft</strong>, inicia sesión desde la página oficial y elige esa misma carpeta. La <strong>primera vez</strong> pulsa <strong>Revisar sincronización</strong> en ambos dispositivos y confirma la combinación. A partir de entonces, la app <strong>solo consulta OneDrive una vez al abrirse</strong>, sin importar ni publicar nada. Pulsa el pequeño botón de <strong>dos flechas circulares</strong> situado junto a «Guardado» para revisar, enviar y recibir cambios cuando quieras.</p>
+   <p>La sincronización es <strong>manual y bidireccional</strong>. La pantalla muestra un resumen y te pide confirmarlo; si hay conflictos, deberás elegir qué conservar. Marcar una película y cambiar de lista solo guarda el estado <strong>en el móvil</strong> y nunca envía datos a OneDrive. No hace falta dejar la app abierta en segundo plano. «Elegir carpeta local» <strong>no equivale</strong> a entrar en OneDrive; otras nubes requieren carpetas compatibles.</p>
   </div>
   <div class="help-card">
     <h3>6 · Manual completo</h3>
@@ -2499,7 +2499,7 @@ $('applyFilm').addEventListener('click',()=>{
  const title=$('newFilmTitle').value.trim(),year=$('newFilmYear').value.trim();if(!title){$('newFilmTitle').focus();return;}
  if(year && !/^(18|19|20|21)\d{2}$/.test(year)){alert('Año incorrecto');return;}
  rawText=rawText.trimEnd()+(rawText.trim()?'\n':'')+'☐ '+title+(year?' ('+year+')':'');
- syncActiveText();reconcileWatched();rawText=activeCollection().text||'';addFilmClose();update();renderCollectionControls();scheduleSave();notify('Película añadida a «'+activeCollection().name+'».');if(platformConfigured)void loadPlatforms(false);
+ syncActiveText();reconcileWatched();rawText=activeCollection().text||'';addFilmClose();update();renderCollectionControls();scheduleSave();notify('Película añadida a «'+activeCollection().name+'».'); // TMDB se consulta solo al pulsar Actualizar.
 });
 // Eliminar una sola película de la lista activa sin tocar otras colecciones.
 let deleteFilmCandidate=null;
@@ -2932,6 +2932,7 @@ async function cloudCheckOnOpen(){
    label.textContent='Carpeta elegida. Pulsa ↻ para revisar y activar la primera sincronización.';
    return;
   }
+  if(saveTimer!==null)await saveLocal(true); // terminar cambios locales pendientes antes de leer OneDrive
   await saveQueue.catch(()=>{});
   if(document.hidden)return;
   // READ-ONLY: /preview builds a plan; only /sync can modify or upload data.
