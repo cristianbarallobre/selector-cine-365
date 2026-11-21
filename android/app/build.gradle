@@ -7,8 +7,8 @@ android {
         applicationId 'es.cine365.app'
         minSdk 26
         targetSdk 35
-        versionCode 9023
-        versionName '9.0.0-beta.13.9'
+        versionCode 9024
+        versionName '9.0.0-beta.13.10'
     }
     buildFeatures { buildConfig true }
     // Public identifier, NOT a secret. Configured by repository owner in GitHub Actions Variables.
