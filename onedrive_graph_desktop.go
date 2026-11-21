@@ -23,6 +23,7 @@ const desktopGraphScope = "offline_access Files.ReadWrite User.Read"
 // after app restart is intentional until native secure token storage ships.
 type desktopGraph struct {
  mu sync.Mutex
+ publishMu sync.Mutex
  client *http.Client
  authBase,graphBase string
  token,refresh,rootID,lastError,deviceCode,userCode,verifyURL string
