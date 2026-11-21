@@ -84,7 +84,7 @@ main{max-width:1250px;padding:28px 28px 32px;margin:auto}.header{display:flex;al
 .library-platform-chevron{color:#f2c36c;font-size:12px;flex-shrink:0}
 .library-platform-count{font-size:12px;color:#aabed2;white-space:nowrap;margin-left:auto;font-variant-numeric:tabular-nums}
 .library-platform-menu[hidden]{display:none}
-.library-platform-menu{position:absolute;z-index:12;top:calc(100% + 6px);left:0;width:min(385px,calc(100vw - 56px));max-width:100%;border:1px solid #5b6575;background:#1a2736;border-radius:13px;box-shadow:0 24px 48px #0009;padding:12px}
+.library-platform-menu{position:absolute;z-index:12;top:calc(100% + 6px);left:0;width:100%;max-width:100%;border:1px solid #5b6575;background:#1a2736;border-radius:13px;box-shadow:0 24px 48px #0009;padding:12px}
 .library-platform-menu-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 9px;padding:0 3px}
 .library-platform-menu-header strong{font-size:13px;color:#eaf1f8}
 .library-platform-reset{border:1px solid #866b43;border-radius:8px;padding:6px 11px;color:#f1d095;background:#332d28;font-weight:720;font-size:12px}
@@ -95,6 +95,26 @@ main{max-width:1250px;padding:28px 28px 32px;margin:auto}.header{display:flex;al
 .library-platform-option:has(input:checked){background:#383425;border-color:#9e7b43;color:#ffe0a2}
 .library-platform-option input{width:16px;height:16px;margin:0;flex:none;accent-color:#e9b65b;cursor:pointer}
 .library-platform-option span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Beta 14: desplegables con apariencia consistente y cursor de mano también en las opciones. */
+.single-select-native{display:none!important}
+.single-select-picker{position:relative;min-width:0}
+.list-switch-picker{margin-left:auto;min-width:190px;max-width:290px;flex:1 1 190px;z-index:16}
+.list-switch-picker .list-switch{display:flex;width:100%;max-width:none;min-width:0;margin:0;flex:none}
+.top-nav{position:relative;z-index:15}
+.single-select-button{display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;cursor:pointer}
+.single-select-button>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.single-select-button:hover,.single-select-button[aria-expanded="true"]{border-color:#d0a963;background:#38352f}
+.list-switch-picker .single-select-button:hover,.list-switch-picker .single-select-button[aria-expanded="true"]{background:#2b3a4d}
+.single-select-menu{width:100%;max-width:100%}
+.single-select-menu .library-platform-options{max-height:min(246px,45vh)}
+.single-select-option{width:100%;text-align:left;cursor:pointer;font-family:inherit}
+.single-select-option[aria-selected="true"]{background:#383425;border-color:#9e7b43;color:#ffe0a2}
+.single-select-check{display:grid;place-items:center;flex:none;width:16px;height:16px;border:1px solid #77889c;border-radius:3px;color:transparent;font-size:12px;font-weight:900;background:#29303a}
+.single-select-option[aria-selected="true"] .single-select-check{background:#e9b65b;color:#362611;border-color:#e9b65b}
+.sort-platform-picker{z-index:12;width:100%}
+.sort-platform-picker .single-select-button{min-height:40px}
+.single-select-menu.opens-up{top:auto;bottom:calc(100% + 6px)}
+@media(max-width:650px){.list-switch-picker{max-width:none;width:100%;margin:0;flex:1 1 100%}}
 @media(max-width:650px){.library-platform-label{width:100%}.library-platform-picker{flex:1 1 210px}.library-platform-count{margin-left:0}.library-platform-menu{max-width:none;width:100%}}
 
 /* Copias automáticas en carpeta sincronizada */
@@ -409,7 +429,14 @@ h2{font-size:19px}
     <button class="nav-btn" type="button" data-view="statistics">▥ Estadísticas</button>
     <button class="nav-btn" type="button" data-view="collections">▤ Mis listas</button>
     <button class="nav-btn" type="button" data-view="instructions">❔ Instrucciones</button>
-    <select id="listSwitcher" class="list-switch" aria-label="Seleccionar lista"></select>
+    <div class="single-select-picker list-switch-picker" id="listSwitcherPicker">
+      <select id="listSwitcher" class="single-select-native" aria-hidden="true" tabindex="-1"></select>
+      <button type="button" id="listSwitcherButton" class="list-switch single-select-button" aria-label="Seleccionar lista" aria-haspopup="listbox" aria-expanded="false" aria-controls="listSwitcherOptions"><span id="listSwitcherButtonLabel">Seleccionar lista</span><span class="library-platform-chevron" aria-hidden="true">▾</span></button>
+      <div class="library-platform-menu single-select-menu" id="listSwitcherMenu" hidden>
+        <div class="library-platform-menu-header"><strong>Seleccionar lista</strong></div>
+        <div class="library-platform-options" id="listSwitcherOptions" role="listbox" aria-label="Listas disponibles"></div>
+      </div>
+    </div>
   </nav>
   <div id="view-library" class="columns view">
     <section class="panel" aria-label="Biblioteca de películas">
@@ -448,11 +475,18 @@ h2{font-size:19px}
         <div class="stat"><div class="stat-value" id="total">—</div><div class="stat-label">Total</div></div>
       </div>
       <div class="progress" role="progressbar" aria-label="Películas vistas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress"><div class="progress-bar" id="progressFill"></div></div>
-      <label class="select-label" for="platformSelect">SORTEAR ENTRE</label>
-      <select id="platformSelect" class="platform-select" aria-label="Plataforma para el sorteo">
-        <option value="all">Todas las películas pendientes</option>
-        <option value="any">Cualquier plataforma (streaming)</option>
-      </select>
+      <span class="select-label" id="sortPlatformLabel">SORTEAR ENTRE</span>
+      <div class="single-select-picker sort-platform-picker" id="sortPlatformPicker">
+        <select id="platformSelect" class="single-select-native" aria-hidden="true" tabindex="-1">
+          <option value="all">Todas las películas pendientes</option>
+          <option value="any">Cualquier plataforma (streaming)</option>
+        </select>
+        <button type="button" id="sortPlatformButton" class="platform-select single-select-button" aria-labelledby="sortPlatformLabel sortPlatformButtonLabel" aria-haspopup="listbox" aria-expanded="false" aria-controls="sortPlatformOptions"><span id="sortPlatformButtonLabel">Todas las películas pendientes</span><span class="library-platform-chevron" aria-hidden="true">▾</span></button>
+        <div class="library-platform-menu single-select-menu" id="sortPlatformMenu" hidden>
+          <div class="library-platform-menu-header"><strong>Seleccionar plataforma</strong><button type="button" class="library-platform-reset" id="sortPlatformReset">Todas</button></div>
+          <div class="library-platform-options" id="sortPlatformOptions" role="listbox" aria-label="Plataforma para el sorteo"></div>
+        </div>
+      </div>
       <div id="sortCount" class="sort-count" aria-live="polite"></div>
       <button type="button" class="primary" id="choose">🎲 Elegir una película al azar</button>
       <div class="pick" aria-live="polite"><img id="resultPoster" class="chosen-poster" alt="" hidden><div class="result-copy"><div class="result-tag" id="resultTag">EL SORTEO TE ESPERA</div><h3 class="result-title" id="resultTitle">Tu próxima película aparecerá aquí</h3><div class="result-meta" id="resultDetails"></div><div class="platform-detail" id="resultPlatforms"></div></div></div>
@@ -1511,7 +1545,7 @@ function validLibrary(s){return s&&s.version===1&&Array.isArray(s.lists)&&s.list
 function restartList(){
  searchScope='current';$('listPlatformButton').disabled=false;document.querySelectorAll('[data-search-scope]').forEach(b=>{const yes=b.dataset.searchScope==='current';b.classList.toggle('active',yes);b.setAttribute('aria-pressed',String(yes));});
  filmPage=0;collectionPage=0;statPages.clear();platformRun++;platformFinished=0;platformTotal=0;platformActive=false;lastChoice=null;resetChoice();filter='all';search='';$('search').value='';
- selectedSortPlatform='all';$('platformSelect').value='all';selectedListPlatforms.clear();closeListPlatformMenu();
+ selectedSortPlatform='all';$('platformSelect').value='all';selectedListPlatforms.clear();closeListPlatformMenu();closeSingleChoiceMenu('sortPlatform');syncSingleChoiceMenu('sortPlatform','platformSelect');
  document.querySelectorAll('.filter').forEach(b=>b.classList.toggle('selected',b.dataset.filter==='all'));
  updateListPlatformOptions();update();updatePlatformProgress();renderStats();renderCollectionControls();if(platformConfigured)void loadPlatforms(false);
 }
@@ -1526,7 +1560,7 @@ function switchCollection(id){
 function renderCollectionControls(){
  const sel=$('listSwitcher');sel.replaceChildren();for(const list of libraryState.lists){const o=document.createElement('option');o.value=list.id;o.textContent=numberedListName(list);sel.appendChild(o)}
  if(hasComparison()){const o=document.createElement('option');o.value=virtualID;o.textContent='⚭ Películas coincidentes (solo lectura)';sel.appendChild(o);}
- sel.value=virtualMode?virtualID:libraryState.active_id;
+ sel.value=virtualMode?virtualID:libraryState.active_id;syncSingleChoiceMenu('listSwitcher','listSwitcher');
  $('compareInfo').textContent=hasComparison()?'Coincidencias: '+comparisonLists().map(x=>x.name).join(' · '):'Coincidencias: sin configurar';$('compareInfo').title=$('compareInfo').textContent;
  $('libraryCount').title=virtualMode?'Coincidencias entre '+comparisonLists().length+' listas · solo lectura':'';
  $('addFilmBtn').disabled=false;
@@ -2109,7 +2143,8 @@ function updateListPlatformOptions(){
 }
 $('listPlatformButton').addEventListener('click',()=>{
  const menu=$('listPlatformMenu'),toOpen=menu.hidden;
- if(toOpen)updateListPlatformOptions();menu.hidden=!toOpen;
+ if(toOpen){updateListPlatformOptions();closeSingleChoiceMenu('sortPlatform');closeSingleChoiceMenu('listSwitcher');}
+ menu.hidden=!toOpen;
  $('listPlatformButton').setAttribute('aria-expanded',String(toOpen));
 });
 $('listPlatformReset').addEventListener('click',()=>{
@@ -2117,6 +2152,88 @@ $('listPlatformReset').addEventListener('click',()=>{
 });
 document.addEventListener('pointerdown',e=>{
  if(!$('libraryPlatformPicker').contains(e.target))closeListPlatformMenu();
+ if(!$('listSwitcherPicker').contains(e.target))closeSingleChoiceMenu('listSwitcher');
+ if(!$('sortPlatformPicker').contains(e.target))closeSingleChoiceMenu('sortPlatform');
+});
+
+/* Los select nativos siguen siendo el estado de referencia. Los dos menús
+   personalizados solo representan una opción activa y emiten change. */
+function closeSingleChoiceMenu(prefix,restoreFocus=false){
+ const menu=$(prefix+'Menu'),button=$(prefix+'Button');
+ if(menu.hidden)return;
+ menu.hidden=true;menu.classList.remove('opens-up');
+ button.setAttribute('aria-expanded','false');
+ if(restoreFocus)button.focus();
+}
+function syncSingleChoiceMenu(prefix,nativeID){
+ const select=$(nativeID),box=$(prefix+'Options');
+ const choices=[...select.options],current=select.options[select.selectedIndex];
+ $(prefix+'ButtonLabel').textContent=current?current.textContent:'Seleccionar…';
+ const signature=JSON.stringify(choices.map(o=>[o.value,o.textContent]));
+ if(box.dataset.signature!==signature){
+   box.dataset.signature=signature;box.replaceChildren();
+   for(const item of choices){
+     const option=document.createElement('button');option.type='button';
+     option.className='library-platform-option single-select-option';
+     option.setAttribute('role','option');option.tabIndex=-1;option.dataset.value=item.value;
+     const mark=document.createElement('span');mark.className='single-select-check';mark.textContent='✓';mark.setAttribute('aria-hidden','true');
+     const label=document.createElement('span');label.textContent=item.textContent;
+     option.append(mark,label);box.appendChild(option);
+     option.addEventListener('click',()=>{
+       const old=select.value;select.value=option.dataset.value;
+       closeSingleChoiceMenu(prefix);
+       if(old!==select.value)select.dispatchEvent(new Event('change',{bubbles:true}));
+       syncSingleChoiceMenu(prefix,nativeID);
+       $(prefix+'Button').focus();
+     });
+   }
+ }
+ for(const option of box.querySelectorAll('.single-select-option')){
+   option.setAttribute('aria-selected',String(option.dataset.value===select.value));
+ }
+ if(prefix==='sortPlatform')$('sortPlatformReset').disabled=select.value==='all';
+}
+function setupSingleChoiceMenu(prefix,nativeID){
+ const button=$(prefix+'Button'),menu=$(prefix+'Menu'),box=$(prefix+'Options');
+ button.addEventListener('click',()=>{
+   const open=menu.hidden;
+   if(prefix!=='listSwitcher')closeSingleChoiceMenu('listSwitcher');
+   if(prefix!=='sortPlatform')closeSingleChoiceMenu('sortPlatform');
+   closeListPlatformMenu();
+   if(open){
+     syncSingleChoiceMenu(prefix,nativeID);
+     menu.hidden=false;button.setAttribute('aria-expanded','true');
+     const bounds=menu.getBoundingClientRect(),anchor=button.getBoundingClientRect();
+     menu.classList.toggle('opens-up',bounds.bottom>window.innerHeight-8&&anchor.top>bounds.height+8);
+   }else closeSingleChoiceMenu(prefix);
+ });
+ button.addEventListener('keydown',e=>{
+   if(e.key!=='ArrowDown'&&e.key!=='ArrowUp')return;
+   e.preventDefault();if(menu.hidden)button.click();
+   const options=[...box.querySelectorAll('.single-select-option')];
+   const chosen=options.findIndex(x=>x.getAttribute('aria-selected')==='true');
+   const target=e.key==='ArrowUp'?Math.max(0,chosen):Math.max(0,chosen);
+   options[target]?.focus();
+ });
+ box.addEventListener('keydown',e=>{
+   if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeSingleChoiceMenu(prefix,true);return;}
+   if(!['ArrowDown','ArrowUp','Home','End'].includes(e.key))return;
+   const options=[...box.querySelectorAll('.single-select-option')];
+   if(!options.length)return;
+   e.preventDefault();
+   const index=options.indexOf(document.activeElement);
+   const next=e.key==='Home'?0:e.key==='End'?options.length-1:e.key==='ArrowDown'?(index+1)%options.length:(index-1+options.length)%options.length;
+   options[next].focus();
+ });
+}
+setupSingleChoiceMenu('listSwitcher','listSwitcher');
+setupSingleChoiceMenu('sortPlatform','platformSelect');
+$('sortPlatformReset').addEventListener('click',()=>{
+ const select=$('platformSelect'),changed=select.value!=='all';
+ select.value='all';closeSingleChoiceMenu('sortPlatform');
+ if(changed)select.dispatchEvent(new Event('change',{bubbles:true}));
+ syncSingleChoiceMenu('sortPlatform','platformSelect');
+ $('sortPlatformButton').focus();
 });
 
 function eligibleFilms(){
@@ -2141,9 +2258,10 @@ function updatePlatformChoices(){
  }
  for(const name of [...all].sort((a,b)=>a.localeCompare(b,'es'))){const o=document.createElement('option');o.value=name;o.textContent=name;select.appendChild(o)}
  select.value=prev;if(select.value!==prev){selectedSortPlatform='all';select.value='all'}
+ syncSingleChoiceMenu('sortPlatform','platformSelect');
  updateSortAvailability();
 }
-$('platformSelect').addEventListener('change',e=>{selectedSortPlatform=e.target.value;resetChoice();updateSortAvailability()});
+$('platformSelect').addEventListener('change',e=>{selectedSortPlatform=e.target.value;resetChoice();updateSortAvailability();syncSingleChoiceMenu('sortPlatform','platformSelect')});
 function posterElement(r){
  if(r?.poster_path){const img=document.createElement('img');img.className='film-poster';img.alt='';img.loading='lazy';img.src='/api/poster?token='+encodeURIComponent(token)+'&path='+encodeURIComponent(r.poster_path);img.addEventListener('error',()=>{img.replaceWith(posterPlaceholder())},{once:true});return img;}
  return posterPlaceholder();
@@ -2236,7 +2354,7 @@ $('exportBtn').addEventListener('click',()=>{
 const overlay=$('pasteOverlay');function closeModal(){overlay.hidden=true;$('pasteText').value='';$('pasteStatus').textContent='';}
 $('pasteBtn').addEventListener('click',()=>{overlay.hidden=false;$('pasteText').focus();});
 $('closeModal').addEventListener('click',closeModal);$('cancelPaste').addEventListener('click',closeModal);overlay.addEventListener('click',e=>{if(e.target===overlay)closeModal();});
-window.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!overlay.hidden)closeModal();if(!$('deleteFilmOverlay').hidden)closeDeleteFilmModal();if(!$('compareOverlay').hidden)closeCompareModal();if(!$('membershipOverlay').hidden)closeMembershipModal();if(!$('platformOverlay').hidden)closePlatformModal();if(!$('batchOverlay').hidden)closeBatchModal();closeListPlatformMenu();$('listOverlay').hidden=true;$('filmOverlay').hidden=true;}});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!overlay.hidden)closeModal();if(!$('deleteFilmOverlay').hidden)closeDeleteFilmModal();if(!$('compareOverlay').hidden)closeCompareModal();if(!$('membershipOverlay').hidden)closeMembershipModal();if(!$('platformOverlay').hidden)closePlatformModal();if(!$('batchOverlay').hidden)closeBatchModal();closeListPlatformMenu();closeSingleChoiceMenu('sortPlatform');closeSingleChoiceMenu('listSwitcher');$('listOverlay').hidden=true;$('filmOverlay').hidden=true;}});
 $('pasteText').addEventListener('input',()=>{const n=parse($('pasteText').value).entries.length;$('pasteStatus').textContent=n?`${n} ${n===1?'película detectada':'películas detectadas'}`:'';});
 $('applyPaste').addEventListener('click',()=>{if(replaceList($('pasteText').value)){closeModal();notify('Lista actualizada.');}else $('pasteStatus').textContent='No se encontraron películas.';});
 $('openFile').addEventListener('click',()=>$('fileInput').click());
