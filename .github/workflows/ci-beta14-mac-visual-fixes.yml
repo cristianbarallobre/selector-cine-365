@@ -35,6 +35,7 @@ jobs:
         run: |
           node scripts/test_v9_beta13.cjs
           node scripts/test_beta14_desktop_dropdowns.cjs
+          node scripts/test_beta14_onedrive_guide.cjs
           node scripts/test_export_txt_name_beta14.cjs
           node scripts/test_txt_import_creates_list_beta14.cjs plantilla.html
           bash scripts/build_macos_beta14_preview.sh
