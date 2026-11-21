@@ -261,13 +261,19 @@ func syncListFilmKeys(list filmCollection) map[string]bool {
 }
 func syncListIdentityError(local,remote filmCollection) error {
  ours,theirs:=syncListFilmKeys(local),syncListFilmKeys(remote)
- if len(ours)==0||len(theirs)==0{return nil}
+ if len(ours)==0||len(theirs)==0{
+  if local.Name!=remote.Name&&len(ours)!=len(theirs){
+   return fmt.Errorf("Sincronización detenida: dos listas distintas comparten el ID %s. Revisa las copias antes de continuar",local.ID)
+  }
+  return nil
+ }
  matches:=0
  for key:=range theirs{if ours[key]{matches++}}
  starterA:=strings.HasPrefix(local.Name,"Selector Cine 365 ·")
  starterB:=strings.HasPrefix(remote.Name,"Selector Cine 365 ·")
  differentSets:=len(ours)!=len(theirs)||matches!=len(ours)
  starterCollision:=starterA!=starterB&&differentSets
+ differentNamedLists:=local.Name!=remote.Name&&differentSets
  smaller:=len(ours);if len(theirs)<smaller{smaller=len(theirs)}
  unrelated:=matches*2<smaller
  // An already contaminated peer can contain the whole true list plus
@@ -275,7 +281,7 @@ func syncListIdentityError(local,remote filmCollection) error {
  extraLeft,extraRight:=len(ours)-matches,len(theirs)-matches
  excess:=extraLeft;if extraRight>excess{excess=extraRight}
  unexpectedExpansion:=excess>=24&&excess*5>=smaller
- if starterCollision||unrelated||unexpectedExpansion{
+ if starterCollision||differentNamedLists||unrelated||unexpectedExpansion{
   return fmt.Errorf("Sincronización detenida: «%s» y «%s» comparten el ID %s pero parecen listas diferentes. No se han mezclado ni enviado datos. Conserva las copias antes de continuar",local.Name,remote.Name,local.ID)
  }
  return nil
