@@ -11,7 +11,7 @@ function notContains(s,needle,msg){assert.ok(!s.includes(needle),msg||needle)}
 contains(gradle,'versionCode 9019');
 contains(gradle,"versionName '9.0.0-beta.13.5'");
 contains(gradle,"applicationId 'es.cine365.app'");
-contains(html,'Android v9 Beta 13.4');
+contains(html,'Android v9 Beta 13.5');
 contains(html,'id="cloudSyncQuick"');
 contains(html,'aria-label="Sincronizar con OneDrive: enviar y recibir cambios"');
 contains(html,"$('cloudSyncQuick').addEventListener('click'");
