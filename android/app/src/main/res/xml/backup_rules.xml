@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 8-11: do not auto-restore this app's internal library, device IDs
+     or Microsoft tokens on a fresh installation. User-managed JSON/OneDrive
+     remains the supported portable backup and restoration mechanism. -->
+<full-backup-content>
+    <exclude domain="root" path="." />
+    <exclude domain="device_root" path="." />
+    <exclude domain="external" path="." />
+</full-backup-content>
