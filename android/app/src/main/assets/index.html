@@ -392,6 +392,8 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
 #view-library .film-toggle .poster-placeholder{font-size:29px!important}
 #view-library .film-main{min-width:0!important;width:100%!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:5px!important}
 #view-library .title-line{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:6px!important;width:100%!important}
+/* Long-press film reordering must not trigger text selection in Android WebView. */
+#view-library .film-item{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}
 #view-library .film-main{position:relative!important;padding-right:27px!important}
 #view-library .film-reorder-handle{position:absolute!important;top:0!important;right:0!important;width:27px!important;height:29px!important;min-height:29px!important;touch-action:none!important}
 #view-library .film-name{display:block!important;width:100%!important;font-size:16px!important;line-height:1.35!important;overflow-wrap:anywhere!important;white-space:normal!important}
