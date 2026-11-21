@@ -81,6 +81,27 @@ msal696458fe-0672-47e5-9fdd-aa0332e9884b://auth
 
 **Es importante conservar todos los caracteres:** `msal` + identificador de aplicación + `://auth`. La app Android espera recibir esa misma dirección cuando termina la autorización.
 
+## 5 bis. Beta 14 Windows y Mac: autorizar el navegador de escritorio
+
+A partir de Beta 14, Windows y Mac también pueden acceder directamente a OneDrive mediante Microsoft Graph y OAuth Authorization Code con PKCE, usando **el mismo registro público de Microsoft Entra que Android**.
+
+**Configuración obligatoria y única del propietario del registro:**
+
+1. Abrir [Microsoft Entra](https://entra.microsoft.com/) → **Registros de aplicaciones** → **Selector Cine 365** (Id. de cliente `696458fe-0672-47e5-9fdd-aa0332e9884b`).
+2. En **Autenticación → Agregar plataforma → Aplicaciones móviles y de escritorio**, agregar `http://localhost` como URI de redirección. Si la plataforma ya existe, añadir esa URI a las existentes.
+3. Mantener **sin modificar** la URI de Android `msal696458fe-0672-47e5-9fdd-aa0332e9884b://auth`.
+4. Guardar y repetir **Conectar con Microsoft** en Selector Cine 365 Windows/Mac.
+
+La aplicación escucha en el equipo en un puerto local variable y solicita un retorno `http://localhost:PUERTO/`. Microsoft Entra **ignora el número de puerto** para comparar URIs localhost, así que se registra solamente `http://localhost`. No usar una URI de tipo **Web** ni **SPA**: la aplicación es un cliente público de escritorio. El puerto local no debe registrarse ni fijarse, ya que cambia con cada ejecución.
+
+**Síntoma de falta de registro:** Microsoft muestra «No se puede completar la solicitud / invalid_request: The provided value for the input parameter 'redirect_uri' is not valid». No es un fallo de tus listas ni de los permisos de almacenamiento: corresponde a la configuración de la aplicación en Entra.
+
+No hace falta crear una segunda aplicación, generar secretos de cliente, abrir puertos públicos ni cambiar el certificado Android.
+
+Referencia oficial: https://learn.microsoft.com/en-us/entra/identity-platform/scenario-desktop-app-configuration
+
+---
+
 ## 6. Configurar los permisos de Microsoft Graph
 
 1. En el menú del registro abre **Permisos de API**.
