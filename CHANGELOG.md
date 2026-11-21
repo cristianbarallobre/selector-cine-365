@@ -4,6 +4,15 @@
 
 Para un historial exhaustivo preparado para Word y PDF consulta [Historial completo v1–v9 Beta 13.1](docs/HISTORIAL_V9_BETA13_1.md). El registro detallado de v8.1.1 permanece como documento histórico independiente.
 
+## v9 Beta 13.3 — Android (21 de noviembre de 2026)
+
+- Eliminada la **subida automática a OneDrive desde cada guardado local**. Cambiar de lista activa guarda únicamente en Android y no muestra «Guardando…».
+- Comprobación única de nube al abrir (lectura sin importar ni enviar). Se eliminan los intervalos, comprobaciones al reanudar y subida de restauraciones locales.
+- Nuevo botón pequeño de **dos flechas circulares** junto al indicador de guardado; inicia comparación bidireccional con **confirmación previa obligatoria** y resolución de conflictos. Los guardados en el móvil siguen siendo automáticos.
+- Se suprimen operaciones innecesarias de disco para datos idénticos y consultas TMDB automáticas al cambiar de lista.
+- Android versionCode 9017, mismo paquete y certificado de firma; Windows y Mac permanecen Beta 13.1.
+- Pruebas de guardado local sin tráfico de nube, única consulta al inicio, no sincronización en segundo plano y conservación de la fusión causal.
+
 ## v9 Beta 13.2 — Android (21 de noviembre de 2026)
 
 - Optimización específica de batería: corregida doble inicialización del backend en Android.
