@@ -4,7 +4,13 @@ android {
     namespace 'es.cine365.app'
     compileSdk 35
     defaultConfig {
+        // Producción mantiene el ID histórico; solo la compilación explícita
+        // -PcineFreshInstall crea otra aplicación, sin intento de actualización.
         applicationId 'es.cine365.app'
+        if (project.hasProperty('cineFreshInstall')) {
+            applicationId 'es.cine365.app.limpia'
+        }
+        resValue 'string', 'cine_app_name', project.hasProperty('cineFreshInstall') ? 'Selector Cine 365 (Limpia)' : 'Selector Cine 365'
         minSdk 26
         targetSdk 35
         versionCode 9026
