@@ -1,0 +1,46 @@
+name: CI Android Beta 13.6 - TMDB resume and TXT export
+on:
+  push:
+    branches: ['fix/android-beta13-6-tmdb-resume']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      MICROSOFT_CLIENT_ID: '696458fe-0672-47e5-9fdd-aa0332e9884b'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Android SDK
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -path '*/bin/sdkmanager' -type f | sort -V | tail -1)"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Run safety regression tests
+        run: |
+          node scripts/test_android_manual_sync_beta13_3.cjs
+          node scripts/test_android_onedrive_efficiency.cjs
+          node scripts/test_android_onedrive_auto_beta13_5.cjs
+          node scripts/test_v9_beta13.cjs
+          node scripts/test_android_tmdb_resume_beta13_6.cjs
+          node scripts/test_export_txt_name_android_beta13_6.cjs
+      - name: Run Java unit tests and assemble unsigned release
+        working-directory: android
+        run: gradle --no-daemon testDebugUnitTest assembleRelease
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Selector_Cine_365_Android_v9_BETA13_6_UNSIGNED
+          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+          if-no-files-found: error
