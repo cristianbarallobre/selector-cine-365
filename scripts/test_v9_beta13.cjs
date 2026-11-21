@@ -31,7 +31,7 @@ assert.ok(android.html.includes('window.CineAndroid?Math.min(2000,'),'Mantener c
 const gradle=fs.readFileSync('android/app/build.gradle','utf8');
 assert.ok(gradle.includes("applicationId 'es.cine365.app'"),'Identificador estable Android');
 assert.ok(!gradle.includes('applicationIdSuffix'),'No generar un paquete distinto en cada Beta');
-assert.ok(gradle.includes('versionCode 9026'),'Versión de Android incrementada');
+assert.ok(gradle.includes('versionCode 9027'),'Versión de Android incrementada');
 const script=desktop.script,start=script.indexOf('function applyFilmMembershipLists('),end=script.indexOf('function toggleSearchedFilm(',start);
 assert.ok(start>=0&&end>start);
 function parse(t){const lines=t.split('\n'),entries=[];
@@ -84,7 +84,7 @@ assert.ok(mainActivity.includes('Build.VERSION.SDK_INT >= 30'),'No utilizar getI
 assert.ok(!mainActivity.includes('setPadding(0, 35,'),'No introducir margen fijo por modelo');
 assert.ok(android.html.includes('Android v9 Beta 13'));
 assert.ok(gradle.includes("applicationId 'es.cine365.app'"),'Mantener package');
-assert.ok(gradle.includes("versionName '9.0.0-beta.13.12'"),'Versión');
+assert.ok(gradle.includes("versionName '9.0.0-beta.13.13'"),'Versión');
 assert.ok(manifest.includes('android:label="Selector Cine 365"'),'Android uses stable app name without stale Beta label');
 console.log('OK: safe area dinámica para notch, navegación gestual y compatibilidad Android antiguos');
 
