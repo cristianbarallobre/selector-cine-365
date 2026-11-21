@@ -3127,6 +3127,21 @@ async function syncDevices(){
       +' No se sustituye ninguna copia de Windows. Comprueba los números antes de continuar.';
    details.textContent='En este móvil: '+data.local_lists+' listas y '+data.local_seen+' películas vistas.\n'
       +'Después de combinar: '+data.result_lists+' listas y '+data.result_seen+' vistas.';
+   const predicted=Array.isArray(data.result_list_details)?data.result_list_details:[];
+   if(predicted.length){
+     const heading=document.createElement('p');heading.textContent='COMPRUEBA CADA LISTA ANTES DE CONFIRMAR:';
+     heading.style.cssText='color:#ffe1a0;font-weight:850;margin-top:14px';
+     details.append(heading);
+     for(const item of predicted){
+       const row=document.createElement('p');row.textContent=(item.name||'Lista')+' · '+Number(item.films||0)+' películas';
+       row.style.cssText='margin:5px 0;color:#d8e6f5';
+       details.append(row);
+     }
+     const warning=document.createElement('p');
+     warning.textContent='Si alguna lista contiene más películas de las que debería, pulsa Cancelar. No envíes esta biblioteca a OneDrive.';
+     warning.style.cssText='color:#f6bd86;font-weight:720;line-height:1.5';
+     details.append(warning);
+   }
    const conflicts=Array.isArray(data.conflicts)?data.conflicts:[];
    if(conflicts.length){
      const title=document.createElement('p');title.textContent='⚠ '+conflicts.length+' decisiones opuestas detectadas. Elige cómo resolverlas:';
