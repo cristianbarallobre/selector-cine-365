@@ -1848,7 +1848,14 @@ function lineInfo(text,idx){
 }
 function parse(text){
  const lines=text.split('\n'),entries=[];
- for(let i=0;i<lines.length;i++){const f=lineInfo(lines[i],i);if(f)entries.push(f);}
+ for(let i=0;i<lines.length;i++){
+  const f=lineInfo(lines[i],i);
+  if(f){
+   // Stable ordinal for unnumbered lists; never rewrites the underlying TXT.
+   f.displayNumber=f.number||String(entries.length+1).padStart(3,'0');
+   entries.push(f);
+  }
+ }
  return {lines,entries,seen:entries.filter(f=>f.checked).length,pending:entries.filter(f=>!f.checked)};
 }
 function update(){membershipCache=null;parsed=parse(rawText);const n=parsed.entries.length;
@@ -1896,7 +1903,8 @@ function renderList(append=false){
    main.appendChild(titleLine);
    const meta=document.createElement('span');meta.className='film-filmmeta';
    if(f.year){const year=document.createElement('span');year.textContent=f.year;meta.appendChild(year);}
-   if(f.number){const number=document.createElement('span');number.className='film-sequence-number';number.textContent='N.º '+f.number;meta.appendChild(number);}
+   const displayNumber=f.number||(!global?f.displayNumber:'');
+   if(displayNumber){const number=document.createElement('span');number.className='film-sequence-number';number.textContent='N.º '+displayNumber;meta.appendChild(number);}
    if(r?.vote_count>0){const rating=document.createElement('span');rating.className='film-rating';rating.textContent='★ '+Number(r.vote_average).toFixed(1)+' TMDB';rating.title='Nota TMDB ('+r.vote_count+' votos), no equivale a IMDb';meta.appendChild(rating);}
    const membership=document.createElement('span');membership.className='film-memberships';
    const caption=document.createElement('span');caption.className='film-memberships-title';caption.textContent='Listas:';
