@@ -340,11 +340,22 @@ final class CloudBackup {
             Plan plan=buildPlan(backend);
             previewToken=plan.fingerprint;
             JSONObject local=new JSONObject(backend.readOrDefault("colecciones.json","{}"));
+            JSONArray byList=new JSONArray();
+            JSONArray planned=plan.library.getJSONArray("lists");
+            for(int i=0;i<planned.length();i++){
+                JSONObject list=planned.getJSONObject(i);
+                int count=0;
+                for(String row:list.getString("text").split("\\n",-1))
+                    if(SyncStore.film(row)!=null)count++;
+                byList.put(new JSONObject().put("id",list.optString("id"))
+                    .put("name",list.optString("name")).put("films",count));
+            }
             return status().put("token",previewToken).put("sources",plan.sources)
                 .put("legacy",plan.hasLegacy).put("local_lists",local.getJSONArray("lists").length())
                 .put("local_seen",SyncStore.watchedCount(local))
                 .put("result_lists",plan.library.getJSONArray("lists").length())
                 .put("result_seen",SyncStore.watchedCount(plan.library))
+                .put("result_list_details",byList)
                 .put("conflicts",plan.conflicts).put("requires_confirmation",true);
         }catch(Exception e){lastError=e.getMessage();throw e;}
     }
