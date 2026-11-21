@@ -9,7 +9,7 @@ Conectar una biblioteca de Selector Cine 365 a **la misma carpeta lógica de One
 ## Funciones añadidas en escritorio (Windows/macOS)
 
 - **Conectar cuenta Microsoft:** integración experimental directa con Microsoft Graph (permisos delegados `Files.ReadWrite`, `User.Read`, `offline_access`), sin instalar OneDrive.
-- Se utiliza el flujo oficial de **código de dispositivo**: la app muestra un código y el enlace oficial; el usuario autoriza su propia cuenta desde el navegador. No se solicita su contraseña en Selector Cine 365.
+- Se utiliza el flujo oficial **Authorization Code + PKCE (S256)**: la app abre el navegador del sistema para autorizar tu cuenta y recibe el retorno en una dirección local con estado de seguridad. No pide tu contraseña ni códigos manuales.
 - La app reutiliza o crea la carpeta raíz `Selector_Cine_365` de OneDrive, compatible con Android Beta 13.5. Dentro respeta la estructura `Selector_Cine_365_Copias/sincronizacion/dispositivos` existente.
 - **Primera sincronización:** vista previa obligatoria, conflictos con elección manual, copia local de recuperación antes de importar, y escritura solo del snapshot del dispositivo propio. No hay envío de la biblioteca solo por conectar la cuenta.
 - **Después de confirmar la vinculación:** escritorio publica cambios propios en lotes y verifica novedades como máximo cada 90 segundos durante las comprobaciones activas, sin trasladar cada edición por separado.
@@ -20,14 +20,14 @@ Conectar una biblioteca de Selector Cine 365 a **la misma carpeta lógica de One
 - **Android:** por el momento sigue con Beta 13.5, usando la misma carpeta OneDrive desde Microsoft Graph. Su sincronización es manual para respetar las mejoras de batería.
 - No se migra silenciosamente ninguna carpeta o configuración antigua. Si la ruta ya configurada es diferente, se debe exportar una copia JSON y revisar qué carpeta contiene las revisiones más recientes antes de cambiarla.
 - **Los tokens de escritorio solo se guardan en memoria durante la sesión.** Hay que volver a autorizar al reiniciar la aplicación; no se guardan credenciales en texto plano. El almacenamiento seguro de sesión con Keychain/credenciales de Windows queda pendiente.
-- La aplicación Microsoft Entra debe admitir clientes públicos para el flujo de código de dispositivo; si no está habilitado en el registro, el inicio de sesión puede fallar. **No probado todavía con una cuenta real.**
+- En Microsoft Entra → Registro de aplicaciones → Autenticación, hay que añadir **`http://localhost`** como URI de redirección para escritorio (plataforma aplicación móvil/escritorio). El puerto local cambia y Microsoft permite la coincidencia de `localhost` sin puerto. **No borres** la URI Android `msal696458fe-0672-47e5-9fdd-aa0332e9884b://auth`. La autenticación de escritorio aún no se ha probado con una cuenta Microsoft real.
 - Las compilaciones de prueba de Windows y macOS no deben confundirse con instaladores finales firmados o notarizados.
 - No se deben subir claves privadas, contraseñas, tokens Microsoft o bibliotecas personales a GitHub.
 
 ## Pruebas de regresión propuestas
 
 1. Sin conectar la nube, crear/modificar una película y comprobar persistencia únicamente local.
-2. En Windows o Mac, conectar Microsoft, elegir el código oficial y comprobar que aparece OneDrive conectado sin selector.
+2. En Windows o Mac, pulsar Conectar Microsoft, completar la autorización PKCE en el navegador y verificar que vuelve a la aplicación sin selector.
 3. Antes de la primera sincronización, verificar que no se crean snapshots ni se reemplazan listas.
 4. En Android Beta 13.5, pulsar ↻ y confirmar; en escritorio revisar y aceptar el mismo conjunto de listas.
 5. Marcar y desmarcar en dos dispositivos desconectados; comprobar que aparece conflicto y que se mantiene la última decisión validada.
