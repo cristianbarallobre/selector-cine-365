@@ -71,4 +71,16 @@ public final class ListIdentityIsolationTest {
         assertEquals(40,SyncStore.statuses(windows).length());
     }
 
+    @Test public void onlyAnUnchangedSampleMayBeReplacedByWindows()throws Exception{
+        String sample="☐ Casablanca (1942)\n☐ Metropolis (1927)";
+        JSONObject clean=library(list("atlas","Selector Cine 365 · 365",sample));
+        assertTrue(SyncStore.isUntouchedStarter(clean,new JSONObject(),new JSONObject(),sample));
+        assertFalse(SyncStore.isUntouchedStarter(clean,new JSONObject().put("key",true),new JSONObject(),sample));
+        assertFalse(SyncStore.isUntouchedStarter(clean,new JSONObject(),new JSONObject().put("desktop-x",2),sample));
+        clean.getJSONArray("lists").getJSONObject(0).put("text",sample+"\n☐ Persona (1966)");
+        assertFalse("Real user additions must be preserved",SyncStore.isUntouchedStarter(clean,new JSONObject(),new JSONObject(),sample));
+        clean.getJSONArray("lists").getJSONObject(0).put("text",sample);
+        clean.getJSONArray("lists").getJSONObject(0).put("name","Mi lista personal");
+        assertFalse("Renamed samples are user data",SyncStore.isUntouchedStarter(clean,new JSONObject(),new JSONObject(),sample));
+    }
 }
