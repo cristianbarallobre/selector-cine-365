@@ -1344,10 +1344,10 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
 <section id="view-sort" class="view mobile-page" hidden></section>
 <section id="view-settings" class="view mobile-page" hidden>
  <div class="panel mobile-settings-panel"><h2>Ajustes y sincronización</h2>
-  <p class="mobile-help"><strong>¿Quieres sincronizar con Windows?</strong> Te recomendamos <strong>OneDrive</strong>. En Android basta conectar tu cuenta Microsoft: se prepara automáticamente la carpeta Selector_Cine_365. En Windows/Mac, usa esa carpeta de OneDrive para compartir los datos. También puedes usar la app sin nube.</p>
+  <p class="mobile-help"><strong>Instalación nueva de Android:</strong> tus listas empiezan guardándose solo en el móvil. Para recuperar las listas ya compartidas por Windows, conecta <strong>la misma cuenta Microsoft</strong> y revisa los datos de OneDrive antes de importar. En Windows Beta 14 también puedes conectar esa cuenta directamente, sin seleccionar una carpeta manual. La nube es opcional.</p>
   <div class="onedrive-box" id="onedriveBox">
    <h3>1 · Conecta tu cuenta Microsoft</h3>
-   <p class="mobile-help">No necesitas buscar OneDrive en las carpetas del teléfono ni copiar códigos. Pulsa «Conectar cuenta Microsoft», inicia sesión en el navegador y vuelve automáticamente aquí. La aplicación localizará o creará la carpeta <strong>Selector_Cine_365</strong> automáticamente, sin pedirte que la selecciones. No se modificarán tus listas hasta que confirmes la primera revisión.</p>
+   <p class="mobile-help">Pulsa «Conectar cuenta Microsoft», autoriza desde el navegador y regresa a Selector Cine 365. La aplicación localizará o creará <strong>Selector_Cine_365</strong> automáticamente en tu OneDrive. <strong>Conectar no importa ni sube películas:</strong> si es tu primera instalación, tendrás que confirmar el paso 2. Android guarda la autorización cifrada; no debería pedirte iniciar sesión cada vez que abras la app.</p>
    <button type="button" class="primary" id="odConnect">Conectar cuenta Microsoft</button>
    <div id="odLoginCode" hidden>
     <p class="mobile-help">Se ha abierto la página oficial de Microsoft en tu navegador. Inicia sesión y acepta el acceso. Microsoft te devolverá automáticamente a Selector Cine 365, <strong>sin copiar ningún código</strong>.</p>
@@ -1369,12 +1369,10 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
    </div>
    <p class="mobile-help" id="odStatus" aria-live="polite">Comprobando disponibilidad de OneDrive…</p>
   </div>
-  <div class="cloud-wizard-step">
-    <h3>3 · Windows y Mac: usa la misma carpeta</h3>
-    <p>En Windows abre OneDrive y elige la carpeta <strong>Selector_Cine_365</strong> dentro de la sección de nube de Selector Cine 365. Comprueba que OneDrive haya terminado de sincronizar sus archivos.</p>
-  </div>
-  <div id="cloudSettingsHome"><h3 class="cloud-wizard-heading">4 · Revisa y confirma la primera sincronización</h3>
-    <p class="mobile-help">En la primera conexión, pulsa <strong>Revisar sincronización</strong>, comprueba el resumen y confirma en ambos dispositivos. Después recibirás los cambios seguros automáticamente.</p>
+  <div id="cloudSettingsHome" class="cloud-wizard-step">
+    <h3 class="cloud-wizard-heading">2 · Revisa las listas que ya tienes en OneDrive</h3>
+    <p>Una instalación nueva genera un identificador nuevo para el móvil. OneDrive puede conservar <strong>las listas de Windows y copias de un Android anterior</strong> aunque hayas desinstalado la app. No borres esos archivos ni des por hecho que son cambios nuevos.</p>
+    <p>Con la misma cuenta conectada, pulsa <strong>↻ Revisar, enviar y recibir cambios</strong>, comprueba las cantidades de listas y películas vistas y resuelve cualquier conflicto. <strong>Solo «Confirmar y sincronizar» aplica la combinación.</strong> Si ves algo inesperado, pulsa «Cancelar» y revisa tu copia de Windows.</p>
   </div>
   <p class="mobile-help"><strong>Modo sin nube:</strong> puedes conservar todas tus películas en el móvil. «Elegir carpeta local» no conecta automáticamente con OneDrive.</p>
   <div class="mobile-sync-support">
@@ -1403,10 +1401,10 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
    <button id="syncCancelButton" type="button" class="tool">Cancelar</button>
   </div>
   <div class="cloud-wizard-step">
-    <h3>5 · Sincronización manual y conflictos</h3>
-    <p>Al abrir la aplicación se consulta OneDrive <strong>una sola vez y sin importar ni publicar cambios</strong>. Usa el botón de dos flechas ↻ para revisar, enviar y recibir cambios. Se mostrará una confirmación antes de fusionarlos; los conflictos requieren una decisión. Puedes trabajar sin conexión y guardar todas tus modificaciones en el móvil.</p>
+    <h3>3 · Sincroniza cuando quieras</h3>
+    <p>Después de confirmar el paso 2, tus cambios se guardarán <strong>siempre en el móvil</strong>. Para enviarlos o recibir los de Windows, pulsa ↻ y vuelve a confirmar. Android no envía cambios automáticamente al abrir ni en segundo plano; al abrir solo puede hacer una consulta de lectura si ya está vinculado.</p>
   </div>
-  <div class="mobile-help mobile-sync-caution">La app guarda sus archivos de intercambio dentro de la carpeta que hayas elegido, en <code>Selector_Cine_365_Copias</code>, con copias separadas para cada dispositivo. <strong>No borres las subcarpetas actual ni sincronizacion.</strong> Si ya usabas otra carpeta con listas sincronizadas, no la renombres ni la muevas sin hacer antes una copia JSON.</div>
+  <div class="mobile-help mobile-sync-caution"><strong>¿Has borrado Android para instalar desde cero?</strong> El almacenamiento privado anterior se elimina normalmente y esta versión no solicita restaurarlo desde copias automáticas de Android. La carpeta <code>Selector_Cine_365</code> de OneDrive <strong>no se borra</strong>: sus archivos están en <code>sincronizacion/dispositivos</code>, directamente o bajo <code>Selector_Cine_365_Copias</code> según la configuración existente. No modifiques los JSON de sincronización; si necesitas recuperar datos, utiliza ↻ y confirma la vista previa.</div>
   <div id="tmdbSettingsTools" class="mobile-setting-actions" aria-label="Ajustes opcionales de TMDB"></div>
   <div class="mobile-setting-actions" style="margin-top:10px">
     <button type="button" class="tool" id="tmdbResumeIncomplete">↻ Completar carátulas y plataformas pendientes</button>
@@ -2881,7 +2879,7 @@ async function odLoadFolders(preselect=''){
      if(folder.id===preselect)option.selected=true;
      selection.append(option);
    }
-   $('odStatus').textContent=selection.options.length?'Elige la carpeta de pruebas que también utilizarás en Windows.':'No hay carpetas en la raíz de OneDrive. Puedes crear una carpeta de pruebas.';
+   $('odStatus').textContent=selection.options.length?'Solo en modo avanzado: selecciona la carpeta que ya utilizaba Windows y revisa sus datos antes de sincronizar.':'No hay carpetas en la raíz de OneDrive. Puedes crear Selector_Cine_365.';
  }catch(e){$('odStatus').textContent='⚠ No se pudieron consultar las carpetas: '+e.message;}
 }
 window.cineMicrosoftAuthFinished=async(ok,message)=>{
@@ -3070,8 +3068,8 @@ async function syncDevices(){
    pendingSyncToken=data.token;
    const panel=$('syncPreviewPanel'),details=$('syncPreviewDetails');
    panel.hidden=false;
-   $('syncPreviewSummary').textContent=(data.sources?('Se han encontrado '+data.sources+' fuentes compartidas.'):'No hay biblioteca compartida: este dispositivo puede crearla.')
-      +' Se conservan las copias de seguridad de Windows.';
+   $('syncPreviewSummary').textContent=(data.sources?('Se han encontrado '+data.sources+' copias de otros dispositivos, que pueden incluir Windows o un Android anterior.'):'No hay biblioteca compartida: este dispositivo puede crearla después de confirmar.')
+      +' No se sustituye ninguna copia de Windows. Comprueba los números antes de continuar.';
    details.textContent='En este móvil: '+data.local_lists+' listas y '+data.local_seen+' películas vistas.\n'
       +'Después de combinar: '+data.result_lists+' listas y '+data.result_seen+' vistas.';
    const conflicts=Array.isArray(data.conflicts)?data.conflicts:[];
@@ -3090,7 +3088,7 @@ async function syncDevices(){
        details.append(row);
      }
    }
-   message.textContent='Revisa el resumen y confirma para ENVIAR y RECIBIR. Ningún dato se ha cambiado todavía.';
+   message.textContent='Revisa listas, vistas y conflictos. Al confirmar se combinarán tus datos locales con OneDrive y se enviará una copia de este móvil; aún no se ha cambiado nada.';
    panel.scrollIntoView({block:'nearest',behavior:'smooth'});
  }catch(error){message.textContent='⚠ '+error.message;}
  finally{cloudSyncBusy=false;if(button)button.disabled=false;$('cloudSyncQuick').disabled=false;cloudBusyEnd();}
