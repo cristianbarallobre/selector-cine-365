@@ -2779,25 +2779,20 @@ $('mobileRecoveryRefresh').addEventListener('click',()=>void mobileRefreshRecove
 $('mobileRecoveryList').addEventListener('change',()=>{$('mobileRecoveryRestore').disabled=!$('mobileRecoveryList').value;});
 $('mobileRecoveryRestore').addEventListener('click',async()=>{
  const selected=$('mobileRecoveryList').value;if(!selected)return;
- if(!confirm('¿Restaurar esta copia local? Antes se guardará una copia del estado actual. Si tienes OneDrive conectado, los cambios restaurados se compartirán con Windows.'))return;
+ if(!confirm('¿Restaurar esta copia local? Antes se guardará una copia del estado actual. No se enviará nada a OneDrive hasta que pulses ↻ y confirmes.'))return;
  try{
   $('mobileRecoveryStatus').textContent='Restaurando con copia de seguridad previa…';
   await saveQueue.catch(()=>{});
   const result=await cloudRequest('/api/sync/recovery/restore','POST',{id:selected});
   await initLibrary();restartList();renderStats();renderCollectionControls();
-  $('mobileRecoveryStatus').textContent='✓ Copia restaurada: '+result.lists+' listas · '+result.seen+' vistas.'
+  $('mobileRecoveryStatus').textContent='✓ Copia local restaurada · pulsa ↻ para compartir: '+result.lists+' listas · '+result.seen+' vistas.'
     +(result.warning?' ⚠ OneDrive: '+result.warning:'');
   await mobileRefreshHistory();await mobileRefreshRecovery();await cloudRefresh();
  }catch(error){$('mobileRecoveryStatus').textContent='⚠ '+error.message;}
 });
-$('mobileSyncNowFast').addEventListener('click',async()=>{
- const btn=$('mobileSyncNowFast');btn.disabled=true;
- $('mobileSyncManualResult').textContent='Comprobando los últimos cambios de OneDrive…';
- try{
-  await cloudAutoReceive(true,true);
-  await cloudRefresh();await mobileRefreshHistory();
-  $('mobileSyncManualResult').textContent=$('mobileAutoStatus').textContent;
- }finally{btn.disabled=false;}
+$('mobileSyncNowFast').addEventListener('click',()=>{
+ $('mobileSyncManualResult').textContent='Revisa los cambios y confirma para enviar y recibir.';
+ void syncDevices();
 });
 
 function cloudShow(s){
@@ -2816,8 +2811,8 @@ function cloudShow(s){
    if($('mobileLastReceive'))$('mobileLastReceive').textContent='Cambios recibidos: '+(s.last_received_ms?mobileSyncAt(s.last_received_ms):'ninguno en esta sesión');
    box.textContent=s.last_error?'⚠ '+s.last_error:
      s.needs_review&&s.activated?'⚠ Hay cambios que debes revisar manualmente para evitar perder datos':
-     !s.activated?'Carpeta seleccionada · Pendiente de revisar e importar, todavía no se ha publicado nada':
-     s.last_backup?'✓ Sincronización automática activa · '+new Date(s.last_backup).toLocaleString('es-ES'):'✓ Carpeta compartida preparada';
+     !s.activated?'Carpeta seleccionada · pulsa ↻ para revisar y vincular, todavía no se ha publicado nada':
+     s.last_backup?'✓ Modo manual · último envío '+new Date(s.last_backup).toLocaleString('es-ES'):'✓ Carpeta preparada · pulsa ↻ para sincronizar';
  }else{
    box.textContent='Sin carpeta de nube configurada';
  }
@@ -2841,7 +2836,7 @@ $('cloudBackupNow').addEventListener('click',async()=>{
  try{cloudShow(await cloudRequest('/api/cloud/backup','POST'))}catch(e){$('cloudStatus').textContent='⚠ '+e.message;$('cloudStatus').classList.add('warn')}
 });
 $('cloudDisable').addEventListener('click',async()=>{
- if(!confirm('¿Desactivar las copias automáticas? Las copias existentes no se borrarán.'))return;
+ if(!confirm('¿Desconectar la carpeta de sincronización? Las copias existentes no se borrarán.'))return;
  try{cloudShow(await cloudRequest('/api/cloud/config','POST',{folder:''}));$('cloudFolder').value='';delete $('cloudFolder').dataset.cloudUri;}
  catch(e){$('cloudStatus').textContent='⚠ '+e.message;}
 });
@@ -2856,6 +2851,7 @@ async function syncDevices(){
  cloudBusyStart('/api/cloud/preview');
  const message=$('syncResult'),button=$('cloudSyncNow');
  if(button)button.disabled=true;
+  $('cloudSyncQuick').disabled=true;
  try{
    message.textContent='Buscando bibliotecas en la carpeta elegida, sin escribir nada…';
    await saveLocal();
@@ -2883,12 +2879,17 @@ async function syncDevices(){
        details.append(row);
      }
    }
-   message.textContent='Revisa el resumen y confirma la importación. Ningún dato se ha cambiado todavía.';
+   message.textContent='Revisa el resumen y confirma para ENVIAR y RECIBIR. Ningún dato se ha cambiado todavía.';
    panel.scrollIntoView({block:'nearest',behavior:'smooth'});
  }catch(error){message.textContent='⚠ '+error.message;}
- finally{cloudSyncBusy=false;if(button)button.disabled=false;cloudBusyEnd();}
+ finally{cloudSyncBusy=false;if(button)button.disabled=false;$('cloudSyncQuick').disabled=false;cloudBusyEnd();}
 }
 $('cloudSyncNow')?.addEventListener('click',()=>void syncDevices());
+$('cloudSyncQuick').addEventListener('click',()=>{
+ showView('settings');
+ $('mobileSyncManualResult').textContent='Revisando antes de enviar o recibir…';
+ void syncDevices();
+});
 $('syncCancelButton')?.addEventListener('click',()=>{
  pendingSyncToken='';$('syncPreviewPanel').hidden=true;$('syncResult').textContent='Operación cancelada; no se han cambiado los datos.';
 });
@@ -2907,7 +2908,8 @@ $('syncConfirmButton')?.addEventListener('click',async()=>{
    const data=await cloudRequest('/api/cloud/sync','POST',{token:pendingSyncToken,decisions});
    pendingSyncToken='';$('syncPreviewPanel').hidden=true;
    await initLibrary();restartList();
-   $('syncResult').textContent='✓ Biblioteca compartida · '+data.lists+' listas · '+data.seen+' películas vistas.\nPuedes volver a revisar cuando quieras.';
+   $('syncResult').textContent='✓ Sincronización manual completada · '+data.lists+' listas · '+data.seen+' películas vistas.\nPulsa ↻ de nuevo para enviar o recibir cambios.';
+    $('saveState').textContent='✓ En móvil y nube';
    await cloudRefresh();
  }catch(e){$('syncResult').textContent='⚠ '+e.message+' No se ha sobrescrito la copia de Windows.';}
  finally{button.disabled=false;cloudBusyEnd();}
