@@ -170,9 +170,16 @@ final class CloudBackup {
             if(!Backend.validLibrary(library))throw new Exception("No hay biblioteca local válida");
             Uri base=base(),devices=ensureDirectory(ensureDirectory(base,"sincronizacion"),"dispositivos");
             byte[] data=sync.snapshot(library).toString(2).getBytes(StandardCharsets.UTF_8);
-            putFile(devices,sync.deviceId()+".json",data,true);
-            Uri own=findChild(devices,sync.deviceId()+".json");
-            if(own==null||!java.util.Arrays.equals(read(own),data))throw new Exception("El proveedor no confirmó la escritura de la sincronización");
+            String snapshotName=sync.deviceId()+".json";
+            Uri own=findChild(devices,snapshotName);
+            // Compare before uploading: unchanged snapshots must not consume an extra
+            // OneDrive PUT or trigger needless downstream sync notifications.
+            if(own==null||!java.util.Arrays.equals(read(own),data)){
+                putFile(devices,snapshotName,data,true);
+                own=findChild(devices,snapshotName);
+                if(own==null||!java.util.Arrays.equals(read(own),data))
+                    throw new Exception("El proveedor no confirmó la escritura de la sincronización");
+            }
             // Daily rescue point for mobile, separate from the Windows backup.
             Uri mobile=ensureDirectory(ensureDirectory(base,"sincronizacion"),"respaldo_movil");
             putFile(mobile,LocalDate.now()+"_"+sync.deviceId()+".json",data,false);
