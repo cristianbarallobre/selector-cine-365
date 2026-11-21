@@ -74,6 +74,7 @@ type runningApp struct {
 	library       libraryState
 	platforms     *availabilityServer
 	cloud         *cloudBackups
+	graph         *desktopGraph
 	syncStore     *desktopSyncStore
 	syncPreviewToken string
     syncLastCheck atomic.Int64
@@ -131,6 +132,8 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		a.serveSyncSupport(w,r)
 	case "/api/cloud/status", "/api/cloud/config", "/api/cloud/backup", "/api/cloud/browse", "/api/cloud/preview", "/api/cloud/sync", "/api/cloud/auto", "/api/cloud/auto-folder":
 		a.serveCloudHTTP(w, r)
+	case "/api/onedrive-desktop/status", "/api/onedrive-desktop/start", "/api/onedrive-desktop/disconnect":
+        a.serveGraphAuthHTTP(w,r)
 	case "/api/poster":
 		a.servePosterHTTP(w, r)
 	case "/api/identities", "/api/identities/resolve":
@@ -221,7 +224,7 @@ func serve() error {
   // Un fallo en el estado de sincronización no debe impedir usar datos locales.
   logDiagnostic("Sincronización no disponible: "+syncErr.Error())
  }
- app := &runningApp{html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath)), cloud: newCloudBackups(filepath.Dir(savePath)), syncStore:syncStore, token: token, stopCh: make(chan struct{})}
+ app := &runningApp{html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath)), cloud: newCloudBackups(filepath.Dir(savePath)), graph:newDesktopGraph(), syncStore:syncStore, token: token, stopCh: make(chan struct{})}
 	app.touch()
 	listener, err := net.Listen("tcp4", "127.0.0.1:0")
 	if err != nil {
