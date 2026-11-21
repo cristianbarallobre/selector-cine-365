@@ -5,3 +5,5 @@ Requiere tests y verificación de firma APK y hashes antes de publicación; sin 
 No se considera certificada para sincronización de bibliotecas previamente contaminadas.
 
 Reintento 2: empaquetado Mac tolerante a estructura del artefacto.
+
+Reintento 3: validación PDFs mediante contenido real y páginas.
