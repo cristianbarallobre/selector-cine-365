@@ -1,6 +1,17 @@
-# Selector Cine 365 — Android v9 Beta 13.3
+# Selector Cine 365 — Android v9 Beta 13.5
 
 **Autor:** Cristian Barallobre Rúa. **Estado:** versión beta experimental para Android 8.0+ (API 26). Conserva funcionamiento local sin cuenta Microsoft y sin clave TMDB.
+
+## Android Beta 13.5 — conectar OneDrive sin elegir carpeta
+
+- **Conexión directa Microsoft:** si ya existe una carpeta de OneDrive enlazada desde Android, la reutiliza. Si no existe, busca o crea `Selector_Cine_365` directamente en OneDrive y la conecta sin necesidad de elegirla de una lista.
+- No se importa ni publica ninguna biblioteca al conectar: sigue siendo obligatorio pulsar el botón **↻**, revisar conflictos y confirmar.
+- Si Android tenía configurada una carpeta local con SAF, mantiene esa configuración y pide revisión antes de migrar. No se cambia ni borra ninguna carpeta en silencio.
+- La selección manual de carpetas (incluida la local) pasa a «Opciones avanzadas» para quien la necesite.
+- La versión sigue funcionando sin cuenta Microsoft, sin conexión a Internet y sin servidor propio.
+- Windows y macOS conservan la conexión mediante carpeta local OneDrive y deben utilizar la **misma carpeta `Selector_Cine_365`** para compartir biblioteca; la autenticación Microsoft Graph nativa de escritorio no está implementada.
+- Código de versión **9019** y nombre **9.0.0-beta.13.5**, mismo ID `es.cine365.app`, firmado con certificado anterior en la APK distribuida para pruebas. Copia JSON antes de instalar y nunca desinstales para actualizar.
+- [Notas completas Beta 13.5](../RELEASE_NOTES_v9_BETA13_5_ANDROID.md).
 
 ## Android Beta 13.3 — guardado local y sincronización manual
 
