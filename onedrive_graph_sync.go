@@ -41,7 +41,9 @@ func (a *runningApp) serveGraphAuthHTTP(w http.ResponseWriter,r *http.Request){
   respond(200,data)
  case "/api/onedrive-desktop/disconnect":
   if r.Method!=http.MethodPost{http.Error(w,"Método no permitido",405);return}
-  a.graph.logout()
+  if err:=a.graph.logout();err!=nil{
+   respond(409,map[string]string{"error":err.Error()});return
+  }
   a.mu.Lock();a.syncPreviewToken="";a.mu.Unlock()
   respond(200,a.graph.status())
  default:http.NotFound(w,r)
