@@ -9,6 +9,6 @@ assert.doesNotMatch(source,/dir=activity\.getFilesDir\(\);/);
 assert.doesNotMatch(source,/AtlasDelCine/);
 assert.match(manifest,/android:label="Selector Cine 365"/);
 assert.doesNotMatch(manifest,/android:label="[^"]*Beta/);
-assert.match(build,/versionCode 9024/);
+assert.match(build,/versionCode 9025/);
 assert.match(build,/versionName '9\.0\.0-beta\.13\.10'/);
 console.log('OK: Android stores lists, TMDB and cloud sync in app-private Selector_Cine_365 directory; no migration');
