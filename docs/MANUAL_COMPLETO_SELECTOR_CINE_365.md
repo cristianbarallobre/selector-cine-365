@@ -1,3 +1,5 @@
+> **MANUAL ACTUALIZADO:** para las versiones recomendadas del 21/11/2026 (**Windows/Mac Beta 14 y Android Beta 13.13**) usa [Manual Beta 14 / Android 13.13](MANUAL_BETA14_ANDROID13_13.md) y [Guía de sincronización segura](GUIA_SINCRONIZACION_SEGURA_BETA14_ANDROID13_13.md). La documentación que continúa a continuación es un **archivo de Beta 13.1/13**, conservado sin borrar su historia. No apliques las instrucciones antiguas de instalación o sincronización a las versiones nuevas.
+
 # Selector Cine 365
 
 ## Manual completo de uso: Windows, macOS y Android

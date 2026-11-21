@@ -1,8 +1,23 @@
 # Historial de cambios — Selector Cine 365
 
-**Edición más reciente: v9 Beta 13.1 (Windows y Mac) y v9 Beta 13 (Android), 20 de noviembre de 2026.** Los cambios recientes se basan en el código fuente v9, no en la rama antigua v8.2. Los paquetes Mac usan el mismo frontend y motor Go que Windows; no se afirma que se hayan validado manualmente en hardware real.
+**Referencia recomendada para pruebas:** Windows/macOS Beta 14 y Android Beta 13.13 (21/11/2026). `v9.0.0-beta.14`. [Descarga conjunta](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.14).
 
-Para un historial exhaustivo preparado para Word y PDF consulta [Historial completo v1–v9 Beta 13.1](docs/HISTORIAL_V9_BETA13_1.md). El registro detallado de v8.1.1 permanece como documento histórico independiente.
+## v9 Beta 14 / Android Beta 13.13 — candidato recomendado (21/11/2026)
+
+- **Código fuente unificado** de las ramas de Windows/macOS y Android, con compilaciones y pruebas automatizadas.
+- **Sincronización segura:** fusión por ID ya no añade a ciegas películas de listas distintas con el mismo `atlas`. Se bloquean listas sospechosas, incluyendo copias ya contaminadas con un gran excedente de películas.
+- **Primera instalación Android:** una biblioteca inicial completamente intacta se sustituye por la biblioteca real sincronizada, sin anexar las 365 películas de muestra.
+- **Android:** vista previa detallada con nombres y películas de cada lista; Beta 13.13, `versionCode 9027`, paquete `es.cine365.app.limpia` y firma original para futuras actualizaciones dentro de esta línea.
+- **Windows Beta 14:** sesión de OneDrive cifrada con DPAPI, vista previa y corrección de scroll/selector, exportación TXT y bloqueo de conflictos entre listas.
+- **Mac Intel/Apple Silicon Beta 14:** la misma protección de listas de Go en las compilaciones; sesión Microsoft temporal, todavía sin Keychain.
+- **TMDB:** identificaciones manuales viajan como IDs; los pósteres y plataformas siguen siendo cachés locales. Android completa un número limitado de fichas visibles.
+- **Limitación:** los datos históricamente fusionados no se separan solos. Las betas no están certificadas con todas las cuentas y dispositivos reales. Se recomienda respaldo JSON antes de sincronizar.
+
+[Notas de publicación](RELEASE_NOTES_v9_BETA14_RECOMENDADA.md) · [Manual vigente](docs/MANUAL_BETA14_ANDROID13_13.md).
+
+---
+
+## Historial anterior (archivo)
 
 ## v9 Beta 13.3 — Android (21 de noviembre de 2026)
 

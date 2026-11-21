@@ -41,7 +41,7 @@ func getSavePath() string {
 	if err != nil {
 		config = os.TempDir()
 	}
-	return filepath.Join(config, "AtlasDelCine", "mis_365_peliculas.txt")
+	return filepath.Join(config, "Selector_Cine_365", "mis_365_peliculas.txt")
 }
 
 func getInitialState(savePath string) (string, error) {
@@ -74,6 +74,8 @@ type runningApp struct {
 	library       libraryState
 	platforms     *availabilityServer
 	cloud         *cloudBackups
+	graph         *desktopGraph
+	graphUploadCh chan struct{}
 	syncStore     *desktopSyncStore
 	syncPreviewToken string
     syncLastCheck atomic.Int64
@@ -94,6 +96,9 @@ func (a *runningApp) auth(r *http.Request) bool {
 }
 func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	a.touch()
+	if r.URL.Path=="/" && r.Method==http.MethodGet && (r.URL.Query().Has("code")||r.URL.Query().Has("error")) {
+		a.serveGraphCallback(w,r);return
+	}
 	if r.URL.Path == "/" || r.URL.Path == "/api/ping" {
 		traceHTTP(r.URL.Path, r.UserAgent())
 	}
@@ -129,8 +134,10 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		a.serveLibraryHTTP(w, r)
 	case "/api/sync/history", "/api/sync/revisions", "/api/sync/recovery/list", "/api/sync/recovery/restore":
 		a.serveSyncSupport(w,r)
-	case "/api/cloud/status", "/api/cloud/config", "/api/cloud/backup", "/api/cloud/browse", "/api/cloud/preview", "/api/cloud/sync", "/api/cloud/auto":
+	case "/api/cloud/status", "/api/cloud/config", "/api/cloud/backup", "/api/cloud/browse", "/api/cloud/preview", "/api/cloud/sync", "/api/cloud/auto", "/api/cloud/auto-folder", "/api/cloud/mode":
 		a.serveCloudHTTP(w, r)
+	case "/api/onedrive-desktop/status", "/api/onedrive-desktop/start", "/api/onedrive-desktop/disconnect":
+        a.serveGraphAuthHTTP(w,r)
 	case "/api/poster":
 		a.servePosterHTTP(w, r)
 	case "/api/identities", "/api/identities/resolve":
@@ -221,12 +228,15 @@ func serve() error {
   // Un fallo en el estado de sincronización no debe impedir usar datos locales.
   logDiagnostic("Sincronización no disponible: "+syncErr.Error())
  }
- app := &runningApp{html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath)), cloud: newCloudBackups(filepath.Dir(savePath)), syncStore:syncStore, token: token, stopCh: make(chan struct{})}
+ app := &runningApp{html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath)), cloud: newCloudBackups(filepath.Dir(savePath)), graph:newDesktopGraph(filepath.Dir(savePath)), graphUploadCh:make(chan struct{},1), syncStore:syncStore, token: token, stopCh: make(chan struct{})}
 	app.touch()
+	go app.graphPublisher()
 	listener, err := net.Listen("tcp4", "127.0.0.1:0")
 	if err != nil {
 		return fmt.Errorf("no se ha podido iniciar la aplicación local: %w", err)
 	}
+	_,port,_:=net.SplitHostPort(listener.Addr().String())
+	app.graph.setRedirect("http://localhost:"+port+"/")
 	server := &http.Server{Handler: http.HandlerFunc(app.serveHTTP), ReadHeaderTimeout: 6 * time.Second}
 	go func() { _ = server.Serve(listener) }()
 	url := "http://" + listener.Addr().String() + "/"
@@ -244,17 +254,28 @@ func serve() error {
 	for {
 		select {
 		case <-app.stopCh:
-			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-			defer cancel()
-			return server.Shutdown(ctx)
+			return closeLocalServer(server)
 		case <-ticker.C:
 			if time.Since(time.Unix(app.lastActivity.Load(), 0)) > 12*time.Minute {
-				ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-				defer cancel()
-				return server.Shutdown(ctx)
+				return closeLocalServer(server)
 			}
 		}
 	}
+}
+
+// Closing the UI can race with a slow OneDrive HTTP request. A shutdown
+// deadline is not an application error and must not open a native Windows
+// 'context deadline exceeded' dialog after the library was already saved.
+func closeLocalServer(server *http.Server) error {
+ ctx,cancel:=context.WithTimeout(context.Background(),3*time.Second)
+ defer cancel()
+ err:=server.Shutdown(ctx)
+ if errors.Is(err,context.DeadlineExceeded) {
+  logDiagnostic("Cierre del servidor local: operación pendiente excedió el tiempo; se cierra la conexión sin mostrar error de aplicación")
+  _=server.Close()
+  return nil
+ }
+ return err
 }
 
 func main() {

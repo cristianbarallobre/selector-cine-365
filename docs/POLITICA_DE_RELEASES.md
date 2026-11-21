@@ -1,6 +1,20 @@
 # Política de publicaciones y recuperación
 
-**Selector Cine 365 · Actualizada el 20 de noviembre de 2026**
+**Actualizada el 21 de noviembre de 2026**
+
+## Referencia recomendada (aún en pruebas)
+
+[Release v9 Beta 14 / Android Beta 13.13](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.14): cuatro descargas verificadas (EXE Windows, ZIP Mac Intel/Apple Silicon, APK Android firmada) más notas, manual actual, historial y SHA-256. Es **prerelease**, no estable definitiva, hasta validar bibliotecas y cuentas Microsoft reales.
+
+**Identificadores Android:** `es.cine365.app.limpia` es la línea recomendada 13.12 → 13.13, siempre con firma original y versionCode creciente (9027). La línea histórica `es.cine365.app` **no** admite actualización directa desde la variante Limpia. Publicar con el mismo paquete/firma es requisito para preservar datos.
+
+Las betas anteriores y sus tags permanecen disponibles para recuperación. No borrar versiones históricas ni renovar un tag publicado sobre otro commit. Las bibliotecas personales, tokens y claves privadas no se incluyen en ningún artefacto o release.
+
+**Antes de sincronizar:** comprobar los conteos de películas **por lista**; si ya hubo mezcla, recuperar primero una copia buena. La corrección bloquea fusiones futuras, no separa copias previamente corruptas.
+
+---
+
+## Historial previo de releases (archivo; las etiquetas «más reciente» de abajo son históricas)
 
 ## Releases públicas y versiones históricas
 

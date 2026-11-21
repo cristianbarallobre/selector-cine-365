@@ -1,0 +1,48 @@
+name: Beta 14 Windows display and TXT fixes
+on:
+  push:
+    branches: ['fix/beta14-windows-platform-dropdown-scroll']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: go test ./... -count=1
+      - run: node scripts/test_v9_beta13.cjs
+      - run: node scripts/test_beta14_desktop_dropdowns.cjs
+      - run: node scripts/test_beta14_onedrive_guide.cjs
+      - run: node scripts/test_export_txt_name_beta14.cjs
+      - run: node scripts/test_txt_import_creates_list_beta14.cjs plantilla.html
+      - run: |
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags='-H windowsgui -s -w' -o Selector_Cine_365_Windows_Beta14_preview.exe .
+          GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -o Selector_Cine_365_Mac_arm64_Beta14_preview .
+          GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -o Selector_Cine_365_Mac_amd64_Beta14_preview .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: beta14-windows-platforms-scroll-txt-preview
+          path: |
+            Selector_Cine_365_Windows_Beta14_preview.exe
+            Selector_Cine_365_Mac_arm64_Beta14_preview
+            Selector_Cine_365_Mac_amd64_Beta14_preview
+          if-no-files-found: error
+
+  test-windows-dpapi:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - name: Probar DPAPI real y recuperación de la sesión Microsoft
+        shell: pwsh
+        run: go test ./... -run "TestWindowsDPAPI|TestMicrosoftSession" -count=1 -v

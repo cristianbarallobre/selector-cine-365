@@ -1,3 +1,50 @@
+# Android Beta 13.13 — aislamiento de listas y recuperación segura
+
+- Las versiones anteriores fusionaban automáticamente películas de listas con el mismo ID, especialmente `atlas` después de reinstalar Android. Una lista podía terminar con películas de otras listas dentro de su propio texto, aunque el selector mostrase una sola lista.
+- Beta 13.13 detiene cualquier unión sospechosa, incluidas bibliotecas ya contaminadas o listas con el mismo ID pero nombres distintos. No envía ni importa datos cuando detecta ese problema.
+- En instalación nueva y sin modificaciones locales, la lista de ejemplo de 365 películas **se sustituye por la biblioteca real de Windows** encontrada en OneDrive; no se anexa al final. Se priorizan snapshots de escritorio y se omiten únicamente ejemplos Android intactos sin cambios.
+- En la vista previa se muestran los nombres y números de películas por lista. Cancela si algún número no cuadra; no pulses Confirmar ni Sincronizar.
+- **Si las listas ya están mezcladas:** no se pueden separar automáticamente con garantías. Cambia Windows a sincronización manual y conserva `%APPDATA%\Selector_Cine_365\colecciones.json` y las copias `sync_recuperacion`. Guarda también una copia JSON desde Android antes de intentar restaurar. Solo restaura desde una biblioteca comprobada, por ejemplo la de Windows; no borres snapshots de OneDrive sin conservarlos.
+- Esta versión mantiene el identificador de la variante limpia `es.cine365.app.limpia`, `versionCode 9027`, `9.0.0-beta.13.13` y firma el APK de prueba entregado con el mismo certificado original Beta 13.12 (`b8a17f39e4fa24d7c110d452161425c7524412c3a5a4d7459b1132ffd0825fb6`). La clave privada no se ha añadido a GitHub.
+- Tests Android (`ListIdentityIsolationTest`) y Windows (`sync_list_identity_beta14_test.go`) protegen los casos detectados. La sincronización real de la instalación del usuario debe comprobarse antes de publicar una versión estable.
+
+---
+# Android Beta 13.12 — cargar carteles y plataformas pendientes en el móvil
+
+- Al abrir la Biblioteca con TMDB ya conectado, Android completa **de forma limitada** las fichas visibles que aún no tiene guardadas. También lo hace tras confirmar una sincronización de OneDrive, seleccionar otra lista o cargar más películas.
+- Solo consulta hasta 12 fichas por tanda, con dos peticiones concurrentes, y como máximo 48 por sesión; respeta la caché y el enfriamiento de errores. No recorre las 365 películas ni solicita nada a OneDrive por ello.
+- Las listas y las marcas de vistas se sincronizan con OneDrive; las carátulas, valoraciones y plataformas son fichas TMDB locales. Para completar el resto de una lista sigue existiendo **Nube → Completar carátulas y plataformas pendientes**.
+- Sin una clave TMDB configurada en el móvil no se hacen consultas; la clave personal sigue sin sincronizarse ni compartirse con Windows.
+- Nueva prueba JavaScript de consultas limitadas y sin subida a la nube. Android `versionCode 9026`, `versionName 9.0.0-beta.13.12`.
+- **Certificado de pruebas:** la APK debug de GitHub Actions está firmada con una clave temporal diferente de Beta 13.11. No es una actualización directa: instalarla sobre una beta firmada con otra clave provoca un error de Android. Utilizar el certificado original en las siguientes versiones sigue siendo necesario.
+
+---
+# Selector Cine 365 — Android v9 Beta 13.11 (instalación limpia de pruebas)
+
+**Estado:** Beta 13.11 (versionCode `9025`) para probar Android recién instalado con Windows Beta 14 y OneDrive ya configurado. No es una release estable.
+
+## Instalar desde cero, sin datos antiguos
+
+1. Si desinstalaste `es.cine365.app`, los archivos privados del Android anterior normalmente desaparecieron. Una copia antigua de Android/Google o la transferencia entre teléfonos podía restaurar configuraciones sin avisar; desde esta Beta se **desactiva Auto Backup** y se excluyen explícitamente archivos privados, credenciales y datos de dispositivo tanto de las copias del sistema como de la transferencia de Android (reglas para Android 8–11 y Android 12+). Esto no borra copias anteriores ya existentes fuera del móvil.
+2. **OneDrive es independiente del móvil:** la carpeta `Selector_Cine_365` y los archivos de Windows y de posibles Android anteriores siguen existiendo. Nunca borres esos archivos solo por haber desinstalado la app.
+3. Abre la Beta 13.11 y confirma que puedes usarla en local. En **Ajustes y sincronización → 1. Conecta tu cuenta Microsoft**, utiliza **la misma cuenta de OneDrive** que Windows. Android localizará o creará la carpeta raíz correcta; conectar no importa ni sube películas.
+4. En **2. Revisa las listas**, pulsa **↻ Revisar, enviar y recibir cambios**. Comprueba el número de listas y de películas vistas; puede haber copias de Windows y de un Android anterior. Si hay conflictos, decide explícitamente; si ves algo raro, **Cancelar** no cambia ni publica datos.
+5. Pulsa **Confirmar y sincronizar** solo después de revisar. Se guarda una recuperación local antes de combinar y se envía **únicamente el JSON de este móvil**. Las copias de Windows permanecen intactas.
+6. En **3. Sincroniza cuando quieras**, vuelve a usar ↻ para enviar o recibir cambios. Android **no sincroniza por intervalos ni automáticamente en segundo plano**; al abrir consulta la nube solo en modo lectura si ya está vinculado.
+
+## Certificado de firma y distribución de prueba
+
+- Las compilaciones GitHub Actions de esta rama generan una `app-debug.apk` **firmada con la clave de depuración temporal del runner** para instalaciones totalmente limpias, y un `app-release-unsigned.apk` que no sirve para instalar directamente.
+- **Esta APK de depuración NO utiliza el certificado original de las betas publicadas.** Solo úsala si no tienes instalada una APK con otra firma; para actualizaciones posteriores sin reinstalar habrá que distribuir una versión firmada con **el certificado original de Selector Cine 365**, cuya clave privada no se guarda en GitHub.
+- La aplicación sigue usando `applicationId es.cine365.app`; Android 8.0+ (API 26). Los cambios de interfaz y reglas de restauración no alteran los datos compartidos de Windows.
+
+## Comprobaciones
+
+- Prueba JVM de primera vinculación: se fusiona una biblioteca Windows ya vista con el estado inicial del móvil, se respeta la revisión causal de Windows frente a una copia Android antigua y las decisiones realmente concurrentes se dejan para revisión.
+- Pruebas de prohibición de restauración automática, revisión antes de subir y compilación debug/release, más verificación de la firma y versión de la APK.
+- Falta validar la instalación y la sincronización real en Redmi. Conserva una copia JSON de Windows antes de aceptar cualquier importación.
+
+---
 # Selector Cine 365 — Android v9 Beta 13.5
 
 **Autor:** Cristian Barallobre Rúa. **Estado:** versión beta experimental para Android 8.0+ (API 26). Conserva funcionamiento local sin cuenta Microsoft y sin clave TMDB.

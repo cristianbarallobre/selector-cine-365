@@ -1,29 +1,39 @@
 # Selector Cine 365 🎬
 
-Aplicación personal de cine para **Windows 10/11**, **macOS Apple Silicon e Intel** y **Android**, creada por **Cristian Barallobre Rúa**. Sirve para organizar listas, registrar películas vistas, decidir qué ver, consultar datos de TMDB y sincronizar bibliotecas entre dispositivos.
+Aplicación personal de cine multiplataforma para Windows, macOS y Android. Biblioteca con listas, películas vistas, estadísticas, TMDB opcional y sincronización opcional mediante OneDrive.
 
-**Código Android más reciente:** **v9 Beta 13.5** (21 de noviembre de 2026, APK firmada para pruebas, distribuida en la conversación del proyecto). **Última APK Android publicada en GitHub Releases:** **Beta 13.3**. Windows y macOS siguen en **Beta 13.1**. Todas son versiones beta; la conexión automática y las pruebas físicas entre dispositivos siguen pendientes de validación.
+## Descarga recomendada para pruebas (21 de noviembre de 2026)
 
-## Descargar
+**[Selector Cine 365 — Release conjunta v9 Beta 14 / Android Beta 13.13](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.14)**
 
-**[Android Beta 13.3 — OneDrive manual y menos consumo](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13.3)** (APK firmada, instalable encima de Beta 13)
-
-**[Windows y Mac Beta 13.1 — descarga de escritorio](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13.1)**
-
-| Plataforma | Archivo incluido | Requisitos |
+| Plataforma | Archivo de esta release | Compatibilidad |
 |---|---|---|
-| Windows | `Selector_Cine_365_Windows_v9_BETA13_1.zip` | Windows 10/11 de 64 bits, Microsoft WebView2 |
-| macOS Apple Silicon | `Selector_Cine_365_Mac_Apple_Silicon_v9_BETA13_1.zip` | macOS 12+, Apple Silicon |
-| macOS Intel | `Selector_Cine_365_Mac_Intel_v9_BETA13_1.zip` | macOS 12+, Intel |
-| Android | `Selector_Cine_365_Android_v9_BETA13_3.apk` | Android 8.0+, APK firmada y verificada |
+| Windows 10/11 x64 | `Selector_Cine_365_Windows_Beta14.exe` | EXE portátil, WebView2 |
+| macOS Apple Silicon | `Selector_Cine_365_Mac_AppleSilicon_Beta14.zip` | macOS 12+, sin notarización |
+| macOS Intel | `Selector_Cine_365_Mac_Intel_Beta14.zip` | macOS 12+, sin notarización |
+| Android 8+ | `Selector_Cine_365_Android_Beta13_13_Limpia.apk` | `es.cine365.app.limpia`, versionCode 9027, firma original |
 
-**Por qué cambian los números:** Windows y Mac siguen en Beta 13.1; Android ha avanzado hasta Beta 13.5 (código 9019) para probar la vinculación automática de OneDrive. La APK publicada en GitHub Releases continúa siendo Beta 13.3 hasta que se publique una release nueva.
+**Estado: beta recomendada para pruebas; no estable definitiva.** Se han pasado pruebas automatizadas, pero faltan comprobaciones de cuentas Microsoft y ciertos dispositivos. La seguridad de sincronización ha mejorado: se bloquean uniones de listas con ID coincidente pero bibliotecas diferentes. **No repara listas que ya se mezclaron:** conserva tus copias JSON y no sincronices si ves conteos incorrectos.
 
-**Novedad de escritorio Beta 13.1:** corregida la ruta local `/api/platforms/cache`, que devolvía HTTP 404 al abrir y dejaba la interfaz en «Conexión local TMDB no disponible. Reintentando…» aunque la clave TMDB existiera. Ahora la caché se carga correctamente; errores de caché y de estado se tratan por separado. El botón Actualizar permite comprobar de nuevo la conexión. No se incluyen claves privadas en los instaladores.
+**Actualización Android:** instala la APK Beta 13.13 encima de la **Beta 13.12 Limpia**, sin desinstalar; solo son compatibles si conservan `es.cine365.app.limpia` y la misma firma. La línea antigua `es.cine365.app` tiene otro identificador y no puede actualizarse directamente con esta APK.
 
-**Antes de actualizar:** exporta copia JSON **desde cada dispositivo**, preferiblemente fuera de OneDrive; después instala las versiones nuevas sin desinstalar y revisa la primera sincronización. Si una lista se eliminó antes de Beta 13 y reapareció por una copia antigua, bórrala una vez con ambos dispositivos ya actualizados. La aplicación puede utilizarse sin sincronización.
+**TMDB:** carátulas, valoraciones y plataformas son cachés locales de cada dispositivo; las identificaciones manuales (ID TMDB) sí pueden viajar con las listas. Una carátula visible en Windows no tiene por qué estar descargada aún en Android.
 
-Histórico: [Beta 12.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.2), [Beta 12.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.1), [Beta 12](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12), [Beta 9](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.9), [v8.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.2) y [v8.1.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.1.1). Para recuperar instaladores de betas retiradas consulta [política de releases](docs/POLITICA_DE_RELEASES.md).
+### Documentación vigente
+
+- [Manual actualizado de las versiones recomendadas](docs/MANUAL_BETA14_ANDROID13_13.md)
+- [Guía de sincronización y recuperación segura](docs/GUIA_SINCRONIZACION_SEGURA_BETA14_ANDROID13_13.md)
+- [Historial de versiones](CHANGELOG.md) y [política de publicaciones](docs/POLITICA_DE_RELEASES.md)
+- [Notas completas](RELEASE_NOTES_v9_BETA14_RECOMENDADA.md)
+- [Código fuente unificado](https://github.com/cristianbarallobre/selector-cine-365/tree/release/selector-cine-v9-beta14-beta13-13)
+
+Las versiones anteriores se conservan en [GitHub Releases](https://github.com/cristianbarallobre/selector-cine-365/releases) y, cuando corresponda, en el archivo histórico privado.
+
+---
+
+## Archivo: cambios de betas anteriores
+
+*Las notas que siguen documentan estados históricos, no versiones actuales recomendadas.*
 
 ## Android v9 Beta 13.5 — OneDrive sin selección obligatoria de carpetas
 

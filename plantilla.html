@@ -9,7 +9,7 @@
 <meta name="author" content="__APP_AUTHOR__">
 <meta name="copyright" content="__APP_COPYRIGHT__">
 <meta name="application-name" content="Selector Cine 365">
-<title>Selector Cine 365 · v9 Beta 13.1</title>
+<title>Selector Cine 365 · Beta 14 Preview</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1018;--panel:#171f2b;--panel2:#1b2735;--line:#314052;--subtle:#94a2b5;--light:#f4f6fa;--gold:#f3c66d;--gold2:#d59b40;--green:#a4e4bc;--red:#e5a6a6;--r:19px}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 960px 510px at 88% -10%,#263649 0%,transparent 76%),var(--bg);color:var(--light);font-family:'Segoe UI',system-ui,Arial,sans-serif;font-size:15px;min-height:100vh}button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
@@ -45,12 +45,21 @@ main{max-width:1250px;padding:28px 28px 32px;margin:auto}.header{display:flex;al
 .nav-btn:hover{background:#2c3d50}.nav-btn.active{border-color:#d9ac5c;background:#413724;color:#ffda89}
 .list-switch{margin-left:auto;min-width:190px;max-width:290px;flex:1;border:1px solid #485b71;border-radius:10px;background:#1e2a3a;color:#f0e6d6;padding:10px 12px;font-size:13px;font-weight:680}
 .view[hidden]{display:none!important}.tool-wide{grid-column:span 2}
+.film-reorder-handle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 28px;width:28px;height:28px;min-height:28px;padding:0;border:1px solid #43546a;border-radius:7px;background:#29394a;color:#b9c8db;cursor:grab;touch-action:none;font-size:19px;line-height:1}
+.film-reorder-handle:active{cursor:grabbing}
+/* Tirador vertical, separado del título y con espacio propio a la izquierda. */
+#view-library .film-item{position:relative;padding-left:37px}
+#view-library .film-reorder-handle{position:absolute;left:6px;top:7px;bottom:7px;width:25px;height:auto;min-height:0;flex:none;border-radius:8px;font-size:20px;z-index:2}
+
+.film-item.reorder-moving{opacity:.58;border-color:var(--gold);background:#243244}
+.film-item.reorder-target{outline:2px solid var(--gold);outline-offset:-2px}
+
 .film-poster{width:42px;height:60px;object-fit:cover;border-radius:6px;border:1px solid #627185;flex:none;background:#151e2a}
 .poster-placeholder{width:42px;height:60px;flex:none;display:grid;place-items:center;border:1px solid #3a4a5f;background:#152131;color:#7d8b9b;border-radius:6px;font-size:22px}
 .title-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.film-name{min-width:0;flex:0 1 auto}.film-rating{border:1px solid #826941;color:#ffda91;border-radius:7px;padding:3px 6px;font-size:11px;font-weight:780;white-space:nowrap;background:#3a2f24}
 .film-toggle{gap:10px;min-width:0}.film-item{min-height:86px}.film-platforms{margin-top:4px}.film-sub{margin-top:4px}
 .select-label{display:block;color:#d2c197;font-size:11px;font-weight:800;letter-spacing:.12em;margin:13px 0 7px}
-.platform-select{display:block;width:100%;border:1px solid #6d614d;border-radius:11px;background:#282b31;color:#f2e0c1;padding:12px 12px;font-size:14px;font-weight:720;outline:none}
+.platform-select{cursor:pointer;display:block;width:100%;border:1px solid #6d614d;border-radius:11px;background:#282b31;color:#f2e0c1;padding:12px 12px;font-size:14px;font-weight:720;outline:none}
 .sort-count{font-size:12px;color:#b6c5d3;margin:7px 0 13px;min-height:16px}
 .pick{flex-direction:row;align-items:center;justify-content:flex-start;gap:17px}.result-copy{flex:1;min-width:0}.chosen-poster{height:154px;width:103px;border:1px solid #887253;border-radius:9px;object-fit:cover;flex:none}.chosen-poster[hidden]{display:none}
 .stats-hero{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
@@ -75,7 +84,7 @@ main{max-width:1250px;padding:28px 28px 32px;margin:auto}.header{display:flex;al
 .library-platform-chevron{color:#f2c36c;font-size:12px;flex-shrink:0}
 .library-platform-count{font-size:12px;color:#aabed2;white-space:nowrap;margin-left:auto;font-variant-numeric:tabular-nums}
 .library-platform-menu[hidden]{display:none}
-.library-platform-menu{position:absolute;z-index:12;top:calc(100% + 6px);left:0;width:min(385px,calc(100vw - 56px));max-width:100%;border:1px solid #5b6575;background:#1a2736;border-radius:13px;box-shadow:0 24px 48px #0009;padding:12px}
+.library-platform-menu{position:absolute;z-index:12;top:calc(100% + 6px);left:0;width:100%;max-width:100%;border:1px solid #5b6575;background:#1a2736;border-radius:13px;box-shadow:0 24px 48px #0009;padding:12px}
 .library-platform-menu-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 9px;padding:0 3px}
 .library-platform-menu-header strong{font-size:13px;color:#eaf1f8}
 .library-platform-reset{border:1px solid #866b43;border-radius:8px;padding:6px 11px;color:#f1d095;background:#332d28;font-weight:720;font-size:12px}
@@ -86,6 +95,26 @@ main{max-width:1250px;padding:28px 28px 32px;margin:auto}.header{display:flex;al
 .library-platform-option:has(input:checked){background:#383425;border-color:#9e7b43;color:#ffe0a2}
 .library-platform-option input{width:16px;height:16px;margin:0;flex:none;accent-color:#e9b65b;cursor:pointer}
 .library-platform-option span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Beta 14: desplegables con apariencia consistente y cursor de mano también en las opciones. */
+.single-select-native{display:none!important}
+.single-select-picker{position:relative;min-width:0}
+.list-switch-picker{margin-left:auto;min-width:190px;max-width:290px;flex:1 1 190px;z-index:16}
+.list-switch-picker .list-switch{display:flex;width:100%;max-width:none;min-width:0;margin:0;flex:none}
+.top-nav{position:relative;z-index:15}
+.single-select-button{display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;cursor:pointer}
+.single-select-button>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.single-select-button:hover,.single-select-button[aria-expanded="true"]{border-color:#d0a963;background:#38352f}
+.list-switch-picker .single-select-button:hover,.list-switch-picker .single-select-button[aria-expanded="true"]{background:#2b3a4d}
+.single-select-menu{width:100%;max-width:100%}
+.single-select-menu .library-platform-options{max-height:min(246px,45vh)}
+.single-select-option{width:100%;text-align:left;cursor:pointer;font-family:inherit}
+.single-select-option[aria-selected="true"]{background:#383425;border-color:#9e7b43;color:#ffe0a2}
+.single-select-check{display:grid;place-items:center;flex:none;width:16px;height:16px;border:1px solid #77889c;border-radius:3px;color:transparent;font-size:12px;font-weight:900;background:#29303a}
+.single-select-option[aria-selected="true"] .single-select-check{background:#e9b65b;color:#362611;border-color:#e9b65b}
+.sort-platform-picker{z-index:12;width:100%}
+.sort-platform-picker .single-select-button{min-height:40px}
+.single-select-menu.opens-up{top:auto;bottom:calc(100% + 6px)}
+@media(max-width:650px){.list-switch-picker{max-width:none;width:100%;margin:0;flex:1 1 100%}}
 @media(max-width:650px){.library-platform-label{width:100%}.library-platform-picker{flex:1 1 210px}.library-platform-count{margin-left:0}.library-platform-menu{max-width:none;width:100%}}
 
 /* Copias automáticas en carpeta sincronizada */
@@ -279,7 +308,7 @@ h2{font-size:19px}
 @media(max-height:690px){.creator-credit{font-size:10px}}
 
 .sync-desktop-panel{position:fixed;z-index:180;left:50%;top:50%;transform:translate(-50%,-50%);width:min(680px,calc(100vw - 30px));max-height:calc(100dvh - 36px);overflow-y:auto;padding:20px;border:1px solid #6e88a6;background:#162535;border-radius:15px;box-shadow:0 0 0 100vmax #000b,0 25px 75px #000a}
-#view-collections .panel{overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior-y:contain}
+#view-collections .panel{overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior-y:contain;border-radius:var(--r);}
 #view-collections .cloud-box{flex:0 0 auto!important}
 #view-collections .cloud-buttons{flex-wrap:wrap!important}
 #view-collections .cloud-buttons .tool{flex:1 1 85px!important}
@@ -368,7 +397,12 @@ h2{font-size:19px}
 /* Las listas deben ocupar altura real. La nube se encuentra DESPUÉS y se desplaza con el panel. */
 #view-collections .collection-rows{display:grid;grid-template-columns:minmax(0,1fr);flex:0 0 auto!important;height:auto!important;min-height:0!important;overflow:visible!important;align-content:start!important;gap:8px}
 #view-collections .collection-item{flex:0 0 auto;min-height:60px}
-#view-collections .panel{min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;overscroll-behavior-y:contain}
+#view-collections .panel{min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;overscroll-behavior-y:contain;clip-path:inset(0 round var(--r));scrollbar-color:#485c70 transparent;scrollbar-gutter:stable;padding-block:18px}
+/* El scroll del panel completo queda dentro de las esquinas redondeadas en WebView2. */
+#view-collections .panel::-webkit-scrollbar{width:10px}
+#view-collections .panel::-webkit-scrollbar-track{background:transparent;margin-block:14px}
+#view-collections .panel::-webkit-scrollbar-thumb{background:#536377;border:2px solid transparent;background-clip:padding-box;border-radius:12px}
+#view-collections .panel::-webkit-scrollbar-corner{background:transparent}
 #view-collections .collection-paging{flex:0 0 auto}
 .cine-sync-history.is-empty{border:0;background:transparent;min-height:0;max-height:none;overflow:visible;padding:3px 0;font-size:13px;color:#b8cbe0;line-height:1.55}
 .cine-history-checked{font-size:11px!important;color:#9fb3c7!important;line-height:1.5!important;margin:4px 0 10px!important}
@@ -376,6 +410,56 @@ h2{font-size:19px}
 <style id="cine-v9-stable-collection-pages">
 @media(min-width:761px){#view-collections .collection-rows{grid-auto-rows:70px!important;min-height:301px!important}#view-collections .collection-item{height:70px;min-height:70px!important}}
 #view-collections .cine-list-placeholder{visibility:hidden;pointer-events:none;border-color:transparent;background:transparent}
+</style>
+<style id="cine-beta14-onedrive-guide">
+#view-collections .cloud-box{margin:18px 0 0;padding:18px;border:1px solid #3e526a;background:#111d2a}
+.cloud-guide-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:15px}
+.cloud-guide-heading .cloud-title{margin:0 0 5px}
+.cloud-guide-heading p{font-size:13px;line-height:1.55;color:#bacbdc;margin:0;max-width:790px}
+.cloud-guide-heading strong,.cloud-guide-where strong{color:#eff3fa}
+.cloud-guide-state{flex:0 0 230px;min-width:0;background:#253548;border:1px solid #465e77;color:#e7eff8;border-radius:10px;padding:10px 13px;font-size:12px;font-weight:740;line-height:1.45}
+.cloud-guide-state[data-phase="paired"]{border-color:#53856d;color:#b9f0d2;background:#19332f}
+.cloud-guide-state[data-phase="review"]{border-color:#ad8a49;color:#f9da97;background:#342c1f}
+.cloud-guide-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.cloud-guide-step{display:flex;flex-direction:column;min-width:0;border:1px solid #354a60;border-radius:13px;background:#19283a;padding:14px}
+.cloud-guide-step[data-state="ready"]{border-color:#9a783f}
+.cloud-guide-step[data-state="done"]{border-color:#4c7967;background:#192e32}
+.cloud-guide-step-head{display:flex;align-items:flex-start;gap:10px}
+.cloud-guide-number{display:grid;place-items:center;flex:0 0 27px;width:27px;height:27px;border-radius:8px;background:#2e3e52;color:#ffdb97;border:1px solid #5b6679;font-weight:850;font-size:14px}
+.cloud-guide-step[data-state="done"] .cloud-guide-number{background:#2c604f;color:#d8ffe7;border-color:#6d9e82}
+.cloud-guide-step-head h3{font-size:14px;line-height:1.3;color:#f8d88e;margin:1px 0 5px}
+.cloud-guide-step-head p{font-size:12px;line-height:1.48;color:#c6d3e1;margin:0}
+.cloud-guide-step-note{font-size:12px;line-height:1.5;color:#aebfd1;margin:9px 0 12px}
+.cloud-guide-step-note strong{color:#f0dbb0}
+.cloud-guide-action{margin-top:auto;min-height:38px;font-size:12px!important;padding:9px 10px!important;border-radius:9px!important;width:100%}
+.cloud-guide-action:disabled{cursor:not-allowed}
+.cloud-guide-feedback,.cloud-guide-hint{font-size:11px;line-height:1.5;color:#b8d1dc;margin:9px 0 0;min-height:17px}
+.cloud-guide-feedback{overflow-wrap:anywhere}
+.cloud-guide-disconnect{margin-top:8px;font-size:11px;padding:7px}
+.cloud-guide-mode{font-size:12px;font-weight:750;color:#d5e3f0;display:grid;gap:6px;margin:10px 0 0}
+.cloud-guide-mode select{width:100%;min-width:0;background:#1e2b3d;color:#eaf2fb;border:1px solid #60758a;border-radius:8px;font:inherit;padding:8px;cursor:pointer}
+.cloud-guide-mode-desc{font-size:11px;color:#a9bdd0;line-height:1.45;margin:7px 0 0}
+.cloud-guide-where{border:1px solid #374d63;border-radius:11px;background:#142333;padding:12px 14px;margin-top:13px}
+.cloud-guide-where>strong{font-size:13px;color:#f4cf84}
+.cloud-guide-where p{color:#b9cddd;font-size:12px;line-height:1.55;margin:5px 0 0;overflow-wrap:anywhere}
+.cloud-guide-where a{color:#f4cd82;text-decoration:underline}
+.cloud-guide-where code{color:#f9db9b;overflow-wrap:anywhere;font-size:12px}
+.cloud-guide-where .cloud-status{min-height:0;margin-top:6px}
+.cloud-guide-health{border:1px solid #435e74;border-radius:11px;background:#192a3c;padding:13px 14px;margin-top:11px}
+.cloud-guide-health h3{font-size:14px;color:#f2ca80;margin:0 0 5px}
+.cloud-guide-health .cloud-status{margin:4px 0;color:#bbd9c6;font-size:12px}
+.cloud-guide-health .cine-sync-metrics{margin-top:7px}
+.cloud-guide-extra{border:1px solid #30475d;border-radius:10px;margin-top:10px;padding:0 13px;background:#172535}
+.cloud-guide-extra>summary{padding:12px 4px;cursor:pointer;color:#d9e7f6;font-weight:730;font-size:13px}
+.cloud-guide-extra[open]>summary{color:#f6d18e;border-bottom:1px solid #35485b;margin-bottom:11px}
+.cloud-guide-extra>p{font-size:12px;line-height:1.5;color:#b6c8dc}
+.cloud-guide-extra .cloud-guide-alt{width:100%;margin:0 0 12px}
+.cloud-guide-extra #cloudFolderAdvanced{margin-bottom:12px}
+.cloud-guide-extra #cloudFolderAdvanced>summary{cursor:pointer;font-size:12px;padding:6px;color:#f0d18d}
+.cloud-guide-extra .cine-sync-activity{margin:0 0 13px}
+.cloud-guide-extra .cine-sync-title{margin-top:8px}
+@media(max-width:1000px){.cloud-guide-heading{flex-direction:column}.cloud-guide-state{flex:0 0 auto;width:100%}.cloud-guide-steps{grid-template-columns:1fr}.cloud-guide-step{padding:12px}.cloud-guide-action{margin-top:12px}}
+@media(max-width:650px){#view-collections .cloud-box{padding:11px}.cloud-guide-heading{gap:9px}.cloud-guide-step-head{gap:8px}.cloud-guide-where,.cloud-guide-health{padding:10px}}
 </style>
 </head>
 <body>
@@ -385,7 +469,7 @@ h2{font-size:19px}
     <div class="brand" aria-hidden="true"><img src="/icon.png" alt="" style="width:58px;height:58px;object-fit:contain"></div>
     <div><div class="eyebrow">Selector Cine 365</div><h1>¿Qué película veo hoy?</h1></div>
     <div class="header-side">
-      <div class="header-tag">🎞️ SELECTOR CINE 365 · v9 Beta 13.1</div>
+      <div class="header-tag">🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview</div>
       <div class="saved" id="saveState" aria-live="polite">✓ Guardado</div>
       <div class="creator-credit" title="__APP_COPYRIGHT__">Hecho por <strong>__APP_AUTHOR__</strong></div>
     </div>
@@ -395,7 +479,14 @@ h2{font-size:19px}
     <button class="nav-btn" type="button" data-view="statistics">▥ Estadísticas</button>
     <button class="nav-btn" type="button" data-view="collections">▤ Mis listas</button>
     <button class="nav-btn" type="button" data-view="instructions">❔ Instrucciones</button>
-    <select id="listSwitcher" class="list-switch" aria-label="Seleccionar lista"></select>
+    <div class="single-select-picker list-switch-picker" id="listSwitcherPicker">
+      <select id="listSwitcher" class="single-select-native" aria-hidden="true" tabindex="-1"></select>
+      <button type="button" id="listSwitcherButton" class="list-switch single-select-button" aria-label="Seleccionar lista" aria-haspopup="listbox" aria-expanded="false" aria-controls="listSwitcherOptions"><span id="listSwitcherButtonLabel">Seleccionar lista</span><span class="library-platform-chevron" aria-hidden="true">▾</span></button>
+      <div class="library-platform-menu single-select-menu" id="listSwitcherMenu" hidden>
+        <div class="library-platform-menu-header"><strong>Seleccionar lista</strong></div>
+        <div class="library-platform-options" id="listSwitcherOptions" role="listbox" aria-label="Listas disponibles"></div>
+      </div>
+    </div>
   </nav>
   <div id="view-library" class="columns view">
     <section class="panel" aria-label="Biblioteca de películas">
@@ -434,11 +525,18 @@ h2{font-size:19px}
         <div class="stat"><div class="stat-value" id="total">—</div><div class="stat-label">Total</div></div>
       </div>
       <div class="progress" role="progressbar" aria-label="Películas vistas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress"><div class="progress-bar" id="progressFill"></div></div>
-      <label class="select-label" for="platformSelect">SORTEAR ENTRE</label>
-      <select id="platformSelect" class="platform-select" aria-label="Plataforma para el sorteo">
-        <option value="all">Todas las películas pendientes</option>
-        <option value="any">Cualquier plataforma (streaming)</option>
-      </select>
+      <span class="select-label" id="sortPlatformLabel">SORTEAR ENTRE</span>
+      <div class="single-select-picker sort-platform-picker" id="sortPlatformPicker">
+        <select id="platformSelect" class="single-select-native" aria-hidden="true" tabindex="-1">
+          <option value="all">Todas las películas pendientes</option>
+          <option value="any">Cualquier plataforma (streaming)</option>
+        </select>
+        <button type="button" id="sortPlatformButton" class="platform-select single-select-button" aria-labelledby="sortPlatformLabel sortPlatformButtonLabel" aria-haspopup="listbox" aria-expanded="false" aria-controls="sortPlatformOptions"><span id="sortPlatformButtonLabel">Todas las películas pendientes</span><span class="library-platform-chevron" aria-hidden="true">▾</span></button>
+        <div class="library-platform-menu single-select-menu" id="sortPlatformMenu" hidden>
+          <div class="library-platform-menu-header"><strong>Seleccionar plataforma</strong><button type="button" class="library-platform-reset" id="sortPlatformReset">Todas</button></div>
+          <div class="library-platform-options" id="sortPlatformOptions" role="listbox" aria-label="Plataforma para el sorteo"></div>
+        </div>
+      </div>
       <div id="sortCount" class="sort-count" aria-live="polite"></div>
       <button type="button" class="primary" id="choose">🎲 Elegir una película al azar</button>
       <div class="pick" aria-live="polite"><img id="resultPoster" class="chosen-poster" alt="" hidden><div class="result-copy"><div class="result-tag" id="resultTag">EL SORTEO TE ESPERA</div><h3 class="result-title" id="resultTitle">Tu próxima película aparecerá aquí</h3><div class="result-meta" id="resultDetails"></div><div class="platform-detail" id="resultPlatforms"></div></div></div>
@@ -483,52 +581,108 @@ h2{font-size:19px}
       <div class="manage-message" id="listActionsState" aria-live="polite"></div>
       <div class="backup-bar"><button class="tool" type="button" id="downloadBackup">⬇ Copia de seguridad</button><button class="tool" type="button" id="restoreBackup">↻ Restaurar copia</button></div>
       <input class="upload-input" type="file" id="backupFile" accept=".json,application/json">
-      <div class="cloud-box" aria-label="Copias automáticas en tu nube">
-        <div class="cloud-title">☁ Sincronización y copias de seguridad</div>
-        <p style="font-size:13px;line-height:1.5;color:#b7c7d7;margin:7px 0 11px">
-          <strong>Para compartir tus películas con Android, utiliza OneDrive.</strong>
-          Crea en OneDrive una carpeta exclusiva, por ejemplo <strong>Selector_Cine_365</strong>,
-          y selecciónala aquí con «Elegir carpeta». En Android inicia sesión en Microsoft y elige
-          <strong>esa misma carpeta</strong>. En ambos dispositivos pulsa «Revisar sincronización» antes de combinar los datos.
-          El uso de nube es opcional: tus listas se guardan también en este PC.
-          Otras nubes pueden funcionar si ambos dispositivos ofrecen carpetas compatibles.
-        </p>
-        <input class="cloud-path" id="cloudFolder" type="text" autocomplete="off" placeholder="Carpeta local de OneDrive, Drive, Dropbox…" aria-label="Carpeta para las copias automáticas">
-        <div class="cloud-buttons">
-          <button class="tool" type="button" id="cloudBrowse">📁 Elegir carpeta</button>
-          <button class="tool" type="button" id="cloudActivate">✓ Activar copia</button>
-          <button class="tool" type="button" id="cloudBackupNow">↻ Copiar ahora</button>
-          <button class="tool" type="button" id="cloudDisable">Desactivar</button>
+      <div class="cloud-box" aria-label="Configuración de sincronización y copias de seguridad">
+        <div class="cloud-guide-heading">
+          <div>
+            <div class="cloud-title">☁ OneDrive y copias de seguridad</div>
+            <p>Comparte tus listas y películas vistas entre Windows y Android. <strong>No necesitas instalar OneDrive.</strong> También puedes utilizar la aplicación solo en este PC: tus datos se guardan localmente.</p>
+          </div>
+          <div class="cloud-guide-state" id="cloudWizardStatus" role="status" aria-live="polite">Comprobando conexión y sincronización…</div>
         </div>
-        <div class="cloud-status" id="cloudStatus" aria-live="polite">Comprobando copias…</div>
-        <button class="tool" type="button" id="cloudSyncReview" style="width:100%;margin-top:8px">⇄ Revisar sincronización / resolver conflictos</button>
-        <div id="cloudAutoStatus" class="cloud-status" aria-live="polite" style="margin-top:9px">Al vincular por primera vez, se recibirán automáticamente los cambios sin conflictos. Se revisan al abrir y periódicamente.</div>
-        <div class="cine-sync-activity">
-          <div class="cine-sync-title"><strong>Estado de sincronización</strong><button class="tool" type="button" id="cloudSyncNowFast">↻ Sincronizar ahora</button></div>
+        <div class="cloud-guide-steps" aria-label="Tres pasos para configurar OneDrive">
+          <section class="cloud-guide-step" id="cloudStepConnect" aria-labelledby="cloudStepConnectTitle">
+            <div class="cloud-guide-step-head">
+              <span class="cloud-guide-number" aria-hidden="true">1</span>
+              <div><h3 id="cloudStepConnectTitle">Conecta OneDrive</h3><p>Inicia sesión con la cuenta Microsoft donde quieres guardar tus películas.</p></div>
+            </div>
+            <p class="cloud-guide-step-note">La conexión crea o encuentra <strong>Selector_Cine_365</strong>. Es normal que esté vacía hasta confirmar el paso 2. En Windows la autorización se guarda cifrada para este usuario: al volver a abrir la app o actualizar el EXE, la cuenta se recupera automáticamente. Si vienes de una versión anterior, conecta una última vez para guardarla.</p>
+            <button class="primary cloud-guide-action" type="button" id="cloudGraphConnect">☁ Conectar cuenta Microsoft</button>
+            <div class="cloud-status cloud-guide-feedback" id="cloudGraphStatus" aria-live="polite">Pendiente de conectar.</div>
+            <div id="cloudGraphLogin" hidden>
+              <p class="cloud-status">Autoriza el acceso en el navegador de Microsoft y regresa a la aplicación.</p>
+              <p><a id="cloudGraphLink" href="https://login.microsoftonline.com/" rel="noopener noreferrer" target="_blank">Abrir el inicio de sesión Microsoft</a></p>
+            </div>
+            <button class="tool cloud-guide-disconnect" type="button" id="cloudGraphDisconnect" hidden>Desconectar Microsoft</button>
+          </section>
+          <section class="cloud-guide-step" id="cloudStepReview" aria-labelledby="cloudStepReviewTitle">
+            <div class="cloud-guide-step-head">
+              <span class="cloud-guide-number" aria-hidden="true">2</span>
+              <div><h3 id="cloudStepReviewTitle">Revisa y confirma</h3><p>Compara las listas de este ordenador con las de OneDrive antes de combinarlas.</p></div>
+            </div>
+            <p class="cloud-guide-step-note">Es obligatorio la primera vez. Comprueba las cantidades y resuelve los conflictos, si aparecen. <strong>No se sobrescriben las copias de otros dispositivos.</strong></p>
+            <button class="tool cloud-guide-action" type="button" id="cloudSyncReview" disabled>⇄ Revisar listas antes de sincronizar</button>
+            <p class="cloud-guide-hint" id="cloudReviewHint">Completa el paso 1 para continuar.</p>
+          </section>
+          <section class="cloud-guide-step" id="cloudStepSync" aria-labelledby="cloudStepSyncTitle">
+            <div class="cloud-guide-step-head">
+              <span class="cloud-guide-number" aria-hidden="true">3</span>
+              <div><h3 id="cloudStepSyncTitle">Sincroniza y comprueba</h3><p>Envía y recibe cambios una vez confirmada la primera sincronización.</p></div>
+            </div>
+            <button class="tool cloud-guide-action" type="button" id="cloudSyncNowFast" disabled>↻ Sincronizar ahora</button>
+            <p class="cloud-guide-hint" id="cloudSyncHint">Completa y confirma el paso 2 para activar este botón.</p>
+            <label class="cloud-guide-mode" for="cloudSyncMode">Después, mantener al día:
+              <select id="cloudSyncMode">
+                <option value="automatic">Automáticamente</option>
+                <option value="manual">Solo cuando pulse sincronizar</option>
+              </select>
+            </label>
+            <p class="cloud-guide-mode-desc">El modo automático comprueba los cambios periódicamente. El manual solo sincroniza al pulsar el botón. Ninguno sustituye la revisión inicial.</p>
+          </section>
+        </div>
+        <div class="cloud-guide-where">
+          <strong>¿Dónde se guardan las listas?</strong>
+          <p><strong>En tu PC, siempre.</strong> En OneDrive se guarda un archivo JSON por dispositivo en <code>Selector_Cine_365/sincronizacion/dispositivos</code>. Puedes verlo desde <a href="https://onedrive.live.com/" target="_blank" rel="noopener noreferrer">Mis archivos de OneDrive</a>; no edites ni borres esos archivos a mano.</p>
+          <p id="cloudStatus" class="cloud-status" aria-live="polite">Comprobando estado de OneDrive…</p>
+        </div>
+        <div class="cloud-guide-health" aria-label="Estado de sincronización">
+          <h3>Estado de sincronización</h3>
+          <p id="cloudAutoStatus" class="cloud-status" aria-live="polite">Primero conecta y confirma tu cuenta. Después podrás sincronizar las listas.</p>
           <div class="cine-sync-metrics">
             <span id="cloudLastCheck">Última comprobación: aún no realizada</span>
             <span id="cloudLastReceive">Últimos cambios recibidos: ninguno en esta sesión</span>
           </div>
           <p id="cloudSyncManualResult" class="cloud-status" aria-live="polite"></p>
-          <div class="cine-sync-title"><strong>Actividad reciente de películas</strong><button class="tool" type="button" id="cloudHistoryRefresh" title="Consultar cambios locales y recibidos de otros dispositivos">Actualizar historial</button></div>
-          <div id="cloudHistory" class="cine-sync-history is-empty" aria-live="polite">Aún no hay movimientos registrados. Aquí aparecerán las películas que marques, desmarques o recibas desde otro dispositivo.</div>
-          <p id="cloudHistoryChecked" class="cine-history-checked" role="status" aria-live="polite">El historial empieza a registrarse desde las versiones que incluyen esta función; no recupera acciones anteriores.</p>
-          <p>Las horas son orientativas. Para decidir qué cambio prevalece se comprueban las revisiones y el orden causal, no solo el reloj.</p>
-          <div class="cine-sync-title"><strong>Copias locales de recuperación</strong><button class="tool" type="button" id="cloudRecoveryRefresh">Buscar copias</button></div>
-          <p>Restaurar una copia es opcional y siempre requiere confirmación. Antes se guarda otra copia del estado actual.</p>
-          <div class="cine-recovery-controls">
-            <select id="cloudRecoveryList" aria-label="Seleccionar una copia local para restaurar"><option value="">Selecciona una copia guardada</option></select>
-            <button class="tool" type="button" id="cloudRecoveryRestore" disabled>Restaurar copia seleccionada</button>
-          </div>
-          <p class="cloud-status" id="cloudRecoveryStatus" aria-live="polite"></p>
         </div>
+        <details class="cloud-guide-extra">
+          <summary>Otras formas de conexión y opciones avanzadas</summary>
+          <p>Alternativa para quienes prefieren una carpeta de OneDrive instalada en Windows u otra carpeta local sincronizada. <strong>No la actives si ya utilizas la conexión directa con Microsoft.</strong></p>
+          <button class="tool cloud-guide-alt" type="button" id="cloudAutoFolder">Detectar OneDrive instalado</button>
+          <details id="cloudFolderAdvanced">
+            <summary>Elegir una carpeta local manualmente</summary>
+            <input class="cloud-path" id="cloudFolder" type="text" autocomplete="off" placeholder="Carpeta local de OneDrive, Drive, Dropbox…" aria-label="Carpeta para las copias automáticas">
+            <div class="cloud-buttons">
+              <button class="tool" type="button" id="cloudBrowse">📁 Elegir carpeta</button>
+              <button class="tool" type="button" id="cloudActivate">✓ Activar copia</button>
+              <button class="tool" type="button" id="cloudBackupNow">↻ Copiar ahora</button>
+              <button class="tool" type="button" id="cloudDisable">Desactivar</button>
+            </div>
+          </details>
+        </details>
+        <details class="cloud-guide-extra">
+          <summary>Actividad reciente, historial y copias de recuperación</summary>
+          <div class="cine-sync-activity">
+            <div class="cine-sync-title"><strong>Actividad reciente de películas</strong><button class="tool" type="button" id="cloudHistoryRefresh" title="Consultar cambios locales y recibidos de otros dispositivos">Actualizar historial</button></div>
+            <p>Los cambios que haces aquí se guardan primero en el PC. Los cambios recibidos desde otros dispositivos aparecen indicados en este historial.</p>
+            <div id="cloudHistory" class="cine-sync-history is-empty" aria-live="polite">Aún no hay movimientos registrados.</div>
+            <p id="cloudHistoryChecked" class="cine-history-checked" role="status" aria-live="polite">El historial empieza a registrarse desde las versiones que incluyen esta función; no recupera acciones anteriores.</p>
+            <p>Las horas son orientativas. Para decidir qué cambio prevalece se comprueban las revisiones y el orden causal, no solo el reloj.</p>
+            <div class="cine-sync-title"><strong>Copias locales de recuperación</strong><button class="tool" type="button" id="cloudRecoveryRefresh">Buscar copias</button></div>
+            <p>Restaurar una copia es opcional y siempre requiere confirmación. Antes se guarda otra copia del estado actual.</p>
+            <div class="cine-recovery-controls">
+              <select id="cloudRecoveryList" aria-label="Seleccionar una copia local para restaurar"><option value="">Selecciona una copia guardada</option></select>
+              <button class="tool" type="button" id="cloudRecoveryRestore" disabled>Restaurar copia seleccionada</button>
+            </div>
+            <p class="cloud-status" id="cloudRecoveryStatus" aria-live="polite"></p>
+          </div>
+        </details>
         <div class="sync-desktop-panel" id="cloudSyncPanel" hidden>
-          <h3>Revisar antes de importar</h3>
+          <h3>Confirmar la primera sincronización</h3>
+          <p>Comprueba lo que hay en el PC y lo que se combinará con OneDrive. Si aparecen conflictos, escoge qué estado conservar en cada película.</p>
           <p id="cloudSyncSummary"></p><div id="cloudSyncConflicts"></div>
-          <p>Se crea una copia local antes de combinar. No se sustituyen archivos de otros dispositivos.</p>
+          <p>Antes de combinar se guarda una copia local de recuperación. No se eliminan las copias de otros dispositivos.</p>
           <div class="sync-desktop-actions">
             <button class="primary" type="button" id="cloudSyncConfirm">Confirmar y sincronizar</button>
-            <button class="tool" type="button" id="cloudSyncCancel">Cancelar</button>
+            <button class="tool" type="button" id="cloudSyncCancel">Volver sin sincronizar</button>
           </div>
         </div>
       </div>
@@ -543,7 +697,7 @@ h2{font-size:19px}
         <article><h3>2. Conectar TMDB</h3><p>Abre <strong>Conectar TMDB</strong>, escribe una clave personal de TMDB y guarda. Aparecerán carteles, puntuaciones y plataformas en España. Los datos ya consultados se guardan en caché; Actualizar vuelve a consultar cuando tú lo pidas.</p></article>
         <article><h3>3. Sorteo y estadísticas</h3><p>En Sorteo eliges una película pendiente al azar. En Estadísticas encontrarás el progreso de tu colección, periodos, géneros, directores y otros datos disponibles.</p></article>
         <article><h3>4. Mis listas</h3><p>Crea, renombra y abre listas. Utiliza los números de página para recorrerlas. Puedes comparar listas y consultar sus coincidencias en la biblioteca.</p></article>
-        <article><h3>5. OneDrive y sincronización</h3><p>Selecciona una carpeta de OneDrive sincronizada con el PC. Android debe usar <strong>la misma carpeta</strong>. Confirma la primera revisión en cada equipo. Después, los cambios seguros se importan automáticamente al abrir o volver a la aplicación; los conflictos siguen necesitando revisión manual.</p></article>
+        <article><h3>5. OneDrive y sincronización</h3><p>En <strong>Mis listas → OneDrive y copias de seguridad</strong> sigue los pasos numerados: <strong>1) Conectar cuenta Microsoft</strong> (se crea la carpeta Selector_Cine_365; inicialmente puede estar vacía), <strong>2) Revisar y confirmar</strong> las listas del PC y de OneDrive (primera vez obligatoria), <strong>3) Sincronizar ahora</strong> y comprobar el estado. Después puedes elegir sincronización automática o manual. Android debe conectarse a la misma cuenta y completar su propia revisión. Los conflictos requieren decisión; el guardado local funciona sin nube.</p></article>
         <article><h3>6. Copias y seguridad</h3><p>Antes de importar muchas películas o cambiar de versión, exporta una copia JSON. Puedes usar la app solo en local y desactivar la nube sin perder las películas guardadas en el PC. No abras simultáneamente dos versiones de Windows.</p></article>
       </div>
       <p><strong>¿Necesitas todos los detalles?</strong> El manual extenso incluye ejemplos, procedimientos paso a paso, sincronización, solución de problemas y recuperación.</p>
@@ -733,13 +887,15 @@ async function initPlatforms(){
    for(const [key,entry] of Object.entries(cached.entries||{}))platformData.set(key,entry);
   }catch(err){
    console.warn('No se pudo leer la caché TMDB; la clave sigue configurada:',err.message);
-   updateListPlatformOptions();renderList();renderStats();
+   updatePlatformChoices();updateListPlatformOptions();renderList();renderStats();
    $('platformProgress').textContent='TMDB configurado. Caché local no disponible; pulsa Actualizar para recuperar datos.';
    return true;
   }
  }
  // Sin consultas externas masivas al abrir; usar caché local si existe.
- updatePlatformProgress();updateListPlatformOptions();renderList();renderStats();
+ // El selector del sorteo se construye con JS y debe reconstruirse también
+ // cuando los datos provienen exclusivamente de la caché al abrir la app.
+ updatePlatformProgress();updatePlatformChoices();updateListPlatformOptions();renderList();renderStats();
  return true;
 }
 async function loadPlatforms(force){
@@ -834,7 +990,14 @@ function lineInfo(text,idx){
 }
 function parse(text){
  const lines=text.split('\n'),entries=[];
- for(let i=0;i<lines.length;i++){const f=lineInfo(lines[i],i);if(f)entries.push(f);}
+ for(let i=0;i<lines.length;i++){
+  const f=lineInfo(lines[i],i);
+  if(f){
+   // Stable ordinal for unnumbered lists; never rewrites the underlying TXT.
+   f.displayNumber=String(entries.length+1).padStart(3,'0');
+   entries.push(f);
+  }
+ }
  return {lines,entries,seen:entries.filter(f=>f.checked).length,pending:entries.filter(f=>!f.checked)};
 }
 function update(){membershipCache=null;parsed=parse(rawText);const n=parsed.entries.length;
@@ -845,6 +1008,119 @@ function update(){membershipCache=null;parsed=parse(rawText);const n=parsed.entr
  updateSortAvailability();
  renderList();
 }
+// Dragging is enabled only on the unfiltered current list. Reorder the original
+// TXT film lines, leaving headings/blank lines untouched; no TMDB IDs or marks change.
+function filmOrderEditable(){
+ return !virtualMode&&searchScope==='current'&&filter==='all'&&!search.trim()&&!selectedListPlatforms.size;
+}
+function moveFilmInCurrentList(fromRawIndex,toRawIndex){
+ if(!filmOrderEditable()||fromRawIndex===toRawIndex)return false;
+ const locations=parsed.entries.map(f=>f.idx);
+ const from=locations.indexOf(fromRawIndex),to=locations.indexOf(toRawIndex);
+ if(from<0||to<0||from===to)return false;
+ const original=rawText.split('\n');
+ const rows=locations.map(i=>original[i]);
+ const [moved]=rows.splice(from,1);
+ rows.splice(to,0,moved);
+ for(let i=0;i<locations.length;i++)original[locations[i]]=rows[i];
+ rawText=original.join('\n');
+ syncActiveText();
+ // This revision travels with the list through OneDrive, independently of marks.
+ const active=activeCollection();
+ active.order_changed_at=Math.max(Date.now(),Number(active.order_changed_at||0)+1);
+ update();renderStats();renderCollectionControls();scheduleSave();
+ notify('Orden actualizado. El número de cada película corresponde ahora a su posición.');
+ return true;
+}
+let filmTouchOrder=null,filmDropSuppressedUntil=0;
+document.addEventListener('click',e=>{
+ if(Date.now()<filmDropSuppressedUntil){
+  e.preventDefault();e.stopImmediatePropagation();
+ }
+},true);
+document.addEventListener('touchmove',e=>{
+ const state=filmTouchOrder;
+ if(!state)return;
+ const touch=e.touches[0];
+ if(!touch)return;
+ if(!state.active){
+  if(Math.hypot(touch.clientX-state.x,touch.clientY-state.y)>11){
+   clearTimeout(state.timer);filmTouchOrder=null;
+  }
+  return;
+ }
+ if(e.cancelable)e.preventDefault();
+ const hovered=document.elementFromPoint(touch.clientX,touch.clientY)?.closest('.film-item');
+ if(hovered&&hovered.parentElement===$('filmList')){
+  const index=Number(hovered.dataset.idx);
+  if(Number.isInteger(index))state.to=index;
+  document.querySelectorAll('#filmList .film-item.reorder-target').forEach(el=>el.classList.remove('reorder-target'));
+  hovered.classList.add('reorder-target');
+ }
+ const scroller=$('view-library');
+ const bounds=scroller.getBoundingClientRect();
+ if(touch.clientY<bounds.top+65)scroller.scrollTop-=17;
+ else if(touch.clientY>bounds.bottom-65)scroller.scrollTop+=17;
+},{passive:false});
+function finishFilmTouchOrder(event,cancel=false){
+ const state=filmTouchOrder;
+ if(!state)return;
+ clearTimeout(state.timer);
+ filmTouchOrder=null;
+ document.querySelectorAll('#filmList .reorder-target, #filmList .reorder-moving').forEach(el=>{
+  el.classList.remove('reorder-target','reorder-moving');
+ });
+ if(state.active){
+  if(event?.cancelable)event.preventDefault();
+  filmDropSuppressedUntil=Date.now()+350;
+  if(!cancel&&state.to!==state.from)moveFilmInCurrentList(state.from,state.to);
+ }
+}
+document.addEventListener('touchend',e=>finishFilmTouchOrder(e),{passive:false});
+document.addEventListener('touchcancel',e=>finishFilmTouchOrder(e,true),{passive:false});
+function attachFilmReorder(card,handle,film){
+ // Desktop drag starts only from its dedicated grip: normal card controls work.
+ handle.draggable=true;
+ handle.addEventListener('dragstart',e=>{
+  if(!filmOrderEditable()){e.preventDefault();return;}
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain',String(film.idx));
+  card.classList.add('reorder-moving');
+ });
+ handle.addEventListener('dragend',()=>{
+  document.querySelectorAll('#filmList .reorder-moving, #filmList .reorder-target').forEach(el=>el.classList.remove('reorder-moving','reorder-target'));
+ });
+ card.addEventListener('dragover',e=>{
+  if(!filmOrderEditable()||!e.dataTransfer.types.includes('text/plain'))return;
+  e.preventDefault();e.dataTransfer.dropEffect='move';
+  card.classList.add('reorder-target');
+ });
+ card.addEventListener('dragleave',()=>card.classList.remove('reorder-target'));
+ card.addEventListener('drop',e=>{
+  card.classList.remove('reorder-target');
+  if(!filmOrderEditable())return;
+  e.preventDefault();
+  const from=Number(e.dataTransfer.getData('text/plain'));
+  if(Number.isInteger(from))moveFilmInCurrentList(from,film.idx);
+ });
+ // Android: hold the card for 500 ms, then slide it vertically. Regular short
+ // swipes continue to scroll and taps on check/links remain unaffected.
+ card.addEventListener('touchstart',e=>{
+  if(!window.CineAndroid||!filmOrderEditable()||e.touches.length!==1)return;
+  const hit=e.target;
+  if(hit.closest('button,a,input,select')&&!hit.closest('.film-reorder-handle'))return;
+  if(filmTouchOrder)finishFilmTouchOrder(null,true);
+  const touch=e.touches[0];
+  const state={from:film.idx,to:film.idx,x:touch.clientX,y:touch.clientY,active:false,timer:null};
+  state.timer=setTimeout(()=>{
+   if(filmTouchOrder!==state||!filmOrderEditable())return;
+   state.active=true;card.classList.add('reorder-moving');
+   if(navigator.vibrate)navigator.vibrate(18);
+  },500);
+  filmTouchOrder=state;
+ },{passive:true});
+}
+
 function renderList(){
  const parent=$('filmList');parent.replaceChildren();const needle=search.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
  const global=searchScope==='all';
@@ -874,9 +1150,16 @@ function renderList(){
    const main=document.createElement('span');main.className='film-main';
    const titleLine=document.createElement('span');titleLine.className='title-line';
    const title=document.createElement('span');title.className='film-name';title.textContent=f.title;titleLine.appendChild(title);
+   if(!global&&!virtualMode){
+    const grip=document.createElement('button');grip.type='button';grip.className='film-reorder-handle';grip.textContent='⠿';
+    grip.title='Arrastrar para cambiar el orden';grip.setAttribute('aria-label','Mover «'+f.title+'» a otra posición');
+    b.appendChild(grip);attachFilmReorder(b,grip,f);
+   }
    main.appendChild(titleLine);
    const meta=document.createElement('span');meta.className='film-filmmeta';
    if(f.year){const year=document.createElement('span');year.textContent=f.year;meta.appendChild(year);}
+   const displayNumber=!global?f.displayNumber:'';
+   if(displayNumber){const number=document.createElement('span');number.className='film-sequence-number';number.textContent='N.º '+displayNumber;meta.appendChild(number);}
    if(r?.vote_count>0){const rating=document.createElement('span');rating.className='film-rating';rating.textContent='★ '+Number(r.vote_average).toFixed(1)+' TMDB';rating.title='Nota TMDB ('+r.vote_count+' votos), no equivale a IMDb';meta.appendChild(rating);}
    const membership=document.createElement('span');membership.className='film-memberships';
    const caption=document.createElement('span');caption.className='film-memberships-title';caption.textContent='Listas:';
@@ -886,7 +1169,7 @@ function renderList(){
    }
    const edit=document.createElement('button');edit.type='button';edit.className='film-memberships-edit';edit.textContent='✎';edit.title='Añadir o quitar de otras listas';edit.setAttribute('aria-label','Gestionar listas de '+f.title);edit.addEventListener('click',()=>editMembership(f));
    membership.append(caption,nums,edit);meta.appendChild(membership);
-   if(f.number){const number=document.createElement('span');number.textContent='N.º '+f.number;meta.appendChild(number);}
+
    main.appendChild(meta);
    const badge=document.createElement('span');badge.className='film-platforms';const [name,css]=platformBadge(f);if(css)badge.classList.add(css);badge.textContent=name;
    badge.title=platformTitle(r);main.appendChild(badge);
@@ -965,6 +1248,28 @@ async function saveLocal(){
  await cineLoadRevisions();
  if(epoch===saveEpoch){cineRecentIntents.clear();$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + carpeta de nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':cloudResult==='pending'?'✓ Local · Revisar sincronización':'✓ Guardado';void cloudRefresh();setTimeout(()=>{if(!document.hidden)void cloudAutoReceive();},3500);}}
  catch(err){if(epoch===saveEpoch)$('saveState').textContent='⚠ Error al guardar';}
+}
+// Abrir TXT crea una colección independiente; nunca reemplaza la lista actual.
+function importTxtAsNewCollection(text,fileName){
+ const clean=String(text||'').replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
+ if(!parse(clean).entries.length)return {ok:false,message:'No se encontraron películas reconocibles en el TXT.'};
+ if(libraryState.lists.length>=40)return {ok:false,message:'Límite de 40 listas alcanzado. No se ha modificado ninguna lista.'};
+ const base=(String(fileName||'').replace(/\.txt$/i,'').trim()||'Lista importada').slice(0,100);
+ let name=base,number=2;
+ const occupied=new Set(libraryState.lists.map(x=>x.name.toLocaleLowerCase('es')));
+ while(occupied.has(name.toLocaleLowerCase('es'))){const suffix=' ('+(number++)+')';name=base.slice(0,100-suffix.length)+suffix;}
+ syncActiveText();
+ const id='lista_'+Date.now().toString(36)+'_'+Math.floor(Math.random()*100000).toString(36);
+ libraryState.lists.push({id,name,text:clean});
+ libraryState.active_id=id;
+ virtualMode=false;
+ rawText=clean;
+ reconcileWatched();
+ rawText=activeCollection().text||'';
+ restartList();
+ scheduleSave();
+ showView('library');
+ return {ok:true,name,count:parse(rawText).entries.length};
 }
 function replaceList(text){let clean=text.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');const test=parse(clean);if(!test.entries.length){$('message').textContent='No se encontraron películas.';return false;}
  rawText=clean;syncActiveText();reconcileWatched();rawText=activeCollection().text||'';restartList();scheduleSave();return true;
@@ -1324,7 +1629,7 @@ function validLibrary(s){return s&&s.version===1&&Array.isArray(s.lists)&&s.list
 function restartList(){
  searchScope='current';$('listPlatformButton').disabled=false;document.querySelectorAll('[data-search-scope]').forEach(b=>{const yes=b.dataset.searchScope==='current';b.classList.toggle('active',yes);b.setAttribute('aria-pressed',String(yes));});
  filmPage=0;collectionPage=0;statPages.clear();platformRun++;platformFinished=0;platformTotal=0;platformActive=false;lastChoice=null;resetChoice();filter='all';search='';$('search').value='';
- selectedSortPlatform='all';$('platformSelect').value='all';selectedListPlatforms.clear();closeListPlatformMenu();
+ selectedSortPlatform='all';$('platformSelect').value='all';selectedListPlatforms.clear();closeListPlatformMenu();closeSingleChoiceMenu('sortPlatform');syncSingleChoiceMenu('sortPlatform','platformSelect');
  document.querySelectorAll('.filter').forEach(b=>b.classList.toggle('selected',b.dataset.filter==='all'));
  updateListPlatformOptions();update();updatePlatformProgress();renderStats();renderCollectionControls();if(platformConfigured)void loadPlatforms(false);
 }
@@ -1339,7 +1644,7 @@ function switchCollection(id){
 function renderCollectionControls(){
  const sel=$('listSwitcher');sel.replaceChildren();for(const list of libraryState.lists){const o=document.createElement('option');o.value=list.id;o.textContent=numberedListName(list);sel.appendChild(o)}
  if(hasComparison()){const o=document.createElement('option');o.value=virtualID;o.textContent='⚭ Películas coincidentes (solo lectura)';sel.appendChild(o);}
- sel.value=virtualMode?virtualID:libraryState.active_id;
+ sel.value=virtualMode?virtualID:libraryState.active_id;syncSingleChoiceMenu('listSwitcher','listSwitcher');
  $('compareInfo').textContent=hasComparison()?'Coincidencias: '+comparisonLists().map(x=>x.name).join(' · '):'Coincidencias: sin configurar';$('compareInfo').title=$('compareInfo').textContent;
  $('libraryCount').title=virtualMode?'Coincidencias entre '+comparisonLists().length+' listas · solo lectura':'';
  $('addFilmBtn').disabled=false;
@@ -1612,21 +1917,132 @@ async function cloudRequest(path,method='GET',payload){
  const r=await fetch(path,opts);const data=await r.json();
  if(!r.ok)throw new Error(data.error||'No se pudo completar la operación');return data;
 }
+let cineGraphConnected=false;
+function updateCloudGuide(s){
+ const connected=Boolean(s.enabled),paired=connected&&Boolean(s.sync_paired);
+ const review=connected&&(!paired||Boolean(s.needs_review));
+ const canSync=paired&&!s.needs_review;
+ const phase=!connected?'disconnected':review?'review':'paired';
+ const banner=$('cloudWizardStatus');
+ banner.dataset.phase=phase;
+ banner.textContent=!connected?'Paso 1 de 3 · Conecta OneDrive':
+   review?'Paso 2 de 3 · Revisa y confirma las listas':
+   'Cuenta vinculada · Sincronización disponible';
+ for(const [id,done,ready] of [
+   ['cloudStepConnect',connected,!connected],
+   ['cloudStepReview',paired&&!s.needs_review,review],
+   ['cloudStepSync',false,canSync]
+ ]){
+   $(id).dataset.state=done?'done':ready?'ready':'locked';
+ }
+ const reviewButton=$('cloudSyncReview');
+ reviewButton.disabled=!connected;
+ reviewButton.textContent=paired?'⇄ Revisar cambios o conflictos':'⇄ Revisar listas antes de sincronizar';
+ $('cloudSyncNowFast').disabled=!canSync;
+ $('cloudReviewHint').textContent=!connected?'Primero conecta tu cuenta o configura una carpeta local.':
+   review?'Abre la revisión y pulsa «Confirmar y sincronizar».':'Primera revisión confirmada. Puedes repetirla cuando necesites resolver cambios.';
+ $('cloudSyncHint').textContent=!connected?'Todavía no hay una nube conectada.':
+   !paired?'Se activará cuando confirmes el paso 2.':
+   !canSync?'Hay conflictos pendientes: revisa el paso 2.':
+   'Disponible. También puedes activar la actualización automática.';
+ // La carpeta sincronizada local y la conexión directa Microsoft son alternativas.
+ if(!cineGraphConnected)$('cloudGraphConnect').disabled=connected;
+}
 function cloudShow(s){
+ cineGraphConnected=s.provider==='onedrive-direct';
+ updateCloudGuide(s);
  const box=$('cloudStatus');box.classList.toggle('warn',Boolean(s.last_error));
  if(s.enabled){
-   if(document.activeElement!==$('cloudFolder'))$('cloudFolder').value=s.folder;
+   if(document.activeElement!==$('cloudFolder'))$('cloudFolder').value=cineGraphConnected?'Cuenta Microsoft · OneDrive directo':s.folder;
    if($('cloudLastCheck'))$('cloudLastCheck').textContent='Última comprobación: '+(s.last_check_ms?new Date(s.last_check_ms).toLocaleTimeString('es-ES'):'aún no realizada');
    if($('cloudLastReceive'))$('cloudLastReceive').textContent='Últimos cambios recibidos: '+(s.last_received_ms?new Date(s.last_received_ms).toLocaleTimeString('es-ES'):'ninguno en esta sesión');
-   box.textContent=s.needs_review?'⚠ Hay otros dispositivos en esta carpeta. Pulsa «Revisar sincronización» antes de publicar cambios.':
-     s.last_error?'⚠ Copia en nube fallida: '+s.last_error:
-     s.sync_paired?'✓ Sincronización automática activada · copias independientes':
-     s.last_backup?'✓ Copia en nube actualizada · '+new Date(s.last_backup).toLocaleString('es-ES'):'✓ Carpeta configurada; revisa antes de combinar';
+   box.textContent=cineGraphConnected?(s.last_error?'⚠ OneDrive conectado, pero la última operación dio un error: '+s.last_error:
+      s.needs_review?'Cuenta Microsoft conectada. La carpeta puede seguir vacía: falta revisar y confirmar las listas en el paso 2.':
+      'Cuenta Microsoft conectada y primera revisión confirmada. Copias en OneDrive: Selector_Cine_365/sincronizacion/dispositivos.') :
+    s.needs_review?'Carpeta local configurada. Revisa y confirma las listas en el paso 2 antes de sincronizar.':
+    s.last_error?'⚠ Copia en nube fallida: '+s.last_error:
+    s.sync_paired?'Carpeta local conectada y revisión inicial confirmada.':
+    s.last_backup?'Copia local de nube actualizada · '+new Date(s.last_backup).toLocaleString('es-ES'):'Carpeta configurada. Revisa antes de combinar.';
  }else{
-   box.textContent='Sin carpeta de nube configurada';
+   box.textContent='Solo guardado local en este ordenador. Conecta OneDrive en el paso 1 si quieres compartir tus listas.';
  }
 }
 async function cloudRefresh(){try{cloudShow(await cloudRequest('/api/cloud/status'))}catch(e){$('cloudStatus').textContent='⚠ No se pudo comprobar la copia en nube';}}
+let graphLoginPoll=null;
+async function desktopGraphStatus(){
+ const s=await cloudRequest('/api/onedrive-desktop/status');
+ $('cloudGraphDisconnect').hidden=!s.connected;
+ $('cloudGraphConnect').hidden=s.connected;
+ $('cloudGraphLogin').hidden=!s.pending;
+ if(s.pending){
+  const address=s.login_url||'';
+  $('cloudGraphLink').href=address.startsWith('https://login.microsoftonline.com/')?address:'https://login.microsoftonline.com/';
+  $('cloudGraphStatus').textContent='Autoriza tu cuenta Microsoft en el navegador. No cierres Selector Cine 365.';
+  if(!graphLoginPoll)graphLoginPoll=setInterval(()=>void desktopGraphStatus().catch(()=>{}),2500);
+ }else{
+  if(graphLoginPoll){clearInterval(graphLoginPoll);graphLoginPoll=null;}
+  if(s.connected){
+   $('cloudGraphStatus').textContent=s.persistence_warning
+    ?'⚠ Cuenta conectada, pero no se pudo conservar la sesión: '+s.persistence_warning
+    :s.session_restored?'✓ Cuenta Microsoft recuperada automáticamente desde Windows. No necesitas iniciar sesión otra vez.'
+    :s.session_remembered?'✓ Cuenta Microsoft conectada y sesión guardada cifrada en Windows. Se recuperará al abrir o actualizar la aplicación.'
+    :'✓ Cuenta Microsoft conectada. Continúa con el paso 2; el almacenamiento seguro de sesión no está disponible en esta plataforma.';
+   await cloudRefresh();
+  }else if(s.last_error){
+   $('cloudGraphStatus').textContent='⚠ '+s.last_error;
+   await cloudRefresh();
+  }else{
+   $('cloudGraphStatus').textContent=s.persistence_warning
+    ?'⚠ '+s.persistence_warning+' · Conecta la cuenta Microsoft para guardar una nueva sesión.'
+    :'Sin cuenta Microsoft conectada. En Windows se recordará automáticamente después de conectar.';
+   await cloudRefresh();
+  }
+ }
+}
+$('cloudGraphConnect').addEventListener('click',async()=>{
+ const button=$('cloudGraphConnect');button.disabled=true;
+ try{await cloudRequest('/api/onedrive-desktop/start','POST');await desktopGraphStatus();}
+ catch(e){$('cloudGraphStatus').textContent='⚠ '+e.message;}
+ finally{button.disabled=false;}
+});
+$('cloudGraphDisconnect').addEventListener('click',async()=>{
+ if(!confirm('¿Desconectar esta sesión de Microsoft? Tus películas seguirán guardadas localmente y OneDrive no se borrará.'))return;
+ try{await cloudRequest('/api/onedrive-desktop/disconnect','POST');await desktopGraphStatus();await cloudRefresh();}
+ catch(e){$('cloudGraphStatus').textContent='⚠ '+e.message;}
+});
+void desktopGraphStatus().catch(()=>{});
+async function refreshDesktopSyncMode(){
+ try{
+  const data=await cloudRequest('/api/cloud/mode');
+  $('cloudSyncMode').value=data.auto_sync?'automatic':'manual';
+ }catch(e){$('cloudGraphStatus').textContent='⚠ Modo de sincronización: '+e.message;}
+}
+$('cloudSyncMode').addEventListener('change',async()=>{
+ const field=$('cloudSyncMode');
+ field.disabled=true;
+ try{
+  await cloudRequest('/api/cloud/mode','POST',{auto_sync:field.value==='automatic'});
+  $('cloudAutoStatus').textContent=field.value==='manual'
+   ?'Modo manual seleccionado: después de confirmar el paso 2, pulsa «Sincronizar ahora» para enviar y recibir cambios.'
+   :'Modo automático seleccionado: después de confirmar el paso 2, la aplicación buscará cambios periódicamente.';
+ }catch(e){$('cloudGraphStatus').textContent='⚠ '+e.message;await refreshDesktopSyncMode();}
+ finally{field.disabled=false;}
+});
+void refreshDesktopSyncMode();
+
+$('cloudAutoFolder').addEventListener('click',async()=>{
+ const button=$('cloudAutoFolder');button.disabled=true;
+ try {
+  const data=await cloudRequest('/api/cloud/auto-folder','POST');
+  cloudShow(data.status);
+  $('cloudStatus').textContent=data.already_connected
+   ? '✓ Se conserva la carpeta ya configurada. Continúa con el paso 2.'
+   : '✓ OneDrive detectado. Continúa con el paso 2 y confirma antes de enviar o recibir datos.';
+ }catch(error){
+  $('cloudStatus').textContent='⚠ '+error.message+' Puedes usar las opciones avanzadas para elegir la carpeta.';
+  $('cloudStatus').classList.add('warn');
+ }finally{button.disabled=false;}
+});
 $('cloudBrowse').addEventListener('click',async()=>{
  const btn=$('cloudBrowse');btn.disabled=true;$('cloudStatus').textContent='Selecciona una carpeta de tu nube…';
  try{const data=await cloudRequest('/api/cloud/browse','POST');
@@ -1646,7 +2062,10 @@ $('cloudBackupNow').addEventListener('click',async()=>{
 });
 $('cloudDisable').addEventListener('click',async()=>{
  if(!confirm('¿Desactivar las copias automáticas? Las copias existentes no se borrarán.'))return;
- try{cloudShow(await cloudRequest('/api/cloud/config','POST',{folder:''}));$('cloudFolder').value='';}
+ try{
+  if(cineGraphConnected){await cloudRequest('/api/onedrive-desktop/disconnect','POST');await desktopGraphStatus();await cloudRefresh();}
+  else{cloudShow(await cloudRequest('/api/cloud/config','POST',{folder:''}));$('cloudFolder').value='';}
+ }
  catch(e){$('cloudStatus').textContent='⚠ '+e.message;}
 });
 
@@ -1713,7 +2132,7 @@ $('cloudRecoveryRestore').addEventListener('click',async()=>{
 });
 $('cloudSyncNowFast').addEventListener('click',async()=>{
  const button=$('cloudSyncNowFast');button.disabled=true;
- $('cloudSyncManualResult').textContent='Comprobando novedades y revisiones de otros dispositivos…';
+ $('cloudSyncManualResult').textContent='Comprobando OneDrive: leyendo y enviando cambios si corresponde…';
  try{
   await cloudAutoReceive(true);
   await cloudRefresh();await cineRefreshHistory();
@@ -1728,9 +2147,10 @@ $('cloudSyncReview').addEventListener('click',async()=>{
   await saveQueue;
   const data=await cloudRequest('/api/cloud/preview','POST');
   syncPreviewToken=data.token;
-  $('cloudSyncSummary').textContent='Fuentes compartidas: '+data.sources+'. En este PC: '+data.local_lists+
-   ' listas y '+data.local_seen+' vistas. Después de combinar: '+data.result_lists+
-   ' listas y '+data.result_seen+' vistas.';
+  $('cloudSyncSummary').textContent='Copias de otros dispositivos encontradas: '+data.sources+
+   '. En este PC: '+data.local_lists+' listas y '+data.local_seen+
+   ' películas vistas. Resultado previsto al combinar: '+data.result_lists+
+   ' listas y '+data.result_seen+' vistas. Revisa estas cantidades antes de confirmar.';
   const target=$('cloudSyncConflicts');target.replaceChildren();
   for(const conflict of data.conflicts||[]){
    const label=document.createElement('label');label.className='sync-choice';
@@ -1757,10 +2177,18 @@ $('cloudSyncConfirm').addEventListener('click',async()=>{
  try{
   $('cloudSyncSummary').textContent='Combinando y creando copia de recuperación…';
   const data=await cloudRequest('/api/cloud/sync','POST',{token:syncPreviewToken,decisions});
-  $('cloudSyncSummary').textContent='✓ '+data.lists+' listas · '+data.seen+' vistas.';
-  location.reload();
- }catch(e){$('cloudSyncSummary').textContent='⚠ '+e.message+' Comprueba la copia local de recuperación.';}
- finally{button.disabled=false;}
+  syncPreviewToken='';$('cloudSyncPanel').hidden=true;
+  await initLibrary();restartList();
+  await cloudRefresh();void cineRefreshHistory();void cineRefreshRecovery();
+  $('cloudAutoStatus').textContent='✓ Revisión confirmada: '+data.lists+' listas y '+data.seen+' vistas. Copia enviada y verificada en OneDrive.';
+  $('cloudSyncManualResult').textContent='Primera sincronización completada. Puedes seguir con el paso 3.';
+ }catch(e){
+   const timeout=/deadline|timeout|tiempo de espera|context canceled/i.test(e.message);
+   $('cloudSyncSummary').textContent=timeout
+    ?'⚠ Se agotó el tiempo de espera. La copia podría haberse enviado igualmente. Consulta la carpeta de OneDrive y el estado de sincronización antes de repetir la operación.'
+    :'⚠ '+e.message+' No se ha confirmado la subida; tus listas siguen guardadas localmente.';
+   await cloudRefresh().catch(()=>{});
+ }finally{button.disabled=false;}
 });
 // Se activa solo tras la primera revisión manual. No consulta TMDB ni sube fichas.
 let cloudAutoBusy=false,cloudAutoCheckedAt=0;
@@ -1777,7 +2205,7 @@ async function cloudAutoReceive(force=false){
    if(beforeEpoch!==saveEpoch||saveTimer!==null)return;
    cloudAutoCheckedAt=Date.now();
    try{
-     const result=await cloudRequest('/api/cloud/auto','POST');
+     const result=await cloudRequest('/api/cloud/auto','POST',{force});
      if(result.needs_review){
        $('cloudAutoStatus').textContent=result.skipped==='not_paired'
          ?'Primera vinculación pendiente: pulsa «Revisar sincronización».'
@@ -1792,7 +2220,9 @@ async function cloudAutoReceive(force=false){
    await cloudRefresh(); // Un GET local: actualiza la hora incluso sin cambios.
    }finally{/* La recepción automática NUNCA bloquea la interfaz. */}
  }catch(error){
-   $('cloudAutoStatus').textContent='⚠ No se pudo comprobar la nube: '+error.message+' · Puedes usar «Revisar sincronización».';
+   $('cloudAutoStatus').textContent=/deadline|timeout|tiempo de espera|context canceled/i.test(error.message)
+     ?'⚠ OneDrive tardó demasiado en responder. La copia puede existir igualmente; comprueba la carpeta y vuelve a revisar el estado.'
+     :'⚠ No se pudo comprobar OneDrive: '+error.message+' · Puedes usar «Revisar cambios o conflictos».';
  }finally{cloudAutoBusy=false;}
 }
 window.addEventListener('focus',()=>void cloudAutoReceive());
@@ -1853,7 +2283,8 @@ function updateListPlatformOptions(){
 }
 $('listPlatformButton').addEventListener('click',()=>{
  const menu=$('listPlatformMenu'),toOpen=menu.hidden;
- if(toOpen)updateListPlatformOptions();menu.hidden=!toOpen;
+ if(toOpen){updateListPlatformOptions();closeSingleChoiceMenu('sortPlatform');closeSingleChoiceMenu('listSwitcher');}
+ menu.hidden=!toOpen;
  $('listPlatformButton').setAttribute('aria-expanded',String(toOpen));
 });
 $('listPlatformReset').addEventListener('click',()=>{
@@ -1861,6 +2292,88 @@ $('listPlatformReset').addEventListener('click',()=>{
 });
 document.addEventListener('pointerdown',e=>{
  if(!$('libraryPlatformPicker').contains(e.target))closeListPlatformMenu();
+ if(!$('listSwitcherPicker').contains(e.target))closeSingleChoiceMenu('listSwitcher');
+ if(!$('sortPlatformPicker').contains(e.target))closeSingleChoiceMenu('sortPlatform');
+});
+
+/* Los select nativos siguen siendo el estado de referencia. Los dos menús
+   personalizados solo representan una opción activa y emiten change. */
+function closeSingleChoiceMenu(prefix,restoreFocus=false){
+ const menu=$(prefix+'Menu'),button=$(prefix+'Button');
+ if(menu.hidden)return;
+ menu.hidden=true;menu.classList.remove('opens-up');
+ button.setAttribute('aria-expanded','false');
+ if(restoreFocus)button.focus();
+}
+function syncSingleChoiceMenu(prefix,nativeID){
+ const select=$(nativeID),box=$(prefix+'Options');
+ const choices=[...select.options],current=select.options[select.selectedIndex];
+ $(prefix+'ButtonLabel').textContent=current?current.textContent:'Seleccionar…';
+ const signature=JSON.stringify(choices.map(o=>[o.value,o.textContent]));
+ if(box.dataset.signature!==signature){
+   box.dataset.signature=signature;box.replaceChildren();
+   for(const item of choices){
+     const option=document.createElement('button');option.type='button';
+     option.className='library-platform-option single-select-option';
+     option.setAttribute('role','option');option.tabIndex=-1;option.dataset.value=item.value;
+     const mark=document.createElement('span');mark.className='single-select-check';mark.textContent='✓';mark.setAttribute('aria-hidden','true');
+     const label=document.createElement('span');label.textContent=item.textContent;
+     option.append(mark,label);box.appendChild(option);
+     option.addEventListener('click',()=>{
+       const old=select.value;select.value=option.dataset.value;
+       closeSingleChoiceMenu(prefix);
+       if(old!==select.value)select.dispatchEvent(new Event('change',{bubbles:true}));
+       syncSingleChoiceMenu(prefix,nativeID);
+       $(prefix+'Button').focus();
+     });
+   }
+ }
+ for(const option of box.querySelectorAll('.single-select-option')){
+   option.setAttribute('aria-selected',String(option.dataset.value===select.value));
+ }
+ if(prefix==='sortPlatform')$('sortPlatformReset').disabled=select.value==='all';
+}
+function setupSingleChoiceMenu(prefix,nativeID){
+ const button=$(prefix+'Button'),menu=$(prefix+'Menu'),box=$(prefix+'Options');
+ button.addEventListener('click',()=>{
+   const open=menu.hidden;
+   if(prefix!=='listSwitcher')closeSingleChoiceMenu('listSwitcher');
+   if(prefix!=='sortPlatform')closeSingleChoiceMenu('sortPlatform');
+   closeListPlatformMenu();
+   if(open){
+     syncSingleChoiceMenu(prefix,nativeID);
+     menu.hidden=false;button.setAttribute('aria-expanded','true');
+     const bounds=menu.getBoundingClientRect(),anchor=button.getBoundingClientRect();
+     menu.classList.toggle('opens-up',bounds.bottom>window.innerHeight-8&&anchor.top>bounds.height+8);
+   }else closeSingleChoiceMenu(prefix);
+ });
+ button.addEventListener('keydown',e=>{
+   if(e.key!=='ArrowDown'&&e.key!=='ArrowUp')return;
+   e.preventDefault();if(menu.hidden)button.click();
+   const options=[...box.querySelectorAll('.single-select-option')];
+   const chosen=options.findIndex(x=>x.getAttribute('aria-selected')==='true');
+   const target=e.key==='ArrowUp'?Math.max(0,chosen):Math.max(0,chosen);
+   options[target]?.focus();
+ });
+ box.addEventListener('keydown',e=>{
+   if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeSingleChoiceMenu(prefix,true);return;}
+   if(!['ArrowDown','ArrowUp','Home','End'].includes(e.key))return;
+   const options=[...box.querySelectorAll('.single-select-option')];
+   if(!options.length)return;
+   e.preventDefault();
+   const index=options.indexOf(document.activeElement);
+   const next=e.key==='Home'?0:e.key==='End'?options.length-1:e.key==='ArrowDown'?(index+1)%options.length:(index-1+options.length)%options.length;
+   options[next].focus();
+ });
+}
+setupSingleChoiceMenu('listSwitcher','listSwitcher');
+setupSingleChoiceMenu('sortPlatform','platformSelect');
+$('sortPlatformReset').addEventListener('click',()=>{
+ const select=$('platformSelect'),changed=select.value!=='all';
+ select.value='all';closeSingleChoiceMenu('sortPlatform');
+ if(changed)select.dispatchEvent(new Event('change',{bubbles:true}));
+ syncSingleChoiceMenu('sortPlatform','platformSelect');
+ $('sortPlatformButton').focus();
 });
 
 function eligibleFilms(){
@@ -1885,9 +2398,10 @@ function updatePlatformChoices(){
  }
  for(const name of [...all].sort((a,b)=>a.localeCompare(b,'es'))){const o=document.createElement('option');o.value=name;o.textContent=name;select.appendChild(o)}
  select.value=prev;if(select.value!==prev){selectedSortPlatform='all';select.value='all'}
+ syncSingleChoiceMenu('sortPlatform','platformSelect');
  updateSortAvailability();
 }
-$('platformSelect').addEventListener('change',e=>{selectedSortPlatform=e.target.value;resetChoice();updateSortAvailability()});
+$('platformSelect').addEventListener('change',e=>{selectedSortPlatform=e.target.value;resetChoice();updateSortAvailability();syncSingleChoiceMenu('sortPlatform','platformSelect')});
 function posterElement(r){
  if(r?.poster_path){const img=document.createElement('img');img.className='film-poster';img.alt='';img.loading='lazy';img.src='/api/poster?token='+encodeURIComponent(token)+'&path='+encodeURIComponent(r.poster_path);img.addEventListener('error',()=>{img.replaceWith(posterPlaceholder())},{once:true});return img;}
  return posterPlaceholder();
@@ -1896,7 +2410,7 @@ function posterPlaceholder(){const span=document.createElement('span');span.clas
 function updateChoiceMedia(){
  const el=$('resultPoster');el.hidden=true;el.removeAttribute('src');if(!chosen)return;
  const r=platformData.get(providerKey(chosen));if(r?.poster_path){el.src='/api/poster?token='+encodeURIComponent(token)+'&path='+encodeURIComponent(r.poster_path);el.hidden=false;}
- const detail=[chosen.number?'N.º '+chosen.number:'',chosen.year];
+ const detail=[chosen.displayNumber?'N.º '+chosen.displayNumber:'',chosen.year];
  if(r?.vote_count>0)detail.push('★ '+Number(r.vote_average).toFixed(1)+' / 10 · TMDB');
  $('resultDetails').textContent=detail.filter(Boolean).join(' · ');
 }
@@ -1954,7 +2468,7 @@ $('choose').addEventListener('click',()=>{
  const pos=(window.crypto&&crypto.getRandomValues?values[0]:Math.floor(Math.random()*4294967296))%pool.length;
  chosen=pool[pos];lastChoice=chosen.idx;
  $('resultTag').textContent='🍿 LA ELEGIDA';$('resultTitle').textContent=chosen.title;
- $('resultDetails').textContent=[chosen.number?'N.º '+chosen.number:'',chosen.year].filter(Boolean).join(' · ');updateChoicePlatforms();
+ $('resultDetails').textContent=[chosen.displayNumber?'N.º '+chosen.displayNumber:'',chosen.year].filter(Boolean).join(' · ');updateChoicePlatforms();
  $('markWatched').disabled=virtualMode;$('copyChoice').disabled=false;$('message').textContent=virtualMode?'Vista de coincidencias · solo lectura':'';
 });
 $('markWatched').addEventListener('click',()=>{if(chosen)toggle(chosen.idx);});
@@ -1967,13 +2481,20 @@ async function copyText(text){
 }
 $('copyChoice').addEventListener('click',()=>{if(chosen)void copyText(chosen.name);});
 $('copyBtn').addEventListener('click',()=>void copyText(rawText));
+// A filename must reflect the active list, without invalid Windows/Android path chars.
+function exportTxtFilename(name){
+ const base=String(name||'').normalize('NFC').replace(/[\\/:*?"<>|\x00-\x1f]/g,' ').replace(/\s+/g,' ').replace(/[. ]+$/g,'').trim();
+ return (base||'Lista de películas').slice(0,120).replace(/[. ]+$/g,'')+'.txt';
+}
 $('exportBtn').addEventListener('click',()=>{
- const blob=new Blob(['\uFEFF',rawText],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Mi_lista_de_peliculas.txt';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);notify('TXT exportado.');
+ const filename=exportTxtFilename(virtualMode?'Comparación de listas':activeCollection()?.name);
+
+ const blob=new Blob(['\uFEFF',rawText],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);notify('TXT exportado.');
 });
 const overlay=$('pasteOverlay');function closeModal(){overlay.hidden=true;$('pasteText').value='';$('pasteStatus').textContent='';}
 $('pasteBtn').addEventListener('click',()=>{overlay.hidden=false;$('pasteText').focus();});
 $('closeModal').addEventListener('click',closeModal);$('cancelPaste').addEventListener('click',closeModal);overlay.addEventListener('click',e=>{if(e.target===overlay)closeModal();});
-window.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!overlay.hidden)closeModal();if(!$('deleteFilmOverlay').hidden)closeDeleteFilmModal();if(!$('compareOverlay').hidden)closeCompareModal();if(!$('membershipOverlay').hidden)closeMembershipModal();if(!$('platformOverlay').hidden)closePlatformModal();if(!$('batchOverlay').hidden)closeBatchModal();closeListPlatformMenu();$('listOverlay').hidden=true;$('filmOverlay').hidden=true;}});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!overlay.hidden)closeModal();if(!$('deleteFilmOverlay').hidden)closeDeleteFilmModal();if(!$('compareOverlay').hidden)closeCompareModal();if(!$('membershipOverlay').hidden)closeMembershipModal();if(!$('platformOverlay').hidden)closePlatformModal();if(!$('batchOverlay').hidden)closeBatchModal();closeListPlatformMenu();closeSingleChoiceMenu('sortPlatform');closeSingleChoiceMenu('listSwitcher');$('listOverlay').hidden=true;$('filmOverlay').hidden=true;}});
 $('pasteText').addEventListener('input',()=>{const n=parse($('pasteText').value).entries.length;$('pasteStatus').textContent=n?`${n} ${n===1?'película detectada':'películas detectadas'}`:'';});
 $('applyPaste').addEventListener('click',()=>{if(replaceList($('pasteText').value)){closeModal();notify('Lista actualizada.');}else $('pasteStatus').textContent='No se encontraron películas.';});
 $('openFile').addEventListener('click',()=>$('fileInput').click());
@@ -1983,7 +2504,8 @@ $('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0
  if(bytes.length>=2 && bytes[0]===0xff && bytes[1]===0xfe)txt=new TextDecoder('utf-16le').decode(bytes);
  else if(bytes.length>=2 && bytes[0]===0xfe && bytes[1]===0xff)txt=new TextDecoder('utf-16be').decode(bytes);
  else {try{txt=new TextDecoder('utf-8',{fatal:true}).decode(bytes);}catch(err){txt=new TextDecoder('windows-1252').decode(bytes);}}
- notify(replaceList(txt)?`Lista cargada: ${file.name}`:'No se encontraron películas.');
+ const imported=importTxtAsNewCollection(txt,file.name);
+  notify(imported.ok?`Lista «${imported.name}» creada: ${imported.count} películas.`:imported.message);
  }
  catch(err){notify('No se pudo abrir el archivo.');}
  e.target.value='';

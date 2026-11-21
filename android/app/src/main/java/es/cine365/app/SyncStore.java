@@ -161,6 +161,90 @@ final class SyncStore {
         final boolean changed;
         Merge(JSONObject l,JSONObject r,JSONObject k,JSONArray issues,boolean c){library=l;revisions=r;known=k;conflicts=issues;changed=c;}
     }
+    // Reorder only film rows. Keep original TXT lines, seen flags, other
+    // unnumbered content, and any movies known only to this device.
+    static String orderedFilmRows(String current,String remote){
+        String[] lines=current.split("\\n",-1);
+        java.util.Map<String,Integer> ranks=new java.util.HashMap<>();
+        for(String line:remote.split("\\n",-1)){
+            Film f=film(line);
+            if(f!=null&&!ranks.containsKey(f.key))ranks.put(f.key,ranks.size());
+        }
+        final class Row {
+            String text;int original,rank;
+            Row(String value,int index,int position){text=value;original=index;rank=position;}
+        }
+        java.util.List<Integer> indices=new java.util.ArrayList<>();
+        java.util.List<Row> rows=new java.util.ArrayList<>();
+        for(int i=0;i<lines.length;i++){
+            Film f=film(lines[i]);if(f==null)continue;
+            indices.add(i);
+            rows.add(new Row(lines[i],i,ranks.containsKey(f.key)?ranks.get(f.key):ranks.size()+i));
+        }
+        rows.sort((left,right)->{
+            int n=Integer.compare(left.rank,right.rank);
+            return n!=0?n:Integer.compare(left.original,right.original);
+        });
+        for(int i=0;i<indices.size();i++)lines[indices.get(i)]=rows.get(i).text;
+        return String.join("\n",lines);
+    }
+
+    // Never join the contents of unrelated lists just because two fresh installs
+    // reused a legacy ID (especially "atlas"). This used to silently append
+    // every film from one list to another and then upload the polluted copy.
+    private static Set<String> listFilms(JSONObject list)throws Exception {
+        Set<String> keys=new HashSet<>();
+        for(String line:list.getString("text").split("\\n",-1)){
+            Film f=film(line);if(f!=null)keys.add(f.key);
+        }
+        return keys;
+    }
+    static boolean isUntouchedStarter(JSONObject library,JSONObject revisions,JSONObject known,String template){
+        if(library==null||revisions==null||known==null||
+           revisions.length()>0||known.length()>0)return false;
+        JSONArray lists=library.optJSONArray("lists");
+        if(lists==null||lists.length()!=1)return false;
+        JSONObject one=lists.optJSONObject(0);
+        if(one==null||!"atlas".equals(one.optString("id"))||
+           !"atlas".equals(library.optString("active_id"))||
+           !"Selector Cine 365 · 365".equals(one.optString("name")))return false;
+        JSONObject deleted=library.optJSONObject("deleted_lists");
+        if(deleted!=null&&deleted.length()>0)return false;
+        JSONArray comparisons=library.optJSONArray("comparison_ids");
+        if(comparisons!=null&&comparisons.length()>0)return false;
+        return one.optString("text").equals(template);
+    }
+    static void requireSameListIdentity(JSONObject local,JSONObject remote)throws Exception {
+        Set<String> ours=listFilms(local),theirs=listFilms(remote);
+        String a=local.optString("name"),b=remote.optString("name");
+        if(ours.isEmpty()||theirs.isEmpty()){
+            if(!a.equals(b)&&ours.size()!=theirs.size())
+                throw new Exception("Sincronización detenida: dos listas distintas comparten el ID "+
+                    local.optString("id")+". Revisa las copias de Windows antes de continuar.");
+            return;
+        }
+        int overlap=0;
+        for(String key:theirs)if(ours.contains(key))overlap++;
+        boolean starterA=a.startsWith("Selector Cine 365 ·"),starterB=b.startsWith("Selector Cine 365 ·");
+        // The 365 starter and a renamed/custom list with the same "atlas" ID
+        // cannot safely be assumed identical when their film inventories differ.
+        boolean starterCollision=starterA!=starterB&&!ours.equals(theirs);
+        boolean differentNamedLists=!a.equals(b)&&!ours.equals(theirs);
+        // A shared ID alone is not proof of identity after reinstall. Require
+        // significant continuity of the film set; fail closed if ambiguous.
+        int smaller=Math.min(ours.size(),theirs.size());
+        boolean unrelated=overlap*2<smaller;
+        int excess=Math.max(ours.size()-overlap,theirs.size()-overlap);
+        // A polluted snapshot often contains ALL the legitimate films plus
+        // hundreds appended from other lists. High overlap alone would miss it.
+        boolean unexpectedExpansion=excess>=24&&excess*5>=smaller;
+        if(starterCollision||differentNamedLists||unrelated||unexpectedExpansion){
+            throw new Exception("Sincronización detenida: «"+a+"» y «"+b+
+                "» comparten el ID "+local.optString("id")+
+                " pero parecen listas diferentes. No se han mezclado ni enviado datos. "+
+                "Conserva las copias de Windows y revisa las listas antes de continuar.");
+        }
+    }
     static Merge merge(JSONObject local,JSONObject revisions,JSONObject known,JSONObject peer)throws Exception {
         return merge(local,revisions,known,peer,false);
     }
@@ -195,6 +279,7 @@ final class SyncStore {
             if(deleted.optBoolean(other.optString("id")))continue;
             for(int j=0;j<left.length();j++)if(left.getJSONObject(j).getString("id").equals(other.getString("id"))){own=left.getJSONObject(j);break;}
             if(own==null){if(left.length()<40)left.put(new JSONObject(other.toString()));continue;}
+            requireSameListIdentity(own,other);
             if(own.optString("name").startsWith("Selector Cine 365 ·")&&!other.optString("name").startsWith("Selector Cine 365 ·"))
                 own.put("name",other.getString("name"));
             Set<String>keys=new HashSet<>();String before=own.getString("text");
@@ -205,7 +290,12 @@ final class SyncStore {
                 if(combined.length()>0&&combined.charAt(combined.length()-1)!='\n')combined.append('\n');
                 combined.append(line);keys.add(f.key);
             }
-            own.put("text",combined.toString());
+            String mergedLines=combined.toString();
+            if(other.optLong("order_changed_at")>own.optLong("order_changed_at")){
+                mergedLines=orderedFilmRows(mergedLines,other.getString("text"));
+                own.put("order_changed_at",other.optLong("order_changed_at"));
+            }
+            own.put("text",mergedLines);
         }
         // Una tombstone local o remota se impone incluso si el otro dispositivo
         // mantiene una copia anterior con el mismo ID de lista.

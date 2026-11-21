@@ -9,7 +9,7 @@
 <meta name="author" content="Cristian Barallobre Rúa">
 <meta name="copyright" content="© 2026 Cristian Barallobre Rúa">
 <meta name="application-name" content="Selector de Cine 365">
-<title>Selector Cine 365 · Android v9 Beta 13.5</title>
+<title>Selector Cine 365 · Android v9 Beta 13.13</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1018;--panel:#171f2b;--panel2:#1b2735;--line:#314052;--subtle:#94a2b5;--light:#f4f6fa;--gold:#f3c66d;--gold2:#d59b40;--green:#a4e4bc;--red:#e5a6a6;--r:19px}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 960px 510px at 88% -10%,#263649 0%,transparent 76%),var(--bg);color:var(--light);font-family:'Segoe UI',system-ui,Arial,sans-serif;font-size:15px;min-height:100vh}button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
@@ -45,12 +45,21 @@ main{max-width:1250px;padding:28px 28px 32px;margin:auto}.header{display:flex;al
 .nav-btn:hover{background:#2c3d50}.nav-btn.active{border-color:#d9ac5c;background:#413724;color:#ffda89}
 .list-switch{margin-left:auto;min-width:190px;max-width:290px;flex:1;border:1px solid #485b71;border-radius:10px;background:#1e2a3a;color:#f0e6d6;padding:10px 12px;font-size:13px;font-weight:680}
 .view[hidden]{display:none!important}.tool-wide{grid-column:span 2}
+.film-reorder-handle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 28px;width:28px;height:28px;min-height:28px;padding:0;border:1px solid #43546a;border-radius:7px;background:#29394a;color:#b9c8db;cursor:grab;touch-action:none;font-size:19px;line-height:1}
+.film-reorder-handle:active{cursor:grabbing}
+/* Tirador vertical, separado del título y con espacio propio a la izquierda. */
+#view-library .film-item{position:relative;padding-left:37px}
+#view-library .film-reorder-handle{position:absolute;left:6px;top:7px;bottom:7px;width:25px;height:auto;min-height:0;flex:none;border-radius:8px;font-size:20px;z-index:2}
+
+.film-item.reorder-moving{opacity:.58;border-color:var(--gold);background:#243244}
+.film-item.reorder-target{outline:2px solid var(--gold);outline-offset:-2px}
+
 .film-poster{width:42px;height:60px;object-fit:cover;border-radius:6px;border:1px solid #627185;flex:none;background:#151e2a}
 .poster-placeholder{width:42px;height:60px;flex:none;display:grid;place-items:center;border:1px solid #3a4a5f;background:#152131;color:#7d8b9b;border-radius:6px;font-size:22px}
 .title-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.film-name{min-width:0;flex:0 1 auto}.film-rating{border:1px solid #826941;color:#ffda91;border-radius:7px;padding:3px 6px;font-size:11px;font-weight:780;white-space:nowrap;background:#3a2f24}
 .film-toggle{gap:10px;min-width:0}.film-item{min-height:86px}.film-platforms{margin-top:4px}.film-sub{margin-top:4px}
 .select-label{display:block;color:#d2c197;font-size:11px;font-weight:800;letter-spacing:.12em;margin:13px 0 7px}
-.platform-select{display:block;width:100%;border:1px solid #6d614d;border-radius:11px;background:#282b31;color:#f2e0c1;padding:12px 12px;font-size:14px;font-weight:720;outline:none}
+.platform-select{cursor:pointer;display:block;width:100%;border:1px solid #6d614d;border-radius:11px;background:#282b31;color:#f2e0c1;padding:12px 12px;font-size:14px;font-weight:720;outline:none}
 .sort-count{font-size:12px;color:#b6c5d3;margin:7px 0 13px;min-height:16px}
 .pick{flex-direction:row;align-items:center;justify-content:flex-start;gap:17px}.result-copy{flex:1;min-width:0}.chosen-poster{height:154px;width:103px;border:1px solid #887253;border-radius:9px;object-fit:cover;flex:none}.chosen-poster[hidden]{display:none}
 .stats-hero{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
@@ -387,7 +396,15 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
 #view-library .film-toggle .poster-placeholder{font-size:29px!important}
 #view-library .film-main{min-width:0!important;width:100%!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:5px!important}
 #view-library .title-line{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:6px!important;width:100%!important}
+/* Long-press film reordering must not trigger text selection in Android WebView. */
+#view-library .film-item{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}
+/* En Android la barra queda al margen de la cuadrícula de carátula y casilla. */
+#view-library .film-item{position:relative!important;padding-left:36px!important}
+#view-library .film-main{position:static!important;padding-right:0!important}
+#view-library .film-reorder-handle{position:absolute!important;left:6px!important;right:auto!important;top:9px!important;bottom:9px!important;width:24px!important;height:auto!important;min-height:0!important;max-height:none!important;touch-action:none!important;z-index:3!important}
 #view-library .film-name{display:block!important;width:100%!important;font-size:16px!important;line-height:1.35!important;overflow-wrap:anywhere!important;white-space:normal!important}
+#view-library .film-filmmeta{display:flex!important;align-items:center!important;gap:5px!important;flex-wrap:wrap!important;min-width:0!important}
+#view-library .film-filmmeta .film-sequence-number{color:#bcd0e7!important;white-space:nowrap!important;font-size:11px!important}
 #view-library .film-rating{max-width:100%!important;white-space:normal!important}
 #view-library .film-sub,#view-library .film-platforms{display:block!important;width:100%!important;margin:0!important;font-size:12px!important;line-height:1.5!important;white-space:normal!important;overflow-wrap:anywhere!important}
 #view-library .film-actions{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:9px!important;padding:0 12px 11px!important}
@@ -1327,10 +1344,10 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
 <section id="view-sort" class="view mobile-page" hidden></section>
 <section id="view-settings" class="view mobile-page" hidden>
  <div class="panel mobile-settings-panel"><h2>Ajustes y sincronización</h2>
-  <p class="mobile-help"><strong>¿Quieres sincronizar con Windows?</strong> Te recomendamos <strong>OneDrive</strong>. En Android basta conectar tu cuenta Microsoft: se prepara automáticamente la carpeta Selector_Cine_365. En Windows/Mac, usa esa carpeta de OneDrive para compartir los datos. También puedes usar la app sin nube.</p>
+  <p class="mobile-help"><strong>Instalación nueva de Android:</strong> tus listas empiezan guardándose solo en el móvil. Para recuperar las listas ya compartidas por Windows, conecta <strong>la misma cuenta Microsoft</strong> y revisa los datos de OneDrive antes de importar. En Windows Beta 14 también puedes conectar esa cuenta directamente, sin seleccionar una carpeta manual. La nube es opcional.</p>
   <div class="onedrive-box" id="onedriveBox">
    <h3>1 · Conecta tu cuenta Microsoft</h3>
-   <p class="mobile-help">No necesitas buscar OneDrive en las carpetas del teléfono ni copiar códigos. Pulsa «Conectar cuenta Microsoft», inicia sesión en el navegador y vuelve automáticamente aquí. La aplicación localizará o creará la carpeta <strong>Selector_Cine_365</strong> automáticamente, sin pedirte que la selecciones. No se modificarán tus listas hasta que confirmes la primera revisión.</p>
+   <p class="mobile-help">Pulsa «Conectar cuenta Microsoft», autoriza desde el navegador y regresa a Selector Cine 365. La aplicación localizará o creará <strong>Selector_Cine_365</strong> automáticamente en tu OneDrive. <strong>Conectar no importa ni sube películas:</strong> si es tu primera instalación, tendrás que confirmar el paso 2. Android guarda la autorización cifrada; no debería pedirte iniciar sesión cada vez que abras la app.</p>
    <button type="button" class="primary" id="odConnect">Conectar cuenta Microsoft</button>
    <div id="odLoginCode" hidden>
     <p class="mobile-help">Se ha abierto la página oficial de Microsoft en tu navegador. Inicia sesión y acepta el acceso. Microsoft te devolverá automáticamente a Selector Cine 365, <strong>sin copiar ningún código</strong>.</p>
@@ -1352,12 +1369,10 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
    </div>
    <p class="mobile-help" id="odStatus" aria-live="polite">Comprobando disponibilidad de OneDrive…</p>
   </div>
-  <div class="cloud-wizard-step">
-    <h3>3 · Windows y Mac: usa la misma carpeta</h3>
-    <p>En Windows abre OneDrive y elige la carpeta <strong>Selector_Cine_365</strong> dentro de la sección de nube de Selector Cine 365. Comprueba que OneDrive haya terminado de sincronizar sus archivos.</p>
-  </div>
-  <div id="cloudSettingsHome"><h3 class="cloud-wizard-heading">4 · Revisa y confirma la primera sincronización</h3>
-    <p class="mobile-help">En la primera conexión, pulsa <strong>Revisar sincronización</strong>, comprueba el resumen y confirma en ambos dispositivos. Después recibirás los cambios seguros automáticamente.</p>
+  <div id="cloudSettingsHome" class="cloud-wizard-step">
+    <h3 class="cloud-wizard-heading">2 · Revisa las listas que ya tienes en OneDrive</h3>
+    <p>Una instalación nueva genera un identificador nuevo para el móvil. OneDrive puede conservar <strong>las listas de Windows y copias de un Android anterior</strong> aunque hayas desinstalado la app. No borres esos archivos ni des por hecho que son cambios nuevos.</p>
+    <p>Con la misma cuenta conectada, pulsa <strong>↻ Revisar, enviar y recibir cambios</strong>, comprueba las cantidades de listas y películas vistas y resuelve cualquier conflicto. <strong>Solo «Confirmar y sincronizar» aplica la combinación.</strong> Si ves algo inesperado, pulsa «Cancelar» y revisa tu copia de Windows.</p>
   </div>
   <p class="mobile-help"><strong>Modo sin nube:</strong> puedes conservar todas tus películas en el móvil. «Elegir carpeta local» no conecta automáticamente con OneDrive.</p>
   <div class="mobile-sync-support">
@@ -1386,11 +1401,15 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
    <button id="syncCancelButton" type="button" class="tool">Cancelar</button>
   </div>
   <div class="cloud-wizard-step">
-    <h3>5 · Sincronización manual y conflictos</h3>
-    <p>Al abrir la aplicación se consulta OneDrive <strong>una sola vez y sin importar ni publicar cambios</strong>. Usa el botón de dos flechas ↻ para revisar, enviar y recibir cambios. Se mostrará una confirmación antes de fusionarlos; los conflictos requieren una decisión. Puedes trabajar sin conexión y guardar todas tus modificaciones en el móvil.</p>
+    <h3>3 · Sincroniza cuando quieras</h3>
+    <p>Después de confirmar el paso 2, tus cambios se guardarán <strong>siempre en el móvil</strong>. Para enviarlos o recibir los de Windows, pulsa ↻ y vuelve a confirmar. Android no envía cambios automáticamente al abrir ni en segundo plano; al abrir solo puede hacer una consulta de lectura si ya está vinculado.</p>
   </div>
-  <div class="mobile-help mobile-sync-caution">La app guarda sus archivos de intercambio dentro de la carpeta que hayas elegido, en <code>Selector_Cine_365_Copias</code>, con copias separadas para cada dispositivo. <strong>No borres las subcarpetas actual ni sincronizacion.</strong> Si ya usabas otra carpeta con listas sincronizadas, no la renombres ni la muevas sin hacer antes una copia JSON.</div>
+  <div class="mobile-help mobile-sync-caution"><strong>¿Has borrado Android para instalar desde cero?</strong> El almacenamiento privado anterior se elimina normalmente y esta versión no solicita restaurarlo desde copias automáticas de Android. La carpeta <code>Selector_Cine_365</code> de OneDrive <strong>no se borra</strong>: sus archivos están en <code>sincronizacion/dispositivos</code>, directamente o bajo <code>Selector_Cine_365_Copias</code> según la configuración existente. No modifiques los JSON de sincronización; si necesitas recuperar datos, utiliza ↻ y confirma la vista previa.</div>
   <div id="tmdbSettingsTools" class="mobile-setting-actions" aria-label="Ajustes opcionales de TMDB"></div>
+  <div class="mobile-setting-actions" style="margin-top:10px">
+    <button type="button" class="tool" id="tmdbResumeIncomplete">↻ Completar carátulas y plataformas pendientes</button>
+  </div>
+  <p id="tmdbRepairStatus" class="mobile-help" aria-live="polite">OneDrive sincroniza las listas y las vistas, no las carátulas ni plataformas de TMDB. Este móvil completa progresivamente las fichas visibles cuando TMDB está conectado. Para completar las demás, utiliza este botón; tu clave privada no se comparte.</p>
   <div id="cloudActivityShield" class="cloud-activity-shield" hidden aria-live="assertive" role="status">
     <div class="cloud-activity-message">
       <span class="cloud-activity-spinner" aria-hidden="true"></span>
@@ -1724,35 +1743,108 @@ async function initPlatforms(){
    setTimeout(()=>{if(!document.hidden)void initPlatforms();},1200);
   return;
  }
- // Al abrir no hacemos búsquedas de red, ni siquiera si faltan fichas.
- // Las nuevas incorporaciones y «Actualizar» solicitan lo que haga falta.
- updatePlatformProgress();updateListPlatformOptions();renderList();renderStats();
+ // Al abrir solo completamos las primeras fichas a la vista.
+ // No se descarga el catálogo entero ni se realiza ninguna acción en OneDrive.
+ updatePlatformProgress();updatePlatformChoices();updateListPlatformOptions();renderList();renderStats();
+ if(window.CineAndroid&&platformConfigured)void fillVisibleTmdbGaps();
 }
-async function loadPlatforms(force){
+async function loadPlatforms(force,onlyIncomplete=false){
  if(!platformConfigured){showPlatformModal();return;}
  const current=++platformRun;
  // No vaciar la caché al cambiar de lista ni al reabrir la aplicación.
  // «Actualizar» puede pedir datos nuevos a TMDB; lo demás usa la copia local.
- const all=parsed.entries.map(f=>({...f}));
- const entries=force?all:all.filter(f=>!platformData.has(providerKey(f)));
+ const all=[...new Map(parsed.entries.map(f=>[providerKey(f),{...f}])).values()];
+ const needsRepair=f=>{
+   const r=platformData.get(providerKey(f));
+   return !r||r.state==='error'||r.state==='not-found'||r.metadata_version<3
+     ||(r.state==='ok'&&!r.poster_path);
+ };
+ const entries=onlyIncomplete?all.filter(needsRepair):force?all:all.filter(f=>!platformData.has(providerKey(f)));
  platformTotal=all.length;platformFinished=all.length-entries.length;
  platformActive=entries.length>0;updatePlatformProgress();renderList();
  if(!entries.length){updateListPlatformOptions();return;}
  // Hasta tres consultas simultáneas solamente para películas no cacheadas.
  let idx=0;
  async function worker(){while(current===platformRun){const n=idx++;if(n>=entries.length)break;const f=entries[n];
-   try{const r=await platformApi('/api/platforms/lookup',{title:f.title,year:Number(f.year)||0,force:!!force});if(current===platformRun){platformData.set(providerKey(f),r);if(r?.tmdb_id>0)registerIdentity(f,r.tmdb_id);}}
+   try{const r=await platformApi('/api/platforms/lookup',{title:f.title,year:Number(f.year)||0,force:!!(force||onlyIncomplete)});if(current===platformRun){platformData.set(providerKey(f),r);if(r?.tmdb_id>0)registerIdentity(f,r.tmdb_id);}}
    catch(err){if(current===platformRun)platformData.set(providerKey(f),{state:'error',note:err.message});}
    if(current===platformRun){platformFinished++;if(platformFinished%5===0||platformFinished===platformTotal){updatePlatformProgress();scheduledPlatformRender();}}
  }}
  await Promise.all([worker(),worker(),worker()]);if(current!==platformRun)return;
  platformActive=false;updatePlatformProgress();scheduledPlatformRender();
 }
+// OneDrive comparte listas y vistos, pero las fichas TMDB se guardan localmente.
+// Consulta ligera bajo demanda: como máximo 12 fichas nuevas por pantalla y 48
+// por sesión de app, con dos consultas concurrentes y sin enviar datos a nube.
+const autoTmdbTried=new Set();
+let autoTmdbBusy=false,autoTmdbQueued=false,autoTmdbCount=0;
+async function fillVisibleTmdbGaps(){
+ if(!window.CineAndroid||!platformConfigured||document.hidden)return;
+ if(platformActive){autoTmdbQueued=true;return;}
+ if(autoTmdbBusy){autoTmdbQueued=true;return;}
+ if(!parsed?.entries?.length||autoTmdbCount>=48)return;
+ const visible=parsed.entries.slice(0,Math.min((filmPage+1)*24,parsed.entries.length));
+ const todo=[];
+ for(const f of visible){
+   const key=providerKey(f),cached=platformData.get(key);
+   if(autoTmdbTried.has(key))continue;
+   if(cached&&cached.metadata_version>=3&&cached.state!=='error'&&cached.state!=='not-found'&&cached.poster_path)continue;
+   if(todo.length>=12||autoTmdbCount+todo.length>=48)break;
+   autoTmdbTried.add(key);
+   todo.push({key,title:f.title,year:Number(f.year)||0,film:f});
+ }
+ if(!todo.length)return;
+ autoTmdbCount+=todo.length;autoTmdbBusy=true;
+ $('platformProgress').textContent='Completando '+todo.length+' fichas TMDB visibles…';
+ let next=0,finished=0;
+ async function worker(){
+   while(next<todo.length){
+     if(document.hidden)break;
+     const task=todo[next++];
+     try{
+       // force:false conserva la caché y el enfriamiento tras errores de red.
+       const result=await platformApi('/api/platforms/lookup',{
+         title:task.title,year:task.year,force:false
+       });
+       platformData.set(task.key,result);
+       if(result?.tmdb_id>0)registerIdentity(task.film,result.tmdb_id);
+     }catch(err){
+       platformData.set(task.key,{state:'error',note:err.message});
+     }
+     finished++;
+     if(finished%3===0||finished===todo.length)scheduledPlatformRender();
+   }
+ }
+ try{await Promise.all([worker(),worker()]);}
+ finally{
+   autoTmdbBusy=false;
+   if(!platformActive)updatePlatformProgress();
+   scheduledPlatformRender();
+   if(autoTmdbQueued){
+     autoTmdbQueued=false;
+     if(!document.hidden)setTimeout(()=>void fillVisibleTmdbGaps(),400);
+   }
+ }
+}
 function showPlatformModal(){ $('platformOverlay').hidden=false;$('platformStatus').textContent='';$('apiKey').value='';$('apiKey').focus();}
 function closePlatformModal(){$('platformOverlay').hidden=true;}
  $('helpConfigureTmdb').addEventListener('click',showPlatformModal);
 $('platformSetup').addEventListener('click',showPlatformModal);
 $('platformRefresh').addEventListener('click',()=>void loadPlatforms(true));
+$('tmdbResumeIncomplete').addEventListener('click',async()=>{
+ const button=$('tmdbResumeIncomplete');
+ if(platformActive){$('tmdbRepairStatus').textContent='Ya se están consultando fichas TMDB. Comprueba el progreso en Tu colección.';return;}
+ if(!platformConfigured){showPlatformModal();$('tmdbRepairStatus').textContent='Conecta tu clave TMDB en este móvil para descargar sus fichas.';return;}
+ button.disabled=true;
+ $('tmdbRepairStatus').textContent='Completando solo fichas faltantes o erróneas de la lista actual…';
+ try{
+   await loadPlatforms(false,true);
+   const entries=[...new Map(parsed.entries.map(f=>[providerKey(f),f])).values()];
+   const incomplete=entries.filter(f=>{const r=platformData.get(providerKey(f));return !r||r.state==='error'||r.state==='not-found';}).length;
+   $('tmdbRepairStatus').textContent='✓ Revisión terminada. '+(entries.length-incomplete)+' fichas disponibles de '+entries.length+'. '+(incomplete?incomplete+' todavía sin identificar o con error. Puedes corregir su ID TMDB.':'');
+ }catch(error){$('tmdbRepairStatus').textContent='⚠ '+error.message;}
+ finally{button.disabled=false;}
+});
 $('closePlatforms').addEventListener('click',closePlatformModal);
 $('cancelPlatforms').addEventListener('click',closePlatformModal);
 $('platformOverlay').addEventListener('click',e=>{if(e.target===$('platformOverlay'))closePlatformModal();});
@@ -1823,7 +1915,14 @@ function lineInfo(text,idx){
 }
 function parse(text){
  const lines=text.split('\n'),entries=[];
- for(let i=0;i<lines.length;i++){const f=lineInfo(lines[i],i);if(f)entries.push(f);}
+ for(let i=0;i<lines.length;i++){
+  const f=lineInfo(lines[i],i);
+  if(f){
+   // Stable ordinal for unnumbered lists; never rewrites the underlying TXT.
+   f.displayNumber=String(entries.length+1).padStart(3,'0');
+   entries.push(f);
+  }
+ }
  return {lines,entries,seen:entries.filter(f=>f.checked).length,pending:entries.filter(f=>!f.checked)};
 }
 function update(){membershipCache=null;parsed=parse(rawText);const n=parsed.entries.length;
@@ -1834,6 +1933,119 @@ function update(){membershipCache=null;parsed=parse(rawText);const n=parsed.entr
  updateSortAvailability();
  renderList();
 }
+// Dragging is enabled only on the unfiltered current list. Reorder the original
+// TXT film lines, leaving headings/blank lines untouched; no TMDB IDs or marks change.
+function filmOrderEditable(){
+ return !virtualMode&&searchScope==='current'&&filter==='all'&&!search.trim()&&!selectedListPlatforms.size;
+}
+function moveFilmInCurrentList(fromRawIndex,toRawIndex){
+ if(!filmOrderEditable()||fromRawIndex===toRawIndex)return false;
+ const locations=parsed.entries.map(f=>f.idx);
+ const from=locations.indexOf(fromRawIndex),to=locations.indexOf(toRawIndex);
+ if(from<0||to<0||from===to)return false;
+ const original=rawText.split('\n');
+ const rows=locations.map(i=>original[i]);
+ const [moved]=rows.splice(from,1);
+ rows.splice(to,0,moved);
+ for(let i=0;i<locations.length;i++)original[locations[i]]=rows[i];
+ rawText=original.join('\n');
+ syncActiveText();
+ // This revision travels with the list through OneDrive, independently of marks.
+ const active=activeCollection();
+ active.order_changed_at=Math.max(Date.now(),Number(active.order_changed_at||0)+1);
+ update();renderStats();renderCollectionControls();scheduleSave();
+ notify('Orden actualizado. El número de cada película corresponde ahora a su posición.');
+ return true;
+}
+let filmTouchOrder=null,filmDropSuppressedUntil=0;
+document.addEventListener('click',e=>{
+ if(Date.now()<filmDropSuppressedUntil){
+  e.preventDefault();e.stopImmediatePropagation();
+ }
+},true);
+document.addEventListener('touchmove',e=>{
+ const state=filmTouchOrder;
+ if(!state)return;
+ const touch=e.touches[0];
+ if(!touch)return;
+ if(!state.active){
+  if(Math.hypot(touch.clientX-state.x,touch.clientY-state.y)>11){
+   clearTimeout(state.timer);filmTouchOrder=null;
+  }
+  return;
+ }
+ if(e.cancelable)e.preventDefault();
+ const hovered=document.elementFromPoint(touch.clientX,touch.clientY)?.closest('.film-item');
+ if(hovered&&hovered.parentElement===$('filmList')){
+  const index=Number(hovered.dataset.idx);
+  if(Number.isInteger(index))state.to=index;
+  document.querySelectorAll('#filmList .film-item.reorder-target').forEach(el=>el.classList.remove('reorder-target'));
+  hovered.classList.add('reorder-target');
+ }
+ const scroller=$('view-library');
+ const bounds=scroller.getBoundingClientRect();
+ if(touch.clientY<bounds.top+65)scroller.scrollTop-=17;
+ else if(touch.clientY>bounds.bottom-65)scroller.scrollTop+=17;
+},{passive:false});
+function finishFilmTouchOrder(event,cancel=false){
+ const state=filmTouchOrder;
+ if(!state)return;
+ clearTimeout(state.timer);
+ filmTouchOrder=null;
+ document.querySelectorAll('#filmList .reorder-target, #filmList .reorder-moving').forEach(el=>{
+  el.classList.remove('reorder-target','reorder-moving');
+ });
+ if(state.active){
+  if(event?.cancelable)event.preventDefault();
+  filmDropSuppressedUntil=Date.now()+350;
+  if(!cancel&&state.to!==state.from)moveFilmInCurrentList(state.from,state.to);
+ }
+}
+document.addEventListener('touchend',e=>finishFilmTouchOrder(e),{passive:false});
+document.addEventListener('touchcancel',e=>finishFilmTouchOrder(e,true),{passive:false});
+function attachFilmReorder(card,handle,film){
+ // Desktop drag starts only from its dedicated grip: normal card controls work.
+ handle.draggable=true;
+ handle.addEventListener('dragstart',e=>{
+  if(!filmOrderEditable()){e.preventDefault();return;}
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain',String(film.idx));
+  card.classList.add('reorder-moving');
+ });
+ handle.addEventListener('dragend',()=>{
+  document.querySelectorAll('#filmList .reorder-moving, #filmList .reorder-target').forEach(el=>el.classList.remove('reorder-moving','reorder-target'));
+ });
+ card.addEventListener('dragover',e=>{
+  if(!filmOrderEditable()||!e.dataTransfer.types.includes('text/plain'))return;
+  e.preventDefault();e.dataTransfer.dropEffect='move';
+  card.classList.add('reorder-target');
+ });
+ card.addEventListener('dragleave',()=>card.classList.remove('reorder-target'));
+ card.addEventListener('drop',e=>{
+  card.classList.remove('reorder-target');
+  if(!filmOrderEditable())return;
+  e.preventDefault();
+  const from=Number(e.dataTransfer.getData('text/plain'));
+  if(Number.isInteger(from))moveFilmInCurrentList(from,film.idx);
+ });
+ // Android: hold the card for 500 ms, then slide it vertically. Regular short
+ // swipes continue to scroll and taps on check/links remain unaffected.
+ card.addEventListener('touchstart',e=>{
+  if(!window.CineAndroid||!filmOrderEditable()||e.touches.length!==1)return;
+  const hit=e.target;
+  if(hit.closest('button,a,input,select')&&!hit.closest('.film-reorder-handle'))return;
+  if(filmTouchOrder)finishFilmTouchOrder(null,true);
+  const touch=e.touches[0];
+  const state={from:film.idx,to:film.idx,x:touch.clientX,y:touch.clientY,active:false,timer:null};
+  state.timer=setTimeout(()=>{
+   if(filmTouchOrder!==state||!filmOrderEditable())return;
+   state.active=true;card.classList.add('reorder-moving');
+   if(navigator.vibrate)navigator.vibrate(18);
+  },500);
+  filmTouchOrder=state;
+ },{passive:true});
+}
+
 function renderList(append=false){
  const parent=$('filmList');
  const scrollView=$('view-library'),scrollBefore=window.CineAndroid?scrollView.scrollTop:0;
@@ -1868,9 +2080,16 @@ function renderList(append=false){
    const main=document.createElement('span');main.className='film-main';
    const titleLine=document.createElement('span');titleLine.className='title-line';
    const title=document.createElement('span');title.className='film-name';title.textContent=f.title;titleLine.appendChild(title);
+   if(!global&&!virtualMode){
+    const grip=document.createElement('button');grip.type='button';grip.className='film-reorder-handle';grip.textContent='⠿';
+    grip.title='Arrastrar para cambiar el orden';grip.setAttribute('aria-label','Mover «'+f.title+'» a otra posición');
+    b.appendChild(grip);attachFilmReorder(b,grip,f);
+   }
    main.appendChild(titleLine);
    const meta=document.createElement('span');meta.className='film-filmmeta';
    if(f.year){const year=document.createElement('span');year.textContent=f.year;meta.appendChild(year);}
+   const displayNumber=!global?f.displayNumber:'';
+   if(displayNumber){const number=document.createElement('span');number.className='film-sequence-number';number.textContent='N.º '+displayNumber;meta.appendChild(number);}
    if(r?.vote_count>0){const rating=document.createElement('span');rating.className='film-rating';rating.textContent='★ '+Number(r.vote_average).toFixed(1)+' TMDB';rating.title='Nota TMDB ('+r.vote_count+' votos), no equivale a IMDb';meta.appendChild(rating);}
    const membership=document.createElement('span');membership.className='film-memberships';
    const caption=document.createElement('span');caption.className='film-memberships-title';caption.textContent='Listas:';
@@ -1880,7 +2099,7 @@ function renderList(append=false){
    }
    const edit=document.createElement('button');edit.type='button';edit.className='film-memberships-edit';edit.textContent='✎';edit.title='Añadir o quitar de otras listas';edit.setAttribute('aria-label','Gestionar listas de '+f.title);edit.addEventListener('click',()=>editMembership(f));
    membership.append(caption,nums,edit);meta.appendChild(membership);
-   if(f.number){const number=document.createElement('span');number.textContent='N.º '+f.number;meta.appendChild(number);}
+
    main.appendChild(meta);
    const badge=document.createElement('span');badge.className='film-platforms';const [name,css]=platformBadge(f);if(css)badge.classList.add(css);badge.textContent=name;
    badge.title=platformTitle(r);main.appendChild(badge);
@@ -1983,6 +2202,28 @@ async function saveLocal(quiet=false){
    if(!quiet)$('saveState').textContent='✓ En el móvil';
   }
  }catch(err){if(epoch===saveEpoch)$('saveState').textContent='⚠ Error al guardar en el móvil';}
+}
+// Abrir TXT crea una colección independiente; nunca reemplaza la lista actual.
+function importTxtAsNewCollection(text,fileName){
+ const clean=String(text||'').replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
+ if(!parse(clean).entries.length)return {ok:false,message:'No se encontraron películas reconocibles en el TXT.'};
+ if(libraryState.lists.length>=40)return {ok:false,message:'Límite de 40 listas alcanzado. No se ha modificado ninguna lista.'};
+ const base=(String(fileName||'').replace(/\.txt$/i,'').trim()||'Lista importada').slice(0,100);
+ let name=base,number=2;
+ const occupied=new Set(libraryState.lists.map(x=>x.name.toLocaleLowerCase('es')));
+ while(occupied.has(name.toLocaleLowerCase('es'))){const suffix=' ('+(number++)+')';name=base.slice(0,100-suffix.length)+suffix;}
+ syncActiveText();
+ const id='lista_'+Date.now().toString(36)+'_'+Math.floor(Math.random()*100000).toString(36);
+ libraryState.lists.push({id,name,text:clean});
+ libraryState.active_id=id;
+ virtualMode=false;
+ rawText=clean;
+ reconcileWatched();
+ rawText=activeCollection().text||'';
+ restartList();
+ scheduleSave();
+ showView('library');
+ return {ok:true,name,count:parse(rawText).entries.length};
 }
 function replaceList(text){let clean=text.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');const test=parse(clean);if(!test.entries.length){$('message').textContent='No se encontraron películas.';return false;}
  rawText=clean;syncActiveText();reconcileWatched();rawText=activeCollection().text||'';restartList();scheduleSave();return true;
@@ -2345,7 +2586,8 @@ function restartList(){
  selectedSortPlatform='all';$('platformSelect').value='all';selectedListPlatforms.clear();closeListPlatformMenu();
  document.querySelectorAll('.filter').forEach(b=>b.classList.toggle('selected',b.dataset.filter==='all'));
  updateListPlatformOptions();update();updatePlatformProgress();renderStats();renderCollectionControls();
- // Cambiar de lista muestra caché local; consultar TMDB requiere pulsar Actualizar.
+ // En Android, completar gradualmente las fichas nuevas de la lista actual.
+ if(window.CineAndroid)void fillVisibleTmdbGaps();
 }
 function switchCollection(id){
  if(id===virtualID){
@@ -2692,7 +2934,7 @@ async function odLoadFolders(preselect=''){
      if(folder.id===preselect)option.selected=true;
      selection.append(option);
    }
-   $('odStatus').textContent=selection.options.length?'Elige la carpeta de pruebas que también utilizarás en Windows.':'No hay carpetas en la raíz de OneDrive. Puedes crear una carpeta de pruebas.';
+   $('odStatus').textContent=selection.options.length?'Solo en modo avanzado: selecciona la carpeta que ya utilizaba Windows y revisa sus datos antes de sincronizar.':'No hay carpetas en la raíz de OneDrive. Puedes crear Selector_Cine_365.';
  }catch(e){$('odStatus').textContent='⚠ No se pudieron consultar las carpetas: '+e.message;}
 }
 window.cineMicrosoftAuthFinished=async(ok,message)=>{
@@ -2881,10 +3123,25 @@ async function syncDevices(){
    pendingSyncToken=data.token;
    const panel=$('syncPreviewPanel'),details=$('syncPreviewDetails');
    panel.hidden=false;
-   $('syncPreviewSummary').textContent=(data.sources?('Se han encontrado '+data.sources+' fuentes compartidas.'):'No hay biblioteca compartida: este dispositivo puede crearla.')
-      +' Se conservan las copias de seguridad de Windows.';
+   $('syncPreviewSummary').textContent=(data.sources?('Se han encontrado '+data.sources+' copias de otros dispositivos, que pueden incluir Windows o un Android anterior.'):'No hay biblioteca compartida: este dispositivo puede crearla después de confirmar.')
+      +' No se sustituye ninguna copia de Windows. Comprueba los números antes de continuar.';
    details.textContent='En este móvil: '+data.local_lists+' listas y '+data.local_seen+' películas vistas.\n'
       +'Después de combinar: '+data.result_lists+' listas y '+data.result_seen+' vistas.';
+   const predicted=Array.isArray(data.result_list_details)?data.result_list_details:[];
+   if(predicted.length){
+     const heading=document.createElement('p');heading.textContent='COMPRUEBA CADA LISTA ANTES DE CONFIRMAR:';
+     heading.style.cssText='color:#ffe1a0;font-weight:850;margin-top:14px';
+     details.append(heading);
+     for(const item of predicted){
+       const row=document.createElement('p');row.textContent=(item.name||'Lista')+' · '+Number(item.films||0)+' películas';
+       row.style.cssText='margin:5px 0;color:#d8e6f5';
+       details.append(row);
+     }
+     const warning=document.createElement('p');
+     warning.textContent='Si alguna lista contiene más películas de las que debería, pulsa Cancelar. No envíes esta biblioteca a OneDrive.';
+     warning.style.cssText='color:#f6bd86;font-weight:720;line-height:1.5';
+     details.append(warning);
+   }
    const conflicts=Array.isArray(data.conflicts)?data.conflicts:[];
    if(conflicts.length){
      const title=document.createElement('p');title.textContent='⚠ '+conflicts.length+' decisiones opuestas detectadas. Elige cómo resolverlas:';
@@ -2901,7 +3158,7 @@ async function syncDevices(){
        details.append(row);
      }
    }
-   message.textContent='Revisa el resumen y confirma para ENVIAR y RECIBIR. Ningún dato se ha cambiado todavía.';
+   message.textContent='Revisa listas, vistas y conflictos. Al confirmar se combinarán tus datos locales con OneDrive y se enviará una copia de este móvil; aún no se ha cambiado nada.';
    panel.scrollIntoView({block:'nearest',behavior:'smooth'});
  }catch(error){message.textContent='⚠ '+error.message;}
  finally{cloudSyncBusy=false;if(button)button.disabled=false;$('cloudSyncQuick').disabled=false;cloudBusyEnd();}
@@ -2930,6 +3187,7 @@ $('syncConfirmButton')?.addEventListener('click',async()=>{
    const data=await cloudRequest('/api/cloud/sync','POST',{token:pendingSyncToken,decisions});
    pendingSyncToken='';$('syncPreviewPanel').hidden=true;
    await initLibrary();restartList();
+   if(window.CineAndroid)void fillVisibleTmdbGaps();
    $('syncResult').textContent='✓ Sincronización manual completada · '+data.lists+' listas · '+data.seen+' películas vistas.\nPulsa ↻ de nuevo para enviar o recibir cambios.';
     $('saveState').textContent='✓ En móvil y nube';
    await cloudRefresh();
@@ -3066,7 +3324,7 @@ function posterPlaceholder(){const span=document.createElement('span');span.clas
 function updateChoiceMedia(){
  const el=$('resultPoster');el.hidden=true;el.removeAttribute('src');if(!chosen)return;
  const r=platformData.get(providerKey(chosen));if(r?.poster_path){el.src='/api/poster?token='+encodeURIComponent(token)+'&path='+encodeURIComponent(r.poster_path);el.hidden=false;}
- const detail=[chosen.number?'N.º '+chosen.number:'',chosen.year];
+ const detail=[chosen.displayNumber?'N.º '+chosen.displayNumber:'',chosen.year];
  if(r?.vote_count>0)detail.push('★ '+Number(r.vote_average).toFixed(1)+' / 10 · TMDB');
  $('resultDetails').textContent=detail.filter(Boolean).join(' · ');
 }
@@ -3116,7 +3374,7 @@ function renderStats(){
 }
 
 $('filmPrev').addEventListener('click',()=>{filmPage=Math.max(0,filmPage-1);renderList();});
-$('filmNext').addEventListener('click',()=>{filmPage++;renderList(!!window.CineAndroid);});
+$('filmNext').addEventListener('click',()=>{filmPage++;renderList(!!window.CineAndroid);if(window.CineAndroid)void fillVisibleTmdbGaps();});
 $('filmList').addEventListener('click',e=>{const b=e.target.closest('button.film-check-action');if(!b)return;if(b.dataset.globalGroup){const f=filmMembershipIndex().byKey.get(b.dataset.globalGroup);if(f)toggleSearchedFilm(f);}else if(b.dataset.idx!==undefined)toggle(Number(b.dataset.idx));});
 $('search').addEventListener('input',e=>{search=e.target.value;filmPage=0;renderList();});
 document.querySelectorAll('.filter').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;filmPage=0;document.querySelectorAll('.filter').forEach(x=>x.classList.toggle('selected',x===b));renderList();}));
@@ -3127,7 +3385,7 @@ $('choose').addEventListener('click',()=>{
  const pos=(window.crypto&&crypto.getRandomValues?values[0]:Math.floor(Math.random()*4294967296))%pool.length;
  chosen=pool[pos];lastChoice=chosen.idx;
  $('resultTag').textContent='🍿 LA ELEGIDA';$('resultTitle').textContent=chosen.title;
- $('resultDetails').textContent=[chosen.number?'N.º '+chosen.number:'',chosen.year].filter(Boolean).join(' · ');updateChoicePlatforms();
+ $('resultDetails').textContent=[chosen.displayNumber?'N.º '+chosen.displayNumber:'',chosen.year].filter(Boolean).join(' · ');updateChoicePlatforms();
  $('markWatched').disabled=virtualMode;$('copyChoice').disabled=false;$('message').textContent=virtualMode?'Vista de coincidencias · solo lectura':'';
 });
 $('markWatched').addEventListener('click',()=>{if(chosen)toggle(chosen.idx);});
@@ -3140,9 +3398,16 @@ async function copyText(text){
 }
 $('copyChoice').addEventListener('click',()=>{if(chosen)void copyText(chosen.name);});
 $('copyBtn').addEventListener('click',()=>void copyText(rawText));
+// A filename must reflect the active list, without invalid Windows/Android path chars.
+function exportTxtFilename(name){
+ const base=String(name||'').normalize('NFC').replace(/[\\/:*?"<>|\x00-\x1f]/g,' ').replace(/\s+/g,' ').replace(/[. ]+$/g,'').trim();
+ return (base||'Lista de películas').slice(0,120).replace(/[. ]+$/g,'')+'.txt';
+}
 $('exportBtn').addEventListener('click',()=>{
- if(window.CineAndroid){window.CineAndroid.exportFile('Mi_lista_de_peliculas.txt','\uFEFF'+rawText,'text/plain');notify('TXT listo para guardar.');return;}
- const blob=new Blob(['\uFEFF',rawText],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Mi_lista_de_peliculas.txt';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);notify('TXT exportado.');
+ const filename=exportTxtFilename(virtualMode?'Comparación de listas':activeCollection()?.name);
+
+ if(window.CineAndroid){window.CineAndroid.exportFile(filename,'\uFEFF'+rawText,'text/plain');notify('TXT listo para guardar.');return;}
+ const blob=new Blob(['\uFEFF',rawText],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);notify('TXT exportado.');
 });
 const overlay=$('pasteOverlay');function closeModal(){overlay.hidden=true;$('pasteText').value='';$('pasteStatus').textContent='';}
 $('pasteBtn').addEventListener('click',()=>{overlay.hidden=false;$('pasteText').focus();});
@@ -3157,7 +3422,8 @@ $('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0
  if(bytes.length>=2 && bytes[0]===0xff && bytes[1]===0xfe)txt=new TextDecoder('utf-16le').decode(bytes);
  else if(bytes.length>=2 && bytes[0]===0xfe && bytes[1]===0xff)txt=new TextDecoder('utf-16be').decode(bytes);
  else {try{txt=new TextDecoder('utf-8',{fatal:true}).decode(bytes);}catch(err){txt=new TextDecoder('windows-1252').decode(bytes);}}
- notify(replaceList(txt)?`Lista cargada: ${file.name}`:'No se encontraron películas.');
+ const imported=importTxtAsNewCollection(txt,file.name);
+  notify(imported.ok?`Lista «${imported.name}» creada: ${imported.count} películas.`:imported.message);
  }
  catch(err){notify('No se pudo abrir el archivo.');}
  e.target.value='';

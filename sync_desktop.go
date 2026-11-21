@@ -221,6 +221,71 @@ func (s *desktopSyncStore) accept(p syncPlan,decisions map[string]bool,folder st
  s.state.PairedFolder=filepath.Clean(folder)
  return s.saveLocked()
 }
+// syncOrderedFilmRows changes *only* the positions of film rows. It keeps
+// unnumbered headings, blank lines, exact film text, existing marks, and films
+// added locally. A peer's older order cannot roll back a newer local movement.
+func syncOrderedFilmRows(current,remote string) string {
+ lines:=strings.Split(current,"\n")
+ ranks:=map[string]int{}
+ for _,line:=range strings.Split(remote,"\n"){
+  f,ok:=parseSyncFilm(line)
+  if ok {if _,seen:=ranks[f.key];!seen {ranks[f.key]=len(ranks)}}
+ }
+ type row struct { line string; original int; rank int }
+ indices:=[]int{}
+ rows:=[]row{}
+ for i,line:=range lines {
+  f,ok:=parseSyncFilm(line)
+  if !ok{continue}
+  rank,found:=ranks[f.key];if !found{rank=len(ranks)+i}
+  indices=append(indices,i)
+  rows=append(rows,row{line:line,original:i,rank:rank})
+ }
+ sort.SliceStable(rows,func(i,j int)bool{
+  if rows[i].rank==rows[j].rank{return rows[i].original<rows[j].original}
+  return rows[i].rank<rows[j].rank
+ })
+ for i,idx:=range indices{lines[idx]=rows[i].line}
+ return strings.Join(lines,"\n")
+}
+
+// Reject unrelated libraries which happen to reuse a legacy list ID. A new
+// Android installation always starts with "atlas" and can otherwise append
+// hundreds of unrelated film lines into the selected Windows list.
+func syncListFilmKeys(list filmCollection) map[string]bool {
+ keys:=map[string]bool{}
+ for _,line:=range strings.Split(list.Text,"\n"){
+  if f,ok:=parseSyncFilm(line);ok{keys[f.key]=true}
+ }
+ return keys
+}
+func syncListIdentityError(local,remote filmCollection) error {
+ ours,theirs:=syncListFilmKeys(local),syncListFilmKeys(remote)
+ if len(ours)==0||len(theirs)==0{
+  if local.Name!=remote.Name&&len(ours)!=len(theirs){
+   return fmt.Errorf("Sincronización detenida: dos listas distintas comparten el ID %s. Revisa las copias antes de continuar",local.ID)
+  }
+  return nil
+ }
+ matches:=0
+ for key:=range theirs{if ours[key]{matches++}}
+ starterA:=strings.HasPrefix(local.Name,"Selector Cine 365 ·")
+ starterB:=strings.HasPrefix(remote.Name,"Selector Cine 365 ·")
+ differentSets:=len(ours)!=len(theirs)||matches!=len(ours)
+ starterCollision:=starterA!=starterB&&differentSets
+ differentNamedLists:=local.Name!=remote.Name&&differentSets
+ smaller:=len(ours);if len(theirs)<smaller{smaller=len(theirs)}
+ unrelated:=matches*2<smaller
+ // An already contaminated peer can contain the whole true list plus
+ // hundreds of films from other lists. Overlap alone does not prove identity.
+ extraLeft,extraRight:=len(ours)-matches,len(theirs)-matches
+ excess:=extraLeft;if extraRight>excess{excess=extraRight}
+ unexpectedExpansion:=excess>=24&&excess*5>=smaller
+ if starterCollision||differentNamedLists||unrelated||unexpectedExpansion{
+  return fmt.Errorf("Sincronización detenida: «%s» y «%s» comparten el ID %s pero parecen listas diferentes. No se han mezclado ni enviado datos. Conserva las copias antes de continuar",local.Name,remote.Name,local.ID)
+ }
+ return nil
+}
 func syncMerge(local libraryState,revisions map[string]syncRevision,known map[string]int64,peer syncSnapshot) (libraryState,map[string]syncRevision,map[string]int64,[]syncConflict,error) {
  return syncMergeVersioned(local,revisions,known,peer,false)
 }
@@ -253,6 +318,7 @@ func syncMergeVersioned(local libraryState,revisions map[string]syncRevision,kno
    result.Lists=append(result.Lists,other);continue
   }
   own:=&result.Lists[idx]
+  if err:=syncListIdentityError(*own,other);err!=nil{return local,nil,nil,nil,err}
   if strings.HasPrefix(own.Name,"Selector Cine 365 ·")&&!strings.HasPrefix(other.Name,"Selector Cine 365 ·"){own.Name=other.Name}
   keys:=map[string]bool{}
   for _,line:=range strings.Split(own.Text,"\n"){if f,ok:=parseSyncFilm(line);ok{keys[f.key]=true}}
@@ -261,6 +327,10 @@ func syncMergeVersioned(local libraryState,revisions map[string]syncRevision,kno
     if own.Text!=""&&!strings.HasSuffix(own.Text,"\n"){own.Text+="\n"}
     own.Text+=line;keys[f.key]=true
    }
+  }
+  if other.OrderChangedAt>own.OrderChangedAt {
+   own.Text=syncOrderedFilmRows(own.Text,other.Text)
+   own.OrderChangedAt=other.OrderChangedAt
   }
  }
  // Eliminar del resultado las listas marcadas como borradas, aunque

@@ -1,0 +1,206 @@
+name: Publicar Beta 14 Windows Mac y Android Beta 13.13 (recomendada)
+on:
+  push:
+    branches: ['release/selector-cine-v9-beta14-beta13-13']
+    paths: ['.release/PUBLICAR_BETA14_1313.txt']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: publicar-selector-cine-v9-beta14-1313
+  cancel-in-progress: false
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    env:
+      MICROSOFT_CLIENT_ID: '696458fe-0672-47e5-9fdd-aa0332e9884b'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: Validar fuente integrada Windows y Android
+        shell: bash
+        run: |
+          set -euo pipefail
+          go test ./... -count=1
+          node scripts/test_beta14_desktop_dropdowns.cjs
+          node scripts/test_beta14_onedrive_guide.cjs
+          node scripts/test_txt_import_creates_list_beta14.cjs
+          node scripts/test_android_manual_sync_beta13_3.cjs
+          node scripts/test_android_onedrive_efficiency.cjs
+          node scripts/test_android_onedrive_auto_beta13_5.cjs
+          node scripts/test_v9_beta13.cjs
+          node scripts/test_android_tmdb_resume_beta13_6.cjs
+          node scripts/test_export_txt_name_android_beta13_6.cjs
+          node scripts/test_txt_import_creates_list_beta14.cjs android/app/src/main/assets/index.html
+          node scripts/test_android_private_storage_beta13_8.cjs
+          node scripts/test_android_fresh_install_beta13_11.cjs
+          node scripts/test_android_tmdb_visible_fill_beta13_12.cjs
+      - name: Ejecutar pruebas unitarias Android sin firmar
+        working-directory: android
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle --no-daemon testDebugUnitTest
+      - name: Instalar herramientas públicas de firma para verificar APK existente
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -path '*/bin/sdkmanager' -type f | sort -V | tail -1)"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install 'build-tools;35.0.0' 'platforms;android-35'
+      - name: Recuperar EXE Windows Beta 14 validado en CI
+        uses: actions/download-artifact@v4
+        with:
+          name: beta14-windows-platforms-scroll-txt-preview
+          run-id: 44923741149
+          repository: cristianbarallobre/selector-cine-365
+          github-token: ${{ github.token }}
+          path: artifacts/windows
+      - name: Recuperar .app Mac Intel Beta 14 validada en CI
+        uses: actions/download-artifact@v4
+        with:
+          name: Selector_Cine_365_Mac_Intel_Beta14_TxtFix_preview
+          run-id: 44923741150
+          repository: cristianbarallobre/selector-cine-365
+          github-token: ${{ github.token }}
+          path: artifacts/mac-intel
+      - name: Recuperar .app Mac Apple Silicon Beta 14 validada en CI
+        uses: actions/download-artifact@v4
+        with:
+          name: Selector_Cine_365_Mac_Apple_Silicon_Beta14_TxtFix_preview
+          run-id: 44923741150
+          repository: cristianbarallobre/selector-cine-365
+          github-token: ${{ github.token }}
+          path: artifacts/mac-apple-silicon
+      - name: Recuperar APK Android Beta 13.13 idéntica a la fuente
+        uses: actions/download-artifact@v4
+        with:
+          name: Selector_Cine_365_Beta13_13_INDEPENDIENTE_SIN_FIRMAR
+          run-id: 44923727030
+          repository: cristianbarallobre/selector-cine-365
+          github-token: ${{ github.token }}
+          path: artifacts/android
+      - name: Verificar EXE, generar ZIP de Mac y APK oficial firmada
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp artifacts/windows/Selector_Cine_365_Windows_Beta14_preview.exe dist/Selector_Cine_365_Windows_Beta14.exe
+          echo '4d3459de746dd69c82232cc2aa222fdcb601c358145172e44b1887be59297130  dist/Selector_Cine_365_Windows_Beta14.exe' | sha256sum -c -
+          file dist/Selector_Cine_365_Windows_Beta14.exe | grep -F 'PE32+ executable'
+          # GitHub Actions may download a Mac artifact as a nested .app tree
+          # or an already prepared ZIP. Locate the application, not a fixed path.
+          for arch in mac-intel mac-apple-silicon; do
+            echo "Estructura descargada Mac $arch:"
+            find "artifacts/$arch" -maxdepth 5 -type f | head -30
+            app="$(find "artifacts/$arch" -type d -name '*.app' -print -quit)"
+            if [[ -z "$app" ]]; then
+              existing_zip="$(find "artifacts/$arch" -type f -name '*.zip' -print -quit)"
+              if [[ -z "$existing_zip" ]]; then
+                echo "::error::No hay aplicación .app ni ZIP en el artefacto Mac $arch."
+                exit 1
+              fi
+              mkdir -p "artifacts/$arch/unpacked"
+              unzip -q "$existing_zip" -d "artifacts/$arch/unpacked"
+              app="$(find "artifacts/$arch/unpacked" -type d -name '*.app' -print -quit)"
+            fi
+            [[ -n "$app" ]] || { echo "::error::Paquete macOS sin .app"; exit 1; }
+            executable="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -print -quit)"
+            [[ -n "$executable" ]] || { echo "::error::App macOS sin ejecutable"; exit 1; }
+            chmod +x "$executable"
+            if [[ "$arch" == "mac-intel" ]]; then
+              outfile="Selector_Cine_365_Mac_Intel_Beta14.zip"
+            else
+              outfile="Selector_Cine_365_Mac_AppleSilicon_Beta14.zip"
+            fi
+            output="$PWD/dist/$outfile"
+            (cd "$(dirname "$app")" && zip -qry "$output" "$(basename "$app")")
+            unzip -t "$output" | tail -1
+          done
+          echo '44fe1d4239b007e24244532767e0b67390be002d7675d9d5f1e43db15bfa6274  artifacts/android/app-release-unsigned.apk' | sha256sum -c -
+          echo '89c733f56388c6412c19e0af4b298ab7bd64f5cdb7738474e02e41edb282f9cd  scripts/release/beta13_13_android_signed_delta.b64' | sha256sum -c -
+          python scripts/release/reconstruct_signed_beta13_13.py \
+            artifacts/android/app-release-unsigned.apk \
+            scripts/release/beta13_13_android_signed_delta.b64 \
+            dist/Selector_Cine_365_Android_Beta13_13_Limpia.apk
+          echo 'c5a24883dfbe3f2806401629a6f93780941c00769fca6f4053a3068cfcfe8fcd  dist/Selector_Cine_365_Android_Beta13_13_Limpia.apk' | sha256sum -c -
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs \
+            dist/Selector_Cine_365_Android_Beta13_13_Limpia.apk | tee /tmp/cine-android-sign.txt
+          grep -Fx 'Verified using v2 scheme (APK Signature Scheme v2): true' /tmp/cine-android-sign.txt
+          grep -Fx 'Verified using v3 scheme (APK Signature Scheme v3): true' /tmp/cine-android-sign.txt
+          grep -Fxi 'Signer #1 certificate SHA-256 digest: b8a17f39e4fa24d7c110d452161425c7524412c3a5a4d7459b1132ffd0825fb6' /tmp/cine-android-sign.txt
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging dist/Selector_Cine_365_Android_Beta13_13_Limpia.apk | grep -F "package: name='es.cine365.app.limpia' versionCode='9027' versionName='9.0.0-beta.13.13'"
+      - name: Instalar conversores de manuales
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends pandoc libreoffice-writer fonts-dejavu-core poppler-utils
+      - name: Generar manual actualizado PDF y Word
+        shell: bash
+        run: |
+          set -euo pipefail
+          pandoc docs/MANUAL_BETA14_ANDROID13_13.md --from=gfm --to=docx \
+            --metadata=lang:es-ES \
+            --metadata=title:'Selector Cine 365 - Manual Beta14/Android13.13' \
+            -o dist/Manual_Selector_Cine_365_Beta14_Android13_13.docx
+          pandoc docs/GUIA_SINCRONIZACION_SEGURA_BETA14_ANDROID13_13.md --from=gfm --to=docx \
+            --metadata=lang:es-ES \
+            -o dist/Guia_Sincronizacion_Segura_Beta14_Android13_13.docx
+          mkdir -p /tmp/cine365-publicacion-2026
+          libreoffice -env:UserInstallation=file:///tmp/cine365-publicacion-2026/profile --headless \
+            --convert-to pdf --outdir dist \
+            dist/Manual_Selector_Cine_365_Beta14_Android13_13.docx \
+            dist/Guia_Sincronizacion_Segura_Beta14_Android13_13.docx
+          for f in dist/*.pdf; do
+            test -s "$f"
+            pdfinfo "$f" | grep '^Pages:'
+            pdftotext "$f" /tmp/cine365_pdf_contents.txt
+            test "$(wc -c < /tmp/cine365_pdf_contents.txt)" -gt 500
+            grep -E 'OneDrive|Android|Windows' /tmp/cine365_pdf_contents.txt >/dev/null
+          done
+          cp RELEASE_NOTES_v9_BETA14_RECOMENDADA.md dist/NOTAS_DE_VERSION_BETA14_ANDROID13_13.md
+          cp CHANGELOG.md dist/HISTORIAL_DE_VERSIONES.md
+          cp docs/MANUAL_BETA14_ANDROID13_13.md dist/MANUAL_EDITABLE.md
+          git archive --format=zip -o dist/Selector_Cine_365_Codigo_Fuente_Beta14_Android13_13.zip HEAD
+      - name: Verificar manifiesto de integridad completo
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd dist && sha256sum -- *.exe *.apk *.zip *.docx *.pdf *.md > SHA256SUMS.txt)
+          (cd dist && sha256sum --check SHA256SUMS.txt)
+          test "$(find dist -maxdepth 1 -name '*.apk' | wc -l)" -eq 1
+          test "$(find dist -maxdepth 1 -name '*.exe' | wc -l)" -eq 1
+          test "$(find dist -maxdepth 1 -name 'Selector_Cine_365_Mac_*.zip' | wc -l)" -eq 2
+      - name: Crear GitHub Release y publicar cuatro instaladores + manuales
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG='v9.0.0-beta.14'
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+            gh release edit "$TAG" --notes-file RELEASE_NOTES_v9_BETA14_RECOMENDADA.md --prerelease
+          else
+            gh release create "$TAG" dist/* --target "$GITHUB_SHA" --prerelease \
+              --title 'Selector Cine 365 v9 Beta 14 - Android Beta 13.13 (recomendada para pruebas)' \
+              --notes-file RELEASE_NOTES_v9_BETA14_RECOMENDADA.md
+          fi
+          gh release view "$TAG" --json tagName,isPrerelease,assets --jq '{tag: .tagName, beta: .isPrerelease, files: [.assets[].name]}'

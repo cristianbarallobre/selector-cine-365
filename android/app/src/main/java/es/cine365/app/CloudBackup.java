@@ -219,12 +219,42 @@ final class CloudBackup {
         StringBuilder out=new StringBuilder();for(byte b:hash)out.append(String.format(java.util.Locale.ROOT,"%02x",b&255));
         return out.toString();
     }
+    // A newly installed Android starts with a bundled example library. That
+    // example must never be unioned into a real Windows library from OneDrive.
+    // Only an untouched, revision-free example can be replaced automatically.
+    private boolean pristineStarter(JSONObject library,JSONObject revisions,JSONObject known)throws Exception{
+        if(activated)return false;
+        try(InputStream in=activity.getAssets().open("lista_inicial.txt");
+            ByteArrayOutputStream buffer=new ByteArrayOutputStream()){
+            byte[] chunk=new byte[8192];int n;
+            while((n=in.read(chunk))!=-1)buffer.write(chunk,0,n);
+            return SyncStore.isUntouchedStarter(library,revisions,known,
+                buffer.toString(StandardCharsets.UTF_8.name()));
+        }
+    }
+    private static final class RemoteCandidate {
+        final JSONObject peer;
+        final String origin;
+        RemoteCandidate(JSONObject value,String name){peer=value;origin=name;}
+    }
+    private static boolean isDesktopSnapshot(JSONObject peer){
+        return peer.optString("device_id").startsWith("desktop-")||
+               peer.optString("device_id").startsWith("windows-");
+    }
+    private static void validatePeer(JSONObject peer)throws Exception{
+        int protocol=peer.optInt("protocol");
+        if((protocol!=1&&protocol!=SyncStore.PROTOCOL)||
+           !Backend.validLibrary(peer.optJSONObject("library")))
+            throw new Exception("Una copia de dispositivo en OneDrive no es válida. No se han cambiado tus listas.");
+    }
     private Plan buildPlan(Backend backend)throws Exception{
         if(folder.isEmpty())throw new Exception("Selecciona antes una carpeta compartida");
         final boolean strict=activated;
         Plan p=new Plan();p.library=new JSONObject(backend.readOrDefault("colecciones.json","{}"));
         if(!Backend.validLibrary(p.library))throw new Exception("Biblioteca local inválida");
         p.revisions=sync.revisions();p.known=sync.known();
+        final boolean fresh=pristineStarter(p.library,p.revisions,p.known);
+        boolean restoredFromCloud=false;
         // Incluir también el estado local en la huella: editar después de la vista previa
         // obliga a revisar otra vez antes de importar datos.
         StringBuilder digest=new StringBuilder("Cine365-sync-v2|local:"+hexHash(
@@ -238,25 +268,60 @@ final class CloudBackup {
                 if(!Backend.validLibrary(remote))throw new Exception("La copia Windows no es válida; no se han cambiado tus datos");
                 JSONObject snapshot=new JSONObject().put("protocol",1).put("device_id","windows-legacy")
                     .put("library",remote).put("revisions",new JSONObject());
-                SyncStore.Merge m=SyncStore.merge(p.library,p.revisions,p.known,snapshot,strict);
-                p.library=m.library;p.revisions=m.revisions;p.known=m.known;
+                if(fresh&&!restoredFromCloud){
+                    p.library=new JSONObject(remote.toString());
+                    restoredFromCloud=true;
+                }else{
+                    SyncStore.Merge m=SyncStore.merge(p.library,p.revisions,p.known,snapshot,strict);
+                    p.library=m.library;p.revisions=m.revisions;p.known=m.known;
+                }
                 p.sources++;p.hasLegacy=true;
             }}
             Uri syncDir=findChild(root,"sincronizacion"),deviceDir=syncDir==null?null:findChild(syncDir,"dispositivos");
             if(deviceDir!=null){
                 List<Uri> snaps=children(deviceDir);
                 Collections.sort(snaps,(a,b)->a.toString().compareTo(b.toString()));
+                List<RemoteCandidate> peers=new ArrayList<>();
                 for(Uri uri:snaps){
                     byte[] bytes=read(uri);digest.append("peer:").append(uri.toString()).append(':').append(hexHash(bytes)).append('|');
                     JSONObject snapshot=new JSONObject(new String(bytes,StandardCharsets.UTF_8));
                     if(sync.deviceId().equals(snapshot.optString("device_id")))continue;
+                    validatePeer(snapshot);
+                    peers.add(new RemoteCandidate(snapshot,uri.toString()));
+                }
+                // The trusted Windows snapshot comes first for a newly installed
+                // phone. Do not let an older Android sample become its baseline.
+                Collections.sort(peers,(a,b)->{
+                    int first=Boolean.compare(isDesktopSnapshot(b.peer),isDesktopSnapshot(a.peer));
+                    if(first!=0)return first;
+                    int recent=Long.compare(b.peer.optLong("updated_at"),a.peer.optLong("updated_at"));
+                    return recent!=0?recent:a.origin.compareTo(b.origin);
+                });
+                for(RemoteCandidate item:peers){
+                    JSONObject snapshot=item.peer;
+                    if(fresh&&!restoredFromCloud){
+                        // Import the actual library, never append its rows to
+                        // the initial 365-film example shipped in the APK.
+                        p.library=new JSONObject(snapshot.getJSONObject("library").toString());
+                        p.revisions=new JSONObject(snapshot.optJSONObject("revisions")==null?"{}":snapshot.getJSONObject("revisions").toString());
+                        p.known=new JSONObject(snapshot.optJSONObject("known")==null?"{}":snapshot.getJSONObject("known").toString());
+                        restoredFromCloud=true;p.sources++;continue;
+                    }
+                    // Ignore only an exact, unchanged starter snapshot left by
+                    // an older Android installation. Never ignore real edits.
+                    if(!snapshot.optString("device_id").startsWith("desktop-")&&
+                       snapshot.optJSONObject("revisions")!=null&&
+                       snapshot.getJSONObject("revisions").length()==0&&
+                       pristineStarter(snapshot.getJSONObject("library"),new JSONObject(),new JSONObject())){
+                        continue;
+                    }
                     SyncStore.Merge m=SyncStore.merge(p.library,p.revisions,p.known,snapshot,strict);
                     p.library=m.library;p.revisions=m.revisions;p.known=m.known;p.sources++;
                     for(int i=0;i<m.conflicts.length();i++){
-                        JSONObject item=m.conflicts.getJSONObject(i);
+                        JSONObject issue=m.conflicts.getJSONObject(i);
                         boolean exists=false;
-                        for(int j=0;j<p.conflicts.length();j++)if(item.optString("key").equals(p.conflicts.getJSONObject(j).optString("key")))exists=true;
-                        if(!exists)p.conflicts.put(item);
+                        for(int j=0;j<p.conflicts.length();j++)if(issue.optString("key").equals(p.conflicts.getJSONObject(j).optString("key")))exists=true;
+                        if(!exists)p.conflicts.put(issue);
                     }
                 }
             }
@@ -270,11 +335,22 @@ final class CloudBackup {
             Plan plan=buildPlan(backend);
             previewToken=plan.fingerprint;
             JSONObject local=new JSONObject(backend.readOrDefault("colecciones.json","{}"));
+            JSONArray byList=new JSONArray();
+            JSONArray planned=plan.library.getJSONArray("lists");
+            for(int i=0;i<planned.length();i++){
+                JSONObject list=planned.getJSONObject(i);
+                int count=0;
+                for(String row:list.getString("text").split("\\n",-1))
+                    if(SyncStore.film(row)!=null)count++;
+                byList.put(new JSONObject().put("id",list.optString("id"))
+                    .put("name",list.optString("name")).put("films",count));
+            }
             return status().put("token",previewToken).put("sources",plan.sources)
                 .put("legacy",plan.hasLegacy).put("local_lists",local.getJSONArray("lists").length())
                 .put("local_seen",SyncStore.watchedCount(local))
                 .put("result_lists",plan.library.getJSONArray("lists").length())
                 .put("result_seen",SyncStore.watchedCount(plan.library))
+                .put("result_list_details",byList)
                 .put("conflicts",plan.conflicts).put("requires_confirmation",true);
         }catch(Exception e){lastError=e.getMessage();throw e;}
     }
