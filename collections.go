@@ -166,6 +166,15 @@ func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), 500)
 			return
 		}
+        if a.graph!=nil&&a.graph.active(){
+            if a.syncStore!=nil&&a.syncStore.isPaired(a.graph.pairingID()){
+                a.queueGraphUpload()
+            }
+            // Pending means local save succeeded but the cloud write is asynchronous.
+            w.Header().Set("X-Cine-Cloud","pending")
+            w.WriteHeader(http.StatusNoContent)
+            return
+        }
 		if a.cloud != nil {
             folder:=a.cloud.status().Folder
             if a.syncStore!=nil&&!a.syncStore.isPaired(folder)&&cloudHasDeviceSnapshots(folder){
