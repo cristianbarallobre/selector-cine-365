@@ -33,7 +33,7 @@ jobs:
           SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -path '*/bin/sdkmanager' -type f | sort -V | tail -1)"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
-      - name: Tests JS: ahorro, no envíos automáticos, revisión de nube
+      - name: 'Tests JS: ahorro, no envíos automáticos y revisión de nube'
         run: |
           node scripts/test_android_manual_sync_beta13_3.cjs
           node scripts/test_v9_beta13.cjs
