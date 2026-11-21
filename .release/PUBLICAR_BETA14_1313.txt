@@ -1,0 +1,5 @@
+Selector Cine 365 - publicación candidata recomendada (21/11/2026)
+Windows Beta 14 · macOS Beta 14 (Intel / Apple Silicon) · Android Beta 13.13 Limpia.
+Fija tag v9.0.0-beta.14 sobre el código fuente conjunto que incluye protección de listas.
+Requiere tests y verificación de firma APK y hashes antes de publicación; sin credenciales.
+No se considera certificada para sincronización de bibliotecas previamente contaminadas.
