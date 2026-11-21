@@ -1943,18 +1943,38 @@ $('filmPageGotoForm').addEventListener('submit',e=>{
  filmPage=page-1;renderList();input.value='';
 });
 function resetChoice(){chosen=null;$('resultPoster').hidden=true;$('resultPoster').removeAttribute('src');$('resultPlatforms').replaceChildren();$('resultTag').textContent='EL SORTEO TE ESPERA';$('resultTitle').textContent='Tu próxima película aparecerá aquí';$('resultDetails').textContent='';$('markWatched').disabled=true;$('copyChoice').disabled=true;}
-function scheduleSave(){membershipCache=null; $('saveState').textContent='Guardando…';clearTimeout(saveTimer);saveTimer=setTimeout(()=>{saveTimer=null;void saveLocal();},240);}
-async function saveLocal(){
- syncActiveText();const snapshot=JSON.stringify(libraryState);const epoch=++saveEpoch;
+// Device-only persistence. OneDrive is never contacted by ordinary saves.
+let lastStoredSnapshot=null;
+function scheduleSave(quiet=false){
+ membershipCache=null;
+ if(!quiet)$('saveState').textContent='Guardando en el móvil…';
+ clearTimeout(saveTimer);
+ saveTimer=setTimeout(()=>{saveTimer=null;void saveLocal(quiet);},240);
+}
+async function saveLocal(quiet=false){
+ if(saveTimer!==null){clearTimeout(saveTimer);saveTimer=null;}
+ syncActiveText();
+ const snapshot=JSON.stringify(libraryState);
+ if(snapshot===lastStoredSnapshot){
+  await saveQueue.catch(()=>{});
+  if(!quiet)$('saveState').textContent='✓ En el móvil';
+  return;
+ }
+ const epoch=++saveEpoch;
  saveQueue=saveQueue.catch(()=>{}).then(async()=>{
-   const response=await fetch('/api/library',{method:'POST',headers:{'Content-Type':'application/json','X-Atlas-Token':token},body:snapshot,cache:'no-store'});
-   if(!response.ok)throw new Error('HTTP '+response.status);
-   return response.headers.get('X-Cine-Cloud');
+  if(snapshot===lastStoredSnapshot)return;
+  const response=await fetch('/api/library',{method:'POST',headers:{'Content-Type':'application/json','X-Atlas-Token':token},body:snapshot,cache:'no-store'});
+  if(!response.ok)throw new Error('HTTP '+response.status);
+  lastStoredSnapshot=snapshot;
  });
- try{const cloudResult=await saveQueue;
- await cineLoadRevisions();
- if(epoch===saveEpoch){cineRecentIntents.clear();$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':'✓ Guardado';void cloudRefresh();setTimeout(()=>{if(!document.hidden)void cloudAutoReceive();},3500);}}
- catch(err){if(epoch===saveEpoch)$('saveState').textContent='⚠ Error al guardar';}
+ try{
+  await saveQueue;
+  if(!quiet)await cineLoadRevisions();
+  if(epoch===saveEpoch){
+   cineRecentIntents.clear();
+   if(!quiet)$('saveState').textContent='✓ En el móvil';
+  }
+ }catch(err){if(epoch===saveEpoch)$('saveState').textContent='⚠ Error al guardar en el móvil';}
 }
 function replaceList(text){let clean=text.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');const test=parse(clean);if(!test.entries.length){$('message').textContent='No se encontraron películas.';return false;}
  rawText=clean;syncActiveText();reconcileWatched();rawText=activeCollection().text||'';restartList();scheduleSave();return true;
@@ -2202,7 +2222,7 @@ async function reconcileTMDBLibrary(){
    for(const [key,id] of Object.entries(merged)){
     if(id>0)identityMap.set(key,id);else identityMap.delete(key);
    }
-   if(changed)scheduleSave();
+   if(changed)scheduleSave(true);
   }
  }catch(error){
   // Un fallo puntual no elimina una configuración válida.
@@ -2306,9 +2326,9 @@ function sanitizeComparisonIDs(){
 async function initLibrary(){
  await cineLoadRevisions();
  try{const response=await fetch('/api/library',{headers:{'X-Atlas-Token':token},cache:'no-store'});
-   if(response.ok){const state=await response.json();if(validLibrary(state))libraryState=state;}
+   if(response.ok){const state=await response.json();if(validLibrary(state)){libraryState=state;lastStoredSnapshot=JSON.stringify(state);}}
  }catch(e){}
- sanitizeComparisonIDs();await reconcileTMDBLibrary();const reconciled=reconcileWatched();rawText=activeCollection().text||'';renderCollectionControls();update();renderStats();if(reconciled)scheduleSave();
+ sanitizeComparisonIDs();await reconcileTMDBLibrary();const reconciled=reconcileWatched();rawText=activeCollection().text||'';renderCollectionControls();update();renderStats();if(reconciled)scheduleSave(true);
 }
 function validLibrary(s){return s&&s.version===1&&Array.isArray(s.lists)&&s.lists.length>0&&s.lists.length<=40&&typeof s.active_id==='string'&&s.lists.some(l=>l.id===s.active_id)&&s.lists.every(l=>typeof l.text==='string'&&typeof l.name==='string'&&typeof l.id==='string');}
 function restartList(){
@@ -2324,7 +2344,7 @@ function switchCollection(id){
    syncActiveText();virtualMode=true;rawText=buildIntersection();restartList();showView('library');return;
  }
  if(!libraryState.lists.some(l=>l.id===id)||(!virtualMode&&id===libraryState.active_id))return;
- syncActiveText();virtualMode=false;libraryState.active_id=id;rawText=activeCollection().text||'';restartList();scheduleSave();showView('library');
+ syncActiveText();virtualMode=false;libraryState.active_id=id;rawText=activeCollection().text||'';restartList();scheduleSave(true);showView('library');
 }
 function renderCollectionControls(){
  const sel=$('listSwitcher');sel.replaceChildren();for(const list of libraryState.lists){const o=document.createElement('option');o.value=list.id;o.textContent=numberedListName(list);sel.appendChild(o)}
