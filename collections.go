@@ -20,6 +20,8 @@ type filmCollection struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 	Text string `json:"text"`
+    // Updated only on explicit drag-and-drop reordering. Older clients omit it.
+    OrderChangedAt int64 `json:"order_changed_at,omitempty"`
 }
 type libraryState struct {
 	Version       int              `json:"version"`
@@ -59,6 +61,7 @@ func validateLibrary(l libraryState) error {
 		if !listIDPattern.MatchString(id)||!deleted||ids[id] {return errors.New("Registro de listas borradas incompatible")}
 	}
 	if len(l.DeletedLists)>1000 {return errors.New("Demasiadas eliminaciones registradas")}
+	for _,it:=range l.Lists {if it.OrderChangedAt<0||it.OrderChangedAt>4102444800000{return errors.New("Marca temporal del orden no válida")}}
 	if len(l.TMDBOverrides)>10000 {return errors.New("Demasiadas identificaciones TMDB")}
 	for key,id:=range l.TMDBOverrides {
 		if len(key)>275||!utf8.ValidString(key)||!strings.Contains(key,"|")||id<0||id>999999999 {return errors.New("Identificación TMDB inválida")}
