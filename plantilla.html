@@ -497,6 +497,13 @@ h2{font-size:19px}
           <button class="primary" type="button" id="cloudGraphConnect">☁ Conectar cuenta Microsoft (sin instalar OneDrive)</button>
         </div>
         <div class="cloud-status" id="cloudGraphStatus" aria-live="polite">Puedes conectar OneDrive directamente con tu cuenta Microsoft.</div>
+        <label for="cloudSyncMode" style="display:block;margin-top:10px;font-size:13px">
+          Sincronización en este ordenador
+          <select id="cloudSyncMode" style="margin-left:8px;padding:7px;border-radius:7px">
+            <option value="automatic">Automática inteligente</option>
+            <option value="manual">Solo al pulsar ↻</option>
+          </select>
+        </label>
         <div id="cloudGraphLogin" hidden>
           <p class="cloud-status">Abre la página oficial de Microsoft e introduce este código:</p>
           <strong id="cloudGraphCode" style="font-size:20px;letter-spacing:2px"></strong>
@@ -1678,6 +1685,24 @@ $('cloudGraphDisconnect').addEventListener('click',async()=>{
  catch(e){$('cloudGraphStatus').textContent='⚠ '+e.message;}
 });
 void desktopGraphStatus().catch(()=>{});
+async function refreshDesktopSyncMode(){
+ try{
+  const data=await cloudRequest('/api/cloud/mode');
+  $('cloudSyncMode').value=data.auto_sync?'automatic':'manual';
+ }catch(e){$('cloudGraphStatus').textContent='⚠ Modo de sincronización: '+e.message;}
+}
+$('cloudSyncMode').addEventListener('change',async()=>{
+ const field=$('cloudSyncMode');
+ field.disabled=true;
+ try{
+  await cloudRequest('/api/cloud/mode','POST',{auto_sync:field.value==='automatic'});
+  $('cloudAutoStatus').textContent=field.value==='manual'
+   ?'Modo manual. Solo se envían o reciben cambios cuando pulsas ↻ y revisas la sincronización.'
+   :'Modo automático. Solo se sincroniza después de la primera revisión confirmada.';
+ }catch(e){$('cloudGraphStatus').textContent='⚠ '+e.message;await refreshDesktopSyncMode();}
+ finally{field.disabled=false;}
+});
+void refreshDesktopSyncMode();
 
 $('cloudAutoFolder').addEventListener('click',async()=>{
  const button=$('cloudAutoFolder');button.disabled=true;
