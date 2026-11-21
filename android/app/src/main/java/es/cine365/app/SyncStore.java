@@ -186,7 +186,7 @@ final class SyncStore {
             return n!=0?n:Integer.compare(left.original,right.original);
         });
         for(int i=0;i<indices.size();i++)lines[indices.get(i)]=rows.get(i).text;
-        return String.join("\\n",lines);
+        return String.join("\n",lines);
     }
 
     static Merge merge(JSONObject local,JSONObject revisions,JSONObject known,JSONObject peer)throws Exception {
