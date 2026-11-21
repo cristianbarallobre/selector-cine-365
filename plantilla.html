@@ -906,6 +906,7 @@ function renderList(){
    main.appendChild(titleLine);
    const meta=document.createElement('span');meta.className='film-filmmeta';
    if(f.year){const year=document.createElement('span');year.textContent=f.year;meta.appendChild(year);}
+   if(f.number){const number=document.createElement('span');number.className='film-sequence-number';number.textContent='N.º '+f.number;meta.appendChild(number);}
    if(r?.vote_count>0){const rating=document.createElement('span');rating.className='film-rating';rating.textContent='★ '+Number(r.vote_average).toFixed(1)+' TMDB';rating.title='Nota TMDB ('+r.vote_count+' votos), no equivale a IMDb';meta.appendChild(rating);}
    const membership=document.createElement('span');membership.className='film-memberships';
    const caption=document.createElement('span');caption.className='film-memberships-title';caption.textContent='Listas:';
@@ -915,7 +916,7 @@ function renderList(){
    }
    const edit=document.createElement('button');edit.type='button';edit.className='film-memberships-edit';edit.textContent='✎';edit.title='Añadir o quitar de otras listas';edit.setAttribute('aria-label','Gestionar listas de '+f.title);edit.addEventListener('click',()=>editMembership(f));
    membership.append(caption,nums,edit);meta.appendChild(membership);
-   if(f.number){const number=document.createElement('span');number.textContent='N.º '+f.number;meta.appendChild(number);}
+
    main.appendChild(meta);
    const badge=document.createElement('span');badge.className='film-platforms';const [name,css]=platformBadge(f);if(css)badge.classList.add(css);badge.textContent=name;
    badge.title=platformTitle(r);main.appendChild(badge);
