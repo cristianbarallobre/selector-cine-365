@@ -303,9 +303,11 @@ func (a *runningApp) serveCloudHTTP(w http.ResponseWriter, r *http.Request) {
 		respond(200, a.cloudDisplayStatus())
     case "/api/cloud/auto":
         if r.Method!=http.MethodPost {http.Error(w,"Método no permitido",405);return}
+        var options struct{Force bool `json:"force"`}
+        _=json.NewDecoder(io.LimitReader(r.Body,2048)).Decode(&options)
         var data map[string]any
         var err error
-        if a.graph!=nil&&a.graph.active(){data,err=a.graphAutoSync()}else{data,err=a.cloudAutoSync()}
+        if a.graph!=nil&&a.graph.active(){data,err=a.graphAutoSync(options.Force)}else{data,err=a.cloudAutoSync()}
         if err!=nil{respond(409,map[string]string{"error":err.Error()});return}
         respond(200,data)
     case "/api/cloud/preview":
