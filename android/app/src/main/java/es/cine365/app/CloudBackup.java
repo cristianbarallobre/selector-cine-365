@@ -247,7 +247,8 @@ final class CloudBackup {
                peer.optString("device_id").startsWith("windows-");
     }
     private static void validatePeer(JSONObject peer)throws Exception{
-        if(peer.optInt("protocol")!=SyncStore.PROTOCOL||
+        int protocol=peer.optInt("protocol");
+        if((protocol!=1&&protocol!=SyncStore.PROTOCOL)||
            !Backend.validLibrary(peer.optJSONObject("library")))
             throw new Exception("Una copia de dispositivo en OneDrive no es válida. No se han cambiado tus listas.");
     }
