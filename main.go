@@ -228,7 +228,7 @@ func serve() error {
   // Un fallo en el estado de sincronización no debe impedir usar datos locales.
   logDiagnostic("Sincronización no disponible: "+syncErr.Error())
  }
- app := &runningApp{html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath)), cloud: newCloudBackups(filepath.Dir(savePath)), graph:newDesktopGraph(), graphUploadCh:make(chan struct{},1), syncStore:syncStore, token: token, stopCh: make(chan struct{})}
+ app := &runningApp{html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath)), cloud: newCloudBackups(filepath.Dir(savePath)), graph:newDesktopGraph(filepath.Dir(savePath)), graphUploadCh:make(chan struct{},1), syncStore:syncStore, token: token, stopCh: make(chan struct{})}
 	app.touch()
 	go app.graphPublisher()
 	listener, err := net.Listen("tcp4", "127.0.0.1:0")
