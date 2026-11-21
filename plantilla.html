@@ -903,6 +903,9 @@ function moveFilmInCurrentList(fromRawIndex,toRawIndex){
  for(let i=0;i<locations.length;i++)original[locations[i]]=rows[i];
  rawText=original.join('\n');
  syncActiveText();
+ // This revision travels with the list through OneDrive, independently of marks.
+ const active=activeCollection();
+ active.order_changed_at=Math.max(Date.now(),Number(active.order_changed_at||0)+1);
  update();renderStats();renderCollectionControls();scheduleSave();
  notify('Orden actualizado. El número de cada película corresponde ahora a su posición.');
  return true;
