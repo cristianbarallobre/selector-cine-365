@@ -230,17 +230,18 @@ final class OneDriveCloud {
         String path="me/drive/root/children?$select=id,name,folder&$top=200";
         for(int page=0;page<5;page++){
             JSONObject result=new JSONObject(new String(graph(path,"GET",null,null),StandardCharsets.UTF_8));
-            JSONArray list=result.optJSONArray("value");if(list==null)break;
+            JSONArray list=result.optJSONArray("value");
+            if(list==null)throw new Exception("OneDrive devolvió un listado de carpetas incompleto");
             for(int i=0;i<list.length();i++){
                 JSONObject item=list.getJSONObject(i);
                 if(item.has("folder"))array.put(new JSONObject().put("id",item.getString("id")).put("name",item.getString("name")));
             }
             String next=result.optString("@odata.nextLink","");
-            if(next.isEmpty())break;
+            if(next.isEmpty())return new JSONObject().put("folders",array);
             if(!next.startsWith(GRAPH+"me/drive/"))throw new Exception("Paginación de OneDrive no reconocida");
             path=next.substring(GRAPH.length());
         }
-        return new JSONObject().put("folders",array);
+        throw new Exception("OneDrive devolvió demasiadas páginas de carpetas; selección automática cancelada");
     }
     synchronized JSONObject createRoot(String name)throws Exception{
         if(!name.matches("[^<>:\"/\\\\|?*]{1,70}")||name.endsWith(".")||name.trim().isEmpty())
