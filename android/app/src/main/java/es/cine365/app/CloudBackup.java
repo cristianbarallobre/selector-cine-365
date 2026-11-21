@@ -71,7 +71,7 @@ final class CloudBackup {
         return new JSONObject().put("enabled",!folder.isEmpty()).put("activated",activated).put("needs_review",!folder.isEmpty()&&(!activated||autoNeedsReview)).put("folder",folder).put("target",folder)
             .put("last_backup",lastBackup).put("last_sync",lastSync).put("last_error",lastError)
             .put("provider",folder.startsWith("onedrive://")?"onedrive":folder.isEmpty()?"none":"folder")
-            .put("auto_sync",!folder.isEmpty()&&activated)
+            .put("auto_sync",false).put("sync_mode","manual")
             .put("last_check_ms",lastCheckMS).put("last_received_ms",lastReceivedMS);
     }
     private Uri tree(){return Uri.parse(folder);}
