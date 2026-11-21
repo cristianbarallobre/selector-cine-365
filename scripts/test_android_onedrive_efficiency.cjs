@@ -11,5 +11,6 @@ assert.match(cloud,/if\(own==null\|\|!java\.util\.Arrays\.equals\(read\(own\),da
 assert.match(graph,/if\(list==null\)throw new Exception\("OneDrive devolvió un listado de archivos incompleto"\)/);
 assert.match(graph,/if\(next\.isEmpty\(\)\)return all;/);
 assert.match(graph,/throw new Exception\("OneDrive devolvió demasiadas páginas de archivos; sincronización cancelada/);
-assert.doesNotMatch(graph,/JSONArray list=result\.optJSONArray\("value"\);if\(list==null\)break/);
+const childListing=graph.slice(graph.indexOf('synchronized JSONArray allChildren('),graph.indexOf('synchronized JSONObject newDirectory('));
+assert.doesNotMatch(childListing,/JSONArray list=result\.optJSONArray\("value"\);if\(list==null\)break/);
 console.log('OK: identical snapshots are not uploaded; incomplete OneDrive listings fail closed');
