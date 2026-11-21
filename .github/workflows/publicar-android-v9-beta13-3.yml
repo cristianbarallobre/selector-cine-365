@@ -1,0 +1,74 @@
+name: Publicar Android v9 Beta 13.3 - sincronización manual
+on:
+  push:
+    branches: ['main']
+    paths: ['.github/workflows/publicar-android-v9-beta13-3.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: cine-android-v9-beta13-3-release
+  cancel-in-progress: false
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Recibir APK sin firmar exacta de CI aprobada
+        uses: actions/download-artifact@v4
+        with:
+          name: Selector_Cine_365_Android_v9_BETA13_3_unsigned
+          repository: cristianbarallobre/selector-cine-365
+          run-id: 44843287397
+          github-token: ${{ github.token }}
+          path: unsigned
+      - name: Comprobar regresiones y delta público
+        run: |
+          node scripts/test_android_manual_sync_beta13_3.cjs
+          node scripts/test_v9_beta13.cjs
+          echo '0f4d7774e676d4a69a969940b8839bfcba4e4f368389f4923a6390f4438609c5  scripts/release/beta13_3_android_signed_delta.b64' | sha256sum -c
+          echo '5ed201cd6a92278d1b9cb589bee43c79e124287849a3f7226234517a2a350774  unsigned/Selector_Cine_365_Android_v9_BETA13_3_UNSIGNED.apk' | sha256sum -c
+      - name: Reconstruir APK firmada original sin usar claves privadas
+        run: |
+          mkdir -p dist
+          python3 scripts/release/reconstruct_signed_beta13_3.py \
+            unsigned/Selector_Cine_365_Android_v9_BETA13_3_UNSIGNED.apk \
+            scripts/release/beta13_3_android_signed_delta.b64 \
+            dist/Selector_Cine_365_Android_v9_BETA13_3.apk
+          java -jar unsigned/android-tools/lib/apksigner.jar verify --verbose --print-certs \
+            dist/Selector_Cine_365_Android_v9_BETA13_3.apk | tee /tmp/cine-apksigner.txt
+          grep -Fx 'Verified using v2 scheme (APK Signature Scheme v2): true' /tmp/cine-apksigner.txt
+          grep -Fx 'Verified using v3 scheme (APK Signature Scheme v3): true' /tmp/cine-apksigner.txt
+          grep -Fx 'Signer #1 certificate SHA-256 digest: b8a17f39e4fa24d7c110d452161425c7524412c3a5a4d7459b1132ffd0825fb6' /tmp/cine-apksigner.txt
+          echo 'e8db284ed38f33c2e91a0fcdb6b6cade684f18d8168cdd935ba4755f3ac70cf0  dist/Selector_Cine_365_Android_v9_BETA13_3.apk' | sha256sum -c
+          unzip -t dist/Selector_Cine_365_Android_v9_BETA13_3.apk | tail -1
+          cp RELEASE_NOTES_v9_BETA13_3_ANDROID.md dist/NOTAS_Android_v9_BETA13_3.md
+      - name: Publicar release Android Beta 13.3 (Mac y Windows continúan Beta 13.1)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=v9.0.0-beta.13.3
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+            gh release edit "$TAG" --notes-file RELEASE_NOTES_v9_BETA13_3_ANDROID.md --prerelease
+          else
+            gh release create "$TAG" dist/* \
+              --target "$GITHUB_SHA" --prerelease \
+              --title 'Selector Cine 365 v9 Beta 13.3 — Android OneDrive manual y guardado local' \
+              --notes-file RELEASE_NOTES_v9_BETA13_3_ANDROID.md
+          fi
+          gh release view "$TAG" --json name,tagName,assets,isPrerelease
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Selector_Cine_365_Android_v9_BETA13_3_Firmada_y_Verificada
+          path: dist/*
+          if-no-files-found: error
