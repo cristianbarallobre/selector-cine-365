@@ -279,7 +279,7 @@ h2{font-size:19px}
 @media(max-height:690px){.creator-credit{font-size:10px}}
 
 .sync-desktop-panel{position:fixed;z-index:180;left:50%;top:50%;transform:translate(-50%,-50%);width:min(680px,calc(100vw - 30px));max-height:calc(100dvh - 36px);overflow-y:auto;padding:20px;border:1px solid #6e88a6;background:#162535;border-radius:15px;box-shadow:0 0 0 100vmax #000b,0 25px 75px #000a}
-#view-collections .panel{overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior-y:contain}
+#view-collections .panel{overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior-y:contain;border-radius:var(--r);}
 #view-collections .cloud-box{flex:0 0 auto!important}
 #view-collections .cloud-buttons{flex-wrap:wrap!important}
 #view-collections .cloud-buttons .tool{flex:1 1 85px!important}
@@ -368,7 +368,7 @@ h2{font-size:19px}
 /* Las listas deben ocupar altura real. La nube se encuentra DESPUÉS y se desplaza con el panel. */
 #view-collections .collection-rows{display:grid;grid-template-columns:minmax(0,1fr);flex:0 0 auto!important;height:auto!important;min-height:0!important;overflow:visible!important;align-content:start!important;gap:8px}
 #view-collections .collection-item{flex:0 0 auto;min-height:60px}
-#view-collections .panel{min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;overscroll-behavior-y:contain}
+#view-collections .panel{min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;overscroll-behavior-y:contain;clip-path:inset(0 round var(--r));scrollbar-color:#485c70 transparent;scrollbar-gutter:stable;padding-block:18px}
 #view-collections .collection-paging{flex:0 0 auto}
 .cine-sync-history.is-empty{border:0;background:transparent;min-height:0;max-height:none;overflow:visible;padding:3px 0;font-size:13px;color:#b8cbe0;line-height:1.55}
 .cine-history-checked{font-size:11px!important;color:#9fb3c7!important;line-height:1.5!important;margin:4px 0 10px!important}
@@ -755,13 +755,15 @@ async function initPlatforms(){
    for(const [key,entry] of Object.entries(cached.entries||{}))platformData.set(key,entry);
   }catch(err){
    console.warn('No se pudo leer la caché TMDB; la clave sigue configurada:',err.message);
-   updateListPlatformOptions();renderList();renderStats();
+   updatePlatformChoices();updateListPlatformOptions();renderList();renderStats();
    $('platformProgress').textContent='TMDB configurado. Caché local no disponible; pulsa Actualizar para recuperar datos.';
    return true;
   }
  }
  // Sin consultas externas masivas al abrir; usar caché local si existe.
- updatePlatformProgress();updateListPlatformOptions();renderList();renderStats();
+ // El selector del sorteo se construye con JS y debe reconstruirse también
+ // cuando los datos provienen exclusivamente de la caché al abrir la app.
+ updatePlatformProgress();updatePlatformChoices();updateListPlatformOptions();renderList();renderStats();
  return true;
 }
 async function loadPlatforms(force){
