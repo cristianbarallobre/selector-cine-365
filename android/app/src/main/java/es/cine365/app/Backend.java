@@ -188,7 +188,12 @@ final class Backend {
         JSONArray lists=state.getJSONArray("lists");
         for(int i=0;i<lists.length();i++){
             JSONObject l=lists.getJSONObject(i);
-            if("atlas".equals(l.optString("id")))atomicWrite(new File(dir,"mis_365_peliculas.txt"),l.optString("text"));
+            if("atlas".equals(l.optString("id"))){
+                String listText=l.optString("text");
+                // Cambiar de lista activa no debe reescribir 365 películas idénticas.
+                if(!listText.equals(readOrDefault("mis_365_peliculas.txt","")))
+                    atomicWrite(new File(dir,"mis_365_peliculas.txt"),listText);
+            }
         }
     }
     static void atomicWrite(File file,String contents)throws Exception{
