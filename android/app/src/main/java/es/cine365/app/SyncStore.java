@@ -199,6 +199,21 @@ final class SyncStore {
         }
         return keys;
     }
+    static boolean isUntouchedStarter(JSONObject library,JSONObject revisions,JSONObject known,String template){
+        if(library==null||revisions==null||known==null||
+           revisions.length()>0||known.length()>0)return false;
+        JSONArray lists=library.optJSONArray("lists");
+        if(lists==null||lists.length()!=1)return false;
+        JSONObject one=lists.optJSONObject(0);
+        if(one==null||!"atlas".equals(one.optString("id"))||
+           !"atlas".equals(library.optString("active_id"))||
+           !"Selector Cine 365 · 365".equals(one.optString("name")))return false;
+        JSONObject deleted=library.optJSONObject("deleted_lists");
+        if(deleted!=null&&deleted.length()>0)return false;
+        JSONArray comparisons=library.optJSONArray("comparison_ids");
+        if(comparisons!=null&&comparisons.length()>0)return false;
+        return one.optString("text").equals(template);
+    }
     static void requireSameListIdentity(JSONObject local,JSONObject remote)throws Exception {
         Set<String> ours=listFilms(local),theirs=listFilms(remote);
         if(ours.isEmpty()||theirs.isEmpty())return;
