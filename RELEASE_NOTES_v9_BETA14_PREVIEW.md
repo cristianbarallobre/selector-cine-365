@@ -37,3 +37,10 @@ Conectar una biblioteca de Selector Cine 365 a **la misma carpeta lógica de One
 ## Estado de publicación
 
 Se publicará una release Beta 14 solo cuando la CI de Windows/macOS sea satisfactoria, el acceso real a OneDrive esté validado y la migración con Android se haya probado. Mientras tanto se trabaja en una rama y una PR separadas de `main`.
+
+## Correcciones de interfaz / exportación para esta revisión de Beta 14
+
+- El selector «SORTEAR ENTRE» se repuebla con las plataformas de la caché TMDB al abrir; no hace falta recargar TMDB para ver Netflix, Filmin u otros proveedores.
+- Barra de scroll de «Mis listas» con carril y extremos dentro de las esquinas redondeadas del panel en WebView2.
+- Exportar TXT usa el nombre real de la lista activa con caracteres válidos para ficheros; en vista de comparación, `Comparación de listas.txt`.
+- Compilaciones CI de Windows y macOS Intel/Apple Silicon verificadas; Windows sigue siendo una vista previa experimental hasta validar la autenticación Microsoft Graph con cuenta real.
