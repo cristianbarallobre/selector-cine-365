@@ -26,4 +26,7 @@ assert.match(html,/f\.displayNumber=String\(entries\.length\+1\)\.padStart\(3,'0
 assert.match(metaBlock,/const displayNumber=!global\?f\.displayNumber:''/);
 assert.match(html,/function moveFilmInCurrentList\(fromRawIndex,toRawIndex\)/);
 assert.match(html,/active\.order_changed_at=Math\.max\(Date\.now\(\),Number\(active\.order_changed_at\|\|0\)\+1\)/);
+assert.match(html,/b\.appendChild\(grip\);attachFilmReorder\(b,grip,f\)/);
+assert.doesNotMatch(html,/titleLine\.appendChild\(grip\)/);
+assert.match(html,/#view-library \.film-item\{position:relative;padding-left:37px\}/);
 console.log('OK desktop: TXT follows active list, streaming choices restore, scrollbar inset');
