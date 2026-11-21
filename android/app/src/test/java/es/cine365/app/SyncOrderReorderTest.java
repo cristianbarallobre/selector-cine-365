@@ -22,10 +22,10 @@ public class SyncOrderReorderTest {
   assertTrue(text.contains("Cuatro (2004)"));
  }
  @Test public void unnumberedHeadingsKeepTheirLocations() throws Exception {
-  String text="\# Cabecera\n☐ 001. Uno (2001)\n\n☑ 002. Dos (2002)";
+  String text="# Cabecera\n☐ 001. Uno (2001)\n\n☑ 002. Dos (2002)";
   String other="☑ 002. Dos (2002)\n☐ 001. Uno (2001)";
   String moved=SyncStore.orderedFilmRows(text,other);
-  assertEquals("\# Cabecera\n☑ 002. Dos (2002)\n\n☐ 001. Uno (2001)",moved);
+  assertEquals("# Cabecera\n☑ 002. Dos (2002)\n\n☐ 001. Uno (2001)",moved);
  }
  private static JSONObject library(String text,long timestamp) throws Exception {
   return new JSONObject().put("version",1).put("active_id","atlas")
