@@ -184,8 +184,9 @@ func cloudHasDeviceSnapshots(folder string) bool {
 func (a *runningApp) cloudDisplayStatus() cloudStatus {
  if a.graph!=nil&&a.graph.active(){
   id:=a.graph.pairingID()
+  a.graph.mu.Lock();graphError:=a.graph.lastError;a.graph.mu.Unlock()
   return cloudStatus{
-   Enabled:true,Folder:id,Target:"OneDrive / Selector_Cine_365",Provider:"onedrive-direct",
+   Enabled:true,Folder:id,Target:"OneDrive / Selector_Cine_365",Provider:"onedrive-direct",LastError:graphError,
    SyncPaired:a.syncStore!=nil&&a.syncStore.isPaired(id),
    NeedsReview:a.syncStore==nil||!a.syncStore.isPaired(id)||a.syncPendingConflict.Load(),
    LastCheckMS:a.syncLastCheck.Load(),LastReceivedMS:a.syncLastReceived.Load(),
