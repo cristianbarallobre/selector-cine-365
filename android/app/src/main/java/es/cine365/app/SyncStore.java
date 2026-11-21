@@ -161,6 +161,34 @@ final class SyncStore {
         final boolean changed;
         Merge(JSONObject l,JSONObject r,JSONObject k,JSONArray issues,boolean c){library=l;revisions=r;known=k;conflicts=issues;changed=c;}
     }
+    // Reorder only film rows. Keep original TXT lines, seen flags, other
+    // unnumbered content, and any movies known only to this device.
+    static String orderedFilmRows(String current,String remote){
+        String[] lines=current.split("\\n",-1);
+        java.util.Map<String,Integer> ranks=new java.util.HashMap<>();
+        for(String line:remote.split("\\n",-1)){
+            Film f=film(line);
+            if(f!=null&&!ranks.containsKey(f.key))ranks.put(f.key,ranks.size());
+        }
+        final class Row {
+            String text;int original,rank;
+            Row(String value,int index,int position){text=value;original=index;rank=position;}
+        }
+        java.util.List<Integer> indices=new java.util.ArrayList<>();
+        java.util.List<Row> rows=new java.util.ArrayList<>();
+        for(int i=0;i<lines.length;i++){
+            Film f=film(lines[i]);if(f==null)continue;
+            indices.add(i);
+            rows.add(new Row(lines[i],i,ranks.containsKey(f.key)?ranks.get(f.key):ranks.size()+i));
+        }
+        rows.sort((left,right)->{
+            int n=Integer.compare(left.rank,right.rank);
+            return n!=0?n:Integer.compare(left.original,right.original);
+        });
+        for(int i=0;i<indices.size();i++)lines[indices.get(i)]=rows.get(i).text;
+        return String.join("\\n",lines);
+    }
+
     static Merge merge(JSONObject local,JSONObject revisions,JSONObject known,JSONObject peer)throws Exception {
         return merge(local,revisions,known,peer,false);
     }
@@ -205,7 +233,12 @@ final class SyncStore {
                 if(combined.length()>0&&combined.charAt(combined.length()-1)!='\n')combined.append('\n');
                 combined.append(line);keys.add(f.key);
             }
-            own.put("text",combined.toString());
+            String mergedLines=combined.toString();
+            if(other.optLong("order_changed_at")>own.optLong("order_changed_at")){
+                mergedLines=orderedFilmRows(mergedLines,other.getString("text"));
+                own.put("order_changed_at",other.optLong("order_changed_at"));
+            }
+            own.put("text",mergedLines);
         }
         // Una tombstone local o remota se impone incluso si el otro dispositivo
         // mantiene una copia anterior con el mismo ID de lista.
