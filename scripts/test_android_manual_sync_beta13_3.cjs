@@ -8,10 +8,10 @@ const activity=fs.readFileSync('android/app/src/main/java/es/cine365/app/MainAct
 const gradle=fs.readFileSync('android/app/build.gradle','utf8');
 function contains(s,needle,msg){assert.ok(s.includes(needle),msg||needle)}
 function notContains(s,needle,msg){assert.ok(!s.includes(needle),msg||needle)}
-contains(gradle,'versionCode 9022');
-contains(gradle,"versionName '9.0.0-beta.13.8'");
+contains(gradle,'versionCode 9023');
+contains(gradle,"versionName '9.0.0-beta.13.9'");
 contains(gradle,"applicationId 'es.cine365.app'");
-contains(html,'Android v9 Beta 13.8');
+contains(html,'Android v9 Beta 13.9');
 contains(html,'id="cloudSyncQuick"');
 contains(html,'aria-label="Sincronizar con OneDrive: enviar y recibir cambios"');
 contains(html,"$('cloudSyncQuick').addEventListener('click'");
