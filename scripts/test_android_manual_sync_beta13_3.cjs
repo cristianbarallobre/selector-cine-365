@@ -8,8 +8,8 @@ const activity=fs.readFileSync('android/app/src/main/java/es/cine365/app/MainAct
 const gradle=fs.readFileSync('android/app/build.gradle','utf8');
 function contains(s,needle,msg){assert.ok(s.includes(needle),msg||needle)}
 function notContains(s,needle,msg){assert.ok(!s.includes(needle),msg||needle)}
-contains(gradle,'versionCode 9024');
-contains(gradle,"versionName '9.0.0-beta.13.10'");
+contains(gradle,'versionCode 9025');
+contains(gradle,"versionName '9.0.0-beta.13.11'");
 contains(gradle,"applicationId 'es.cine365.app'");
 contains(html,'Android v9 Beta 13.10');
 contains(html,'id="cloudSyncQuick"');
@@ -19,7 +19,7 @@ contains(html,"showView('settings')");
 contains(html,"void syncDevices()");
 contains(html,"pendingSyncToken=data.token");
 contains(html,"cloudRequest('/api/cloud/sync','POST',{token:pendingSyncToken,decisions})");
-contains(html,"Revisa el resumen y confirma para ENVIAR y RECIBIR");
+contains(html,"Revisa listas, vistas y conflictos. Al confirmar");
 notContains(html,'cloudAutoReceive(');
 notContains(html,'setInterval(()=>{if(!document.hidden)');
 notContains(html,"window.addEventListener('focus',()=>void cloud");
@@ -105,5 +105,5 @@ vm.runInContext(html.slice(start,end)+';this.commit=saveLocal;this.quietSave=sch
  cloudCtx.window.cineSyncResume();
  assert.equal(called.length,2,'Returning to app does not call OneDrive');
  assert.ok(label.textContent.includes('sin importar ni enviar'),'User sees read-only notice');
- console.log('OK: local save, no redundant write, startup read-only OneDrive, manual confirm, 9017');
+ console.log('OK: local save, no redundant write, startup read-only OneDrive, manual confirm, 9025');
 })().catch(e=>{console.error(e);process.exitCode=1;});
