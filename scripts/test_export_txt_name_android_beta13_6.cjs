@@ -22,4 +22,9 @@ assert.match(html,/f\.displayNumber=String\(entries\.length\+1\)\.padStart\(3,'0
 assert.match(metaBlock,/const displayNumber=!global\?f\.displayNumber:''/);
 assert.match(html,/function moveFilmInCurrentList\(fromRawIndex,toRawIndex\)/);
 assert.match(html,/active\.order_changed_at=Math\.max\(Date\.now\(\),Number\(active\.order_changed_at\|\|0\)\+1\)/);
+assert.match(html,/b\.appendChild\(grip\);attachFilmReorder\(b,grip,f\)/);
+assert.doesNotMatch(html,/titleLine\.appendChild\(grip\)/);
+assert.match(html,/#view-library \.film-item\{position:relative;padding-left:37px\}/);
+assert.match(html,/#view-library \.film-item\{position:relative!important;padding-left:36px!important\}/);
+assert.match(html,/#view-library \.film-reorder-handle\{position:absolute!important;left:6px!important;right:auto!important/);
 console.log('OK Android: TXT follows active list and native export chooser receives filename');
