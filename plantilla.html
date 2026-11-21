@@ -1636,7 +1636,7 @@ function cloudShow(s){
    if(document.activeElement!==$('cloudFolder'))$('cloudFolder').value=cineGraphConnected?'Cuenta Microsoft · OneDrive directo':s.folder;
    if($('cloudLastCheck'))$('cloudLastCheck').textContent='Última comprobación: '+(s.last_check_ms?new Date(s.last_check_ms).toLocaleTimeString('es-ES'):'aún no realizada');
    if($('cloudLastReceive'))$('cloudLastReceive').textContent='Últimos cambios recibidos: '+(s.last_received_ms?new Date(s.last_received_ms).toLocaleTimeString('es-ES'):'ninguno en esta sesión');
-   box.textContent=cineGraphConnected?(s.needs_review?'✓ OneDrive conectado · pulsa «Revisar sincronización» antes de la primera importación.':'✓ Microsoft Graph conectado · biblioteca sincronizada.') :
+   box.textContent=cineGraphConnected?(s.last_error?'⚠ OneDrive: '+s.last_error:s.needs_review?'✓ OneDrive conectado · pulsa «Revisar sincronización» antes de la primera importación.':'✓ Microsoft Graph conectado · biblioteca sincronizada.') :
     s.needs_review?'⚠ Hay otros dispositivos en esta carpeta. Pulsa «Revisar sincronización» antes de publicar cambios.':
      s.last_error?'⚠ Copia en nube fallida: '+s.last_error:
      s.sync_paired?'✓ Sincronización automática activada · copias independientes':
