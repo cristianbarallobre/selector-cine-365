@@ -171,7 +171,9 @@ jobs:
           for f in dist/*.pdf; do
             test -s "$f"
             pdfinfo "$f" | grep '^Pages:'
-            pdftotext "$f" - | grep -F 'Selector Cine 365' >/dev/null
+            pdftotext "$f" /tmp/cine365_pdf_contents.txt
+            test "$(wc -c < /tmp/cine365_pdf_contents.txt)" -gt 500
+            grep -E 'OneDrive|Android|Windows' /tmp/cine365_pdf_contents.txt >/dev/null
           done
           cp RELEASE_NOTES_v9_BETA14_RECOMENDADA.md dist/NOTAS_DE_VERSION_BETA14_ANDROID13_13.md
           cp CHANGELOG.md dist/HISTORIAL_DE_VERSIONES.md
