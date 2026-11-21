@@ -1845,7 +1845,7 @@ async function cloudAutoReceive(force=false){
    if(beforeEpoch!==saveEpoch||saveTimer!==null)return;
    cloudAutoCheckedAt=Date.now();
    try{
-     const result=await cloudRequest('/api/cloud/auto','POST');
+     const result=await cloudRequest('/api/cloud/auto','POST',{force});
      if(result.needs_review){
        $('cloudAutoStatus').textContent=result.skipped==='not_paired'
          ?'Primera vinculación pendiente: pulsa «Revisar sincronización».'
