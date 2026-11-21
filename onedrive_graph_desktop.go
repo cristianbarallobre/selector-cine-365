@@ -23,6 +23,7 @@ const desktopGraphScope = "offline_access Files.ReadWrite User.Read"
 // after app restart is intentional until native secure token storage ships.
 type desktopGraph struct {
  mu sync.Mutex
+ tokenMu sync.Mutex
  publishMu sync.Mutex
  client *http.Client
  authBase,graphBase string
@@ -34,7 +35,12 @@ type desktopGraph struct {
 
 func newDesktopGraph()*desktopGraph {
  return &desktopGraph{
-  client:&http.Client{Timeout:35*time.Second},
+  client:&http.Client{Timeout:35*time.Second,CheckRedirect:func(req *http.Request,via []*http.Request)error{
+   if req.URL.Scheme!="https"{return errors.New("Redirección de OneDrive no segura")}
+   if len(via)>5{return errors.New("Demasiadas redirecciones de OneDrive")}
+   if req.URL.Hostname()!="graph.microsoft.com"{req.Header.Del("Authorization")}
+   return nil
+  }},
   authBase:microsoftDeviceEndpoint,graphBase:desktopGraphEndpoint,
  }
 }
@@ -143,6 +149,7 @@ func (g *desktopGraph) failLogin(device string,err error){
  g.lastError=err.Error()
 }
 func (g *desktopGraph) accessToken()(string,error){
+ g.tokenMu.Lock();defer g.tokenMu.Unlock()
  g.mu.Lock()
  if g.token==""{g.mu.Unlock();return "",errors.New("Conecta primero tu cuenta Microsoft")}
  if time.Now().Before(g.expiry){t:=g.token;g.mu.Unlock();return t,nil}
