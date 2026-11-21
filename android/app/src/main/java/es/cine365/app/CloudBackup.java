@@ -223,18 +223,13 @@ final class CloudBackup {
     // example must never be unioned into a real Windows library from OneDrive.
     // Only an untouched, revision-free example can be replaced automatically.
     private boolean pristineStarter(JSONObject library,JSONObject revisions,JSONObject known)throws Exception{
-        if(activated||revisions.length()>0||known.length()>0)return false;
-        JSONArray lists=library.optJSONArray("lists");
-        if(lists==null||lists.length()!=1)return false;
-        JSONObject list=lists.getJSONObject(0);
-        if(!"atlas".equals(list.optString("id"))||
-           !"Selector Cine 365 · 365".equals(list.optString("name")))return false;
-        if(library.optJSONObject("deleted_lists")!=null&&library.getJSONObject("deleted_lists").length()>0)return false;
+        if(activated)return false;
         try(InputStream in=activity.getAssets().open("lista_inicial.txt");
             ByteArrayOutputStream buffer=new ByteArrayOutputStream()){
             byte[] chunk=new byte[8192];int n;
             while((n=in.read(chunk))!=-1)buffer.write(chunk,0,n);
-            return list.optString("text").equals(buffer.toString(StandardCharsets.UTF_8.name()));
+            return SyncStore.isUntouchedStarter(library,revisions,known,
+                buffer.toString(StandardCharsets.UTF_8.name()));
         }
     }
     private static final class RemoteCandidate {
