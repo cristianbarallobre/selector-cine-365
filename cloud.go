@@ -202,6 +202,22 @@ func (a *runningApp) serveCloudHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		respond(200, a.cloudDisplayStatus())
+    case "/api/cloud/auto-folder":
+        if r.Method!=http.MethodPost {http.Error(w,"Método no permitido",405);return}
+        // Preserve the existing library and its device pairing; never switch accounts
+        // or publish the local library just by connecting a folder.
+        if a.cloud.status().Enabled {
+            respond(200,map[string]any{"configured":true,"already_connected":true,"status":a.cloudDisplayStatus()})
+            return
+        }
+        folder,err:=discoverCurrentOneDriveFolder()
+        if err!=nil {respond(409,map[string]string{"error":err.Error()});return}
+        // Create only the app-specific directory under one unambiguous OneDrive root.
+        // No data goes into the cloud until the user reviews and confirms a sync.
+        if err=os.MkdirAll(folder,0700);err!=nil {respond(500,map[string]string{"error":err.Error()});return}
+        if err=a.cloud.configure(folder);err!=nil {respond(500,map[string]string{"error":err.Error()});return}
+        a.mu.Lock();a.syncPreviewToken="";a.mu.Unlock()
+        respond(200,map[string]any{"configured":true,"folder":folder,"needs_review":true,"status":a.cloudDisplayStatus()})
 	case "/api/cloud/browse":
 		if r.Method != http.MethodPost {
 			http.Error(w, "Método no permitido", 405)
