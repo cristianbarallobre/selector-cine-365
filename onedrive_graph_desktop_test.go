@@ -5,6 +5,9 @@ import (
  "net/http"
  "net/http/httptest"
  "strings"
+ "sync"
+ "path/filepath"
+ "io"
  "testing"
  "time"
 )
@@ -59,4 +62,56 @@ func TestDesktopGraphRejectsUntrustedPagination(t *testing.T){
  g.token="test-access";g.rootID="root";g.expiry=time.Now().Add(time.Hour)
  _,err:=g.list("me/drive/root/children")
  if err==nil||!strings.Contains(err.Error(),"no reconocida"){t.Fatalf("unsafe pagination should fail: %v",err)}
+}
+
+func TestGraphPreviewConfirmAndroidSnapshotWithoutOverwritingPeer(t *testing.T){
+ remote:=initialLibrary("☑ Película compartida (2024)")
+ remoteJSON,err:=json.Marshal(syncSnapshot{Protocol:2,DeviceID:"android-peer",Library:remote,Known:map[string]int64{},Revisions:map[string]syncRevision{}})
+ if err!=nil{t.Fatal(err)}
+ var guard sync.Mutex
+ var ownBytes []byte
+ ownName:=""
+ server:=httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
+  guard.Lock();defer guard.Unlock()
+  w.Header().Set("Content-Type","application/json")
+  switch {
+  case r.Method=="GET"&&r.URL.Path=="/me/drive/items/root/children":
+   _,_=w.Write([]byte("{\"value\":[{\"id\":\"sync\",\"name\":\"sincronizacion\",\"folder\":{}}]}"))
+  case r.Method=="GET"&&r.URL.Path=="/me/drive/items/sync/children":
+   _,_=w.Write([]byte("{\"value\":[{\"id\":\"dev\",\"name\":\"dispositivos\",\"folder\":{}}]}"))
+  case r.Method=="GET"&&r.URL.Path=="/me/drive/items/dev/children":
+   items:=[]map[string]any{{"id":"remote","name":"android-peer.json","file":map[string]any{}}}
+   if ownBytes!=nil{items=append(items,map[string]any{"id":"own","name":ownName,"file":map[string]any{}})}
+   _=json.NewEncoder(w).Encode(map[string]any{"value":items})
+  case r.Method=="GET"&&r.URL.Path=="/me/drive/items/remote/content":
+   _,_=w.Write(remoteJSON)
+  case r.Method=="PUT"&&strings.HasPrefix(r.URL.Path,"/me/drive/items/dev:/")&&strings.HasSuffix(r.URL.Path,":/content"):
+   // This test refuses any write to the Android peer snapshot.
+   ownName=strings.TrimSuffix(strings.TrimPrefix(r.URL.Path,"/me/drive/items/dev:/"),":/content")
+   ownBytes,_=io.ReadAll(r.Body)
+   _,_=w.Write([]byte("{\"id\":\"own\"}"))
+  case r.Method=="GET"&&r.URL.Path=="/me/drive/items/own/content":
+   _,_=w.Write(ownBytes)
+  default:
+   t.Errorf("unexpected Graph operation %s %s",r.Method,r.URL.Path)
+   w.WriteHeader(404)
+  }
+ }))
+ defer server.Close()
+ g:=newDesktopGraph()
+ g.client=server.Client();g.graphBase=server.URL+"/"
+ g.token="test-access";g.rootID="root";g.expiry=time.Now().Add(time.Hour)
+ dir:=t.TempDir()
+ store,err:=newDesktopSyncStore(dir);if err!=nil{t.Fatal(err)}
+ lib:=initialLibrary("☐ Película compartida (2024)")
+ app:=&runningApp{graph:g,syncStore:store,library:lib,libraryPath:filepath.Join(dir,"colecciones.json"),savePath:filepath.Join(dir,"peliculas.txt")}
+ if err=saveLibrary(app.libraryPath,app.savePath,lib);err!=nil{t.Fatal(err)}
+ preview,err:=app.graphSyncPreview();if err!=nil{t.Fatal(err)}
+ if n,ok:=preview["sources"].(int);!ok||n!=1{t.Fatalf("expected one Android snapshot, got %v",preview["sources"])}
+ if ownBytes!=nil{t.Fatal("preview must not upload")}
+ _,err=app.graphSyncConfirm(preview["token"].(string),map[string]bool{})
+ if err!=nil{t.Fatal(err)}
+ if ownBytes==nil{t.Fatal("confirmation did not publish own-device snapshot")}
+ if ownName=="android-peer.json"{t.Fatal("must never replace another device snapshot")}
+ if syncWatched(app.library)!=1{t.Fatalf("Android watched flag not merged: %+v",app.library)}
 }
