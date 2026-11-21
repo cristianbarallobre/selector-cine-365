@@ -6,10 +6,10 @@ import (
 )
 
 func TestFilmOrderDoesNotAlterRowsOrMarks(t *testing.T){
- current:="\# Mi lista\n☐ 001. Ciudadano Kane (1941)\n\n☑ 002. Vértigo (1958)\n☐ Otra (2002)"
+ current:="# Mi lista\n☐ 001. Ciudadano Kane (1941)\n\n☑ 002. Vértigo (1958)\n☐ Otra (2002)"
  remote:="☑ 002. Vértigo (1958)\n☐ 001. Ciudadano Kane (1941)"
  got:=syncOrderedFilmRows(current,remote)
- want:="\# Mi lista\n☑ 002. Vértigo (1958)\n\n☐ 001. Ciudadano Kane (1941)\n☐ Otra (2002)"
+ want:="# Mi lista\n☑ 002. Vértigo (1958)\n\n☐ 001. Ciudadano Kane (1941)\n☐ Otra (2002)"
  if got!=want{t.Fatalf("wrong order:\n%s\nwanted:\n%s",got,want)}
 }
 func TestFilmOrderSyncMergesNewerRemoteOrder(t *testing.T){
