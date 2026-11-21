@@ -1,0 +1,18 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const html=fs.readFileSync('plantilla.html','utf8');
+const start=html.indexOf('function exportTxtFilename('),end=html.indexOf("$('exportBtn').addEventListener",start);
+assert.ok(start>=0&&end>start);
+const fn=new Function(html.slice(start,end)+';return exportTxtFilename;')();
+assert.equal(fn('Terror de los 80'),'Terror de los 80.txt');
+assert.equal(fn('Ciencia ficción: 2026/2027'),'Ciencia ficción 2026 2027.txt');
+assert.equal(fn('Mi lista.  '),'Mi lista.txt');
+assert.equal(fn(''), 'Lista de películas.txt');
+assert.equal(fn('A'.repeat(200)).length,124);
+assert.match(html,/const filename=exportTxtFilename\(virtualMode\?'Comparación de listas':activeCollection\(\)\?\.name\)/);
+assert.match(html,/a\.download=filename/);
+assert.doesNotMatch(html,/Mi_lista_de_peliculas\.txt/);
+assert.match(html,/updatePlatformProgress\(\);updatePlatformChoices\(\);updateListPlatformOptions\(\);renderList\(\);renderStats\(\)/);
+assert.match(html,/#view-collections \.panel::-webkit-scrollbar-track\{[^}]*margin-block:14px/);
+for(const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g))new Function(m[1]);
+console.log('OK desktop: TXT follows active list, streaming choices restore, scrollbar inset');
