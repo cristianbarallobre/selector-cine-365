@@ -67,6 +67,25 @@ final class CloudBackup {
         folder=uriValue;lastError="";
         activity.getPreferences(Context.MODE_PRIVATE).edit().putString("backup_uri",folder).apply();
     }
+    /**
+     * Connect an existing OneDrive library without asking for a directory.
+     * An existing Graph connection always wins: changing roots silently would
+     * fork a user's existing sync library. SAF configurations are never migrated
+     * automatically because their cloud identity cannot be inferred reliably.
+     */
+    synchronized JSONObject connectDefaultOneDrive()throws Exception{
+        if(!oneDrive.connected())throw new Exception("Conecta primero tu cuenta Microsoft.");
+        if(graphMode())return status().put("automatic_folder",true).put("reused",true);
+        if(!folder.isEmpty())return status().put("migration_required",true);
+        // Use the same root name supported by previous desktop/Android setups.
+        // A missing folder is created once; no library data is uploaded here.
+        JSONObject chosen=oneDrive.createRoot("Selector_Cine_365");
+        String id=chosen.getString("id");
+        if(id.isEmpty())throw new Exception("OneDrive no devolvió una carpeta válida");
+        configure("onedrive://item/"+Uri.encode(id));
+        return status().put("automatic_folder",true).put("created_or_found",true);
+    }
+
     synchronized JSONObject status()throws Exception{
         return new JSONObject().put("enabled",!folder.isEmpty()).put("activated",activated).put("needs_review",!folder.isEmpty()&&(!activated||autoNeedsReview)).put("folder",folder).put("target",folder)
             .put("last_backup",lastBackup).put("last_sync",lastSync).put("last_error",lastError)
