@@ -216,14 +216,20 @@ final class SyncStore {
     }
     static void requireSameListIdentity(JSONObject local,JSONObject remote)throws Exception {
         Set<String> ours=listFilms(local),theirs=listFilms(remote);
-        if(ours.isEmpty()||theirs.isEmpty())return;
+        String a=local.optString("name"),b=remote.optString("name");
+        if(ours.isEmpty()||theirs.isEmpty()){
+            if(!a.equals(b)&&ours.size()!=theirs.size())
+                throw new Exception("Sincronización detenida: dos listas distintas comparten el ID "+
+                    local.optString("id")+". Revisa las copias de Windows antes de continuar.");
+            return;
+        }
         int overlap=0;
         for(String key:theirs)if(ours.contains(key))overlap++;
-        String a=local.optString("name"),b=remote.optString("name");
         boolean starterA=a.startsWith("Selector Cine 365 ·"),starterB=b.startsWith("Selector Cine 365 ·");
         // The 365 starter and a renamed/custom list with the same "atlas" ID
         // cannot safely be assumed identical when their film inventories differ.
         boolean starterCollision=starterA!=starterB&&!ours.equals(theirs);
+        boolean differentNamedLists=!a.equals(b)&&!ours.equals(theirs);
         // A shared ID alone is not proof of identity after reinstall. Require
         // significant continuity of the film set; fail closed if ambiguous.
         int smaller=Math.min(ours.size(),theirs.size());
@@ -232,7 +238,7 @@ final class SyncStore {
         // A polluted snapshot often contains ALL the legitimate films plus
         // hundreds appended from other lists. High overlap alone would miss it.
         boolean unexpectedExpansion=excess>=24&&excess*5>=smaller;
-        if(starterCollision||unrelated||unexpectedExpansion){
+        if(starterCollision||differentNamedLists||unrelated||unexpectedExpansion){
             throw new Exception("Sincronización detenida: «"+a+"» y «"+b+
                 "» comparten el ID "+local.optString("id")+
                 " pero parecen listas diferentes. No se han mezclado ni enviado datos. "+
