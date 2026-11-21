@@ -1,4 +1,4 @@
-name: CI Android Beta 13.11 - fresh install and OneDrive recovery
+name: CI Android Beta 13.12 - TMDB visible details and clean install
 on:
   push:
     branches: ['fix/android-beta13-6-tmdb-resume']
@@ -39,13 +39,14 @@ jobs:
           node scripts/test_txt_import_creates_list_beta14.cjs android/app/src/main/assets/index.html
           node scripts/test_android_private_storage_beta13_8.cjs
           node scripts/test_android_fresh_install_beta13_11.cjs
+          node scripts/test_android_tmdb_visible_fill_beta13_12.cjs
       - name: Run Java unit tests and build clean-install test APK + unsigned release
         working-directory: android
         run: gradle --no-daemon testDebugUnitTest assembleDebug assembleRelease
       - name: Verify debug APK signing and version
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs android/app/build/outputs/apk/debug/app-debug.apk
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging android/app/build/outputs/apk/debug/app-debug.apk | grep -F "versionCode='9025' versionName='9.0.0-beta.13.11'"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging android/app/build/outputs/apk/debug/app-debug.apk | grep -F "versionCode='9025' versionName='9.0.0-beta.13.12'"
       # Official public Android SDK signing tool only. NEVER store private keys
       # or passwords in GitHub Actions artifacts.
       - name: Copy official public apksigner
@@ -57,7 +58,7 @@ jobs:
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
-          name: Selector_Cine_365_Android_v9_BETA13_11_UNSIGNED
+          name: Selector_Cine_365_Android_v9_BETA13_12_UNSIGNED
           path: android/app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
 
@@ -66,6 +67,6 @@ jobs:
       # is not suitable for in-place updating production/release APKs.
       - uses: actions/upload-artifact@v4
         with:
-          name: Selector_Cine_365_Android_Beta13_11_CLEAN_INSTALL_DEBUG_SIGNED
+          name: Selector_Cine_365_Android_Beta13_12_CLEAN_INSTALL_DEBUG_SIGNED
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
