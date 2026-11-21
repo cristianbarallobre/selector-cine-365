@@ -41,7 +41,7 @@ func getSavePath() string {
 	if err != nil {
 		config = os.TempDir()
 	}
-	return filepath.Join(config, "AtlasDelCine", "mis_365_peliculas.txt")
+	return filepath.Join(config, "Selector_Cine_365", "mis_365_peliculas.txt")
 }
 
 func getInitialState(savePath string) (string, error) {
