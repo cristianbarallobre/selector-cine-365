@@ -1,0 +1,32 @@
+name: Beta 14 desktop OneDrive discovery
+on:
+  push:
+    branches: ['feature/beta14-desktop-onedrive-autodiscovery']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: go test ./... -count=1
+      - run: node scripts/test_v9_beta13.cjs
+      - run: |
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags='-H windowsgui -s -w' -o Selector_Cine_365_Windows_Beta14_preview.exe .
+          GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -o Selector_Cine_365_Mac_arm64_Beta14_preview .
+          GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -o Selector_Cine_365_Mac_amd64_Beta14_preview .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: beta14-desktop-preview-unsigned
+          path: |
+            Selector_Cine_365_Windows_Beta14_preview.exe
+            Selector_Cine_365_Mac_arm64_Beta14_preview
+            Selector_Cine_365_Mac_amd64_Beta14_preview
+          if-no-files-found: error
