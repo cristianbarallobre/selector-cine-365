@@ -8,6 +8,7 @@ import (
  "sync"
  "path/filepath"
  "io"
+ "net/url"
  "testing"
  "time"
 )
@@ -114,4 +115,33 @@ func TestGraphPreviewConfirmAndroidSnapshotWithoutOverwritingPeer(t *testing.T){
  if ownBytes==nil{t.Fatal("confirmation did not publish own-device snapshot")}
  if ownName=="android-peer.json"{t.Fatal("must never replace another device snapshot")}
  if syncWatched(app.library)!=1{t.Fatalf("Android watched flag not merged: %+v",app.library)}
+}
+
+func TestPKCEBrowserAuthorizationValidatesStateAndUsesVerifier(t *testing.T){
+ var verifierInToken string
+ oauth:=httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
+  if r.URL.Path!="/token"{t.Errorf("unexpected oauth endpoint %s",r.URL.Path);w.WriteHeader(404);return}
+  if err:=r.ParseForm();err!=nil{t.Error(err)}
+  verifierInToken=r.Form.Get("code_verifier")
+  if r.Form.Get("code")!="expected-code"||r.Form.Get("redirect_uri")!="http://localhost:45678/"||verifierInToken==""{t.Errorf("invalid token request")}
+  _=json.NewEncoder(w).Encode(map[string]any{"access_token":"test-access","refresh_token":"test-refresh","expires_in":3600})
+ }))
+ defer oauth.Close()
+ graph:=httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
+  if r.URL.Path!="/me/drive/root/children"{t.Errorf("unexpected graph endpoint %s",r.URL.Path);w.WriteHeader(404);return}
+  _=json.NewEncoder(w).Encode(map[string]any{"value":[]map[string]any{{"id":"root","name":"Selector_Cine_365","folder":map[string]any{}}}})
+ }))
+ defer graph.Close()
+ g:=newDesktopGraph();g.authBase=oauth.URL+"/";g.graphBase=graph.URL+"/"
+ g.setRedirect("http://localhost:45678/")
+ status,err:=g.begin();if err!=nil{t.Fatal(err)}
+ address,err:=url.Parse(status["login_url"].(string));if err!=nil{t.Fatal(err)}
+ query:=address.Query()
+ if query.Get("response_type")!="code"||query.Get("code_challenge_method")!="S256"||query.Get("state")==""{t.Fatalf("invalid PKCE authorization URL: %s",address)}
+ if !strings.Contains(status["login_url"].(string),"/authorize?"){t.Fatal("missing authorization endpoint")}
+ if err=g.finish("wrong-state","expected-code","");err==nil{t.Fatal("wrong OAuth state must be rejected")}
+ if err=g.finish(query.Get("state"),"expected-code","");err!=nil{t.Fatal(err)}
+ if !g.active(){t.Fatal("Graph should be connected after PKCE callback")}
+ if verifierInToken==""||verifierInToken==query.Get("code_challenge"){t.Fatal("PKCE verifier must be separate from challenge")}
+ if err=g.finish(query.Get("state"),"expected-code","");err==nil{t.Fatal("OAuth callback cannot be replayed")}
 }
