@@ -36,6 +36,7 @@ jobs:
           node scripts/test_v9_beta13.cjs
           node scripts/test_android_tmdb_resume_beta13_6.cjs
           node scripts/test_export_txt_name_android_beta13_6.cjs
+          node scripts/test_txt_import_creates_list_beta14.cjs android/app/src/main/assets/index.html
           node scripts/test_android_private_storage_beta13_8.cjs
       - name: Run Java unit tests and assemble unsigned release
         working-directory: android
