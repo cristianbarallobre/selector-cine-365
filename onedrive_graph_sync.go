@@ -7,6 +7,7 @@ import (
  "errors"
  "fmt"
  "net/http"
+ "html"
  "net/url"
  "path/filepath"
  "reflect"
@@ -284,4 +285,23 @@ func (a *runningApp) graphPublisher(){
    }
   }
  }
+}
+
+func (a *runningApp) serveGraphCallback(w http.ResponseWriter,r *http.Request){
+ w.Header().Set("Cache-Control","no-store")
+ w.Header().Set("X-Content-Type-Options","nosniff")
+ w.Header().Set("Content-Security-Policy","default-src 'none'; style-src 'unsafe-inline'")
+ w.Header().Set("Content-Type","text/html; charset=utf-8")
+ if a.graph==nil||r.Host!=a.graph.callbackHost(){
+  http.Error(w,"Retorno de Microsoft no reconocido",400);return
+ }
+ query:=r.URL.Query()
+ err:=a.graph.finish(query.Get("state"),query.Get("code"),query.Get("error"))
+ if err!=nil{
+  w.WriteHeader(400)
+  _,_=fmt.Fprintf(w,"<!doctype html><html lang=es><meta charset=utf-8><title>Selector Cine 365</title><body><h2>No se pudo conectar OneDrive</h2><p>%s</p><p>Vuelve a Selector Cine 365.</p></body></html>",html.EscapeString(err.Error()))
+  return
+ }
+ a.mu.Lock();a.syncPreviewToken="";a.mu.Unlock()
+ _,_=w.Write([]byte("<!doctype html><html lang=es><meta charset=utf-8><title>Selector Cine 365</title><body><h2>Cuenta Microsoft conectada</h2><p>Regresa a Selector Cine 365 para revisar y confirmar la primera sincronización.</p></body></html>"))
 }
