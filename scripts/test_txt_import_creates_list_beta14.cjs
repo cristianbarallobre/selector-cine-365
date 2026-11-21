@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 
-for(const path of ['plantilla.html','android/app/src/main/assets/index.html']){
+for(const path of [process.argv[2]||'plantilla.html']){
  const html=fs.readFileSync(path,'utf8');
  const start=html.indexOf('function importTxtAsNewCollection('),end=html.indexOf('function replaceList(',start);
  assert.ok(start>=0&&end>start,'TXT import helper missing in '+path);
