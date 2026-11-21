@@ -47,6 +47,7 @@ const state={version:1,active_id:'a',lists:[
  {id:'b',name:'Lista B',text:'☐ Vertigo (1958)'}]};
 const requests=[],saveLabel={textContent:''};
 const ctx={
+ token:'test-local-token',
  libraryState:state,
  membershipCache:null,
  saveTimer:null,
