@@ -595,7 +595,7 @@ h2{font-size:19px}
               <span class="cloud-guide-number" aria-hidden="true">1</span>
               <div><h3 id="cloudStepConnectTitle">Conecta OneDrive</h3><p>Inicia sesión con la cuenta Microsoft donde quieres guardar tus películas.</p></div>
             </div>
-            <p class="cloud-guide-step-note">La conexión crea o encuentra <strong>Selector_Cine_365</strong>. Es normal que esté vacía hasta confirmar el paso 2. En esta Beta quizá debas conectar otra vez después de reiniciar la app; las copias permanecen en OneDrive.</p>
+            <p class="cloud-guide-step-note">La conexión crea o encuentra <strong>Selector_Cine_365</strong>. Es normal que esté vacía hasta confirmar el paso 2. En Windows la autorización se guarda cifrada para este usuario: al volver a abrir la app o actualizar el EXE, la cuenta se recupera automáticamente. Si vienes de una versión anterior, conecta una última vez para guardarla.</p>
             <button class="primary cloud-guide-action" type="button" id="cloudGraphConnect">☁ Conectar cuenta Microsoft</button>
             <div class="cloud-status cloud-guide-feedback" id="cloudGraphStatus" aria-live="polite">Pendiente de conectar.</div>
             <div id="cloudGraphLogin" hidden>
@@ -1982,13 +1982,19 @@ async function desktopGraphStatus(){
  }else{
   if(graphLoginPoll){clearInterval(graphLoginPoll);graphLoginPoll=null;}
   if(s.connected){
-   $('cloudGraphStatus').textContent='✓ Cuenta Microsoft conectada. Continúa con el paso 2 para enviar tus listas.';
+   $('cloudGraphStatus').textContent=s.persistence_warning
+    ?'⚠ Cuenta conectada, pero no se pudo conservar la sesión: '+s.persistence_warning
+    :s.session_restored?'✓ Cuenta Microsoft recuperada automáticamente desde Windows. No necesitas iniciar sesión otra vez.'
+    :s.session_remembered?'✓ Cuenta Microsoft conectada y sesión guardada cifrada en Windows. Se recuperará al abrir o actualizar la aplicación.'
+    :'✓ Cuenta Microsoft conectada. Continúa con el paso 2; el almacenamiento seguro de sesión no está disponible en esta plataforma.';
    await cloudRefresh();
   }else if(s.last_error){
    $('cloudGraphStatus').textContent='⚠ '+s.last_error;
    await cloudRefresh();
   }else{
-   $('cloudGraphStatus').textContent='Sin cuenta Microsoft conectada.';
+   $('cloudGraphStatus').textContent=s.persistence_warning
+    ?'⚠ '+s.persistence_warning+' · Conecta la cuenta Microsoft para guardar una nueva sesión.'
+    :'Sin cuenta Microsoft conectada. En Windows se recordará automáticamente después de conectar.';
    await cloudRefresh();
   }
  }
