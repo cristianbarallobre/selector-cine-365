@@ -79,6 +79,8 @@ func (a *runningApp) graphPlanFor(local libraryState)(syncPlan,error){
  strict:=a.syncStore.isPaired(pairing)
  p:=syncPlan{Library:local,Revisions:revision,Known:known,Conflicts:[]syncConflict{}}
  h:=sha256.New()
+ // The preview belongs to this exact Microsoft drive, never another account.
+ fmt.Fprintf(h,"graph-pairing:%s|",pairing)
  localBytes,_:=json.Marshal(local)
  h.Write(localBytes)
  process:=func(name string,data []byte,legacy bool)error {
