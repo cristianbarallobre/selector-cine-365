@@ -47,6 +47,10 @@ main{max-width:1250px;padding:28px 28px 32px;margin:auto}.header{display:flex;al
 .view[hidden]{display:none!important}.tool-wide{grid-column:span 2}
 .film-reorder-handle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 28px;width:28px;height:28px;min-height:28px;padding:0;border:1px solid #43546a;border-radius:7px;background:#29394a;color:#b9c8db;cursor:grab;touch-action:none;font-size:19px;line-height:1}
 .film-reorder-handle:active{cursor:grabbing}
+/* Tirador vertical, separado del título y con espacio propio a la izquierda. */
+#view-library .film-item{position:relative;padding-left:37px}
+#view-library .film-reorder-handle{position:absolute;left:6px;top:7px;bottom:7px;width:25px;height:auto;min-height:0;flex:none;border-radius:8px;font-size:20px;z-index:2}
+
 .film-item.reorder-moving{opacity:.58;border-color:var(--gold);background:#243244}
 .film-item.reorder-target{outline:2px solid var(--gold);outline-offset:-2px}
 
@@ -394,8 +398,10 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
 #view-library .title-line{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:6px!important;width:100%!important}
 /* Long-press film reordering must not trigger text selection in Android WebView. */
 #view-library .film-item{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}
-#view-library .film-main{position:relative!important;padding-right:27px!important}
-#view-library .film-reorder-handle{position:absolute!important;top:0!important;right:0!important;width:27px!important;height:29px!important;min-height:29px!important;touch-action:none!important}
+/* En Android la barra queda al margen de la cuadrícula de carátula y casilla. */
+#view-library .film-item{position:relative!important;padding-left:36px!important}
+#view-library .film-main{position:static!important;padding-right:0!important}
+#view-library .film-reorder-handle{position:absolute!important;left:6px!important;right:auto!important;top:9px!important;bottom:9px!important;width:24px!important;height:auto!important;min-height:0!important;max-height:none!important;touch-action:none!important;z-index:3!important}
 #view-library .film-name{display:block!important;width:100%!important;font-size:16px!important;line-height:1.35!important;overflow-wrap:anywhere!important;white-space:normal!important}
 #view-library .film-filmmeta{display:flex!important;align-items:center!important;gap:5px!important;flex-wrap:wrap!important;min-width:0!important}
 #view-library .film-filmmeta .film-sequence-number{color:#bcd0e7!important;white-space:nowrap!important;font-size:11px!important}
@@ -2025,7 +2031,7 @@ function renderList(append=false){
    if(!global&&!virtualMode){
     const grip=document.createElement('button');grip.type='button';grip.className='film-reorder-handle';grip.textContent='⠿';
     grip.title='Arrastrar para cambiar el orden';grip.setAttribute('aria-label','Mover «'+f.title+'» a otra posición');
-    titleLine.appendChild(grip);attachFilmReorder(b,grip,f);
+    b.appendChild(grip);attachFilmReorder(b,grip,f);
    }
    main.appendChild(titleLine);
    const meta=document.createElement('span');meta.className='film-filmmeta';
