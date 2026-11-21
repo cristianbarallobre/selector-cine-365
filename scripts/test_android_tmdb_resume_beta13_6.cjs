@@ -1,0 +1,18 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const html=fs.readFileSync('android/app/src/main/assets/index.html','utf8');
+const tmdb=fs.readFileSync('android/app/src/main/java/es/cine365/app/Tmdb.java','utf8');
+const gradle=fs.readFileSync('android/app/build.gradle','utf8');
+assert.match(html,/id="tmdbResumeIncomplete"/);
+assert.match(html,/loadPlatforms\(false,true\)/);
+assert.match(html,/async function loadPlatforms\(force,onlyIncomplete=false\)/);
+assert.match(html,/onlyIncomplete\?all\.filter\(needsRepair\)/);
+assert.match(html,/const all=\[\.\.\.new Map\(parsed\.entries\.map/);
+assert.match(html,/force:!!\(force\|\|onlyIncomplete\)/);
+assert.match(html,/updatePlatformProgress\(\);updatePlatformChoices\(\);updateListPlatformOptions\(\);renderList\(\);renderStats\(\)/);
+assert.match(tmdb,/if\(!"error"\.equals\(saved\.optString\("state"\)\)\)return saved;/);
+assert.match(tmdb,/last\.plusSeconds\(30\*60\)\.isAfter\(Instant\.now\(\)\)/);
+assert.match(gradle,/versionCode 9020/);
+assert.match(gradle,/versionName '9\.0\.0-beta\.13\.6'/);
+for(const match of html.matchAll(/<script>([\s\S]*?)<\/script>/g))new Function(match[1]);
+console.log('OK: incomplete TMDB metadata can be resumed without refreshing completed entries; transient failures expire');
