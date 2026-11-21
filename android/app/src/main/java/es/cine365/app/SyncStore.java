@@ -211,8 +211,13 @@ final class SyncStore {
         boolean starterCollision=starterA!=starterB&&!ours.equals(theirs);
         // A shared ID alone is not proof of identity after reinstall. Require
         // significant continuity of the film set; fail closed if ambiguous.
-        boolean unrelated=overlap*2<Math.min(ours.size(),theirs.size());
-        if(starterCollision||unrelated){
+        int smaller=Math.min(ours.size(),theirs.size());
+        boolean unrelated=overlap*2<smaller;
+        int excess=Math.max(ours.size()-overlap,theirs.size()-overlap);
+        // A polluted snapshot often contains ALL the legitimate films plus
+        // hundreds appended from other lists. High overlap alone would miss it.
+        boolean unexpectedExpansion=excess>=24&&excess*5>=smaller;
+        if(starterCollision||unrelated||unexpectedExpansion){
             throw new Exception("Sincronización detenida: «"+a+"» y «"+b+
                 "» comparten el ID "+local.optString("id")+
                 " pero parecen listas diferentes. No se han mezclado ni enviado datos. "+
