@@ -104,13 +104,35 @@ jobs:
           cp artifacts/windows/Selector_Cine_365_Windows_Beta14_preview.exe dist/Selector_Cine_365_Windows_Beta14.exe
           echo '4d3459de746dd69c82232cc2aa222fdcb601c358145172e44b1887be59297130  dist/Selector_Cine_365_Windows_Beta14.exe' | sha256sum -c -
           file dist/Selector_Cine_365_Windows_Beta14.exe | grep -F 'PE32+ executable'
+          # GitHub Actions may download a Mac artifact as a nested .app tree
+          # or an already prepared ZIP. Locate the application, not a fixed path.
           for arch in mac-intel mac-apple-silicon; do
-            test -f "artifacts/$arch/Selector Cine 365.app/Contents/MacOS/SelectorCine365"
-            chmod +x "artifacts/$arch/Selector Cine 365.app/Contents/MacOS/SelectorCine365"
+            echo "Estructura descargada Mac $arch:"
+            find "artifacts/$arch" -maxdepth 5 -type f | head -30
+            app="$(find "artifacts/$arch" -type d -name '*.app' -print -quit)"
+            if [[ -z "$app" ]]; then
+              existing_zip="$(find "artifacts/$arch" -type f -name '*.zip' -print -quit)"
+              if [[ -z "$existing_zip" ]]; then
+                echo "::error::No hay aplicación .app ni ZIP en el artefacto Mac $arch."
+                exit 1
+              fi
+              mkdir -p "artifacts/$arch/unpacked"
+              unzip -q "$existing_zip" -d "artifacts/$arch/unpacked"
+              app="$(find "artifacts/$arch/unpacked" -type d -name '*.app' -print -quit)"
+            fi
+            [[ -n "$app" ]] || { echo "::error::Paquete macOS sin .app"; exit 1; }
+            executable="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -print -quit)"
+            [[ -n "$executable" ]] || { echo "::error::App macOS sin ejecutable"; exit 1; }
+            chmod +x "$executable"
+            if [[ "$arch" == "mac-intel" ]]; then
+              outfile="Selector_Cine_365_Mac_Intel_Beta14.zip"
+            else
+              outfile="Selector_Cine_365_Mac_AppleSilicon_Beta14.zip"
+            fi
+            output="$PWD/dist/$outfile"
+            (cd "$(dirname "$app")" && zip -qry "$output" "$(basename "$app")")
+            unzip -t "$output" | tail -1
           done
-          (cd artifacts/mac-intel && zip -qry ../../dist/Selector_Cine_365_Mac_Intel_Beta14.zip .)
-          (cd artifacts/mac-apple-silicon && zip -qry ../../dist/Selector_Cine_365_Mac_AppleSilicon_Beta14.zip .)
-          for zip in dist/Selector_Cine_365_Mac_*.zip; do unzip -t "$zip" | tail -1; done
           echo '44fe1d4239b007e24244532767e0b67390be002d7675d9d5f1e43db15bfa6274  artifacts/android/app-release-unsigned.apk' | sha256sum -c -
           echo '89c733f56388c6412c19e0af4b298ab7bd64f5cdb7738474e02e41edb282f9cd  scripts/release/beta13_13_android_signed_delta.b64' | sha256sum -c -
           python scripts/release/reconstruct_signed_beta13_13.py \
