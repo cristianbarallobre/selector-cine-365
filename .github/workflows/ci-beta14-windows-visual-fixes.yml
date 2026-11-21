@@ -18,6 +18,7 @@ jobs:
           node-version: '22'
       - run: go test ./... -count=1
       - run: node scripts/test_v9_beta13.cjs
+      - run: node scripts/test_beta14_desktop_dropdowns.cjs
       - run: node scripts/test_export_txt_name_beta14.cjs
       - run: node scripts/test_txt_import_creates_list_beta14.cjs plantilla.html
       - run: |
