@@ -188,6 +188,10 @@ Comprueba que Windows y Android apuntan a **la misma carpeta**, que el cliente O
 - La app solo revisa la carpeta OneDrive seleccionada para su biblioteca; conserva una copia JSON independiente antes de conectar otro dispositivo.
 - Esta guía documenta la configuración, no garantiza instantaneidad ni ausencia de conflictos en la sincronización real.
 
+## Cambio en Android Beta 13.3: sincronización manual, sin tocar Entra
+
+La cuenta Microsoft, permisos y carpeta de OneDrive **no requieren ninguna modificación**. Solo cambia cuándo Android intercambia archivos: se realiza una consulta **de solo lectura al abrir la app**, y después ninguna comprobación programada ni al regresar de segundo plano. Para **enviar o recibir** cambios, pulsa el nuevo icono de dos flechas circulares de la cabecera y confirma el resumen de comparación. La marca «Guardado» indica almacenamiento **en el móvil**, no subida a OneDrive. Se mantienen todas las copias de recuperación y la resolución de conflictos. Windows/Mac Beta 13.1 mantienen sus propios mecanismos automáticos.
+
 ## Nota de compatibilidad con Beta 13.1
 
 En esta publicación Windows y Mac incluyen la corrección de caché TMDB del servidor local Go. Android permanece en Beta 13 (versión interna 9015) con su firma persistente. **La corrección TMDB no requiere modificar Microsoft Entra ni volver a iniciar sesión en OneDrive**. Los IDs de películas identificadas manualmente y los marcadores de listas eliminadas se comparten en la biblioteca, pero **la clave privada API TMDB nunca se sincroniza**. Antes de compartir borrados entre dispositivos exporta una copia JSON independiente y actualiza Windows/Mac y Android a estas versiones.
