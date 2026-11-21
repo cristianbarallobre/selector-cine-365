@@ -28,6 +28,7 @@ type cloudStatus struct {
 	NeedsReview bool `json:"needs_review"`
  LastCheckMS int64 `json:"last_check_ms,omitempty"`
  LastReceivedMS int64 `json:"last_received_ms,omitempty"`
+ Provider string `json:"provider,omitempty"`
 }
 type cloudBackups struct {
 	mu           sync.Mutex
@@ -181,6 +182,15 @@ func cloudHasDeviceSnapshots(folder string) bool {
  return false
 }
 func (a *runningApp) cloudDisplayStatus() cloudStatus {
+ if a.graph!=nil&&a.graph.active(){
+  id:=a.graph.pairingID()
+  return cloudStatus{
+   Enabled:true,Folder:id,Target:"OneDrive / Selector_Cine_365",Provider:"onedrive-direct",
+   SyncPaired:a.syncStore!=nil&&a.syncStore.isPaired(id),
+   NeedsReview:a.syncStore==nil||!a.syncStore.isPaired(id)||a.syncPendingConflict.Load(),
+   LastCheckMS:a.syncLastCheck.Load(),LastReceivedMS:a.syncLastReceived.Load(),
+  }
+ }
  s:=a.cloud.status()
  s.SyncPaired=a.syncStore!=nil&&a.syncStore.isPaired(s.Folder)
  s.NeedsReview=(s.Enabled&&!s.SyncPaired&&cloudHasDeviceSnapshots(s.Folder))||a.syncPendingConflict.Load()
@@ -230,6 +240,9 @@ func (a *runningApp) serveCloudHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		respond(200, map[string]string{"folder": folder})
 	case "/api/cloud/config":
+        if a.graph!=nil&&a.graph.active(){
+            respond(409,map[string]string{"error":"Desconecta primero la cuenta Microsoft para cambiar a carpetas locales"});return
+        }
 		if r.Method != http.MethodPost {
 			http.Error(w, "Método no permitido", 405)
 			return
@@ -261,6 +274,11 @@ func (a *runningApp) serveCloudHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		respond(200, a.cloud.backup())
 	case "/api/cloud/backup":
+        if a.graph!=nil&&a.graph.active(){
+            if r.Method!=http.MethodPost{http.Error(w,"Método no permitido",405);return}
+            if err:=a.graphPublishSnapshot();err!=nil{respond(409,map[string]string{"error":err.Error()});return}
+            respond(200,a.cloudDisplayStatus());return
+        }
 		if r.Method != http.MethodPost {
 			http.Error(w, "Método no permitido", 405)
 			return
@@ -285,12 +303,16 @@ func (a *runningApp) serveCloudHTTP(w http.ResponseWriter, r *http.Request) {
 		respond(200, a.cloudDisplayStatus())
     case "/api/cloud/auto":
         if r.Method!=http.MethodPost {http.Error(w,"Método no permitido",405);return}
-        data,err:=a.cloudAutoSync()
+        var data map[string]any
+        var err error
+        if a.graph!=nil&&a.graph.active(){data,err=a.graphAutoSync()}else{data,err=a.cloudAutoSync()}
         if err!=nil{respond(409,map[string]string{"error":err.Error()});return}
         respond(200,data)
     case "/api/cloud/preview":
         if r.Method!=http.MethodPost {http.Error(w,"Método no permitido",405);return}
-        data,err:=a.cloudSyncPreview()
+        var data map[string]any
+        var err error
+        if a.graph!=nil&&a.graph.active(){data,err=a.graphSyncPreview()}else{data,err=a.cloudSyncPreview()}
         if err!=nil{respond(409,map[string]string{"error":err.Error()});return}
         respond(200,data)
     case "/api/cloud/sync":
@@ -302,7 +324,9 @@ func (a *runningApp) serveCloudHTTP(w http.ResponseWriter, r *http.Request) {
         if err:=json.NewDecoder(io.LimitReader(r.Body,100<<10)).Decode(&payload);err!=nil {
             respond(400,map[string]string{"error":"Solicitud incorrecta"});return
         }
-        data,err:=a.cloudSyncConfirm(payload.Token,payload.Decisions)
+        var data map[string]any
+        var err error
+        if a.graph!=nil&&a.graph.active(){data,err=a.graphSyncConfirm(payload.Token,payload.Decisions)}else{data,err=a.cloudSyncConfirm(payload.Token,payload.Decisions)}
         if err!=nil{respond(409,map[string]string{"error":err.Error()});return}
         respond(200,data)
 	default:
