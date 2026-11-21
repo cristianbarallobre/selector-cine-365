@@ -13,6 +13,6 @@ assert.match(html,/updatePlatformProgress\(\);updatePlatformChoices\(\);updateLi
 assert.match(tmdb,/if\(!"error"\.equals\(saved\.optString\("state"\)\)\)return saved;/);
 assert.match(tmdb,/last\.plusSeconds\(30\*60\)\.isAfter\(Instant\.now\(\)\)/);
 assert.match(gradle,/versionCode 9025/);
-assert.match(gradle,/versionName '9\.0\.0-beta\.13\.10'/);
+assert.match(gradle,/versionName '9\.0\.0-beta\.13\.11'/);
 for(const match of html.matchAll(/<script>([\s\S]*?)<\/script>/g))new Function(match[1]);
 console.log('OK: incomplete TMDB metadata can be resumed without refreshing completed entries; transient failures expire');
