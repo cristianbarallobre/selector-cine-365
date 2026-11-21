@@ -1646,6 +1646,39 @@ function cloudShow(s){
  }
 }
 async function cloudRefresh(){try{cloudShow(await cloudRequest('/api/cloud/status'))}catch(e){$('cloudStatus').textContent='⚠ No se pudo comprobar la copia en nube';}}
+let graphLoginPoll=null;
+async function desktopGraphStatus(){
+ const s=await cloudRequest('/api/onedrive-desktop/status');
+ $('cloudGraphDisconnect').hidden=!s.connected;
+ $('cloudGraphConnect').hidden=s.connected;
+ $('cloudGraphLogin').hidden=!s.pending;
+ if(s.pending){
+  $('cloudGraphCode').textContent=s.user_code||'';
+  const address=s.verification_uri||'https://microsoft.com/devicelogin';
+  $('cloudGraphLink').href=address.startsWith('https://')?address:'https://microsoft.com/devicelogin';
+  $('cloudGraphStatus').textContent='Autoriza tu cuenta Microsoft en el navegador. No cierres Selector Cine 365.';
+  if(!graphLoginPoll)graphLoginPoll=setInterval(()=>void desktopGraphStatus().catch(()=>{}),2500);
+ }else{
+  if(graphLoginPoll){clearInterval(graphLoginPoll);graphLoginPoll=null;}
+  if(s.connected){
+   $('cloudGraphStatus').textContent='✓ Cuenta Microsoft conectada directamente. No necesitas instalar ni elegir carpetas OneDrive.';
+   await cloudRefresh();
+  }else if(s.last_error){$('cloudGraphStatus').textContent='⚠ '+s.last_error;}
+ }
+}
+$('cloudGraphConnect').addEventListener('click',async()=>{
+ const button=$('cloudGraphConnect');button.disabled=true;
+ try{await cloudRequest('/api/onedrive-desktop/start','POST');await desktopGraphStatus();}
+ catch(e){$('cloudGraphStatus').textContent='⚠ '+e.message;}
+ finally{button.disabled=false;}
+});
+$('cloudGraphDisconnect').addEventListener('click',async()=>{
+ if(!confirm('¿Desconectar esta sesión de Microsoft? Tus películas seguirán guardadas localmente y OneDrive no se borrará.'))return;
+ try{await cloudRequest('/api/onedrive-desktop/disconnect','POST');await desktopGraphStatus();await cloudRefresh();}
+ catch(e){$('cloudGraphStatus').textContent='⚠ '+e.message;}
+});
+void desktopGraphStatus().catch(()=>{});
+
 $('cloudAutoFolder').addEventListener('click',async()=>{
  const button=$('cloudAutoFolder');button.disabled=true;
  try {
@@ -1678,7 +1711,10 @@ $('cloudBackupNow').addEventListener('click',async()=>{
 });
 $('cloudDisable').addEventListener('click',async()=>{
  if(!confirm('¿Desactivar las copias automáticas? Las copias existentes no se borrarán.'))return;
- try{cloudShow(await cloudRequest('/api/cloud/config','POST',{folder:''}));$('cloudFolder').value='';}
+ try{
+  if(cineGraphConnected){await cloudRequest('/api/onedrive-desktop/disconnect','POST');await desktopGraphStatus();await cloudRefresh();}
+  else{cloudShow(await cloudRequest('/api/cloud/config','POST',{folder:''}));$('cloudFolder').value='';}
+ }
  catch(e){$('cloudStatus').textContent='⚠ '+e.message;}
 });
 
