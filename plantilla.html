@@ -411,6 +411,56 @@ h2{font-size:19px}
 @media(min-width:761px){#view-collections .collection-rows{grid-auto-rows:70px!important;min-height:301px!important}#view-collections .collection-item{height:70px;min-height:70px!important}}
 #view-collections .cine-list-placeholder{visibility:hidden;pointer-events:none;border-color:transparent;background:transparent}
 </style>
+<style id="cine-beta14-onedrive-guide">
+#view-collections .cloud-box{margin:18px 0 0;padding:18px;border:1px solid #3e526a;background:#111d2a}
+.cloud-guide-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:15px}
+.cloud-guide-heading .cloud-title{margin:0 0 5px}
+.cloud-guide-heading p{font-size:13px;line-height:1.55;color:#bacbdc;margin:0;max-width:790px}
+.cloud-guide-heading strong,.cloud-guide-where strong{color:#eff3fa}
+.cloud-guide-state{flex:0 0 230px;min-width:0;background:#253548;border:1px solid #465e77;color:#e7eff8;border-radius:10px;padding:10px 13px;font-size:12px;font-weight:740;line-height:1.45}
+.cloud-guide-state[data-phase="paired"]{border-color:#53856d;color:#b9f0d2;background:#19332f}
+.cloud-guide-state[data-phase="review"]{border-color:#ad8a49;color:#f9da97;background:#342c1f}
+.cloud-guide-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.cloud-guide-step{display:flex;flex-direction:column;min-width:0;border:1px solid #354a60;border-radius:13px;background:#19283a;padding:14px}
+.cloud-guide-step[data-state="ready"]{border-color:#9a783f}
+.cloud-guide-step[data-state="done"]{border-color:#4c7967;background:#192e32}
+.cloud-guide-step-head{display:flex;align-items:flex-start;gap:10px}
+.cloud-guide-number{display:grid;place-items:center;flex:0 0 27px;width:27px;height:27px;border-radius:8px;background:#2e3e52;color:#ffdb97;border:1px solid #5b6679;font-weight:850;font-size:14px}
+.cloud-guide-step[data-state="done"] .cloud-guide-number{background:#2c604f;color:#d8ffe7;border-color:#6d9e82}
+.cloud-guide-step-head h3{font-size:14px;line-height:1.3;color:#f8d88e;margin:1px 0 5px}
+.cloud-guide-step-head p{font-size:12px;line-height:1.48;color:#c6d3e1;margin:0}
+.cloud-guide-step-note{font-size:12px;line-height:1.5;color:#aebfd1;margin:9px 0 12px}
+.cloud-guide-step-note strong{color:#f0dbb0}
+.cloud-guide-action{margin-top:auto;min-height:38px;font-size:12px!important;padding:9px 10px!important;border-radius:9px!important;width:100%}
+.cloud-guide-action:disabled{cursor:not-allowed}
+.cloud-guide-feedback,.cloud-guide-hint{font-size:11px;line-height:1.5;color:#b8d1dc;margin:9px 0 0;min-height:17px}
+.cloud-guide-feedback{overflow-wrap:anywhere}
+.cloud-guide-disconnect{margin-top:8px;font-size:11px;padding:7px}
+.cloud-guide-mode{font-size:12px;font-weight:750;color:#d5e3f0;display:grid;gap:6px;margin:10px 0 0}
+.cloud-guide-mode select{width:100%;min-width:0;background:#1e2b3d;color:#eaf2fb;border:1px solid #60758a;border-radius:8px;font:inherit;padding:8px;cursor:pointer}
+.cloud-guide-mode-desc{font-size:11px;color:#a9bdd0;line-height:1.45;margin:7px 0 0}
+.cloud-guide-where{border:1px solid #374d63;border-radius:11px;background:#142333;padding:12px 14px;margin-top:13px}
+.cloud-guide-where>strong{font-size:13px;color:#f4cf84}
+.cloud-guide-where p{color:#b9cddd;font-size:12px;line-height:1.55;margin:5px 0 0;overflow-wrap:anywhere}
+.cloud-guide-where a{color:#f4cd82;text-decoration:underline}
+.cloud-guide-where code{color:#f9db9b;overflow-wrap:anywhere;font-size:12px}
+.cloud-guide-where .cloud-status{min-height:0;margin-top:6px}
+.cloud-guide-health{border:1px solid #435e74;border-radius:11px;background:#192a3c;padding:13px 14px;margin-top:11px}
+.cloud-guide-health h3{font-size:14px;color:#f2ca80;margin:0 0 5px}
+.cloud-guide-health .cloud-status{margin:4px 0;color:#bbd9c6;font-size:12px}
+.cloud-guide-health .cine-sync-metrics{margin-top:7px}
+.cloud-guide-extra{border:1px solid #30475d;border-radius:10px;margin-top:10px;padding:0 13px;background:#172535}
+.cloud-guide-extra>summary{padding:12px 4px;cursor:pointer;color:#d9e7f6;font-weight:730;font-size:13px}
+.cloud-guide-extra[open]>summary{color:#f6d18e;border-bottom:1px solid #35485b;margin-bottom:11px}
+.cloud-guide-extra>p{font-size:12px;line-height:1.5;color:#b6c8dc}
+.cloud-guide-extra .cloud-guide-alt{width:100%;margin:0 0 12px}
+.cloud-guide-extra #cloudFolderAdvanced{margin-bottom:12px}
+.cloud-guide-extra #cloudFolderAdvanced>summary{cursor:pointer;font-size:12px;padding:6px;color:#f0d18d}
+.cloud-guide-extra .cine-sync-activity{margin:0 0 13px}
+.cloud-guide-extra .cine-sync-title{margin-top:8px}
+@media(max-width:1000px){.cloud-guide-heading{flex-direction:column}.cloud-guide-state{flex:0 0 auto;width:100%}.cloud-guide-steps{grid-template-columns:1fr}.cloud-guide-step{padding:12px}.cloud-guide-action{margin-top:12px}}
+@media(max-width:650px){#view-collections .cloud-box{padding:11px}.cloud-guide-heading{gap:9px}.cloud-guide-step-head{gap:8px}.cloud-guide-where,.cloud-guide-health{padding:10px}}
+</style>
 </head>
 <body>
 <textarea id="initialState" hidden>__ATLAS_LISTA_INICIAL__</textarea>
@@ -531,74 +581,108 @@ h2{font-size:19px}
       <div class="manage-message" id="listActionsState" aria-live="polite"></div>
       <div class="backup-bar"><button class="tool" type="button" id="downloadBackup">⬇ Copia de seguridad</button><button class="tool" type="button" id="restoreBackup">↻ Restaurar copia</button></div>
       <input class="upload-input" type="file" id="backupFile" accept=".json,application/json">
-      <div class="cloud-box" aria-label="Copias automáticas en tu nube">
-        <div class="cloud-title">☁ Sincronización y copias de seguridad</div>
-        <p style="font-size:13px;line-height:1.5;color:#b7c7d7;margin:7px 0 11px">
-          <strong>Para compartir tus películas con Android, utiliza OneDrive.</strong>
-          Pulsa «Detectar OneDrive» para usar automáticamente la carpeta <strong>Selector_Cine_365</strong> de tu OneDrive local.
-          Android puede conectar esa misma carpeta mediante tu cuenta Microsoft.
-          En ambos dispositivos pulsa «Revisar sincronización» antes de combinar los datos.
-          El uso de nube es opcional: tus listas se guardan también en este PC.
-          Otras nubes pueden funcionar si ambos dispositivos ofrecen carpetas compatibles.
-        </p>
-        <div class="cloud-buttons">
-          <button class="primary" type="button" id="cloudGraphConnect">☁ Conectar cuenta Microsoft (sin instalar OneDrive)</button>
+      <div class="cloud-box" aria-label="Configuración de sincronización y copias de seguridad">
+        <div class="cloud-guide-heading">
+          <div>
+            <div class="cloud-title">☁ OneDrive y copias de seguridad</div>
+            <p>Comparte tus listas y películas vistas entre Windows y Android. <strong>No necesitas instalar OneDrive.</strong> También puedes utilizar la aplicación solo en este PC: tus datos se guardan localmente.</p>
+          </div>
+          <div class="cloud-guide-state" id="cloudWizardStatus" role="status" aria-live="polite">Comprobando conexión y sincronización…</div>
         </div>
-        <div class="cloud-status" id="cloudGraphStatus" aria-live="polite">Puedes conectar OneDrive directamente con tu cuenta Microsoft.</div>
-        <label for="cloudSyncMode" style="display:block;margin-top:10px;font-size:13px">
-          Sincronización en este ordenador
-          <select id="cloudSyncMode" style="margin-left:8px;padding:7px;border-radius:7px">
-            <option value="automatic">Automática inteligente</option>
-            <option value="manual">Solo al pulsar ↻</option>
-          </select>
-        </label>
-        <div id="cloudGraphLogin" hidden>
-          <p class="cloud-status">Inicia sesión en el navegador oficial de Microsoft. Al terminar volverás automáticamente a Selector Cine 365.</p>
-          <p><a id="cloudGraphLink" href="https://login.microsoftonline.com/" rel="noopener noreferrer" target="_blank">Volver a abrir el inicio de sesión Microsoft</a></p>
+        <div class="cloud-guide-steps" aria-label="Tres pasos para configurar OneDrive">
+          <section class="cloud-guide-step" id="cloudStepConnect" aria-labelledby="cloudStepConnectTitle">
+            <div class="cloud-guide-step-head">
+              <span class="cloud-guide-number" aria-hidden="true">1</span>
+              <div><h3 id="cloudStepConnectTitle">Conecta OneDrive</h3><p>Inicia sesión con la cuenta Microsoft donde quieres guardar tus películas.</p></div>
+            </div>
+            <p class="cloud-guide-step-note">La conexión crea o encuentra <strong>Selector_Cine_365</strong>. Es normal que la carpeta esté vacía hasta confirmar el paso 2.</p>
+            <button class="primary cloud-guide-action" type="button" id="cloudGraphConnect">☁ Conectar cuenta Microsoft</button>
+            <div class="cloud-status cloud-guide-feedback" id="cloudGraphStatus" aria-live="polite">Pendiente de conectar.</div>
+            <div id="cloudGraphLogin" hidden>
+              <p class="cloud-status">Autoriza el acceso en el navegador de Microsoft y regresa a la aplicación.</p>
+              <p><a id="cloudGraphLink" href="https://login.microsoftonline.com/" rel="noopener noreferrer" target="_blank">Abrir el inicio de sesión Microsoft</a></p>
+            </div>
+            <button class="tool cloud-guide-disconnect" type="button" id="cloudGraphDisconnect" hidden>Desconectar Microsoft</button>
+          </section>
+          <section class="cloud-guide-step" id="cloudStepReview" aria-labelledby="cloudStepReviewTitle">
+            <div class="cloud-guide-step-head">
+              <span class="cloud-guide-number" aria-hidden="true">2</span>
+              <div><h3 id="cloudStepReviewTitle">Revisa y confirma</h3><p>Compara las listas de este ordenador con las de OneDrive antes de combinarlas.</p></div>
+            </div>
+            <p class="cloud-guide-step-note">Es obligatorio la primera vez. Comprueba las cantidades y resuelve los conflictos, si aparecen. <strong>No se sobrescriben las copias de otros dispositivos.</strong></p>
+            <button class="tool cloud-guide-action" type="button" id="cloudSyncReview" disabled>⇄ Revisar listas antes de sincronizar</button>
+            <p class="cloud-guide-hint" id="cloudReviewHint">Completa el paso 1 para continuar.</p>
+          </section>
+          <section class="cloud-guide-step" id="cloudStepSync" aria-labelledby="cloudStepSyncTitle">
+            <div class="cloud-guide-step-head">
+              <span class="cloud-guide-number" aria-hidden="true">3</span>
+              <div><h3 id="cloudStepSyncTitle">Sincroniza y comprueba</h3><p>Envía y recibe cambios una vez confirmada la primera sincronización.</p></div>
+            </div>
+            <button class="tool cloud-guide-action" type="button" id="cloudSyncNowFast" disabled>↻ Sincronizar ahora</button>
+            <p class="cloud-guide-hint" id="cloudSyncHint">Completa y confirma el paso 2 para activar este botón.</p>
+            <label class="cloud-guide-mode" for="cloudSyncMode">Después, mantener al día:
+              <select id="cloudSyncMode">
+                <option value="automatic">Automáticamente</option>
+                <option value="manual">Solo cuando pulse sincronizar</option>
+              </select>
+            </label>
+            <p class="cloud-guide-mode-desc">El modo automático comprueba los cambios periódicamente. El manual solo sincroniza al pulsar el botón. Ninguno sustituye la revisión inicial.</p>
+          </section>
         </div>
-        <div class="cloud-buttons">
-          <button class="tool" type="button" id="cloudAutoFolder">Detectar OneDrive instalado (alternativa)</button>
-          <button class="tool" type="button" id="cloudGraphDisconnect" hidden>Desconectar Microsoft</button>
+        <div class="cloud-guide-where">
+          <strong>¿Dónde se guardan las listas?</strong>
+          <p><strong>En tu PC, siempre.</strong> En OneDrive se guarda un archivo JSON por dispositivo en <code>Selector_Cine_365/sincronizacion/dispositivos</code>. Puedes verlo desde <a href="https://onedrive.live.com/" target="_blank" rel="noopener noreferrer">Mis archivos de OneDrive</a>; no edites ni borres esos archivos a mano.</p>
+          <p id="cloudStatus" class="cloud-status" aria-live="polite">Comprobando estado de OneDrive…</p>
         </div>
-        <details id="cloudFolderAdvanced">
-          <summary>Opciones avanzadas: elegir carpeta manualmente</summary>
-        <input class="cloud-path" id="cloudFolder" type="text" autocomplete="off" placeholder="Carpeta local de OneDrive, Drive, Dropbox…" aria-label="Carpeta para las copias automáticas">
-        <div class="cloud-buttons">
-          <button class="tool" type="button" id="cloudBrowse">📁 Elegir carpeta</button>
-          <button class="tool" type="button" id="cloudActivate">✓ Activar copia</button>
-          <button class="tool" type="button" id="cloudBackupNow">↻ Copiar ahora</button>
-          <button class="tool" type="button" id="cloudDisable">Desactivar</button>
-        </div>
-        </details>
-        <div class="cloud-status" id="cloudStatus" aria-live="polite">Comprobando copias…</div>
-        <button class="tool" type="button" id="cloudSyncReview" style="width:100%;margin-top:8px">⇄ Revisar sincronización / resolver conflictos</button>
-        <div id="cloudAutoStatus" class="cloud-status" aria-live="polite" style="margin-top:9px">Al vincular por primera vez, se recibirán automáticamente los cambios sin conflictos. Se revisan al abrir y periódicamente.</div>
-        <div class="cine-sync-activity">
-          <div class="cine-sync-title"><strong>Estado de sincronización</strong><button class="tool" type="button" id="cloudSyncNowFast">↻ Sincronizar ahora</button></div>
+        <div class="cloud-guide-health" aria-label="Estado de sincronización">
+          <h3>Estado de sincronización</h3>
+          <p id="cloudAutoStatus" class="cloud-status" aria-live="polite">Primero conecta y confirma tu cuenta. Después podrás sincronizar las listas.</p>
           <div class="cine-sync-metrics">
             <span id="cloudLastCheck">Última comprobación: aún no realizada</span>
             <span id="cloudLastReceive">Últimos cambios recibidos: ninguno en esta sesión</span>
           </div>
           <p id="cloudSyncManualResult" class="cloud-status" aria-live="polite"></p>
-          <div class="cine-sync-title"><strong>Actividad reciente de películas</strong><button class="tool" type="button" id="cloudHistoryRefresh" title="Consultar cambios locales y recibidos de otros dispositivos">Actualizar historial</button></div>
-          <div id="cloudHistory" class="cine-sync-history is-empty" aria-live="polite">Aún no hay movimientos registrados. Aquí aparecerán las películas que marques, desmarques o recibas desde otro dispositivo.</div>
-          <p id="cloudHistoryChecked" class="cine-history-checked" role="status" aria-live="polite">El historial empieza a registrarse desde las versiones que incluyen esta función; no recupera acciones anteriores.</p>
-          <p>Las horas son orientativas. Para decidir qué cambio prevalece se comprueban las revisiones y el orden causal, no solo el reloj.</p>
-          <div class="cine-sync-title"><strong>Copias locales de recuperación</strong><button class="tool" type="button" id="cloudRecoveryRefresh">Buscar copias</button></div>
-          <p>Restaurar una copia es opcional y siempre requiere confirmación. Antes se guarda otra copia del estado actual.</p>
-          <div class="cine-recovery-controls">
-            <select id="cloudRecoveryList" aria-label="Seleccionar una copia local para restaurar"><option value="">Selecciona una copia guardada</option></select>
-            <button class="tool" type="button" id="cloudRecoveryRestore" disabled>Restaurar copia seleccionada</button>
-          </div>
-          <p class="cloud-status" id="cloudRecoveryStatus" aria-live="polite"></p>
         </div>
+        <details class="cloud-guide-extra">
+          <summary>Otras formas de conexión y opciones avanzadas</summary>
+          <p>Alternativa para quienes prefieren una carpeta de OneDrive instalada en Windows u otra carpeta local sincronizada. <strong>No la actives si ya utilizas la conexión directa con Microsoft.</strong></p>
+          <button class="tool cloud-guide-alt" type="button" id="cloudAutoFolder">Detectar OneDrive instalado</button>
+          <details id="cloudFolderAdvanced">
+            <summary>Elegir una carpeta local manualmente</summary>
+            <input class="cloud-path" id="cloudFolder" type="text" autocomplete="off" placeholder="Carpeta local de OneDrive, Drive, Dropbox…" aria-label="Carpeta para las copias automáticas">
+            <div class="cloud-buttons">
+              <button class="tool" type="button" id="cloudBrowse">📁 Elegir carpeta</button>
+              <button class="tool" type="button" id="cloudActivate">✓ Activar copia</button>
+              <button class="tool" type="button" id="cloudBackupNow">↻ Copiar ahora</button>
+              <button class="tool" type="button" id="cloudDisable">Desactivar</button>
+            </div>
+          </details>
+        </details>
+        <details class="cloud-guide-extra">
+          <summary>Actividad reciente, historial y copias de recuperación</summary>
+          <div class="cine-sync-activity">
+            <div class="cine-sync-title"><strong>Actividad reciente de películas</strong><button class="tool" type="button" id="cloudHistoryRefresh" title="Consultar cambios locales y recibidos de otros dispositivos">Actualizar historial</button></div>
+            <p>Los cambios que haces aquí se guardan primero en el PC. Los cambios recibidos desde otros dispositivos aparecen indicados en este historial.</p>
+            <div id="cloudHistory" class="cine-sync-history is-empty" aria-live="polite">Aún no hay movimientos registrados.</div>
+            <p id="cloudHistoryChecked" class="cine-history-checked" role="status" aria-live="polite">El historial empieza a registrarse desde las versiones que incluyen esta función; no recupera acciones anteriores.</p>
+            <p>Las horas son orientativas. Para decidir qué cambio prevalece se comprueban las revisiones y el orden causal, no solo el reloj.</p>
+            <div class="cine-sync-title"><strong>Copias locales de recuperación</strong><button class="tool" type="button" id="cloudRecoveryRefresh">Buscar copias</button></div>
+            <p>Restaurar una copia es opcional y siempre requiere confirmación. Antes se guarda otra copia del estado actual.</p>
+            <div class="cine-recovery-controls">
+              <select id="cloudRecoveryList" aria-label="Seleccionar una copia local para restaurar"><option value="">Selecciona una copia guardada</option></select>
+              <button class="tool" type="button" id="cloudRecoveryRestore" disabled>Restaurar copia seleccionada</button>
+            </div>
+            <p class="cloud-status" id="cloudRecoveryStatus" aria-live="polite"></p>
+          </div>
+        </details>
         <div class="sync-desktop-panel" id="cloudSyncPanel" hidden>
-          <h3>Revisar antes de importar</h3>
+          <h3>Confirmar la primera sincronización</h3>
+          <p>Comprueba lo que hay en el PC y lo que se combinará con OneDrive. Si aparecen conflictos, escoge qué estado conservar en cada película.</p>
           <p id="cloudSyncSummary"></p><div id="cloudSyncConflicts"></div>
-          <p>Se crea una copia local antes de combinar. No se sustituyen archivos de otros dispositivos.</p>
+          <p>Antes de combinar se guarda una copia local de recuperación. No se eliminan las copias de otros dispositivos.</p>
           <div class="sync-desktop-actions">
             <button class="primary" type="button" id="cloudSyncConfirm">Confirmar y sincronizar</button>
-            <button class="tool" type="button" id="cloudSyncCancel">Cancelar</button>
+            <button class="tool" type="button" id="cloudSyncCancel">Volver sin sincronizar</button>
           </div>
         </div>
       </div>
