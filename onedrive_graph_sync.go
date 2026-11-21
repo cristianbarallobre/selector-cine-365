@@ -168,6 +168,7 @@ func (a *runningApp) graphSyncConfirm(token string,decisions map[string]bool)(ma
  return map[string]any{"changed":true,"sources":p.Sources,"lists":len(p.Library.Lists),"seen":syncWatched(p.Library)},nil
 }
 func (a *runningApp) graphPublishSnapshot()error{
+ if a.graph!=nil{a.graph.publishMu.Lock();defer a.graph.publishMu.Unlock()}
  if a.graph==nil||!a.graph.active(){return errors.New("OneDrive no está conectado")}
  if a.syncStore==nil||!a.syncStore.isPaired(a.graph.pairingID()){
   return errors.New("Revisa y confirma primero la sincronización")
@@ -183,7 +184,11 @@ func (a *runningApp) graphPublishSnapshot()error{
  // The snapshot contains a timestamp, but an identical payload still needs no PUT.
  if exists {
   previous,err:=a.graph.readItem(old.ID);if err!=nil{return err}
-  if sha256.Sum256(previous)==sha256.Sum256(bytes){return nil}
+  var previousSnapshot,currentSnapshot syncSnapshot
+  if json.Unmarshal(previous,&previousSnapshot)==nil&&json.Unmarshal(bytes,&currentSnapshot)==nil {
+   previousSnapshot.UpdatedAt=0;currentSnapshot.UpdatedAt=0
+   if reflect.DeepEqual(previousSnapshot,currentSnapshot){return nil}
+  }
  }
  if err=a.graph.writeItem(devices,name,bytes);err!=nil{return err}
  actual,exists,err:=a.graph.child(devices,name)
@@ -239,4 +244,34 @@ func (a *runningApp) graphAutoSync()(map[string]any,error){
  if err=a.graphPublishSnapshot();err!=nil{return nil,err}
  return map[string]any{"changed":libChanged,"metadata_updated":metadataChanged,
   "lists":len(p.Library.Lists),"seen":syncWatched(p.Library),"sources":p.Sources},nil
+}
+
+func (a *runningApp) queueGraphUpload(){
+ if a.graphUploadCh==nil{return}
+ select{case a.graphUploadCh<-struct{}{}:default:}
+}
+
+// One small batch after edits: serialize uploads, no per-keystroke network,
+// never publish before the user has reviewed the initial pairing.
+func (a *runningApp) graphPublisher(){
+ for{
+  select {
+  case <-a.stopCh:return
+  case <-a.graphUploadCh:
+   timer:=time.NewTimer(3*time.Second)
+   select{case <-timer.C:case <-a.stopCh:timer.Stop();return}
+   // Drain duplicate notifications without dropping the newest library state.
+   for {
+    select{case <-a.graphUploadCh:continue
+    default:goto publish}
+   }
+  publish:
+   if a.graph==nil||!a.graph.active()||a.syncStore==nil||!a.syncStore.isPaired(a.graph.pairingID()){continue}
+   if err:=a.graphPublishSnapshot();err!=nil{
+    a.graph.mu.Lock();a.graph.lastError=err.Error();a.graph.mu.Unlock()
+   }else{
+    a.graph.mu.Lock();a.graph.lastError="";a.graph.mu.Unlock()
+   }
+  }
+ }
 }
