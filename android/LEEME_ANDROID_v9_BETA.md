@@ -1,6 +1,20 @@
-# Selector Cine 365 — Android v9 Beta 13.2
+# Selector Cine 365 — Android v9 Beta 13.3
 
 **Autor:** Cristian Barallobre Rúa. **Estado:** versión beta experimental para Android 8.0+ (API 26). Conserva funcionamiento local sin cuenta Microsoft y sin clave TMDB.
+
+## Android Beta 13.3 — guardado local y sincronización manual
+
+- **Una lista no es una subida:** al cambiar de lista no se muestra «Guardando…»; si la selección cambia, se conserva en la memoria local sin subir nada.
+- Todas las modificaciones de películas o listas se guardan automáticamente **solo en el móvil**, sin consultar ni publicar en OneDrive.
+- **OneDrive solo se consulta al abrir la app**, una vez y de forma **solo lectura** cuando ya se ha vinculado. No se importan ni envían datos automáticamente.
+- Nuevo botón compacto de dos flechas circulares en la parte superior, junto al estado de guardado. Al pulsarlo se abre Nube, se muestra un resumen comparado y debes **confirmar** para enviar o recuperar cambios; ante conflictos eliges qué conservar.
+- No quedan comprobaciones periódicas ni al regresar a la app desde otra pantalla, y no se consulta TMDB al pasar de una lista a otra.
+- Sigue disponible el botón específico «Enviar copia» en Nube para subir únicamente por voluntad del usuario, pero para recuperar y combinar cambios se recomienda el de las dos flechas.
+- **Android versión 9017** `es.cine365.app` y el mismo certificado de todas las Beta 11–13.2: instalar la nueva APK encima sin borrar datos. Exporta un JSON antes de actualizar.
+- **Windows y Mac Beta 13.1 no cambian**. Pueden seguir sincronizando automáticamente según su configuración, así que en Android habrá que pulsar ↻ y confirmar después de los cambios del PC.
+- Sin red ni OneDrive conectado, la app sigue guardando tus listas localmente como siempre.
+
+[Notas de versión Beta 13.3](../RELEASE_NOTES_v9_BETA13_3_ANDROID.md).
 
 ## Hotfix Android Beta 13.2 — consumo y actividad en segundo plano
 
