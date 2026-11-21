@@ -23,8 +23,8 @@ for(const xml of [rulesOld,rulesNew]){
 assert.match(rulesNew,/<cloud-backup>[\s\S]*?<\/cloud-backup>/);
 assert.match(rulesNew,/<device-transfer>[\s\S]*?<\/device-transfer>/);
 assert.match(build,/applicationId 'es\.cine365\.app'/);
-assert.match(build,/versionCode 9026/);
-assert.match(build,/versionName '9\.0\.0-beta\.13\.12'/);
+assert.match(build,/versionCode 9027/);
+assert.match(build,/versionName '9\.0\.0-beta\.13\.13'/);
 assert.match(backend,/new File\(activity\.getFilesDir\(\),"Selector_Cine_365"\)/,'Android local files in private storage');
 assert.match(drive,/AndroidKeyStore/,'Microsoft token protected by Android Keystore');
 assert.match(drive,/getSharedPreferences\("onedrive"/,'Microsoft refresh token stored securely');
