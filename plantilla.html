@@ -487,12 +487,17 @@ h2{font-size:19px}
         <div class="cloud-title">☁ Sincronización y copias de seguridad</div>
         <p style="font-size:13px;line-height:1.5;color:#b7c7d7;margin:7px 0 11px">
           <strong>Para compartir tus películas con Android, utiliza OneDrive.</strong>
-          Crea en OneDrive una carpeta exclusiva, por ejemplo <strong>Selector_Cine_365</strong>,
-          y selecciónala aquí con «Elegir carpeta». En Android inicia sesión en Microsoft y elige
-          <strong>esa misma carpeta</strong>. En ambos dispositivos pulsa «Revisar sincronización» antes de combinar los datos.
+          Pulsa «Detectar OneDrive» para usar automáticamente la carpeta <strong>Selector_Cine_365</strong> de tu OneDrive local.
+          Android puede conectar esa misma carpeta mediante tu cuenta Microsoft.
+          En ambos dispositivos pulsa «Revisar sincronización» antes de combinar los datos.
           El uso de nube es opcional: tus listas se guardan también en este PC.
           Otras nubes pueden funcionar si ambos dispositivos ofrecen carpetas compatibles.
         </p>
+        <div class="cloud-buttons">
+          <button class="primary" type="button" id="cloudAutoFolder">☁ Detectar OneDrive</button>
+        </div>
+        <details id="cloudFolderAdvanced">
+          <summary>Opciones avanzadas: elegir carpeta manualmente</summary>
         <input class="cloud-path" id="cloudFolder" type="text" autocomplete="off" placeholder="Carpeta local de OneDrive, Drive, Dropbox…" aria-label="Carpeta para las copias automáticas">
         <div class="cloud-buttons">
           <button class="tool" type="button" id="cloudBrowse">📁 Elegir carpeta</button>
@@ -500,6 +505,7 @@ h2{font-size:19px}
           <button class="tool" type="button" id="cloudBackupNow">↻ Copiar ahora</button>
           <button class="tool" type="button" id="cloudDisable">Desactivar</button>
         </div>
+        </details>
         <div class="cloud-status" id="cloudStatus" aria-live="polite">Comprobando copias…</div>
         <button class="tool" type="button" id="cloudSyncReview" style="width:100%;margin-top:8px">⇄ Revisar sincronización / resolver conflictos</button>
         <div id="cloudAutoStatus" class="cloud-status" aria-live="polite" style="margin-top:9px">Al vincular por primera vez, se recibirán automáticamente los cambios sin conflictos. Se revisan al abrir y periódicamente.</div>
@@ -1627,6 +1633,19 @@ function cloudShow(s){
  }
 }
 async function cloudRefresh(){try{cloudShow(await cloudRequest('/api/cloud/status'))}catch(e){$('cloudStatus').textContent='⚠ No se pudo comprobar la copia en nube';}}
+$('cloudAutoFolder').addEventListener('click',async()=>{
+ const button=$('cloudAutoFolder');button.disabled=true;
+ try {
+  const data=await cloudRequest('/api/cloud/auto-folder','POST');
+  cloudShow(data.status);
+  $('cloudStatus').textContent=data.already_connected
+   ? '✓ Se conserva la carpeta ya configurada. Pulsa «Revisar sincronización» antes de cambiar nada.'
+   : '✓ OneDrive detectado. Pulsa «Revisar sincronización» y confirma antes de publicar o recibir datos.';
+ }catch(error){
+  $('cloudStatus').textContent='⚠ '+error.message+' Puedes usar las opciones avanzadas para elegir la carpeta.';
+  $('cloudStatus').classList.add('warn');
+ }finally{button.disabled=false;}
+});
 $('cloudBrowse').addEventListener('click',async()=>{
  const btn=$('cloudBrowse');btn.disabled=true;$('cloudStatus').textContent='Selecciona una carpeta de tu nube…';
  try{const data=await cloudRequest('/api/cloud/browse','POST');
