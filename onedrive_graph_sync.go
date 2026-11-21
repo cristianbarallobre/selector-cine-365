@@ -221,12 +221,17 @@ func (a *runningApp) graphAutoSync(force bool)(map[string]any,error){
   return map[string]any{"changed":false,"needs_review":true,"conflicts":len(p.Conflicts)},nil
  }
  a.syncPendingConflict.Store(false)
- if p.Sources==0{a.mu.Unlock();return map[string]any{"changed":false,"skipped":"no_remote_sources"},nil}
+ if p.Sources==0{
+  a.mu.Unlock()
+  if force {if err:=a.graphPublishSnapshot();err!=nil{return nil,err}}
+  return map[string]any{"changed":false,"skipped":"no_remote_sources"},nil
+ }
  _,oldRev,oldKnown:=a.syncStore.parts()
  libChanged:=!reflect.DeepEqual(a.library,p.Library)
  metadataChanged:=!reflect.DeepEqual(oldRev,p.Revisions)||!reflect.DeepEqual(oldKnown,p.Known)
  if !libChanged&&!metadataChanged{
   a.mu.Unlock()
+  if force {if err:=a.graphPublishSnapshot();err!=nil{return nil,err}}
   return map[string]any{"changed":false},nil
  }
  if libChanged{
@@ -246,7 +251,7 @@ func (a *runningApp) graphAutoSync(force bool)(map[string]any,error){
 }
 
 func (a *runningApp) queueGraphUpload(){
- if a.graphUploadCh==nil{return}
+ if a.graphUploadCh==nil||a.cloud==nil||!a.cloud.autoMode(){return}
  select{case a.graphUploadCh<-struct{}{}:default:}
 }
 
