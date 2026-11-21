@@ -505,9 +505,8 @@ h2{font-size:19px}
           </select>
         </label>
         <div id="cloudGraphLogin" hidden>
-          <p class="cloud-status">Abre la página oficial de Microsoft e introduce este código:</p>
-          <strong id="cloudGraphCode" style="font-size:20px;letter-spacing:2px"></strong>
-          <p><a id="cloudGraphLink" href="https://microsoft.com/devicelogin" rel="noopener noreferrer" target="_blank">Abrir inicio de sesión de Microsoft</a></p>
+          <p class="cloud-status">Inicia sesión en el navegador oficial de Microsoft. Al terminar volverás automáticamente a Selector Cine 365.</p>
+          <p><a id="cloudGraphLink" href="https://login.microsoftonline.com/" rel="noopener noreferrer" target="_blank">Volver a abrir el inicio de sesión Microsoft</a></p>
         </div>
         <div class="cloud-buttons">
           <button class="tool" type="button" id="cloudAutoFolder">Detectar OneDrive instalado (alternativa)</button>
@@ -1660,9 +1659,8 @@ async function desktopGraphStatus(){
  $('cloudGraphConnect').hidden=s.connected;
  $('cloudGraphLogin').hidden=!s.pending;
  if(s.pending){
-  $('cloudGraphCode').textContent=s.user_code||'';
-  const address=s.verification_uri||'https://microsoft.com/devicelogin';
-  $('cloudGraphLink').href=address.startsWith('https://')?address:'https://microsoft.com/devicelogin';
+  const address=s.login_url||'';
+  $('cloudGraphLink').href=address.startsWith('https://login.microsoftonline.com/')?address:'https://login.microsoftonline.com/';
   $('cloudGraphStatus').textContent='Autoriza tu cuenta Microsoft en el navegador. No cierres Selector Cine 365.';
   if(!graphLoginPoll)graphLoginPoll=setInterval(()=>void desktopGraphStatus().catch(()=>{}),2500);
  }else{
