@@ -67,6 +67,25 @@ final class CloudBackup {
         folder=uriValue;lastError="";
         activity.getPreferences(Context.MODE_PRIVATE).edit().putString("backup_uri",folder).apply();
     }
+    /**
+     * Connect an existing OneDrive library without asking for a directory.
+     * An existing Graph connection always wins: changing roots silently would
+     * fork a user's existing sync library. SAF configurations are never migrated
+     * automatically because their cloud identity cannot be inferred reliably.
+     */
+    synchronized JSONObject connectDefaultOneDrive()throws Exception{
+        if(!oneDrive.connected())throw new Exception("Conecta primero tu cuenta Microsoft.");
+        if(graphMode())return status().put("automatic_folder",true).put("reused",true);
+        if(!folder.isEmpty())return status().put("migration_required",true);
+        // Use the same root name supported by previous desktop/Android setups.
+        // A missing folder is created once; no library data is uploaded here.
+        JSONObject chosen=oneDrive.createRoot("Selector_Cine_365");
+        String id=chosen.getString("id");
+        if(id.isEmpty())throw new Exception("OneDrive no devolvió una carpeta válida");
+        configure("onedrive://item/"+Uri.encode(id));
+        return status().put("automatic_folder",true).put("created_or_found",true);
+    }
+
     synchronized JSONObject status()throws Exception{
         return new JSONObject().put("enabled",!folder.isEmpty()).put("activated",activated).put("needs_review",!folder.isEmpty()&&(!activated||autoNeedsReview)).put("folder",folder).put("target",folder)
             .put("last_backup",lastBackup).put("last_sync",lastSync).put("last_error",lastError)
@@ -170,9 +189,16 @@ final class CloudBackup {
             if(!Backend.validLibrary(library))throw new Exception("No hay biblioteca local válida");
             Uri base=base(),devices=ensureDirectory(ensureDirectory(base,"sincronizacion"),"dispositivos");
             byte[] data=sync.snapshot(library).toString(2).getBytes(StandardCharsets.UTF_8);
-            putFile(devices,sync.deviceId()+".json",data,true);
-            Uri own=findChild(devices,sync.deviceId()+".json");
-            if(own==null||!java.util.Arrays.equals(read(own),data))throw new Exception("El proveedor no confirmó la escritura de la sincronización");
+            String snapshotName=sync.deviceId()+".json";
+            Uri own=findChild(devices,snapshotName);
+            // Compare before uploading: unchanged snapshots must not consume an extra
+            // OneDrive PUT or trigger needless downstream sync notifications.
+            if(own==null||!java.util.Arrays.equals(read(own),data)){
+                putFile(devices,snapshotName,data,true);
+                own=findChild(devices,snapshotName);
+                if(own==null||!java.util.Arrays.equals(read(own),data))
+                    throw new Exception("El proveedor no confirmó la escritura de la sincronización");
+            }
             // Daily rescue point for mobile, separate from the Windows backup.
             Uri mobile=ensureDirectory(ensureDirectory(base,"sincronizacion"),"respaldo_movil");
             putFile(mobile,LocalDate.now()+"_"+sync.deviceId()+".json",data,false);

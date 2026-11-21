@@ -9,7 +9,7 @@
 <meta name="author" content="Cristian Barallobre Rúa">
 <meta name="copyright" content="© 2026 Cristian Barallobre Rúa">
 <meta name="application-name" content="Selector de Cine 365">
-<title>Selector Cine 365 · Android v9 Beta 13.3</title>
+<title>Selector Cine 365 · Android v9 Beta 13.5</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1018;--panel:#171f2b;--panel2:#1b2735;--line:#314052;--subtle:#94a2b5;--light:#f4f6fa;--gold:#f3c66d;--gold2:#d59b40;--green:#a4e4bc;--red:#e5a6a6;--r:19px}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 960px 510px at 88% -10%,#263649 0%,transparent 76%),var(--bg);color:var(--light);font-family:'Segoe UI',system-ui,Arial,sans-serif;font-size:15px;min-height:100vh}button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
@@ -1327,10 +1327,10 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
 <section id="view-sort" class="view mobile-page" hidden></section>
 <section id="view-settings" class="view mobile-page" hidden>
  <div class="panel mobile-settings-panel"><h2>Ajustes y sincronización</h2>
-  <p class="mobile-help"><strong>¿Quieres sincronizar con Windows?</strong> Te recomendamos <strong>OneDrive</strong>. En el PC eliges una carpeta dentro de OneDrive; en Android conectas tu cuenta Microsoft y seleccionas esa misma carpeta. También puedes usar la app sin nube.</p>
+  <p class="mobile-help"><strong>¿Quieres sincronizar con Windows?</strong> Te recomendamos <strong>OneDrive</strong>. En Android basta conectar tu cuenta Microsoft: se prepara automáticamente la carpeta Selector_Cine_365. En Windows/Mac, usa esa carpeta de OneDrive para compartir los datos. También puedes usar la app sin nube.</p>
   <div class="onedrive-box" id="onedriveBox">
    <h3>1 · Conecta tu cuenta Microsoft</h3>
-   <p class="mobile-help">No necesitas buscar OneDrive en las carpetas del teléfono ni copiar códigos. Pulsa «Conectar cuenta Microsoft», inicia sesión en el navegador y vuelve automáticamente aquí. Después selecciona o crea una carpeta llamada <strong>Selector_Cine_365</strong>. No se modificarán tus listas hasta que confirmes la primera revisión.</p>
+   <p class="mobile-help">No necesitas buscar OneDrive en las carpetas del teléfono ni copiar códigos. Pulsa «Conectar cuenta Microsoft», inicia sesión en el navegador y vuelve automáticamente aquí. La aplicación localizará o creará la carpeta <strong>Selector_Cine_365</strong> automáticamente, sin pedirte que la selecciones. No se modificarán tus listas hasta que confirmes la primera revisión.</p>
    <button type="button" class="primary" id="odConnect">Conectar cuenta Microsoft</button>
    <div id="odLoginCode" hidden>
     <p class="mobile-help">Se ha abierto la página oficial de Microsoft en tu navegador. Inicia sesión y acepta el acceso. Microsoft te devolverá automáticamente a Selector Cine 365, <strong>sin copiar ningún código</strong>.</p>
@@ -1338,7 +1338,9 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
     <p class="mobile-help">Si Microsoft indica que la dirección de retorno no está registrada, el editor debe añadir <code>msal696458fe-0672-47e5-9fdd-aa0332e9884b://auth</code> como URI de redirección de aplicación móvil/escritorio en Microsoft Entra.</p>
    </div>
    <div id="odFolderArea" hidden>
-    <h3>2 · Selecciona la carpeta de OneDrive</h3>
+    <button type="button" class="tool" id="odDisconnect">Desconectar cuenta Microsoft</button>
+    <details id="odAdvancedFolders"><summary>Opciones avanzadas: carpeta antigua</summary>
+    <p class="mobile-help">Solo si utilizabas otra carpeta en Windows/Mac. Exporta una copia JSON y revisa la sincronización antes de cambiarla.</p>
     <label for="odFolders" class="mobile-help"><strong>Carpeta de OneDrive</strong></label>
     <select id="odFolders" class="input-key" aria-label="Carpeta de OneDrive"></select>
     <button type="button" class="tool" id="odRefresh">Actualizar carpetas</button>
@@ -1346,12 +1348,12 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
     <p class="mobile-help">Si la carpeta no existe, créala en la raíz de OneDrive; no hace falta utilizar una carpeta de pruebas antigua:</p>
     <input id="odNewFolder" class="input-key" type="text" maxlength="70" value="Selector_Cine_365" aria-label="Nombre de nueva carpeta de OneDrive">
     <button type="button" class="tool" id="odCreateFolder">Crear carpeta Selector_Cine_365</button>
-    <button type="button" class="tool" id="odDisconnect">Desconectar cuenta Microsoft</button>
+    </details>
    </div>
    <p class="mobile-help" id="odStatus" aria-live="polite">Comprobando disponibilidad de OneDrive…</p>
   </div>
   <div class="cloud-wizard-step">
-    <h3>3 · Selecciona la misma carpeta en Windows</h3>
+    <h3>3 · Windows y Mac: usa la misma carpeta</h3>
     <p>En Windows abre OneDrive y elige la carpeta <strong>Selector_Cine_365</strong> dentro de la sección de nube de Selector Cine 365. Comprueba que OneDrive haya terminado de sincronizar sus archivos.</p>
   </div>
   <div id="cloudSettingsHome"><h3 class="cloud-wizard-heading">4 · Revisa y confirma la primera sincronización</h3>
@@ -1484,10 +1486,16 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
       <input class="upload-input" type="file" id="backupFile" accept=".json,application/json">
       <div class="cloud-box" aria-label="Copias automáticas en tu nube">
         <div class="cloud-title">☁ OneDrive · sincronización manual</div>
-        <input class="cloud-path" id="cloudFolder" type="text" autocomplete="off" placeholder="Carpeta local de OneDrive, Drive, Dropbox…" aria-label="Carpeta para las copias automáticas">
+        <details id="localFolderAdvanced">
+          <summary>Carpeta local alternativa (avanzado)</summary>
+          <p class="mobile-help">La conexión normal a OneDrive no necesita elegir carpeta. Esta opción es solo para usar proveedores o carpetas antiguas.</p>
+          <input class="cloud-path" id="cloudFolder" type="text" autocomplete="off" placeholder="Carpeta local compatible" aria-label="Carpeta local alternativa">
+          <div class="cloud-buttons">
+            <button class="tool" type="button" id="cloudBrowse">📁 Elegir carpeta local</button>
+            <button class="tool" type="button" id="cloudActivate">✓ Conectar carpeta</button>
+          </div>
+        </details>
         <div class="cloud-buttons">
-          <button class="tool" type="button" id="cloudBrowse">📁 Elegir carpeta local</button>
-          <button class="tool" type="button" id="cloudActivate">✓ Conectar carpeta</button>
           <button class="tool" type="button" id="cloudBackupNow">⬆ Enviar copia</button>
           <button class="tool" type="button" id="cloudDisable">Desactivar</button>
         </div>
@@ -2654,13 +2662,23 @@ async function odStatus(){
    }else if(state.connected){
      connect.disabled=false;
      $('odLoginCode').hidden=true;
-     $('odStatus').textContent='✓ Cuenta Microsoft conectada. Elige tu carpeta de OneDrive; después revisa la sincronización.';
-     if(!area.dataset.loaded){area.dataset.loaded='1';await odLoadFolders();}
+     $('odStatus').textContent='✓ Cuenta Microsoft conectada. Preparando la carpeta automáticamente…';
+     try{
+       const link=await cloudRequest('/api/onedrive/auto','POST');
+       if(link.migration_required){
+         $('odStatus').textContent='⚠ Conservamos tu carpeta anterior sin cambiarla. Para migrarla, exporta JSON y utiliza las opciones avanzadas.';
+       }else{
+         $('odStatus').textContent='✓ OneDrive conectado automáticamente. Pulsa ↻ para revisar y confirmar los cambios.';
+         await cloudRefresh();
+       }
+     }catch(error){
+       $('odStatus').textContent='⚠ No se pudo preparar OneDrive: '+error.message+'. Tus películas siguen en el móvil.';
+     }
    }else if(!$('odLoginCode').hidden){
      $('odStatus').textContent='Esperando el regreso de Microsoft al móvil…';
    }else{
      connect.disabled=false;
-     $('odStatus').textContent='OneDrive disponible. No se accederá a tus archivos hasta que inicies sesión y selecciones una carpeta.';
+     $('odStatus').textContent='OneDrive disponible. Inicia sesión para utilizar automáticamente tu carpeta de Selector Cine 365.';
    }
  }catch(e){$('odStatus').textContent='⚠ '+e.message;}
 }
@@ -2706,6 +2724,9 @@ $('odOpenLogin').addEventListener('click',()=>{
  if(window.CineAndroid?.openMicrosoftLogin)window.CineAndroid.openMicrosoftLogin(odAuthorizationUrl);
 });
 $('odRefresh').addEventListener('click',()=>void odLoadFolders());
+$('odAdvancedFolders').addEventListener('toggle',()=>{
+  if($('odAdvancedFolders').open)void odLoadFolders();
+});
 $('odCreateFolder').addEventListener('click',async()=>{
  const name=$('odNewFolder').value.trim();
  if(!name){$('odStatus').textContent='Escribe primero el nombre de la carpeta.';return;}

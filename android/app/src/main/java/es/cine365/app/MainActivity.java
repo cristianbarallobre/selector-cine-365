@@ -159,7 +159,7 @@ public class MainActivity extends Activity {
             try{
                 backend.onedrive.finish(callback);
                 ok=true;
-                message="Cuenta Microsoft conectada. Ya puedes elegir tu carpeta de OneDrive.";
+                message="Cuenta Microsoft conectada. Selector Cine 365 preparará la carpeta de OneDrive automáticamente.";
             }catch(Exception e){
                 message=e.getMessage()==null?"Microsoft no pudo completar el inicio de sesión.":e.getMessage();
             }
