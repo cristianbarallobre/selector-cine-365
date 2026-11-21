@@ -494,7 +494,17 @@ h2{font-size:19px}
           Otras nubes pueden funcionar si ambos dispositivos ofrecen carpetas compatibles.
         </p>
         <div class="cloud-buttons">
-          <button class="primary" type="button" id="cloudAutoFolder">☁ Detectar OneDrive</button>
+          <button class="primary" type="button" id="cloudGraphConnect">☁ Conectar cuenta Microsoft (sin instalar OneDrive)</button>
+        </div>
+        <div class="cloud-status" id="cloudGraphStatus" aria-live="polite">Puedes conectar OneDrive directamente con tu cuenta Microsoft.</div>
+        <div id="cloudGraphLogin" hidden>
+          <p class="cloud-status">Abre la página oficial de Microsoft e introduce este código:</p>
+          <strong id="cloudGraphCode" style="font-size:20px;letter-spacing:2px"></strong>
+          <p><a id="cloudGraphLink" href="https://microsoft.com/devicelogin" rel="noopener noreferrer" target="_blank">Abrir inicio de sesión de Microsoft</a></p>
+        </div>
+        <div class="cloud-buttons">
+          <button class="tool" type="button" id="cloudAutoFolder">Detectar OneDrive instalado (alternativa)</button>
+          <button class="tool" type="button" id="cloudGraphDisconnect" hidden>Desconectar Microsoft</button>
         </div>
         <details id="cloudFolderAdvanced">
           <summary>Opciones avanzadas: elegir carpeta manualmente</summary>
@@ -1618,13 +1628,16 @@ async function cloudRequest(path,method='GET',payload){
  const r=await fetch(path,opts);const data=await r.json();
  if(!r.ok)throw new Error(data.error||'No se pudo completar la operación');return data;
 }
+let cineGraphConnected=false;
 function cloudShow(s){
+ cineGraphConnected=s.provider==='onedrive-direct';
  const box=$('cloudStatus');box.classList.toggle('warn',Boolean(s.last_error));
  if(s.enabled){
-   if(document.activeElement!==$('cloudFolder'))$('cloudFolder').value=s.folder;
+   if(document.activeElement!==$('cloudFolder'))$('cloudFolder').value=cineGraphConnected?'Cuenta Microsoft · OneDrive directo':s.folder;
    if($('cloudLastCheck'))$('cloudLastCheck').textContent='Última comprobación: '+(s.last_check_ms?new Date(s.last_check_ms).toLocaleTimeString('es-ES'):'aún no realizada');
    if($('cloudLastReceive'))$('cloudLastReceive').textContent='Últimos cambios recibidos: '+(s.last_received_ms?new Date(s.last_received_ms).toLocaleTimeString('es-ES'):'ninguno en esta sesión');
-   box.textContent=s.needs_review?'⚠ Hay otros dispositivos en esta carpeta. Pulsa «Revisar sincronización» antes de publicar cambios.':
+   box.textContent=cineGraphConnected?(s.needs_review?'✓ OneDrive conectado · pulsa «Revisar sincronización» antes de la primera importación.':'✓ Microsoft Graph conectado · biblioteca sincronizada.') :
+    s.needs_review?'⚠ Hay otros dispositivos en esta carpeta. Pulsa «Revisar sincronización» antes de publicar cambios.':
      s.last_error?'⚠ Copia en nube fallida: '+s.last_error:
      s.sync_paired?'✓ Sincronización automática activada · copias independientes':
      s.last_backup?'✓ Copia en nube actualizada · '+new Date(s.last_backup).toLocaleString('es-ES'):'✓ Carpeta configurada; revisa antes de combinar';
