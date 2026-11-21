@@ -1,3 +1,14 @@
+# Android Beta 13.13 — aislamiento de listas y recuperación segura
+
+- Las versiones anteriores fusionaban automáticamente películas de listas con el mismo ID, especialmente `atlas` después de reinstalar Android. Una lista podía terminar con películas de otras listas dentro de su propio texto, aunque el selector mostrase una sola lista.
+- Beta 13.13 detiene cualquier unión sospechosa, incluidas bibliotecas ya contaminadas o listas con el mismo ID pero nombres distintos. No envía ni importa datos cuando detecta ese problema.
+- En instalación nueva y sin modificaciones locales, la lista de ejemplo de 365 películas **se sustituye por la biblioteca real de Windows** encontrada en OneDrive; no se anexa al final. Se priorizan snapshots de escritorio y se omiten únicamente ejemplos Android intactos sin cambios.
+- En la vista previa se muestran los nombres y números de películas por lista. Cancela si algún número no cuadra; no pulses Confirmar ni Sincronizar.
+- **Si las listas ya están mezcladas:** no se pueden separar automáticamente con garantías. Cambia Windows a sincronización manual y conserva `%APPDATA%\Selector_Cine_365\colecciones.json` y las copias `sync_recuperacion`. Guarda también una copia JSON desde Android antes de intentar restaurar. Solo restaura desde una biblioteca comprobada, por ejemplo la de Windows; no borres snapshots de OneDrive sin conservarlos.
+- Esta versión mantiene el identificador de la variante limpia `es.cine365.app.limpia`, `versionCode 9027`, `9.0.0-beta.13.13` y firma el APK de prueba entregado con el mismo certificado original Beta 13.12 (`b8a17f39e4fa24d7c110d452161425c7524412c3a5a4d7459b1132ffd0825fb6`). La clave privada no se ha añadido a GitHub.
+- Tests Android (`ListIdentityIsolationTest`) y Windows (`sync_list_identity_beta14_test.go`) protegen los casos detectados. La sincronización real de la instalación del usuario debe comprobarse antes de publicar una versión estable.
+
+---
 # Android Beta 13.12 — cargar carteles y plataformas pendientes en el móvil
 
 - Al abrir la Biblioteca con TMDB ya conectado, Android completa **de forma limitada** las fichas visibles que aún no tiene guardadas. También lo hace tras confirmar una sincronización de OneDrive, seleccionar otra lista o cargar más películas.
