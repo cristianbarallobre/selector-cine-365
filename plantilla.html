@@ -1987,6 +1987,9 @@ async function desktopGraphStatus(){
   }else if(s.last_error){
    $('cloudGraphStatus').textContent='⚠ '+s.last_error;
    await cloudRefresh();
+  }else{
+   $('cloudGraphStatus').textContent='Sin cuenta Microsoft conectada.';
+   await cloudRefresh();
   }
  }
 }
