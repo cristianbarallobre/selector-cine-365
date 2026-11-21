@@ -1,3 +1,29 @@
+# Selector Cine 365 — Android v9 Beta 13.11 (instalación limpia de pruebas)
+
+**Estado:** Beta 13.11 (versionCode `9025`) para probar Android recién instalado con Windows Beta 14 y OneDrive ya configurado. No es una release estable.
+
+## Instalar desde cero, sin datos antiguos
+
+1. Si desinstalaste `es.cine365.app`, los archivos privados del Android anterior normalmente desaparecieron. Una copia antigua de Android/Google o la transferencia entre teléfonos podía restaurar configuraciones sin avisar; desde esta Beta se **desactiva Auto Backup** y se excluyen explícitamente archivos privados, credenciales y datos de dispositivo tanto de las copias del sistema como de la transferencia de Android (reglas para Android 8–11 y Android 12+). Esto no borra copias anteriores ya existentes fuera del móvil.
+2. **OneDrive es independiente del móvil:** la carpeta `Selector_Cine_365` y los archivos de Windows y de posibles Android anteriores siguen existiendo. Nunca borres esos archivos solo por haber desinstalado la app.
+3. Abre la Beta 13.11 y confirma que puedes usarla en local. En **Ajustes y sincronización → 1. Conecta tu cuenta Microsoft**, utiliza **la misma cuenta de OneDrive** que Windows. Android localizará o creará la carpeta raíz correcta; conectar no importa ni sube películas.
+4. En **2. Revisa las listas**, pulsa **↻ Revisar, enviar y recibir cambios**. Comprueba el número de listas y de películas vistas; puede haber copias de Windows y de un Android anterior. Si hay conflictos, decide explícitamente; si ves algo raro, **Cancelar** no cambia ni publica datos.
+5. Pulsa **Confirmar y sincronizar** solo después de revisar. Se guarda una recuperación local antes de combinar y se envía **únicamente el JSON de este móvil**. Las copias de Windows permanecen intactas.
+6. En **3. Sincroniza cuando quieras**, vuelve a usar ↻ para enviar o recibir cambios. Android **no sincroniza por intervalos ni automáticamente en segundo plano**; al abrir consulta la nube solo en modo lectura si ya está vinculado.
+
+## Certificado de firma y distribución de prueba
+
+- Las compilaciones GitHub Actions de esta rama generan una `app-debug.apk` **firmada con la clave de depuración temporal del runner** para instalaciones totalmente limpias, y un `app-release-unsigned.apk` que no sirve para instalar directamente.
+- **Esta APK de depuración NO utiliza el certificado original de las betas publicadas.** Solo úsala si no tienes instalada una APK con otra firma; para actualizaciones posteriores sin reinstalar habrá que distribuir una versión firmada con **el certificado original de Selector Cine 365**, cuya clave privada no se guarda en GitHub.
+- La aplicación sigue usando `applicationId es.cine365.app`; Android 8.0+ (API 26). Los cambios de interfaz y reglas de restauración no alteran los datos compartidos de Windows.
+
+## Comprobaciones
+
+- Prueba JVM de primera vinculación: se fusiona una biblioteca Windows ya vista con el estado inicial del móvil, se respeta la revisión causal de Windows frente a una copia Android antigua y las decisiones realmente concurrentes se dejan para revisión.
+- Pruebas de prohibición de restauración automática, revisión antes de subir y compilación debug/release, más verificación de la firma y versión de la APK.
+- Falta validar la instalación y la sincronización real en Redmi. Conserva una copia JSON de Windows antes de aceptar cualquier importación.
+
+---
 # Selector Cine 365 — Android v9 Beta 13.5
 
 **Autor:** Cristian Barallobre Rúa. **Estado:** versión beta experimental para Android 8.0+ (API 26). Conserva funcionamiento local sin cuenta Microsoft y sin clave TMDB.
