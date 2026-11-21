@@ -254,17 +254,28 @@ func serve() error {
 	for {
 		select {
 		case <-app.stopCh:
-			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-			defer cancel()
-			return server.Shutdown(ctx)
+			return closeLocalServer(server)
 		case <-ticker.C:
 			if time.Since(time.Unix(app.lastActivity.Load(), 0)) > 12*time.Minute {
-				ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-				defer cancel()
-				return server.Shutdown(ctx)
+				return closeLocalServer(server)
 			}
 		}
 	}
+}
+
+// Closing the UI can race with a slow OneDrive HTTP request. A shutdown
+// deadline is not an application error and must not open a native Windows
+// 'context deadline exceeded' dialog after the library was already saved.
+func closeLocalServer(server *http.Server) error {
+ ctx,cancel:=context.WithTimeout(context.Background(),3*time.Second)
+ defer cancel()
+ err:=server.Shutdown(ctx)
+ if errors.Is(err,context.DeadlineExceeded) {
+  logDiagnostic("Cierre del servidor local: operación pendiente excedió el tiempo; se cierra la conexión sin mostrar error de aplicación")
+  _=server.Close()
+  return nil
+ }
+ return err
 }
 
 func main() {
