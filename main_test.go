@@ -22,7 +22,7 @@ func TestInitialMovieCounts(t *testing.T) {
 	}
 }
 func TestSaveInPlace(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "AtlasDelCine", "mis_365_peliculas.txt")
+	path := filepath.Join(t.TempDir(), "Selector_Cine_365", "mis_365_peliculas.txt")
 	app := &runningApp{savePath: path, token: "test-token", stopCh: make(chan struct{})}
 	initial, _ := getInitialState(path)
 	if err := app.save(initial); err != nil {
