@@ -96,6 +96,9 @@ func (a *runningApp) auth(r *http.Request) bool {
 }
 func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	a.touch()
+	if r.URL.Path=="/" && r.Method==http.MethodGet && (r.URL.Query().Has("code")||r.URL.Query().Has("error")) {
+		a.serveGraphCallback(w,r);return
+	}
 	if r.URL.Path == "/" || r.URL.Path == "/api/ping" {
 		traceHTTP(r.URL.Path, r.UserAgent())
 	}
@@ -232,6 +235,8 @@ func serve() error {
 	if err != nil {
 		return fmt.Errorf("no se ha podido iniciar la aplicación local: %w", err)
 	}
+	_,port,_:=net.SplitHostPort(listener.Addr().String())
+	app.graph.setRedirect("http://localhost:"+port+"/")
 	server := &http.Server{Handler: http.HandlerFunc(app.serveHTTP), ReadHeaderTimeout: 6 * time.Second}
 	go func() { _ = server.Serve(listener) }()
 	url := "http://" + listener.Addr().String() + "/"
