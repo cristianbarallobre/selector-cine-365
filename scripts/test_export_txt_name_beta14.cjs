@@ -12,6 +12,8 @@ assert.equal(fn('A'.repeat(200)).length,124);
 assert.match(html,/const filename=exportTxtFilename\(virtualMode\?'Comparación de listas':activeCollection\(\)\?\.name\)/);
 assert.match(html,/a\.download=filename/);
 assert.doesNotMatch(html,/Mi_lista_de_peliculas\.txt/);
+assert.match(html,/SELECTOR CINE 365 · v9 Beta 14 Preview/);
+assert.doesNotMatch(html,/SELECTOR CINE 365 · v9 Beta 13\.1/);
 assert.match(html,/updatePlatformProgress\(\);updatePlatformChoices\(\);updateListPlatformOptions\(\);renderList\(\);renderStats\(\)/);
 assert.match(html,/#view-collections \.panel::-webkit-scrollbar-track\{[^}]*margin-block:14px/);
 for(const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g))new Function(m[1]);
