@@ -2,7 +2,7 @@
 
 Aplicación personal de cine para **Windows 10/11**, **macOS Apple Silicon e Intel** y **Android**, creada por **Cristian Barallobre Rúa**. Sirve para organizar listas, registrar películas vistas, decidir qué ver, consultar datos de TMDB y sincronizar bibliotecas entre dispositivos.
 
-**Edición actual para pruebas:** **v9 Beta 13.1 en Windows y macOS**, y **v9 Beta 13.3 en Android** (20 de noviembre de 2026). Es una *beta*, no una versión estable; las pruebas físicas de sincronización entre dispositivos siguen pendientes. Las cuatro plataformas se distribuyen juntas bajo una misma publicación.
+**Código Android más reciente:** **v9 Beta 13.5** (21 de noviembre de 2026, APK firmada para pruebas, distribuida en la conversación del proyecto). **Última APK Android publicada en GitHub Releases:** **Beta 13.3**. Windows y macOS siguen en **Beta 13.1**. Todas son versiones beta; la conexión automática y las pruebas físicas entre dispositivos siguen pendientes de validación.
 
 ## Descargar
 
@@ -17,13 +17,22 @@ Aplicación personal de cine para **Windows 10/11**, **macOS Apple Silicon e Int
 | macOS Intel | `Selector_Cine_365_Mac_Intel_v9_BETA13_1.zip` | macOS 12+, Intel |
 | Android | `Selector_Cine_365_Android_v9_BETA13_3.apk` | Android 8.0+, APK firmada y verificada |
 
-**Por qué cambian los números:** Windows y Mac siguen en Beta 13.1. Android incorpora ahora Beta 13.2 (código 9016) por la reducción de tareas en segundo plano y el guardado protegido. La clave de firma y el paquete Android no cambian.
+**Por qué cambian los números:** Windows y Mac siguen en Beta 13.1; Android ha avanzado hasta Beta 13.5 (código 9019) para probar la vinculación automática de OneDrive. La APK publicada en GitHub Releases continúa siendo Beta 13.3 hasta que se publique una release nueva.
 
 **Novedad de escritorio Beta 13.1:** corregida la ruta local `/api/platforms/cache`, que devolvía HTTP 404 al abrir y dejaba la interfaz en «Conexión local TMDB no disponible. Reintentando…» aunque la clave TMDB existiera. Ahora la caché se carga correctamente; errores de caché y de estado se tratan por separado. El botón Actualizar permite comprobar de nuevo la conexión. No se incluyen claves privadas en los instaladores.
 
 **Antes de actualizar:** exporta copia JSON **desde cada dispositivo**, preferiblemente fuera de OneDrive; después instala las versiones nuevas sin desinstalar y revisa la primera sincronización. Si una lista se eliminó antes de Beta 13 y reapareció por una copia antigua, bórrala una vez con ambos dispositivos ya actualizados. La aplicación puede utilizarse sin sincronización.
 
 Histórico: [Beta 12.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.2), [Beta 12.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.1), [Beta 12](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12), [Beta 9](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.9), [v8.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.2) y [v8.1.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.1.1). Para recuperar instaladores de betas retiradas consulta [política de releases](docs/POLITICA_DE_RELEASES.md).
+
+## Android v9 Beta 13.5 — OneDrive sin selección obligatoria de carpetas
+
+- Al conectar Microsoft, Android reutiliza la carpeta Graph previamente vinculada o localiza/crea automáticamente `Selector_Cine_365` en la raíz de OneDrive, **sin publicar ni importar datos en ese paso**.
+- Las carpetas antiguas SAF no se migran a escondidas; el selector queda en **Opciones avanzadas** para una transición controlada.
+- Para enviar y recibir cambios hay que pulsar ↻, revisar y confirmar; se mantienen los guardados locales.
+- Compatible con la misma firma Android de Beta 13.3; **`versionCode 9019`**.
+- **Límite:** Windows/macOS aún usan la carpeta local de OneDrive y deben apuntar a `Selector_Cine_365` para compartir biblioteca; no tienen inicio Microsoft Graph directo.
+- [Notas técnicas y pasos de comprobación](RELEASE_NOTES_v9_BETA13_5_ANDROID.md). **La APK Beta 13.5 todavía no está publicada en GitHub Releases; no confundir el artefacto CI sin firma con una APK instalable.**
 
 ## Novedad Android Beta 13.3 — botón de sincronización manual
 
