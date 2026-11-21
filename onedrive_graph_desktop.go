@@ -2,6 +2,10 @@ package main
 
 import (
  "bytes"
+ "crypto/rand"
+ "crypto/sha256"
+ "crypto/subtle"
+ "encoding/base64"
  "encoding/json"
  "errors"
  "fmt"
@@ -14,7 +18,7 @@ import (
 )
 
 const desktopMicrosoftAppID = "696458fe-0672-47e5-9fdd-aa0332e9884b"
-const microsoftDeviceEndpoint = "https://login.microsoftonline.com/consumers/oauth2/v2.0/"
+const microsoftOAuthEndpoint = "https://login.microsoftonline.com/consumers/oauth2/v2.0/"
 const desktopGraphEndpoint = "https://graph.microsoft.com/v1.0/"
 const desktopGraphScope = "offline_access Files.ReadWrite User.Read"
 
@@ -27,9 +31,10 @@ type desktopGraph struct {
  publishMu sync.Mutex
  client *http.Client
  authBase,graphBase string
- token,refresh,rootID,lastError,deviceCode,userCode,verifyURL string
+ token,refresh,rootID,lastError,loginURL,pendingState,pendingVerifier,redirectURI string
  expiry,timeLimit time.Time
- pending bool
+ pending,callbackUsed bool
+ generation uint64
  lastCheck time.Time
 }
 
@@ -41,7 +46,7 @@ func newDesktopGraph()*desktopGraph {
    if req.URL.Hostname()!="graph.microsoft.com"{req.Header.Del("Authorization")}
    return nil
   }},
-  authBase:microsoftDeviceEndpoint,graphBase:desktopGraphEndpoint,
+  authBase:microsoftOAuthEndpoint,graphBase:desktopGraphEndpoint,
  }
 }
 func (g *desktopGraph) status() map[string]any {
@@ -49,8 +54,7 @@ func (g *desktopGraph) status() map[string]any {
  return map[string]any{
   "connected":g.token!=""&&g.rootID!="",
   "pending":g.pending,
-  "verification_uri":g.verifyURL,
-  "user_code":g.userCode,
+  "login_url":g.loginURL,
   "last_error":g.lastError,
   "provider":"onedrive-direct",
  }
@@ -66,7 +70,7 @@ func (g *desktopGraph) pairingID()string{
 }
 func (g *desktopGraph) logout(){
  g.mu.Lock();defer g.mu.Unlock()
- g.token="";g.refresh="";g.rootID="";g.pending=false;g.deviceCode="";g.userCode="";g.verifyURL="";g.lastError=""
+ g.generation++;g.token="";g.refresh="";g.rootID="";g.pending=false;g.callbackUsed=false;g.pendingState="";g.pendingVerifier="";g.loginURL="";g.lastError=""
 }
 func (g *desktopGraph) oauthForm(endpoint string,values url.Values)(map[string]any,error){
  req,err:=http.NewRequest("POST",g.authBase+endpoint,strings.NewReader(values.Encode()))
@@ -82,71 +86,103 @@ func (g *desktopGraph) oauthForm(endpoint string,values url.Values)(map[string]a
 }
 func stringValue(m map[string]any,k string)string{s,_:=m[k].(string);return s}
 func numericValue(m map[string]any,k string)int{v,_:=m[k].(float64);return int(v)}
-func (g *desktopGraph) begin() (map[string]any,error) {
+func (g *desktopGraph) setRedirect(uri string){
+ g.mu.Lock();g.redirectURI=uri;g.mu.Unlock()
+}
+func (g *desktopGraph) callbackHost()string{
+ g.mu.Lock();uri:=g.redirectURI;g.mu.Unlock()
+ u,err:=url.Parse(uri);if err!=nil{return ""}
+ return u.Host
+}
+func randomPKCE()(string,error){
+ bytes:=make([]byte,32)
+ if _,err:=rand.Read(bytes);err!=nil{return "",err}
+ return base64.RawURLEncoding.EncodeToString(bytes),nil
+}
+func (g *desktopGraph) begin()(map[string]any,error){
  g.mu.Lock()
- if g.pending {g.mu.Unlock();return g.status(),nil}
+ if g.pending{g.mu.Unlock();return g.status(),nil}
+ redirect:=g.redirectURI
+ g.mu.Unlock()
+ if redirect==""{return nil,errors.New("La dirección local de retorno de Microsoft no está preparada")}
+ verifier,err:=randomPKCE();if err!=nil{return nil,err}
+ state,err:=randomPKCE();if err!=nil{return nil,err}
+ challengeBytes:=sha256.Sum256([]byte(verifier))
+ challenge:=base64.RawURLEncoding.EncodeToString(challengeBytes[:])
+ query:=url.Values{
+  "client_id":{desktopMicrosoftAppID},
+  "response_type":{"code"},
+  "redirect_uri":{redirect},
+  "response_mode":{"query"},
+  "scope":{desktopGraphScope},
+  "code_challenge":{challenge},
+  "code_challenge_method":{"S256"},
+  "state":{state},
+  "prompt":{"select_account"},
+ }
+ address:=g.authBase+"authorize?"+query.Encode()
+ g.mu.Lock()
+ g.generation++
  g.token="";g.refresh="";g.rootID="";g.lastError=""
+ g.loginURL=address;g.pendingState=state;g.pendingVerifier=verifier;g.pending=true;g.callbackUsed=false
+ g.timeLimit=time.Now().Add(10*time.Minute)
  g.mu.Unlock()
- data,err:=g.oauthForm("devicecode",url.Values{"client_id":{desktopMicrosoftAppID},"scope":{desktopGraphScope}})
- if err!=nil{return nil,err}
- device:=stringValue(data,"device_code")
- if device==""{return nil,fmt.Errorf("Microsoft no autorizó el inicio de sesión: %s",stringValue(data,"error_description"))}
- verify:=stringValue(data,"verification_uri")
- code:=stringValue(data,"user_code")
- if !strings.HasPrefix(verify,"https://"){return nil,errors.New("Dirección de validación Microsoft no segura")}
- expires:=numericValue(data,"expires_in")
- if expires<30||expires>3600{return nil,errors.New("Microsoft devolvió una expiración de inicio de sesión inválida")}
- interval:=numericValue(data,"interval")
- if interval<5{interval=5}
- g.mu.Lock()
- g.deviceCode=device;g.userCode=code;g.verifyURL=verify;g.pending=true
- g.timeLimit=time.Now().Add(time.Duration(expires)*time.Second)
- g.mu.Unlock()
- go g.poll(device,interval)
  return g.status(),nil
 }
-func (g *desktopGraph) poll(device string,interval int){
- for {
-  time.Sleep(time.Duration(interval)*time.Second)
-  g.mu.Lock()
-  active:=g.pending&&g.deviceCode==device&&time.Now().Before(g.timeLimit)
-  g.mu.Unlock()
-  if !active{return}
-  data,err:=g.oauthForm("token",url.Values{
-   "grant_type":{"urn:ietf:params:oauth:grant-type:device_code"},
-   "client_id":{desktopMicrosoftAppID},"device_code":{device},
-  })
-  if err!=nil{g.failLogin(device,err);return}
-  code:=stringValue(data,"error")
-  if code=="authorization_pending"{continue}
-  if code=="slow_down"{interval+=5;continue}
-  if code!=""{g.failLogin(device,fmt.Errorf("Microsoft no autorizó la conexión: %s",code));return}
-  access:=stringValue(data,"access_token")
-  if access==""{g.failLogin(device,errors.New("Microsoft no devolvió acceso a OneDrive"));return}
-  g.mu.Lock()
-  if !g.pending||g.deviceCode!=device{g.mu.Unlock();return}
-  g.token=access;g.refresh=stringValue(data,"refresh_token")
-  lifetime:=numericValue(data,"expires_in")
-  if lifetime<120{lifetime=3600}
-  g.expiry=time.Now().Add(time.Duration(lifetime-90)*time.Second)
-  g.mu.Unlock()
-  root,err:=g.ensureRoot()
-  if err!=nil{g.failLogin(device,err);return}
-  g.mu.Lock()
-  if g.pending&&g.deviceCode==device{
-   g.rootID=root
-   g.pending=false;g.deviceCode="";g.userCode="";g.verifyURL="";g.lastError=""
-  }
-  g.mu.Unlock()
-  return
- }
-}
-func (g *desktopGraph) failLogin(device string,err error){
+func (g *desktopGraph) loginFailure(gen uint64,err error){
  g.mu.Lock();defer g.mu.Unlock()
- if g.deviceCode!=device{return}
- g.token="";g.refresh="";g.rootID="";g.pending=false
- g.deviceCode="";g.userCode="";g.verifyURL=""
+ if g.generation!=gen{return}
+ g.token="";g.refresh="";g.rootID="";g.pending=false;g.callbackUsed=false
+ g.pendingState="";g.pendingVerifier="";g.loginURL=""
  g.lastError=err.Error()
+}
+// finish is called only on a local loopback callback with an unguessable state.
+// The authorization code and verifier are never passed to browser JavaScript.
+func (g *desktopGraph) finish(state,code,oauthError string)error{
+ g.mu.Lock()
+ if !g.pending||g.callbackUsed||time.Now().After(g.timeLimit){
+  g.mu.Unlock();return errors.New("La sesión de Microsoft ha caducado o ya fue utilizada")
+ }
+ if subtle.ConstantTimeCompare([]byte(state),[]byte(g.pendingState))!=1{
+  g.mu.Unlock();return errors.New("La respuesta de Microsoft no coincide con esta conexión")
+ }
+ gen:=g.generation
+ verifier,redirect:=g.pendingVerifier,g.redirectURI
+ g.callbackUsed=true
+ g.pendingState="";g.pendingVerifier="";g.loginURL=""
+ g.mu.Unlock()
+ if oauthError!=""{
+  err:=fmt.Errorf("Microsoft canceló el acceso: %s",oauthError)
+  g.loginFailure(gen,err);return err
+ }
+ if code==""||len(code)>8192{
+  err:=errors.New("Microsoft no devolvió un código de autorización válido")
+  g.loginFailure(gen,err);return err
+ }
+ data,err:=g.oauthForm("token",url.Values{
+  "grant_type":{"authorization_code"},"client_id":{desktopMicrosoftAppID},
+  "code":{code},"redirect_uri":{redirect},"code_verifier":{verifier},
+  "scope":{desktopGraphScope},
+ })
+ if err!=nil{g.loginFailure(gen,err);return err}
+ access:=stringValue(data,"access_token")
+ if access==""{
+  err=fmt.Errorf("Microsoft rechazó el inicio de sesión: %s",stringValue(data,"error_description"))
+  g.loginFailure(gen,err);return err
+ }
+ g.mu.Lock()
+ if g.generation!=gen{g.mu.Unlock();return errors.New("La conexión fue cancelada")}
+ g.token=access;g.refresh=stringValue(data,"refresh_token")
+ lifetime:=numericValue(data,"expires_in");if lifetime<120{lifetime=3600}
+ g.expiry=time.Now().Add(time.Duration(lifetime-90)*time.Second)
+ g.mu.Unlock()
+ root,err:=g.ensureRoot()
+ if err!=nil{g.loginFailure(gen,err);return err}
+ g.mu.Lock();defer g.mu.Unlock()
+ if g.generation!=gen{return errors.New("La conexión fue cancelada")}
+ g.rootID=root;g.pending=false;g.callbackUsed=false
+ g.pendingState="";g.pendingVerifier="";g.loginURL="";g.lastError=""
+ return nil
 }
 func (g *desktopGraph) accessToken()(string,error){
  g.tokenMu.Lock();defer g.tokenMu.Unlock()
