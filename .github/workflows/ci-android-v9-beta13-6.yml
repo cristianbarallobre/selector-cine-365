@@ -41,10 +41,12 @@ jobs:
         run: gradle --no-daemon testDebugUnitTest assembleRelease
       # Official public Android SDK signing tool only. NEVER store private keys
       # or passwords in GitHub Actions artifacts.
+      - name: Copy official public apksigner
+        run: cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" android/apksigner.jar
       - uses: actions/upload-artifact@v4
         with:
           name: android-build-tools-35-apksigner-public-tool
-          path: ${{ env.ANDROID_HOME }}/build-tools/35.0.0/lib/apksigner.jar
+          path: android/apksigner.jar
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
