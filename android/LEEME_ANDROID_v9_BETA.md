@@ -1,3 +1,13 @@
+# Android Beta 13.12 — cargar carteles y plataformas pendientes en el móvil
+
+- Al abrir la Biblioteca con TMDB ya conectado, Android completa **de forma limitada** las fichas visibles que aún no tiene guardadas. También lo hace tras confirmar una sincronización de OneDrive, seleccionar otra lista o cargar más películas.
+- Solo consulta hasta 12 fichas por tanda, con dos peticiones concurrentes, y como máximo 48 por sesión; respeta la caché y el enfriamiento de errores. No recorre las 365 películas ni solicita nada a OneDrive por ello.
+- Las listas y las marcas de vistas se sincronizan con OneDrive; las carátulas, valoraciones y plataformas son fichas TMDB locales. Para completar el resto de una lista sigue existiendo **Nube → Completar carátulas y plataformas pendientes**.
+- Sin una clave TMDB configurada en el móvil no se hacen consultas; la clave personal sigue sin sincronizarse ni compartirse con Windows.
+- Nueva prueba JavaScript de consultas limitadas y sin subida a la nube. Android `versionCode 9026`, `versionName 9.0.0-beta.13.12`.
+- **Certificado de pruebas:** la APK debug de GitHub Actions está firmada con una clave temporal diferente de Beta 13.11. No es una actualización directa: instalarla sobre una beta firmada con otra clave provoca un error de Android. Utilizar el certificado original en las siguientes versiones sigue siendo necesario.
+
+---
 # Selector Cine 365 — Android v9 Beta 13.11 (instalación limpia de pruebas)
 
 **Estado:** Beta 13.11 (versionCode `9025`) para probar Android recién instalado con Windows Beta 14 y OneDrive ya configurado. No es una release estable.
