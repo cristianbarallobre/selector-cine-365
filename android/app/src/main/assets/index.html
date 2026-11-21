@@ -1409,7 +1409,7 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
   <div class="mobile-setting-actions" style="margin-top:10px">
     <button type="button" class="tool" id="tmdbResumeIncomplete">↻ Completar carátulas y plataformas pendientes</button>
   </div>
-  <p id="tmdbRepairStatus" class="mobile-help" aria-live="polite">Las fichas TMDB se guardan por separado en cada dispositivo. Este botón recupera únicamente las incompletas de la lista actual, sin sincronizar claves privadas.</p>
+  <p id="tmdbRepairStatus" class="mobile-help" aria-live="polite">OneDrive sincroniza las listas y las vistas, no las carátulas ni plataformas de TMDB. Este móvil completa progresivamente las fichas visibles cuando TMDB está conectado. Para completar las demás, utiliza este botón; tu clave privada no se comparte.</p>
   <div id="cloudActivityShield" class="cloud-activity-shield" hidden aria-live="assertive" role="status">
     <div class="cloud-activity-message">
       <span class="cloud-activity-spinner" aria-hidden="true"></span>
@@ -1743,9 +1743,10 @@ async function initPlatforms(){
    setTimeout(()=>{if(!document.hidden)void initPlatforms();},1200);
   return;
  }
- // Al abrir no hacemos búsquedas de red, ni siquiera si faltan fichas.
- // Las nuevas incorporaciones y «Actualizar» solicitan lo que haga falta.
+ // Al abrir solo completamos las primeras fichas a la vista.
+ // No se descarga el catálogo entero ni se realiza ninguna acción en OneDrive.
  updatePlatformProgress();updatePlatformChoices();updateListPlatformOptions();renderList();renderStats();
+ if(window.CineAndroid&&platformConfigured)void fillVisibleTmdbGaps();
 }
 async function loadPlatforms(force,onlyIncomplete=false){
  if(!platformConfigured){showPlatformModal();return;}
@@ -1771,6 +1772,59 @@ async function loadPlatforms(force,onlyIncomplete=false){
  }}
  await Promise.all([worker(),worker(),worker()]);if(current!==platformRun)return;
  platformActive=false;updatePlatformProgress();scheduledPlatformRender();
+}
+// OneDrive comparte listas y vistos, pero las fichas TMDB se guardan localmente.
+// Consulta ligera bajo demanda: como máximo 12 fichas nuevas por pantalla y 48
+// por sesión de app, con dos consultas concurrentes y sin enviar datos a nube.
+const autoTmdbTried=new Set();
+let autoTmdbBusy=false,autoTmdbQueued=false,autoTmdbCount=0;
+async function fillVisibleTmdbGaps(){
+ if(!window.CineAndroid||!platformConfigured||document.hidden)return;
+ if(platformActive){autoTmdbQueued=true;return;}
+ if(autoTmdbBusy){autoTmdbQueued=true;return;}
+ if(!parsed?.entries?.length||autoTmdbCount>=48)return;
+ const visible=parsed.entries.slice(0,Math.min((filmPage+1)*24,parsed.entries.length));
+ const todo=[];
+ for(const f of visible){
+   const key=providerKey(f),cached=platformData.get(key);
+   if(autoTmdbTried.has(key))continue;
+   if(cached&&cached.metadata_version>=3&&cached.state!=='error'&&cached.state!=='not-found'&&cached.poster_path)continue;
+   if(todo.length>=12||autoTmdbCount+todo.length>=48)break;
+   autoTmdbTried.add(key);
+   todo.push({key,title:f.title,year:Number(f.year)||0,film:f});
+ }
+ if(!todo.length)return;
+ autoTmdbCount+=todo.length;autoTmdbBusy=true;
+ $('platformProgress').textContent='Completando '+todo.length+' fichas TMDB visibles…';
+ let next=0,finished=0;
+ async function worker(){
+   while(next<todo.length){
+     if(document.hidden)break;
+     const task=todo[next++];
+     try{
+       // force:false conserva la caché y el enfriamiento tras errores de red.
+       const result=await platformApi('/api/platforms/lookup',{
+         title:task.title,year:task.year,force:false
+       });
+       platformData.set(task.key,result);
+       if(result?.tmdb_id>0)registerIdentity(task.film,result.tmdb_id);
+     }catch(err){
+       platformData.set(task.key,{state:'error',note:err.message});
+     }
+     finished++;
+     if(finished%3===0||finished===todo.length)scheduledPlatformRender();
+   }
+ }
+ try{await Promise.all([worker(),worker()]);}
+ finally{
+   autoTmdbBusy=false;
+   if(!platformActive)updatePlatformProgress();
+   scheduledPlatformRender();
+   if(autoTmdbQueued){
+     autoTmdbQueued=false;
+     if(!document.hidden)setTimeout(()=>void fillVisibleTmdbGaps(),400);
+   }
+ }
 }
 function showPlatformModal(){ $('platformOverlay').hidden=false;$('platformStatus').textContent='';$('apiKey').value='';$('apiKey').focus();}
 function closePlatformModal(){$('platformOverlay').hidden=true;}
@@ -2532,7 +2586,8 @@ function restartList(){
  selectedSortPlatform='all';$('platformSelect').value='all';selectedListPlatforms.clear();closeListPlatformMenu();
  document.querySelectorAll('.filter').forEach(b=>b.classList.toggle('selected',b.dataset.filter==='all'));
  updateListPlatformOptions();update();updatePlatformProgress();renderStats();renderCollectionControls();
- // Cambiar de lista muestra caché local; consultar TMDB requiere pulsar Actualizar.
+ // En Android, completar gradualmente las fichas nuevas de la lista actual.
+ if(window.CineAndroid)void fillVisibleTmdbGaps();
 }
 function switchCollection(id){
  if(id===virtualID){
@@ -3117,6 +3172,7 @@ $('syncConfirmButton')?.addEventListener('click',async()=>{
    const data=await cloudRequest('/api/cloud/sync','POST',{token:pendingSyncToken,decisions});
    pendingSyncToken='';$('syncPreviewPanel').hidden=true;
    await initLibrary();restartList();
+   if(window.CineAndroid)void fillVisibleTmdbGaps();
    $('syncResult').textContent='✓ Sincronización manual completada · '+data.lists+' listas · '+data.seen+' películas vistas.\nPulsa ↻ de nuevo para enviar o recibir cambios.';
     $('saveState').textContent='✓ En móvil y nube';
    await cloudRefresh();
@@ -3303,7 +3359,7 @@ function renderStats(){
 }
 
 $('filmPrev').addEventListener('click',()=>{filmPage=Math.max(0,filmPage-1);renderList();});
-$('filmNext').addEventListener('click',()=>{filmPage++;renderList(!!window.CineAndroid);});
+$('filmNext').addEventListener('click',()=>{filmPage++;renderList(!!window.CineAndroid);if(window.CineAndroid)void fillVisibleTmdbGaps();});
 $('filmList').addEventListener('click',e=>{const b=e.target.closest('button.film-check-action');if(!b)return;if(b.dataset.globalGroup){const f=filmMembershipIndex().byKey.get(b.dataset.globalGroup);if(f)toggleSearchedFilm(f);}else if(b.dataset.idx!==undefined)toggle(Number(b.dataset.idx));});
 $('search').addEventListener('input',e=>{search=e.target.value;filmPage=0;renderList();});
 document.querySelectorAll('.filter').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;filmPage=0;document.querySelectorAll('.filter').forEach(x=>x.classList.toggle('selected',x===b));renderList();}));
