@@ -9,6 +9,16 @@
 
 > Este manual describe la release coordinada v9 Beta 13.1 para Windows y Mac y la APK Android Beta 13. La interfaz de escritorio se comparte entre Windows (WebView2) y Mac (WKWebView); Android tiene navegación propia. No se ha validado toda la funcionalidad en hardware Mac real. Antes de probar nuevas betas, exporta una copia JSON y conserva una versión anterior. La nube es opcional: la biblioteca también funciona sin Internet ni clave TMDB.
 
+## Android Beta 13.3 — guardar localmente y sincronizar cuando quieras
+
+En Android, **cambiar de lista deja de enviar un snapshot a OneDrive**: cambiar la lista activa se guarda de forma silenciosa solo en el móvil. Marcar películas o editar listas se guarda automáticamente en el teléfono, sin necesidad de pulsar un botón. Al abrir la aplicación, la nube se consulta una vez para preparar una **vista previa de solo lectura**; no se importan ni publican cambios por abrir.
+
+El botón compacto de **dos flechas circulares**, situado en la cabecera junto al estado de guardado, abre Nube y compara el estado local y remoto. Revisa el resumen, resuelve conflictos si aparecen y pulsa **Confirmar y sincronizar** para recibir y enviar los cambios. Sin confirmación no se escribe ni se importa nada. En segundo plano no hay comprobaciones periódicas ni al regresar desde otra app.
+
+La versión de Android es **9017** (`9.0.0-beta.13.3`), con el mismo paquete `es.cine365.app` y el mismo certificado que las Betas anteriores desde Beta 11. Instala encima sin borrar datos, pero realiza una copia JSON antes. Windows/Mac siguen en **Beta 13.1** y conservan su sincronización propia; para recibir desde el PC en Android debes pulsar las dos flechas.
+
+**Importante:** el modo manual evita tráfico innecesario, pero los cambios locales no estarán copiados en OneDrive hasta que los sincronices expresamente. Para no perder nada al cambiar de teléfono, pulsa y confirma el icono de sincronización o exporta JSON.
+
 ## Corrección Beta 13.1 — TMDB al abrir Windows o Mac
 
 Al reabrir Beta 13, podía aparecer permanentemente «Conexión local TMDB no disponible. Reintentando…», incluso con una clave válida guardada. El problema no estaba en tu clave ni en OneDrive: el servidor local tenía la ruta de caché `/api/platforms/cache` implementada, pero no conectada al enrutador principal, por lo que respondía HTTP 404. **Beta 13.1** corrige esa ruta y distingue el estado de credenciales del estado de la caché. Si la caché falla, la clave local no se borra ni se marca erróneamente como ausente; el botón Actualizar permite volver a consultarla.
