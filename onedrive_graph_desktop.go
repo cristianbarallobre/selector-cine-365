@@ -12,6 +12,7 @@ import (
  "io"
  "net/http"
  "net/url"
+ "os"
  "strings"
  "sync"
  "time"
@@ -22,9 +23,9 @@ const microsoftOAuthEndpoint = "https://login.microsoftonline.com/consumers/oaut
 const desktopGraphEndpoint = "https://graph.microsoft.com/v1.0/"
 const desktopGraphScope = "offline_access Files.ReadWrite User.Read"
 
-// desktopGraph stores tokens only in memory. Never write refresh tokens to
-// unencrypted files, browser JS, GitHub artifacts, or logging. Reauthentication
-// after app restart is intentional until native secure token storage ships.
+// Windows protects the refresh token using current-user DPAPI. Access tokens
+// remain in RAM; no token is exposed to browser JS, logs or GitHub artifacts.
+// Other platforms keep the memory-only behavior until native secure storage is added.
 type desktopGraph struct {
  mu sync.Mutex
  tokenMu sync.Mutex
@@ -36,10 +37,13 @@ type desktopGraph struct {
  pending,callbackUsed bool
  generation uint64
  lastCheck time.Time
+ sessionStore graphSessionStore
+ sessionSaved,sessionRestored bool
+ persistError string
 }
 
-func newDesktopGraph()*desktopGraph {
- return &desktopGraph{
+func newDesktopGraph(configDirectory ...string)*desktopGraph {
+ g:=&desktopGraph{
   client:&http.Client{Timeout:35*time.Second,CheckRedirect:func(req *http.Request,via []*http.Request)error{
    if req.URL.Scheme!="https"{return errors.New("Redirección de OneDrive no segura")}
    if len(via)>5{return errors.New("Demasiadas redirecciones de OneDrive")}
@@ -48,12 +52,59 @@ func newDesktopGraph()*desktopGraph {
   }},
   authBase:microsoftOAuthEndpoint,graphBase:desktopGraphEndpoint,
  }
+ if len(configDirectory)>0&&configDirectory[0]!=""{
+  g.sessionStore=windowsProtectedSessionStore(configDirectory[0])
+  g.restoreSession()
+ }
+ return g
 }
+
+// Restore the encrypted refresh token without requesting the Internet at startup.
+// The first Graph request refreshes it, so opening the app also works offline.
+func (g *desktopGraph) restoreSession(){
+ if g.sessionStore==nil{return}
+ saved,err:=g.sessionStore.load()
+ if errors.Is(err,os.ErrNotExist){return}
+ if err!=nil{
+  g.persistError="No se pudo recuperar la autorización Microsoft guardada. Conecta de nuevo para restaurarla."
+  return
+ }
+ if !validGraphStoredSession(saved){
+  g.persistError="La autorización guardada no es válida. Conecta Microsoft de nuevo."
+  return
+ }
+ g.rootID=saved.RootID
+ g.refresh=saved.Refresh
+ g.token=""
+ g.sessionSaved=true
+ g.sessionRestored=true
+}
+
+// Called under g.mu. Never store the short-lived access token.
+func (g *desktopGraph) rememberSessionLocked(){
+ if g.sessionStore==nil{return}
+ saved:=graphStoredSession{
+  Version:graphSessionVersion,ClientID:desktopMicrosoftAppID,
+  RootID:g.rootID,Refresh:g.refresh,
+ }
+ if err:=g.sessionStore.save(saved);err!=nil{
+  g.sessionSaved=false
+  g.persistError="No se pudo guardar la sesión Microsoft protegida en Windows. La conexión puede requerir iniciar sesión al volver a abrir."
+  return
+ }
+ g.sessionSaved=true
+ g.persistError=""
+}
+
 func (g *desktopGraph) status() map[string]any {
  g.mu.Lock();defer g.mu.Unlock()
  return map[string]any{
-  "connected":g.token!=""&&g.rootID!="",
+  "connected":(g.token!=""||g.refresh!="")&&g.rootID!="",
   "pending":g.pending,
+  "session_remembered":g.sessionSaved,
+  "session_restored":g.sessionRestored,
+  "secure_storage":g.sessionStore!=nil,
+  "persistence_warning":g.persistError,
   "login_url":g.loginURL,
   "last_error":g.lastError,
   "provider":"onedrive-direct",
@@ -61,16 +112,26 @@ func (g *desktopGraph) status() map[string]any {
 }
 func (g *desktopGraph) active()bool{
  g.mu.Lock();defer g.mu.Unlock()
- return g.token!=""&&g.rootID!=""
+ return (g.token!=""||g.refresh!="")&&g.rootID!=""
 }
 func (g *desktopGraph) pairingID()string{
  g.mu.Lock();defer g.mu.Unlock()
  if g.rootID==""{return ""}
  return "onedrive://item/"+g.rootID
 }
-func (g *desktopGraph) logout(){
+func (g *desktopGraph) logout()error{
+ // Serialize logout with token refresh. A failed deletion must not be reported
+ // as a successful disconnect, otherwise the old account could reappear.
+ g.tokenMu.Lock();defer g.tokenMu.Unlock()
  g.mu.Lock();defer g.mu.Unlock()
+ if g.sessionStore!=nil{
+  if err:=g.sessionStore.clear();err!=nil{
+   return errors.New("No se pudo eliminar la sesión cifrada. Cierra otras instancias y vuelve a pulsar Desconectar.")
+  }
+ }
  g.generation++;g.token="";g.refresh="";g.rootID="";g.pending=false;g.callbackUsed=false;g.pendingState="";g.pendingVerifier="";g.loginURL="";g.lastError=""
+ g.sessionSaved=false;g.sessionRestored=false;g.persistError=""
+ return nil
 }
 func (g *desktopGraph) oauthForm(endpoint string,values url.Values)(map[string]any,error){
  req,err:=http.NewRequest("POST",g.authBase+endpoint,strings.NewReader(values.Encode()))
@@ -124,6 +185,7 @@ func (g *desktopGraph) begin()(map[string]any,error){
  g.mu.Lock()
  g.generation++
  g.token="";g.refresh="";g.rootID="";g.lastError=""
+ g.sessionSaved=false;g.sessionRestored=false;g.persistError=""
  g.loginURL=address;g.pendingState=state;g.pendingVerifier=verifier;g.pending=true;g.callbackUsed=false
  g.timeLimit=time.Now().Add(10*time.Minute)
  g.mu.Unlock()
@@ -182,13 +244,15 @@ func (g *desktopGraph) finish(state,code,oauthError string)error{
  if g.generation!=gen{return errors.New("La conexión fue cancelada")}
  g.rootID=root;g.pending=false;g.callbackUsed=false
  g.pendingState="";g.pendingVerifier="";g.loginURL="";g.lastError=""
+ g.sessionRestored=false
+ g.rememberSessionLocked()
  return nil
 }
 func (g *desktopGraph) accessToken()(string,error){
  g.tokenMu.Lock();defer g.tokenMu.Unlock()
  g.mu.Lock()
- if g.token==""{g.mu.Unlock();return "",errors.New("Conecta primero tu cuenta Microsoft")}
- if time.Now().Before(g.expiry){t:=g.token;g.mu.Unlock();return t,nil}
+ if g.token==""&&g.refresh==""{g.mu.Unlock();return "",errors.New("Conecta primero tu cuenta Microsoft")}
+ if g.token!=""&&time.Now().Before(g.expiry){t:=g.token;g.mu.Unlock();return t,nil}
  refresh:=g.refresh
  g.mu.Unlock()
  if refresh==""{return "",errors.New("La sesión de Microsoft ha caducado. Vuelve a conectar.")}
@@ -198,11 +262,31 @@ func (g *desktopGraph) accessToken()(string,error){
  })
  if err!=nil{return "",err}
  token:=stringValue(data,"access_token")
- if token==""{return "",errors.New("Microsoft ha caducado la sesión; vuelve a conectar")}
+ if token==""{
+  // Only an explicit revocation should forget the saved session. Transient
+  // network failures are already returned by oauthForm and remain retryable.
+  if code:=stringValue(data,"error");code=="invalid_grant"||code=="interaction_required"{
+   g.mu.Lock()
+   if g.refresh==refresh{
+    if g.sessionStore!=nil{
+     if err:=g.sessionStore.clear();err!=nil{
+      g.persistError="No se pudo borrar la sesión Microsoft caducada. Desconecta y vuelve a conectar."
+     }
+    }
+    g.token="";g.refresh="";g.rootID="";g.sessionSaved=false;g.sessionRestored=false
+    g.lastError="La autorización Microsoft ha caducado o ha sido revocada. Vuelve a conectar."
+   }
+   g.mu.Unlock()
+  }
+  return "",errors.New("La autorización Microsoft ha caducado o ha sido revocada. Vuelve a conectar")
+ }
  g.mu.Lock();defer g.mu.Unlock()
  if g.refresh!=refresh{return "",errors.New("La cuenta Microsoft ha cambiado; vuelve a conectar")}
  g.token=token
- if next:=stringValue(data,"refresh_token");next!=""{g.refresh=next}
+ if next:=stringValue(data,"refresh_token");next!=""{
+  g.refresh=next
+  g.rememberSessionLocked()
+ }
  ttl:=numericValue(data,"expires_in");if ttl<120{ttl=3600}
  g.expiry=time.Now().Add(time.Duration(ttl-90)*time.Second)
  return g.token,nil
