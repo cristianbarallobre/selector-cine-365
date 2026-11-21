@@ -1,3 +1,5 @@
+> **Actualización 21/11/2026:** Windows Beta 14 conecta Microsoft Graph directamente con PKCE y conserva la sesión con DPAPI. Android Beta 13.13 usa la misma cuenta de OneDrive y sincronización manual; las listas se revisan por nombre y número de películas antes de confirmar. Consulta la [Guía de sincronización segura de la versión recomendada](GUIA_SINCRONIZACION_SEGURA_BETA14_ANDROID13_13.md). El documento que sigue incluye pasos históricos y de configuración avanzada.
+
 # Selector Cine 365
 ## Guía de configuración de Microsoft Azure, Entra ID y OneDrive
 
