@@ -45,6 +45,11 @@ main{max-width:1250px;padding:28px 28px 32px;margin:auto}.header{display:flex;al
 .nav-btn:hover{background:#2c3d50}.nav-btn.active{border-color:#d9ac5c;background:#413724;color:#ffda89}
 .list-switch{margin-left:auto;min-width:190px;max-width:290px;flex:1;border:1px solid #485b71;border-radius:10px;background:#1e2a3a;color:#f0e6d6;padding:10px 12px;font-size:13px;font-weight:680}
 .view[hidden]{display:none!important}.tool-wide{grid-column:span 2}
+.film-reorder-handle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 28px;width:28px;height:28px;min-height:28px;padding:0;border:1px solid #43546a;border-radius:7px;background:#29394a;color:#b9c8db;cursor:grab;touch-action:none;font-size:19px;line-height:1}
+.film-reorder-handle:active{cursor:grabbing}
+.film-item.reorder-moving{opacity:.58;border-color:var(--gold);background:#243244}
+.film-item.reorder-target{outline:2px solid var(--gold);outline-offset:-2px}
+
 .film-poster{width:42px;height:60px;object-fit:cover;border-radius:6px;border:1px solid #627185;flex:none;background:#151e2a}
 .poster-placeholder{width:42px;height:60px;flex:none;display:grid;place-items:center;border:1px solid #3a4a5f;background:#152131;color:#7d8b9b;border-radius:6px;font-size:22px}
 .title-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.film-name{min-width:0;flex:0 1 auto}.film-rating{border:1px solid #826941;color:#ffda91;border-radius:7px;padding:3px 6px;font-size:11px;font-weight:780;white-space:nowrap;background:#3a2f24}
@@ -881,6 +886,116 @@ function update(){membershipCache=null;parsed=parse(rawText);const n=parsed.entr
  updateSortAvailability();
  renderList();
 }
+// Dragging is enabled only on the unfiltered current list. Reorder the original
+// TXT film lines, leaving headings/blank lines untouched; no TMDB IDs or marks change.
+function filmOrderEditable(){
+ return !virtualMode&&searchScope==='current'&&filter==='all'&&!search.trim()&&!selectedListPlatforms.size;
+}
+function moveFilmInCurrentList(fromRawIndex,toRawIndex){
+ if(!filmOrderEditable()||fromRawIndex===toRawIndex)return false;
+ const locations=parsed.entries.map(f=>f.idx);
+ const from=locations.indexOf(fromRawIndex),to=locations.indexOf(toRawIndex);
+ if(from<0||to<0||from===to)return false;
+ const original=rawText.split('\n');
+ const rows=locations.map(i=>original[i]);
+ const [moved]=rows.splice(from,1);
+ rows.splice(to,0,moved);
+ for(let i=0;i<locations.length;i++)original[locations[i]]=rows[i];
+ rawText=original.join('\n');
+ syncActiveText();
+ update();renderStats();renderCollectionControls();scheduleSave();
+ notify('Orden actualizado. El número de cada película corresponde ahora a su posición.');
+ return true;
+}
+let filmTouchOrder=null,filmDropSuppressedUntil=0;
+document.addEventListener('click',e=>{
+ if(Date.now()<filmDropSuppressedUntil){
+  e.preventDefault();e.stopImmediatePropagation();
+ }
+},true);
+document.addEventListener('touchmove',e=>{
+ const state=filmTouchOrder;
+ if(!state)return;
+ const touch=e.touches[0];
+ if(!touch)return;
+ if(!state.active){
+  if(Math.hypot(touch.clientX-state.x,touch.clientY-state.y)>11){
+   clearTimeout(state.timer);filmTouchOrder=null;
+  }
+  return;
+ }
+ if(e.cancelable)e.preventDefault();
+ const hovered=document.elementFromPoint(touch.clientX,touch.clientY)?.closest('.film-item');
+ if(hovered&&hovered.parentElement===$('filmList')){
+  const index=Number(hovered.dataset.idx);
+  if(Number.isInteger(index))state.to=index;
+  document.querySelectorAll('#filmList .film-item.reorder-target').forEach(el=>el.classList.remove('reorder-target'));
+  hovered.classList.add('reorder-target');
+ }
+ const scroller=$('view-library');
+ const bounds=scroller.getBoundingClientRect();
+ if(touch.clientY<bounds.top+65)scroller.scrollTop-=17;
+ else if(touch.clientY>bounds.bottom-65)scroller.scrollTop+=17;
+},{passive:false});
+function finishFilmTouchOrder(event,cancel=false){
+ const state=filmTouchOrder;
+ if(!state)return;
+ clearTimeout(state.timer);
+ filmTouchOrder=null;
+ document.querySelectorAll('#filmList .reorder-target, #filmList .reorder-moving').forEach(el=>{
+  el.classList.remove('reorder-target','reorder-moving');
+ });
+ if(state.active){
+  if(event?.cancelable)event.preventDefault();
+  filmDropSuppressedUntil=Date.now()+350;
+  if(!cancel&&state.to!==state.from)moveFilmInCurrentList(state.from,state.to);
+ }
+}
+document.addEventListener('touchend',e=>finishFilmTouchOrder(e),{passive:false});
+document.addEventListener('touchcancel',e=>finishFilmTouchOrder(e,true),{passive:false});
+function attachFilmReorder(card,handle,film){
+ // Desktop drag starts only from its dedicated grip: normal card controls work.
+ handle.draggable=true;
+ handle.addEventListener('dragstart',e=>{
+  if(!filmOrderEditable()){e.preventDefault();return;}
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain',String(film.idx));
+  card.classList.add('reorder-moving');
+ });
+ handle.addEventListener('dragend',()=>{
+  document.querySelectorAll('#filmList .reorder-moving, #filmList .reorder-target').forEach(el=>el.classList.remove('reorder-moving','reorder-target'));
+ });
+ card.addEventListener('dragover',e=>{
+  if(!filmOrderEditable()||!e.dataTransfer.types.includes('text/plain'))return;
+  e.preventDefault();e.dataTransfer.dropEffect='move';
+  card.classList.add('reorder-target');
+ });
+ card.addEventListener('dragleave',()=>card.classList.remove('reorder-target'));
+ card.addEventListener('drop',e=>{
+  card.classList.remove('reorder-target');
+  if(!filmOrderEditable())return;
+  e.preventDefault();
+  const from=Number(e.dataTransfer.getData('text/plain'));
+  if(Number.isInteger(from))moveFilmInCurrentList(from,film.idx);
+ });
+ // Android: hold the card for 500 ms, then slide it vertically. Regular short
+ // swipes continue to scroll and taps on check/links remain unaffected.
+ card.addEventListener('touchstart',e=>{
+  if(!window.CineAndroid||!filmOrderEditable()||e.touches.length!==1)return;
+  const hit=e.target;
+  if(hit.closest('button,a,input,select')&&!hit.closest('.film-reorder-handle'))return;
+  if(filmTouchOrder)finishFilmTouchOrder(null,true);
+  const touch=e.touches[0];
+  const state={from:film.idx,to:film.idx,x:touch.clientX,y:touch.clientY,active:false,timer:null};
+  state.timer=setTimeout(()=>{
+   if(filmTouchOrder!==state||!filmOrderEditable())return;
+   state.active=true;card.classList.add('reorder-moving');
+   if(navigator.vibrate)navigator.vibrate(18);
+  },500);
+  filmTouchOrder=state;
+ },{passive:true});
+}
+
 function renderList(){
  const parent=$('filmList');parent.replaceChildren();const needle=search.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
  const global=searchScope==='all';
@@ -910,6 +1025,11 @@ function renderList(){
    const main=document.createElement('span');main.className='film-main';
    const titleLine=document.createElement('span');titleLine.className='title-line';
    const title=document.createElement('span');title.className='film-name';title.textContent=f.title;titleLine.appendChild(title);
+   if(!global&&!virtualMode){
+    const grip=document.createElement('button');grip.type='button';grip.className='film-reorder-handle';grip.textContent='⠿';
+    grip.title='Arrastrar para cambiar el orden';grip.setAttribute('aria-label','Mover «'+f.title+'» a otra posición');
+    titleLine.appendChild(grip);attachFilmReorder(b,grip,f);
+   }
    main.appendChild(titleLine);
    const meta=document.createElement('span');meta.className='film-filmmeta';
    if(f.year){const year=document.createElement('span');year.textContent=f.year;meta.appendChild(year);}
