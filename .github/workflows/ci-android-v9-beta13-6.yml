@@ -46,7 +46,7 @@ jobs:
       - name: Verify debug APK signing and version
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs android/app/build/outputs/apk/debug/app-debug.apk
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging android/app/build/outputs/apk/debug/app-debug.apk | grep -F "versionCode='9025' versionName='9.0.0-beta.13.12'"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging android/app/build/outputs/apk/debug/app-debug.apk | grep -F "versionCode='9026' versionName='9.0.0-beta.13.12'"
       # Official public Android SDK signing tool only. NEVER store private keys
       # or passwords in GitHub Actions artifacts.
       - name: Copy official public apksigner
