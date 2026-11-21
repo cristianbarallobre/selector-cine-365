@@ -197,7 +197,7 @@ func (a *runningApp) graphPublishSnapshot()error{
  if sha256.Sum256(confirm)!=sha256.Sum256(bytes){return errors.New("OneDrive no confirmó el contenido de la copia")}
  return nil
 }
-func (a *runningApp) graphAutoSync()(map[string]any,error){
+func (a *runningApp) graphAutoSync(force bool)(map[string]any,error){
  if !a.graph.active()||a.syncStore==nil{
   return map[string]any{"changed":false,"skipped":"disconnected"},nil
  }
@@ -206,7 +206,7 @@ func (a *runningApp) graphAutoSync()(map[string]any,error){
   return map[string]any{"changed":false,"skipped":"not_paired","needs_review":true},nil
  }
  a.graph.mu.Lock()
- if time.Since(a.graph.lastCheck)<90*time.Second{
+ if !force&&time.Since(a.graph.lastCheck)<90*time.Second{
   a.graph.mu.Unlock()
   return map[string]any{"changed":false,"skipped":"cooldown"},nil
  }
