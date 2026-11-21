@@ -388,6 +388,8 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
 #view-library .film-main{min-width:0!important;width:100%!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:5px!important}
 #view-library .title-line{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:6px!important;width:100%!important}
 #view-library .film-name{display:block!important;width:100%!important;font-size:16px!important;line-height:1.35!important;overflow-wrap:anywhere!important;white-space:normal!important}
+#view-library .film-filmmeta{display:flex!important;align-items:center!important;gap:5px!important;flex-wrap:wrap!important;min-width:0!important}
+#view-library .film-filmmeta .film-sequence-number{color:#bcd0e7!important;white-space:nowrap!important;font-size:11px!important}
 #view-library .film-rating{max-width:100%!important;white-space:normal!important}
 #view-library .film-sub,#view-library .film-platforms{display:block!important;width:100%!important;margin:0!important;font-size:12px!important;line-height:1.5!important;white-space:normal!important;overflow-wrap:anywhere!important}
 #view-library .film-actions{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:9px!important;padding:0 12px 11px!important}
@@ -1894,6 +1896,7 @@ function renderList(append=false){
    main.appendChild(titleLine);
    const meta=document.createElement('span');meta.className='film-filmmeta';
    if(f.year){const year=document.createElement('span');year.textContent=f.year;meta.appendChild(year);}
+   if(f.number){const number=document.createElement('span');number.className='film-sequence-number';number.textContent='N.º '+f.number;meta.appendChild(number);}
    if(r?.vote_count>0){const rating=document.createElement('span');rating.className='film-rating';rating.textContent='★ '+Number(r.vote_average).toFixed(1)+' TMDB';rating.title='Nota TMDB ('+r.vote_count+' votos), no equivale a IMDb';meta.appendChild(rating);}
    const membership=document.createElement('span');membership.className='film-memberships';
    const caption=document.createElement('span');caption.className='film-memberships-title';caption.textContent='Listas:';
@@ -1903,7 +1906,7 @@ function renderList(append=false){
    }
    const edit=document.createElement('button');edit.type='button';edit.className='film-memberships-edit';edit.textContent='✎';edit.title='Añadir o quitar de otras listas';edit.setAttribute('aria-label','Gestionar listas de '+f.title);edit.addEventListener('click',()=>editMembership(f));
    membership.append(caption,nums,edit);meta.appendChild(membership);
-   if(f.number){const number=document.createElement('span');number.textContent='N.º '+f.number;meta.appendChild(number);}
+
    main.appendChild(meta);
    const badge=document.createElement('span');badge.className='film-platforms';const [name,css]=platformBadge(f);if(css)badge.classList.add(css);badge.textContent=name;
    badge.title=platformTitle(r);main.appendChild(badge);
