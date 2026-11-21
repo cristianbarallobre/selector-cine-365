@@ -1,0 +1,47 @@
+name: Beta 14 native Mac preview
+on:
+  push:
+    branches: ['feature/beta14-desktop-onedrive-autodiscovery']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  macos:
+    runs-on: macos-15-intel
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            label: Apple_Silicon
+            cc: 'clang -arch arm64'
+          - arch: amd64
+            label: Intel
+            cc: clang
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build signed-ad-hoc native macOS preview
+        env:
+          MAC_ARCH: ${{ matrix.arch }}
+          MAC_LABEL: ${{ matrix.label }}
+          CC: ${{ matrix.cc }}
+        run: |
+          node scripts/test_v9_beta13.cjs
+          bash scripts/build_macos_beta14_preview.sh
+          APP="dist/Selector Cine 365.app"
+          test -s "$APP/Contents/MacOS/SelectorCine365"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Contents/Info.plist" | grep -Fx 9020
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist" | grep -Fx '9.0.0-beta.14-preview'
+          codesign --verify --deep --strict "$APP"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Selector_Cine_365_Mac_${{ matrix.label }}_Beta14_preview
+          path: dist/Selector_Cine_365_Mac_*_BETA14_preview.zip
+          if-no-files-found: error
