@@ -35,6 +35,9 @@ func (a *runningApp) serveGraphAuthHTTP(w http.ResponseWriter,r *http.Request){
   a.mu.Lock();a.syncPreviewToken="";a.mu.Unlock()
   data,err:=a.graph.begin()
   if err!=nil{respond(409,map[string]string{"error":err.Error()});return}
+  if err=openDesktopMicrosoftBrowser(stringValue(data,"login_url"));err!=nil{
+   data["browser_warning"]=err.Error()
+  }
   respond(200,data)
  case "/api/onedrive-desktop/disconnect":
   if r.Method!=http.MethodPost{http.Error(w,"Método no permitido",405);return}
