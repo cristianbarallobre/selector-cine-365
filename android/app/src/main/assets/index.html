@@ -1486,10 +1486,16 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
       <input class="upload-input" type="file" id="backupFile" accept=".json,application/json">
       <div class="cloud-box" aria-label="Copias automáticas en tu nube">
         <div class="cloud-title">☁ OneDrive · sincronización manual</div>
-        <input class="cloud-path" id="cloudFolder" type="text" autocomplete="off" placeholder="Carpeta local de OneDrive, Drive, Dropbox…" aria-label="Carpeta para las copias automáticas">
+        <details id="localFolderAdvanced">
+          <summary>Carpeta local alternativa (avanzado)</summary>
+          <p class="mobile-help">La conexión normal a OneDrive no necesita elegir carpeta. Esta opción es solo para usar proveedores o carpetas antiguas.</p>
+          <input class="cloud-path" id="cloudFolder" type="text" autocomplete="off" placeholder="Carpeta local compatible" aria-label="Carpeta local alternativa">
+          <div class="cloud-buttons">
+            <button class="tool" type="button" id="cloudBrowse">📁 Elegir carpeta local</button>
+            <button class="tool" type="button" id="cloudActivate">✓ Conectar carpeta</button>
+          </div>
+        </details>
         <div class="cloud-buttons">
-          <button class="tool" type="button" id="cloudBrowse">📁 Elegir carpeta local</button>
-          <button class="tool" type="button" id="cloudActivate">✓ Conectar carpeta</button>
           <button class="tool" type="button" id="cloudBackupNow">⬆ Enviar copia</button>
           <button class="tool" type="button" id="cloudDisable">Desactivar</button>
         </div>
