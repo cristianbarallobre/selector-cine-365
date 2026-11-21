@@ -189,6 +189,36 @@ final class SyncStore {
         return String.join("\n",lines);
     }
 
+    // Never join the contents of unrelated lists just because two fresh installs
+    // reused a legacy ID (especially "atlas"). This used to silently append
+    // every film from one list to another and then upload the polluted copy.
+    private static Set<String> listFilms(JSONObject list)throws Exception {
+        Set<String> keys=new HashSet<>();
+        for(String line:list.getString("text").split("\\n",-1)){
+            Film f=film(line);if(f!=null)keys.add(f.key);
+        }
+        return keys;
+    }
+    static void requireSameListIdentity(JSONObject local,JSONObject remote)throws Exception {
+        Set<String> ours=listFilms(local),theirs=listFilms(remote);
+        if(ours.isEmpty()||theirs.isEmpty())return;
+        int overlap=0;
+        for(String key:theirs)if(ours.contains(key))overlap++;
+        String a=local.optString("name"),b=remote.optString("name");
+        boolean starterA=a.startsWith("Selector Cine 365 ·"),starterB=b.startsWith("Selector Cine 365 ·");
+        // The 365 starter and a renamed/custom list with the same "atlas" ID
+        // cannot safely be assumed identical when their film inventories differ.
+        boolean starterCollision=starterA!=starterB&&!ours.equals(theirs);
+        // A shared ID alone is not proof of identity after reinstall. Require
+        // significant continuity of the film set; fail closed if ambiguous.
+        boolean unrelated=overlap*2<Math.min(ours.size(),theirs.size());
+        if(starterCollision||unrelated){
+            throw new Exception("Sincronización detenida: «"+a+"» y «"+b+
+                "» comparten el ID "+local.optString("id")+
+                " pero parecen listas diferentes. No se han mezclado ni enviado datos. "+
+                "Conserva las copias de Windows y revisa las listas antes de continuar.");
+        }
+    }
     static Merge merge(JSONObject local,JSONObject revisions,JSONObject known,JSONObject peer)throws Exception {
         return merge(local,revisions,known,peer,false);
     }
@@ -223,6 +253,7 @@ final class SyncStore {
             if(deleted.optBoolean(other.optString("id")))continue;
             for(int j=0;j<left.length();j++)if(left.getJSONObject(j).getString("id").equals(other.getString("id"))){own=left.getJSONObject(j);break;}
             if(own==null){if(left.length()<40)left.put(new JSONObject(other.toString()));continue;}
+            requireSameListIdentity(own,other);
             if(own.optString("name").startsWith("Selector Cine 365 ·")&&!other.optString("name").startsWith("Selector Cine 365 ·"))
                 own.put("name",other.getString("name"));
             Set<String>keys=new HashSet<>();String before=own.getString("text");
