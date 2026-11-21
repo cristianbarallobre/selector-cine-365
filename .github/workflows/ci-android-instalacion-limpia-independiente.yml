@@ -1,4 +1,4 @@
-name: Android Beta 13.12 - instalación independiente sin conflicto
+name: Android Beta 13.13 - instalación independiente sin conflicto
 on:
   push:
     branches: ['fix/android-beta13-6-tmdb-resume']
@@ -35,11 +35,11 @@ jobs:
       - name: Comprobar que NO usa el identificador de la instalación anterior
         shell: bash
         run: |
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging android/app/build/outputs/apk/release/app-release-unsigned.apk | grep -F "package: name='es.cine365.app.limpia' versionCode='9026' versionName='9.0.0-beta.13.12'"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging android/app/build/outputs/apk/release/app-release-unsigned.apk | grep -F "package: name='es.cine365.app.limpia' versionCode='9027' versionName='9.0.0-beta.13.13'"
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging android/app/build/outputs/apk/release/app-release-unsigned.apk | grep -m 1 'application-label'
           unzip -t android/app/build/outputs/apk/release/app-release-unsigned.apk | tail -1
       - uses: actions/upload-artifact@v4
         with:
-          name: Selector_Cine_365_Beta13_12_INDEPENDIENTE_SIN_FIRMAR
+          name: Selector_Cine_365_Beta13_13_INDEPENDIENTE_SIN_FIRMAR
           path: android/app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
