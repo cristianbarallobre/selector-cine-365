@@ -271,9 +271,8 @@ public class MainActivity extends Activity {
         super.onResume();
         appForeground=true;
         if(webView!=null){
+            // Returning to the foreground resumes rendering, not OneDrive polling.
             webView.onResume();webView.resumeTimers();
-            // Check OneDrive on return; JS throttling prevents redundant polls.
-            webView.evaluateJavascript("if(window.cineSyncResume)window.cineSyncResume()",null);
         }
     }
     @Override public void onConfigurationChanged(Configuration newConfig){super.onConfigurationChanged(newConfig);}

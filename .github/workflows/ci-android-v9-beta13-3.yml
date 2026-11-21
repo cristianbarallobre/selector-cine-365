@@ -1,0 +1,58 @@
+name: CI Android v9 Beta 13.3 - sincronización manual
+on:
+  push:
+    branches: ['fix/android-v9-beta13-3-manual-onedrive']
+    paths:
+      - '.github/workflows/ci-android-v9-beta13-3.yml'
+      - 'android/**'
+      - 'scripts/test_android_manual_sync_beta13_3.cjs'
+      - 'scripts/test_v9_beta13.cjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      MICROSOFT_CLIENT_ID: '696458fe-0672-47e5-9fdd-aa0332e9884b'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Preparar Android SDK 35
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -path '*/bin/sdkmanager' -type f | sort -V | tail -1)"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
+      - name: 'Tests JS: ahorro, no envíos automáticos y revisión de nube'
+        run: |
+          node scripts/test_android_manual_sync_beta13_3.cjs
+          node scripts/test_v9_beta13.cjs
+      - name: Pruebas Java de sincronización y APK sin firma
+        working-directory: android
+        run: gradle --no-daemon testDebugUnitTest assembleRelease
+      - name: Preparar binario exacto para firma privada posterior
+        run: |
+          mkdir -p dist/android-tools/lib
+          test -s android/app/build/outputs/apk/release/app-release-unsigned.apk
+          grep -F "versionCode 9017" android/app/build.gradle
+          grep -F "applicationId 'es.cine365.app'" android/app/build.gradle
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk dist/Selector_Cine_365_Android_v9_BETA13_3_UNSIGNED.apk
+          cp "$ANDROID_HOME/build-tools/35.0.0/apksigner" dist/android-tools/apksigner
+          cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" dist/android-tools/lib/apksigner.jar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Selector_Cine_365_Android_v9_BETA13_3_unsigned
+          path: |
+            dist/Selector_Cine_365_Android_v9_BETA13_3_UNSIGNED.apk
+            dist/android-tools/**
+          if-no-files-found: error

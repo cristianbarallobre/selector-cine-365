@@ -2,11 +2,11 @@
 
 Aplicación personal de cine para **Windows 10/11**, **macOS Apple Silicon e Intel** y **Android**, creada por **Cristian Barallobre Rúa**. Sirve para organizar listas, registrar películas vistas, decidir qué ver, consultar datos de TMDB y sincronizar bibliotecas entre dispositivos.
 
-**Edición actual para pruebas:** **v9 Beta 13.1 en Windows y macOS**, y **v9 Beta 13.2 en Android** (20 de noviembre de 2026). Es una *beta*, no una versión estable; las pruebas físicas de sincronización entre dispositivos siguen pendientes. Las cuatro plataformas se distribuyen juntas bajo una misma publicación.
+**Edición actual para pruebas:** **v9 Beta 13.1 en Windows y macOS**, y **v9 Beta 13.3 en Android** (20 de noviembre de 2026). Es una *beta*, no una versión estable; las pruebas físicas de sincronización entre dispositivos siguen pendientes. Las cuatro plataformas se distribuyen juntas bajo una misma publicación.
 
 ## Descargar
 
-**[Android Beta 13.2 — batería y segundo plano](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13.2)** (APK firmada, instalable encima de Beta 13)
+**[Android Beta 13.3 — OneDrive manual y menos consumo](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13.3)** (APK firmada, instalable encima de Beta 13)
 
 **[Windows y Mac Beta 13.1 — descarga de escritorio](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13.1)**
 
@@ -15,7 +15,7 @@ Aplicación personal de cine para **Windows 10/11**, **macOS Apple Silicon e Int
 | Windows | `Selector_Cine_365_Windows_v9_BETA13_1.zip` | Windows 10/11 de 64 bits, Microsoft WebView2 |
 | macOS Apple Silicon | `Selector_Cine_365_Mac_Apple_Silicon_v9_BETA13_1.zip` | macOS 12+, Apple Silicon |
 | macOS Intel | `Selector_Cine_365_Mac_Intel_v9_BETA13_1.zip` | macOS 12+, Intel |
-| Android | `Selector_Cine_365_Android_v9_BETA13_2.apk` | Android 8.0+, APK firmada y verificada |
+| Android | `Selector_Cine_365_Android_v9_BETA13_3.apk` | Android 8.0+, APK firmada y verificada |
 
 **Por qué cambian los números:** Windows y Mac siguen en Beta 13.1. Android incorpora ahora Beta 13.2 (código 9016) por la reducción de tareas en segundo plano y el guardado protegido. La clave de firma y el paquete Android no cambian.
 
@@ -24,6 +24,15 @@ Aplicación personal de cine para **Windows 10/11**, **macOS Apple Silicon e Int
 **Antes de actualizar:** exporta copia JSON **desde cada dispositivo**, preferiblemente fuera de OneDrive; después instala las versiones nuevas sin desinstalar y revisa la primera sincronización. Si una lista se eliminó antes de Beta 13 y reapareció por una copia antigua, bórrala una vez con ambos dispositivos ya actualizados. La aplicación puede utilizarse sin sincronización.
 
 Histórico: [Beta 12.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.2), [Beta 12.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.1), [Beta 12](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12), [Beta 9](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.9), [v8.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.2) y [v8.1.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.1.1). Para recuperar instaladores de betas retiradas consulta [política de releases](docs/POLITICA_DE_RELEASES.md).
+
+## Novedad Android Beta 13.3 — botón de sincronización manual
+
+- Al marcar películas se guardan **en el móvil**; la app ya no sube datos a OneDrive por cada cambio o cambio de lista.
+- Al abrir consulta la nube una vez en modo **solo lectura**, sin importar ni enviar automáticamente.
+- El pequeño botón de dos flechas circulares junto a «Guardado» permite revisar **envío y recepción** de cambios, con confirmación previa y gestión de conflictos.
+- No hay sincronización periódica ni al volver desde segundo plano. Se reducen escrituras de datos idénticos.
+- Android `es.cine365.app`, versión interna **9017**, misma firma que Beta 13.2. Windows y macOS mantienen Beta 13.1.
+- [Notas completas Beta 13.3](RELEASE_NOTES_v9_BETA13_3_ANDROID.md).
 
 ## Hotfix Android Beta 13.2 — batería y segundo plano
 

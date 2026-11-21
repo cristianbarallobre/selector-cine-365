@@ -59,10 +59,8 @@ final class LocalRecovery {
         JSONObject result=new JSONObject().put("restored",true)
             .put("lists",state.getJSONArray("lists").length())
             .put("seen",SyncStore.watchedCount(state));
-        if(backend.cloud.status().optBoolean("activated")){
-            JSONObject published=backend.cloud.backup();
-            if(!published.optString("last_error").isEmpty())result.put("warning",published.optString("last_error"));
-        }
+        // Restoring a local rescue copy must NEVER push it silently to OneDrive.
+        // The user may inspect it and press the manual sync control afterwards.
         return result;
     }
 }

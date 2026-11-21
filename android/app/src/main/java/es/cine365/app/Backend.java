@@ -57,11 +57,14 @@ final class Backend {
                     if(!validLibrary(state))return fail(400,"Colecciones no válidas");
                     synchronized(filesLock){
                         JSONObject previous=new JSONObject(readOrDefault("colecciones.json","{}"));
+                        // No write, no sync revision and NO network upload if unchanged.
+                        if(validLibrary(previous)&&previous.toString().equals(state.toString()))
+                            return new ApiResponse(204,"");
                         sync.observe(validLibrary(previous)?previous:null,state);
                         storeState(state);
                     }
-                    JSONObject s=cloud.backup();
-                    return new ApiResponse(204,"").cloud(!s.optBoolean("enabled",false)?"":s.optString("last_error","").isEmpty()?"ok":"error");
+                    // Only save locally. Upload/download requires explicit user action.
+                    return new ApiResponse(204,"");
                 }
                 return fail(405,"Método incorrecto");
             case "/api/identities":return ok(tmdb.identities().toString());
@@ -91,7 +94,7 @@ final class Backend {
             case "/api/platforms/match":{
                 JSONObject p=new JSONObject(body);
                 tmdb.match(p.optString("title"),p.optInt("year"),p.optInt("id"));
-                cloud.backup();return ok(new JSONObject().put("saved",true).toString());
+                return ok(new JSONObject().put("saved",true).toString());
             }
             case "/api/onedrive/status":return ok(onedrive.status().toString());
             case "/api/onedrive/connect":return ok(onedrive.begin().toString());
@@ -123,16 +126,10 @@ final class Backend {
                 return ok(cloud.status().toString());
             }
             case "/api/cloud/backup":return ok(cloud.backup().toString());
-            case "/api/cloud/auto":{
-                // No automated background network checks; manual sync remains unchanged.
-                if(!activity.isAppForeground())return ok(new JSONObject()
-                    .put("changed",false).put("skipped","background").toString());
-                synchronized(filesLock){
-                    if(!activity.isAppForeground())return ok(new JSONObject()
-                        .put("changed",false).put("skipped","background").toString());
-                    return ok(cloud.autoSynchronize(this).toString());
-                }
-            }
+            case "/api/cloud/auto":
+                // Legacy route deliberately disabled: no timed or resume syncing.
+                return ok(new JSONObject().put("changed",false)
+                    .put("skipped","manual_only").toString());
             case "/api/cloud/preview":{
                 synchronized(filesLock){return ok(cloud.preview(this).toString());}
             }
@@ -168,6 +165,7 @@ final class Backend {
         if(!validLibrary(state))return;
         synchronized(filesLock){
             JSONObject previous=new JSONObject(readOrDefault("colecciones.json","{}"));
+            if(validLibrary(previous)&&previous.toString().equals(state.toString()))return;
             sync.observe(validLibrary(previous)?previous:null,state);
             storeState(state);
         }
@@ -179,6 +177,9 @@ final class Backend {
     void storeState(JSONObject state)throws Exception{
         String txt=state.toString(2);
         File old=new File(dir,"colecciones.json"), backupDir=new File(dir,"copias_automaticas");
+        // JSON objects can serialize fields in a different order; only skip exact
+        // identical persisted states. Content edits still create their safety copy.
+        if(old.isFile()&&readOrDefault("colecciones.json","").equals(txt))return;
         if(old.exists()){
             backupDir.mkdirs();File snap=new File(backupDir,LocalDate.now()+".json");
             if(!snap.exists())Files.copy(old.toPath(),snap.toPath());
@@ -187,7 +188,12 @@ final class Backend {
         JSONArray lists=state.getJSONArray("lists");
         for(int i=0;i<lists.length();i++){
             JSONObject l=lists.getJSONObject(i);
-            if("atlas".equals(l.optString("id")))atomicWrite(new File(dir,"mis_365_peliculas.txt"),l.optString("text"));
+            if("atlas".equals(l.optString("id"))){
+                String listText=l.optString("text");
+                // Cambiar de lista activa no debe reescribir 365 películas idénticas.
+                if(!listText.equals(readOrDefault("mis_365_peliculas.txt","")))
+                    atomicWrite(new File(dir,"mis_365_peliculas.txt"),listText);
+            }
         }
     }
     static void atomicWrite(File file,String contents)throws Exception{

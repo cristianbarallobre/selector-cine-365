@@ -6,7 +6,8 @@
 
 | Publicación | Estado | Activos |
 |---|---|---|
-| [v9 Beta 13.2 Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13.2) | **Última actualización Android**, solo batería y segundo plano | APK firmada 9016 + notas; Windows/Mac continúan Beta 13.1 |
+| [v9 Beta 13.3 Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13.3) | **Android más reciente, sincronización bajo control del usuario** | APK firmada 9017, icono de doble flecha, consulta al abrir y sincronización confirmada. Windows/Mac Beta 13.1 |
+| [v9 Beta 13.2 Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13.2) | Anterior hotfix Android, batería y segundo plano | APK firmada 9016 + notas; Windows/Mac continúan Beta 13.1 |
 | [v9 Beta 13.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13.1) | Edición coordinada anterior (Windows/Mac aún vigentes) | Windows/Mac Beta 13.1, Android Beta 13 firmada, manuales PDF e historial Word/PDF |
 | [v9 Beta 12.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.2) | **Beta más reciente**, Android y escritorio sin cambios | APK Android 9014, Windows/Mac Beta 12 y documentación |
 | [v9 Beta 12.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.1) | Histórica: primer arreglo notch | APK Android 9013 y escritorio original |

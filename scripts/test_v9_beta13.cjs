@@ -6,9 +6,11 @@ function source(p){
  assert.ok(scripts.length,'JS existente en '+p);
  for(const code of scripts)assert.doesNotThrow(()=>new Function(code),'Cada script JS debe compilar '+p);
  const script=scripts[scripts.length-1];
- for(const needle of ['cloudAutoReceive','cineRecentIntents','cineLoadRevisions','film-check-action','togg.append(tick,poster,main)','data-search-scope="all"','filmMembershipIndex','applyFilmMembershipLists','membershipOverlay','Conectar TMDB']){
+ for(const needle of ['cineRecentIntents','cineLoadRevisions','film-check-action','togg.append(tick,poster,main)','data-search-scope="all"','filmMembershipIndex','applyFilmMembershipLists','membershipOverlay','Conectar TMDB']){
   assert.ok(s.includes(needle),'Falta en '+p+': '+needle);
  }
+ if(p==='plantilla.html')assert.ok(s.includes('cloudAutoReceive'),'Windows mantiene sincronización independiente');
+ if(p.includes('/android/')||p.startsWith('android/'))assert.ok(!s.includes('cloudAutoReceive'),'Android Beta13.3 usa sincronización manual');
  return {html:s,script};
 }
 const desktop=source('plantilla.html'),android=source('android/app/src/main/assets/index.html');
@@ -29,7 +31,7 @@ assert.ok(android.html.includes('window.CineAndroid?Math.min(2000,'),'Mantener c
 const gradle=fs.readFileSync('android/app/build.gradle','utf8');
 assert.ok(gradle.includes("applicationId 'es.cine365.app'"),'Identificador estable Android');
 assert.ok(!gradle.includes('applicationIdSuffix'),'No generar un paquete distinto en cada Beta');
-assert.ok(gradle.includes('versionCode 9016'),'Versión de Android incrementada');
+assert.ok(gradle.includes('versionCode 9017'),'Versión de Android incrementada');
 const script=desktop.script,start=script.indexOf('function applyFilmMembershipLists('),end=script.indexOf('function toggleSearchedFilm(',start);
 assert.ok(start>=0&&end>start);
 function parse(t){const lines=t.split('\n'),entries=[];
@@ -82,7 +84,7 @@ assert.ok(mainActivity.includes('Build.VERSION.SDK_INT >= 30'),'No utilizar getI
 assert.ok(!mainActivity.includes('setPadding(0, 35,'),'No introducir margen fijo por modelo');
 assert.ok(android.html.includes('Android v9 Beta 13'));
 assert.ok(gradle.includes("applicationId 'es.cine365.app'"),'Mantener package');
-assert.ok(gradle.includes("versionName '9.0.0-beta.13.2'"),'Versión');
+assert.ok(gradle.includes("versionName '9.0.0-beta.13.3'"),'Versión');
 assert.ok(manifest.includes('Selector Cine 365 · Beta 13'));
 console.log('OK: safe area dinámica para notch, navegación gestual y compatibilidad Android antiguos');
 

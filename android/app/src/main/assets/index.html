@@ -9,7 +9,7 @@
 <meta name="author" content="Cristian Barallobre Rúa">
 <meta name="copyright" content="© 2026 Cristian Barallobre Rúa">
 <meta name="application-name" content="Selector de Cine 365">
-<title>Selector Cine 365 · Android v9 Beta 13.2</title>
+<title>Selector Cine 365 · Android v9 Beta 13.3</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1018;--panel:#171f2b;--panel2:#1b2735;--line:#314052;--subtle:#94a2b5;--light:#f4f6fa;--gold:#f3c66d;--gold2:#d59b40;--green:#a4e4bc;--red:#e5a6a6;--r:19px}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 960px 510px at 88% -10%,#263649 0%,transparent 76%),var(--bg);color:var(--light);font-family:'Segoe UI',system-ui,Arial,sans-serif;font-size:15px;min-height:100vh}button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
@@ -508,6 +508,13 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
    adicional con la variable CSS de área segura desplaza la barra demasiado arriba.
    Un único responsable para cada inset: nativo, no CSS. */
 .mobile-bottom-nav{padding-bottom:7px!important;bottom:0!important}
+</style>
+<style id="cine-android-manual-onedrive">
+.sync-header-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-height:31px}
+.sync-quick-btn{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;padding:0;border:1px solid #a78444;border-radius:10px;background:#2c3033;color:#f3d08d;cursor:pointer}
+.sync-quick-btn:active{background:#4a3d2c}.sync-quick-btn:focus-visible{outline:2px solid #ffd47e;outline-offset:2px}
+.sync-quick-btn:disabled{opacity:.45;cursor:wait}
+@media(max-width:420px){.sync-header-row{gap:4px}.sync-quick-btn{width:32px;height:32px;flex-basis:32px}.sync-header-row .saved{font-size:10px;max-width:115px;overflow:hidden;text-overflow:ellipsis}}
 </style>
 </head>
 <body>
@@ -1249,8 +1256,16 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
     <div class="brand" aria-hidden="true"><img src="/assets/icon.png" class="brand-image" alt=""></div>
     <div><div class="eyebrow">SELECTOR CINE 365</div><h1>¿Qué película veo hoy?</h1></div>
     <div class="header-side">
-      <div class="header-tag">🎞️ CINE 365 · ANDROID BETA 13.2</div>
-      <div class="saved" id="saveState" aria-live="polite">✓ Guardado</div>
+      <div class="header-tag">🎞️ CINE 365 · ANDROID BETA 13.3</div>
+      <div class="sync-header-row">
+         <span class="saved" id="saveState" aria-live="polite">✓ En el móvil</span>
+         <button id="cloudSyncQuick" class="sync-quick-btn" type="button" title="Sincronizar manualmente con OneDrive: enviar y recibir cambios" aria-label="Sincronizar con OneDrive: enviar y recibir cambios">
+           <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+             <path d="M20 11a8 8 0 0 0-14.8-4.1L4 9"/><path d="M4 4v5h5"/>
+             <path d="M4 13a8 8 0 0 0 14.8 4.1L20 15"/><path d="M20 20v-5h-5"/>
+           </svg>
+         </button>
+       </div>
       <div class="creator-credit" title="© 2026 Cristian Barallobre Rúa">Hecho por <strong>Cristian Barallobre Rúa</strong></div>
     </div>
   </header>
@@ -1347,7 +1362,7 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
     <h3>Estado de sincronización</h3>
     <p class="mobile-help" id="mobileLastCheck" aria-live="polite">Última comprobación: todavía no realizada.</p>
     <p class="mobile-help" id="mobileLastReceive">Cambios recibidos: ninguno en esta sesión.</p>
-    <button class="primary" id="mobileSyncNowFast" type="button">↻ Sincronizar ahora</button>
+    <button class="primary" id="mobileSyncNowFast" type="button">↻ Revisar, enviar y recibir cambios</button>
     <p id="mobileSyncManualResult" class="mobile-help" aria-live="polite"></p>
     <h3>Actividad reciente de películas</h3>
     <button class="tool" id="mobileHistoryRefresh" type="button">Actualizar historial</button>
@@ -1365,12 +1380,12 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
    <p id="syncPreviewSummary" class="mobile-help"></p>
    <div id="syncPreviewDetails" class="sync-preview-details"></div>
    <p class="mobile-help"><strong>Nunca sobrescribimos</strong> la copia principal del PC. Primero se importan los datos encontrados. Si hay cambios opuestos simultáneos, se detiene la operación.</p>
-   <button id="syncConfirmButton" type="button" class="primary">✓ Importar y activar sincronización</button>
+   <button id="syncConfirmButton" type="button" class="primary">✓ Confirmar y sincronizar</button>
    <button id="syncCancelButton" type="button" class="tool">Cancelar</button>
   </div>
   <div class="cloud-wizard-step">
-    <h3>5 · Sincronización automática y conflictos</h3>
-    <p>Después de la primera revisión, recibirás automáticamente los cambios compatibles al abrir la app y mientras la uses. <strong>Si aparecen marcas contradictorias, pulsa Revisar sincronización</strong> y decide qué conservar.</p>
+    <h3>5 · Sincronización manual y conflictos</h3>
+    <p>Al abrir la aplicación se consulta OneDrive <strong>una sola vez y sin importar ni publicar cambios</strong>. Usa el botón de dos flechas ↻ para revisar, enviar y recibir cambios. Se mostrará una confirmación antes de fusionarlos; los conflictos requieren una decisión. Puedes trabajar sin conexión y guardar todas tus modificaciones en el móvil.</p>
   </div>
   <div class="mobile-help mobile-sync-caution">La app guarda sus archivos de intercambio dentro de la carpeta que hayas elegido, en <code>Selector_Cine_365_Copias</code>, con copias separadas para cada dispositivo. <strong>No borres las subcarpetas actual ni sincronizacion.</strong> Si ya usabas otra carpeta con listas sincronizadas, no la renombres ni la muevas sin hacer antes una copia JSON.</div>
   <div id="tmdbSettingsTools" class="mobile-setting-actions" aria-label="Ajustes opcionales de TMDB"></div>
@@ -1417,9 +1432,9 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
    <p>En <strong>Listas</strong> puedes crear, importar y exportar colecciones. Usa <strong>Copia de seguridad</strong> para guardar un JSON con tus listas y marcas.</p>
   </div>
   <div class="help-card">
-   <h3>5 · Sincronización automática con OneDrive</h3>
-   <p>La nube es <strong>opcional</strong>. Sin conectarla, tus películas siguen guardadas en el móvil. Para compartirlas, en el PC crea una carpeta exclusiva como <strong>Selector_Cine_365</strong> dentro de OneDrive y selecciónala en los ajustes de Selector Cine 365 Windows. En Android pulsa <strong>Conectar cuenta Microsoft</strong>, inicia sesión desde la página oficial y elige esa misma carpeta. La <strong>primera vez</strong> pulsa <strong>Revisar sincronización</strong> en ambos dispositivos y confirma la combinación. Después, los cambios normales se importan automáticamente al abrir la app, volver a ella y periódicamente mientras esté en uso.</p>
-   <p>Solo debes revisar manualmente cuando sea la <strong>primera conexión</strong> o cuando la app detecte un <strong>conflicto</strong>. Las modificaciones recibidas sin conflicto se incorporan automáticamente. Es posible que haya una demora por la subida de OneDrive. No hace falta dejar la app abierta en segundo plano. «Elegir carpeta local» <strong>no equivale</strong> a entrar en OneDrive; otras nubes requieren carpetas compatibles.</p>
+   <h3>5 · Sincronización manual con OneDrive</h3>
+   <p>La nube es <strong>opcional</strong>. Sin conectarla, tus películas siguen guardadas en el móvil. Para compartirlas, en el PC crea una carpeta exclusiva como <strong>Selector_Cine_365</strong> dentro de OneDrive y selecciónala en los ajustes de Selector Cine 365 Windows. En Android pulsa <strong>Conectar cuenta Microsoft</strong>, inicia sesión desde la página oficial y elige esa misma carpeta. La <strong>primera vez</strong> pulsa <strong>Revisar sincronización</strong> en ambos dispositivos y confirma la combinación. A partir de entonces, la app <strong>solo consulta OneDrive una vez al abrirse</strong>, sin importar ni publicar nada. Pulsa el pequeño botón de <strong>dos flechas circulares</strong> situado junto a «Guardado» para revisar, enviar y recibir cambios cuando quieras.</p>
+   <p>La sincronización es <strong>manual y bidireccional</strong>. La pantalla muestra un resumen y te pide confirmarlo; si hay conflictos, deberás elegir qué conservar. Marcar una película y cambiar de lista solo guarda el estado <strong>en el móvil</strong> y nunca envía datos a OneDrive. No hace falta dejar la app abierta en segundo plano. «Elegir carpeta local» <strong>no equivale</strong> a entrar en OneDrive; otras nubes requieren carpetas compatibles.</p>
   </div>
   <div class="help-card">
     <h3>6 · Manual completo</h3>
@@ -1468,16 +1483,16 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
       <div class="backup-bar"><button class="tool" type="button" id="downloadBackup">⬇ Copia de seguridad</button><button class="tool" type="button" id="restoreBackup">↻ Restaurar copia</button></div>
       <input class="upload-input" type="file" id="backupFile" accept=".json,application/json">
       <div class="cloud-box" aria-label="Copias automáticas en tu nube">
-        <div class="cloud-title">☁ Copias y sincronización de la carpeta elegida</div>
+        <div class="cloud-title">☁ OneDrive · sincronización manual</div>
         <input class="cloud-path" id="cloudFolder" type="text" autocomplete="off" placeholder="Carpeta local de OneDrive, Drive, Dropbox…" aria-label="Carpeta para las copias automáticas">
         <div class="cloud-buttons">
           <button class="tool" type="button" id="cloudBrowse">📁 Elegir carpeta local</button>
-          <button class="tool" type="button" id="cloudActivate">✓ Activar copia</button>
-          <button class="tool" type="button" id="cloudBackupNow">↻ Copiar ahora</button>
+          <button class="tool" type="button" id="cloudActivate">✓ Conectar carpeta</button>
+          <button class="tool" type="button" id="cloudBackupNow">⬆ Enviar copia</button>
           <button class="tool" type="button" id="cloudDisable">Desactivar</button>
         </div>
         <div class="cloud-status" id="cloudStatus" aria-live="polite">Comprobando copias…</div>
-        <div class="cloud-status" id="mobileAutoStatus" aria-live="polite">Después de la primera revisión, la app recibirá automáticamente los cambios seguros al abrirla o volver a ella.</div>
+        <div class="cloud-status" id="mobileAutoStatus" aria-live="polite">OneDrive se consulta una vez al abrir. Para enviar o recibir cambios, pulsa ↻ y confirma la revisión.</div>
       </div>
     </div>
   </section>
@@ -1928,18 +1943,38 @@ $('filmPageGotoForm').addEventListener('submit',e=>{
  filmPage=page-1;renderList();input.value='';
 });
 function resetChoice(){chosen=null;$('resultPoster').hidden=true;$('resultPoster').removeAttribute('src');$('resultPlatforms').replaceChildren();$('resultTag').textContent='EL SORTEO TE ESPERA';$('resultTitle').textContent='Tu próxima película aparecerá aquí';$('resultDetails').textContent='';$('markWatched').disabled=true;$('copyChoice').disabled=true;}
-function scheduleSave(){membershipCache=null; $('saveState').textContent='Guardando…';clearTimeout(saveTimer);saveTimer=setTimeout(()=>{saveTimer=null;void saveLocal();},240);}
-async function saveLocal(){
- syncActiveText();const snapshot=JSON.stringify(libraryState);const epoch=++saveEpoch;
+// Device-only persistence. OneDrive is never contacted by ordinary saves.
+let lastStoredSnapshot=null;
+function scheduleSave(quiet=false){
+ membershipCache=null;
+ if(!quiet)$('saveState').textContent='Guardando en el móvil…';
+ clearTimeout(saveTimer);
+ saveTimer=setTimeout(()=>{saveTimer=null;void saveLocal(quiet);},240);
+}
+async function saveLocal(quiet=false){
+ if(saveTimer!==null){clearTimeout(saveTimer);saveTimer=null;}
+ syncActiveText();
+ const snapshot=JSON.stringify(libraryState);
+ if(snapshot===lastStoredSnapshot){
+  await saveQueue.catch(()=>{});
+  if(!quiet)$('saveState').textContent='✓ En el móvil';
+  return;
+ }
+ const epoch=++saveEpoch;
  saveQueue=saveQueue.catch(()=>{}).then(async()=>{
-   const response=await fetch('/api/library',{method:'POST',headers:{'Content-Type':'application/json','X-Atlas-Token':token},body:snapshot,cache:'no-store'});
-   if(!response.ok)throw new Error('HTTP '+response.status);
-   return response.headers.get('X-Cine-Cloud');
+  if(snapshot===lastStoredSnapshot)return;
+  const response=await fetch('/api/library',{method:'POST',headers:{'Content-Type':'application/json','X-Atlas-Token':token},body:snapshot,cache:'no-store'});
+  if(!response.ok)throw new Error('HTTP '+response.status);
+  lastStoredSnapshot=snapshot;
  });
- try{const cloudResult=await saveQueue;
- await cineLoadRevisions();
- if(epoch===saveEpoch){cineRecentIntents.clear();$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':'✓ Guardado';void cloudRefresh();setTimeout(()=>{if(!document.hidden)void cloudAutoReceive();},3500);}}
- catch(err){if(epoch===saveEpoch)$('saveState').textContent='⚠ Error al guardar';}
+ try{
+  await saveQueue;
+  if(!quiet)await cineLoadRevisions();
+  if(epoch===saveEpoch){
+   cineRecentIntents.clear();
+   if(!quiet)$('saveState').textContent='✓ En el móvil';
+  }
+ }catch(err){if(epoch===saveEpoch)$('saveState').textContent='⚠ Error al guardar en el móvil';}
 }
 function replaceList(text){let clean=text.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');const test=parse(clean);if(!test.entries.length){$('message').textContent='No se encontraron películas.';return false;}
  rawText=clean;syncActiveText();reconcileWatched();rawText=activeCollection().text||'';restartList();scheduleSave();return true;
@@ -2187,7 +2222,7 @@ async function reconcileTMDBLibrary(){
    for(const [key,id] of Object.entries(merged)){
     if(id>0)identityMap.set(key,id);else identityMap.delete(key);
    }
-   if(changed)scheduleSave();
+   if(changed)scheduleSave(true);
   }
  }catch(error){
   // Un fallo puntual no elimina una configuración válida.
@@ -2291,9 +2326,9 @@ function sanitizeComparisonIDs(){
 async function initLibrary(){
  await cineLoadRevisions();
  try{const response=await fetch('/api/library',{headers:{'X-Atlas-Token':token},cache:'no-store'});
-   if(response.ok){const state=await response.json();if(validLibrary(state))libraryState=state;}
+   if(response.ok){const state=await response.json();if(validLibrary(state)){libraryState=state;lastStoredSnapshot=JSON.stringify(state);}}
  }catch(e){}
- sanitizeComparisonIDs();await reconcileTMDBLibrary();const reconciled=reconcileWatched();rawText=activeCollection().text||'';renderCollectionControls();update();renderStats();if(reconciled)scheduleSave();
+ sanitizeComparisonIDs();await reconcileTMDBLibrary();const reconciled=reconcileWatched();rawText=activeCollection().text||'';renderCollectionControls();update();renderStats();if(reconciled)scheduleSave(true);
 }
 function validLibrary(s){return s&&s.version===1&&Array.isArray(s.lists)&&s.lists.length>0&&s.lists.length<=40&&typeof s.active_id==='string'&&s.lists.some(l=>l.id===s.active_id)&&s.lists.every(l=>typeof l.text==='string'&&typeof l.name==='string'&&typeof l.id==='string');}
 function restartList(){
@@ -2301,7 +2336,8 @@ function restartList(){
  filmPage=0;collectionPage=0;statPages.clear();platformRun++;platformFinished=0;platformTotal=0;platformActive=false;lastChoice=null;resetChoice();filter='all';search='';$('search').value='';
  selectedSortPlatform='all';$('platformSelect').value='all';selectedListPlatforms.clear();closeListPlatformMenu();
  document.querySelectorAll('.filter').forEach(b=>b.classList.toggle('selected',b.dataset.filter==='all'));
- updateListPlatformOptions();update();updatePlatformProgress();renderStats();renderCollectionControls();if(platformConfigured)void loadPlatforms(false);
+ updateListPlatformOptions();update();updatePlatformProgress();renderStats();renderCollectionControls();
+ // Cambiar de lista muestra caché local; consultar TMDB requiere pulsar Actualizar.
 }
 function switchCollection(id){
  if(id===virtualID){
@@ -2309,7 +2345,7 @@ function switchCollection(id){
    syncActiveText();virtualMode=true;rawText=buildIntersection();restartList();showView('library');return;
  }
  if(!libraryState.lists.some(l=>l.id===id)||(!virtualMode&&id===libraryState.active_id))return;
- syncActiveText();virtualMode=false;libraryState.active_id=id;rawText=activeCollection().text||'';restartList();scheduleSave();showView('library');
+ syncActiveText();virtualMode=false;libraryState.active_id=id;rawText=activeCollection().text||'';restartList();scheduleSave(true);showView('library');
 }
 function renderCollectionControls(){
  const sel=$('listSwitcher');sel.replaceChildren();for(const list of libraryState.lists){const o=document.createElement('option');o.value=list.id;o.textContent=numberedListName(list);sel.appendChild(o)}
@@ -2463,7 +2499,7 @@ $('applyFilm').addEventListener('click',()=>{
  const title=$('newFilmTitle').value.trim(),year=$('newFilmYear').value.trim();if(!title){$('newFilmTitle').focus();return;}
  if(year && !/^(18|19|20|21)\d{2}$/.test(year)){alert('Año incorrecto');return;}
  rawText=rawText.trimEnd()+(rawText.trim()?'\n':'')+'☐ '+title+(year?' ('+year+')':'');
- syncActiveText();reconcileWatched();rawText=activeCollection().text||'';addFilmClose();update();renderCollectionControls();scheduleSave();notify('Película añadida a «'+activeCollection().name+'».');if(platformConfigured)void loadPlatforms(false);
+ syncActiveText();reconcileWatched();rawText=activeCollection().text||'';addFilmClose();update();renderCollectionControls();scheduleSave();notify('Película añadida a «'+activeCollection().name+'».'); // TMDB se consulta solo al pulsar Actualizar.
 });
 // Eliminar una sola película de la lista activa sin tocar otras colecciones.
 let deleteFilmCandidate=null;
@@ -2744,25 +2780,20 @@ $('mobileRecoveryRefresh').addEventListener('click',()=>void mobileRefreshRecove
 $('mobileRecoveryList').addEventListener('change',()=>{$('mobileRecoveryRestore').disabled=!$('mobileRecoveryList').value;});
 $('mobileRecoveryRestore').addEventListener('click',async()=>{
  const selected=$('mobileRecoveryList').value;if(!selected)return;
- if(!confirm('¿Restaurar esta copia local? Antes se guardará una copia del estado actual. Si tienes OneDrive conectado, los cambios restaurados se compartirán con Windows.'))return;
+ if(!confirm('¿Restaurar esta copia local? Antes se guardará una copia del estado actual. No se enviará nada a OneDrive hasta que pulses ↻ y confirmes.'))return;
  try{
   $('mobileRecoveryStatus').textContent='Restaurando con copia de seguridad previa…';
   await saveQueue.catch(()=>{});
   const result=await cloudRequest('/api/sync/recovery/restore','POST',{id:selected});
   await initLibrary();restartList();renderStats();renderCollectionControls();
-  $('mobileRecoveryStatus').textContent='✓ Copia restaurada: '+result.lists+' listas · '+result.seen+' vistas.'
+  $('mobileRecoveryStatus').textContent='✓ Copia local restaurada · pulsa ↻ para compartir: '+result.lists+' listas · '+result.seen+' vistas.'
     +(result.warning?' ⚠ OneDrive: '+result.warning:'');
   await mobileRefreshHistory();await mobileRefreshRecovery();await cloudRefresh();
  }catch(error){$('mobileRecoveryStatus').textContent='⚠ '+error.message;}
 });
-$('mobileSyncNowFast').addEventListener('click',async()=>{
- const btn=$('mobileSyncNowFast');btn.disabled=true;
- $('mobileSyncManualResult').textContent='Comprobando los últimos cambios de OneDrive…';
- try{
-  await cloudAutoReceive(true,true);
-  await cloudRefresh();await mobileRefreshHistory();
-  $('mobileSyncManualResult').textContent=$('mobileAutoStatus').textContent;
- }finally{btn.disabled=false;}
+$('mobileSyncNowFast').addEventListener('click',()=>{
+ $('mobileSyncManualResult').textContent='Revisa los cambios y confirma para enviar y recibir.';
+ void syncDevices();
 });
 
 function cloudShow(s){
@@ -2781,8 +2812,8 @@ function cloudShow(s){
    if($('mobileLastReceive'))$('mobileLastReceive').textContent='Cambios recibidos: '+(s.last_received_ms?mobileSyncAt(s.last_received_ms):'ninguno en esta sesión');
    box.textContent=s.last_error?'⚠ '+s.last_error:
      s.needs_review&&s.activated?'⚠ Hay cambios que debes revisar manualmente para evitar perder datos':
-     !s.activated?'Carpeta seleccionada · Pendiente de revisar e importar, todavía no se ha publicado nada':
-     s.last_backup?'✓ Sincronización automática activa · '+new Date(s.last_backup).toLocaleString('es-ES'):'✓ Carpeta compartida preparada';
+     !s.activated?'Carpeta seleccionada · pulsa ↻ para revisar y vincular, todavía no se ha publicado nada':
+     s.last_backup?'✓ Modo manual · último envío '+new Date(s.last_backup).toLocaleString('es-ES'):'✓ Carpeta preparada · pulsa ↻ para sincronizar';
  }else{
    box.textContent='Sin carpeta de nube configurada';
  }
@@ -2806,7 +2837,7 @@ $('cloudBackupNow').addEventListener('click',async()=>{
  try{cloudShow(await cloudRequest('/api/cloud/backup','POST'))}catch(e){$('cloudStatus').textContent='⚠ '+e.message;$('cloudStatus').classList.add('warn')}
 });
 $('cloudDisable').addEventListener('click',async()=>{
- if(!confirm('¿Desactivar las copias automáticas? Las copias existentes no se borrarán.'))return;
+ if(!confirm('¿Desconectar la carpeta de sincronización? Las copias existentes no se borrarán.'))return;
  try{cloudShow(await cloudRequest('/api/cloud/config','POST',{folder:''}));$('cloudFolder').value='';delete $('cloudFolder').dataset.cloudUri;}
  catch(e){$('cloudStatus').textContent='⚠ '+e.message;}
 });
@@ -2821,6 +2852,7 @@ async function syncDevices(){
  cloudBusyStart('/api/cloud/preview');
  const message=$('syncResult'),button=$('cloudSyncNow');
  if(button)button.disabled=true;
+  $('cloudSyncQuick').disabled=true;
  try{
    message.textContent='Buscando bibliotecas en la carpeta elegida, sin escribir nada…';
    await saveLocal();
@@ -2848,12 +2880,17 @@ async function syncDevices(){
        details.append(row);
      }
    }
-   message.textContent='Revisa el resumen y confirma la importación. Ningún dato se ha cambiado todavía.';
+   message.textContent='Revisa el resumen y confirma para ENVIAR y RECIBIR. Ningún dato se ha cambiado todavía.';
    panel.scrollIntoView({block:'nearest',behavior:'smooth'});
  }catch(error){message.textContent='⚠ '+error.message;}
- finally{cloudSyncBusy=false;if(button)button.disabled=false;cloudBusyEnd();}
+ finally{cloudSyncBusy=false;if(button)button.disabled=false;$('cloudSyncQuick').disabled=false;cloudBusyEnd();}
 }
 $('cloudSyncNow')?.addEventListener('click',()=>void syncDevices());
+$('cloudSyncQuick').addEventListener('click',()=>{
+ showView('settings');
+ $('mobileSyncManualResult').textContent='Revisando antes de enviar o recibir…';
+ void syncDevices();
+});
 $('syncCancelButton')?.addEventListener('click',()=>{
  pendingSyncToken='';$('syncPreviewPanel').hidden=true;$('syncResult').textContent='Operación cancelada; no se han cambiado los datos.';
 });
@@ -2872,55 +2909,45 @@ $('syncConfirmButton')?.addEventListener('click',async()=>{
    const data=await cloudRequest('/api/cloud/sync','POST',{token:pendingSyncToken,decisions});
    pendingSyncToken='';$('syncPreviewPanel').hidden=true;
    await initLibrary();restartList();
-   $('syncResult').textContent='✓ Biblioteca compartida · '+data.lists+' listas · '+data.seen+' películas vistas.\nPuedes volver a revisar cuando quieras.';
+   $('syncResult').textContent='✓ Sincronización manual completada · '+data.lists+' listas · '+data.seen+' películas vistas.\nPulsa ↻ de nuevo para enviar o recibir cambios.';
+    $('saveState').textContent='✓ En móvil y nube';
    await cloudRefresh();
  }catch(e){$('syncResult').textContent='⚠ '+e.message+' No se ha sobrescrito la copia de Windows.';}
  finally{button.disabled=false;cloudBusyEnd();}
 });
-// Tras la primera revisión manual, se fusionan automáticamente cambios seguros.
-// No se consulta TMDB para revisar OneDrive. Se limita la frecuencia de acceso a Graph.
-let cloudAutoBusy=false,cloudAutoCheckedAt=0;
-async function cloudAutoReceive(force=false,showBusy=false){
- if(document.hidden)return; // Invisible WebView must not poll OneDrive.
- if(cloudAutoBusy||cloudSyncBusy||cloudUserRequests>0||pendingSyncToken||!$('syncPreviewPanel').hidden)return;
- if(!force&&Date.now()-cloudAutoCheckedAt<55000)return;
- if(document.querySelector('.overlay:not([hidden])'))return;
- if(document.activeElement?.matches('input,textarea,select,[contenteditable="true"]'))return;
- if(saveTimer!==null)return;
- cloudAutoBusy=true;
- if(showBusy)cloudBusyStart('/api/cloud/auto');
- const beforeEpoch=saveEpoch;
- const main=document.querySelector('main');
+// Manual-mode OneDrive policy: ONE read-only check on cold application launch.
+// Never import, upload, poll by interval or on every resume/focus. The user
+// must press the two-arrow button and confirm the full merge preview.
+let cloudAutoBusy=false;
+async function cloudCheckOnOpen(){
+ const label=$('mobileAutoStatus');
  try{
-   await saveQueue.catch(()=>{});
-   if(beforeEpoch!==saveEpoch||saveTimer!==null)return;
-   cloudAutoCheckedAt=Date.now();
-   try{
-     const r=await cloudRequest('/api/cloud/auto','POST');
-     if(r.skipped==='background'){
-       // Minimized while a check was queued; allow a fresh check on resume.
-       cloudAutoCheckedAt=0;
-     }else if(r.needs_review){
-       $('mobileAutoStatus').textContent=r.skipped==='not_paired'
-         ?'Primera conexión pendiente: pulsa «Revisar sincronización».'
-         :'⚠ Hay marcas contradictorias. Pulsa «Revisar sincronización» para elegir qué conservar.';
-     }else if(r.changed){
-       await initLibrary();restartList();
-       $('mobileAutoStatus').textContent='✓ Cambios recibidos automáticamente de otro dispositivo.';
-       await cloudRefresh();
-     }else if(!r.skipped){
-       $('mobileAutoStatus').textContent='✓ Sincronización automática al día.';
-     }
-   await cloudRefresh(); // Un GET local: actualiza la hora incluso sin cambios.
-   }finally{/* La recepción automática NUNCA bloquea la interfaz. */}
- }catch(e){
-   $('mobileAutoStatus').textContent='⚠ No se pudo comprobar la nube: '+e.message+'. Puedes seguir utilizando tus listas sin conexión.';
- }finally{cloudAutoBusy=false;if(showBusy)cloudBusyEnd();}
+  const status=await cloudRequest('/api/cloud/status'); // local-only
+  cloudShow(status);
+  if(!status.enabled){
+   label.textContent='Sin OneDrive conectado. Tus cambios se guardan en el móvil.';
+   return;
+  }
+  if(!status.activated){
+   label.textContent='Carpeta elegida. Pulsa ↻ para revisar y activar la primera sincronización.';
+   return;
+  }
+  if(saveTimer!==null)await saveLocal(true); // terminar cambios locales pendientes antes de leer OneDrive
+  await saveQueue.catch(()=>{});
+  if(document.hidden)return;
+  // READ-ONLY: /preview builds a plan; only /sync can modify or upload data.
+  const preview=await platformApi('/api/cloud/preview',{});
+  const conflicts=Array.isArray(preview.conflicts)?preview.conflicts.length:0;
+  label.textContent=conflicts
+    ?'⚠ OneDrive consultado al abrir · '+conflicts+' cambios requieren decisión. Pulsa ↻.'
+    :'✓ OneDrive consultado al abrir (sin importar ni enviar). Pulsa ↻ para sincronizar.';
+  await cloudRefresh();
+ }catch(error){
+  label.textContent='⚠ No se pudo consultar OneDrive al abrir: '+error.message+'. Tus datos siguen guardados en el móvil.';
+ }
 }
-window.cineSyncResume=()=>void cloudAutoReceive();
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)void cloudAutoReceive();});
-window.addEventListener('focus',()=>void cloudAutoReceive());
-setInterval(()=>{if(!document.hidden)void cloudAutoReceive();},60000);
+// Android onResume deliberately does not contact OneDrive.
+window.cineSyncResume=()=>{};
 void mobileRefreshHistory();
 void mobileRefreshRecovery();
 
@@ -3137,7 +3164,7 @@ window.addEventListener('pagehide',()=>{
  try{syncActiveText();if(window.CineAndroid)window.CineAndroid.saveOnExit(JSON.stringify(libraryState));else navigator.sendBeacon('/api/library?token='+encodeURIComponent(token),new Blob([JSON.stringify(libraryState)],{type:'application/json'}));}catch(err){}
  try{navigator.sendBeacon('/api/quit?token='+encodeURIComponent(token),'cerrar');}catch(err){}
 });
-updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void initLibrary().then(async()=>{await initIdentities();await initPlatforms();void cloudAutoReceive(true);});
+updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void initLibrary().then(async()=>{await initIdentities();await initPlatforms();await cloudCheckOnOpen();});
 })();
 </script>
 </body>
