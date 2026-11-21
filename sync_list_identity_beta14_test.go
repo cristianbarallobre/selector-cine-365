@@ -1,6 +1,7 @@
 package main
 
 import (
+ "fmt"
  "strings"
  "testing"
 )
@@ -35,4 +36,20 @@ func TestWindowsStarterAndRenamedListCannotSwallowSubset(t *testing.T){
  peer:=syncSnapshot{Protocol:2,DeviceID:"android-other",Library:android}
  _,_,_,_,err:=syncMerge(win,map[string]syncRevision{},map[string]int64{},peer)
  if err==nil||!strings.Contains(err.Error(),"Sincronización detenida"){t.Fatalf("starter/subset collision not blocked: %v",err)}
+}
+
+func TestWindowsRejectsPreviouslyPollutedSuperset(t *testing.T){
+ var expected,polluted strings.Builder
+ for i:=0;i<40;i++{
+  line:=fmt.Sprintf("☐ Película %d (2000)\\n",i)
+  expected.WriteString(line);polluted.WriteString(line)
+ }
+ for i:=0;i<40;i++{polluted.WriteString(fmt.Sprintf("☐ Otra película %d (2010)\\n",i))}
+ correct:=initialLibrary(expected.String())
+ correct.Lists[0].Name="Mi lista"
+ bad:=initialLibrary(polluted.String())
+ bad.Lists[0].Name="Mi lista"
+ peer:=syncSnapshot{Protocol:2,DeviceID:"android-contaminated",Library:bad}
+ _,_,_,_,err:=syncMerge(correct,map[string]syncRevision{},map[string]int64{},peer)
+ if err==nil||!strings.Contains(err.Error(),"Sincronización detenida"){t.Fatalf("polluted supersets must be rejected: %v",err)}
 }
