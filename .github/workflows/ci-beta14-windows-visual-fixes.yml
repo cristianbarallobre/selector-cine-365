@@ -34,3 +34,15 @@ jobs:
             Selector_Cine_365_Mac_arm64_Beta14_preview
             Selector_Cine_365_Mac_amd64_Beta14_preview
           if-no-files-found: error
+
+  test-windows-dpapi:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - name: Probar DPAPI real y recuperación de la sesión Microsoft
+        shell: pwsh
+        run: go test ./... -run "TestWindowsDPAPI|TestMicrosoftSession" -count=1 -v
