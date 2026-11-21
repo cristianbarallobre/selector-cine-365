@@ -1918,20 +1918,53 @@ async function cloudRequest(path,method='GET',payload){
  if(!r.ok)throw new Error(data.error||'No se pudo completar la operación');return data;
 }
 let cineGraphConnected=false;
+function updateCloudGuide(s){
+ const connected=Boolean(s.enabled),paired=connected&&Boolean(s.sync_paired);
+ const review=connected&&(!paired||Boolean(s.needs_review));
+ const canSync=paired&&!s.needs_review;
+ const phase=!connected?'disconnected':review?'review':'paired';
+ const banner=$('cloudWizardStatus');
+ banner.dataset.phase=phase;
+ banner.textContent=!connected?'Paso 1 de 3 · Conecta OneDrive':
+   review?'Paso 2 de 3 · Revisa y confirma las listas':
+   'Cuenta vinculada · Sincronización disponible';
+ for(const [id,done,ready] of [
+   ['cloudStepConnect',connected,!connected],
+   ['cloudStepReview',paired&&!s.needs_review,review],
+   ['cloudStepSync',false,canSync]
+ ]){
+   $(id).dataset.state=done?'done':ready?'ready':'locked';
+ }
+ const reviewButton=$('cloudSyncReview');
+ reviewButton.disabled=!connected;
+ reviewButton.textContent=paired?'⇄ Revisar cambios o conflictos':'⇄ Revisar listas antes de sincronizar';
+ $('cloudSyncNowFast').disabled=!canSync;
+ $('cloudReviewHint').textContent=!connected?'Primero conecta tu cuenta o configura una carpeta local.':
+   review?'Abre la revisión y pulsa «Confirmar y sincronizar».':'Primera revisión confirmada. Puedes repetirla cuando necesites resolver cambios.';
+ $('cloudSyncHint').textContent=!connected?'Todavía no hay una nube conectada.':
+   !paired?'Se activará cuando confirmes el paso 2.':
+   !canSync?'Hay conflictos pendientes: revisa el paso 2.':
+   'Disponible. También puedes activar la actualización automática.';
+ // La carpeta sincronizada local y la conexión directa Microsoft son alternativas.
+ if(!cineGraphConnected)$('cloudGraphConnect').disabled=connected;
+}
 function cloudShow(s){
  cineGraphConnected=s.provider==='onedrive-direct';
+ updateCloudGuide(s);
  const box=$('cloudStatus');box.classList.toggle('warn',Boolean(s.last_error));
  if(s.enabled){
    if(document.activeElement!==$('cloudFolder'))$('cloudFolder').value=cineGraphConnected?'Cuenta Microsoft · OneDrive directo':s.folder;
    if($('cloudLastCheck'))$('cloudLastCheck').textContent='Última comprobación: '+(s.last_check_ms?new Date(s.last_check_ms).toLocaleTimeString('es-ES'):'aún no realizada');
    if($('cloudLastReceive'))$('cloudLastReceive').textContent='Últimos cambios recibidos: '+(s.last_received_ms?new Date(s.last_received_ms).toLocaleTimeString('es-ES'):'ninguno en esta sesión');
-   box.textContent=cineGraphConnected?(s.last_error?'⚠ OneDrive: '+s.last_error:s.needs_review?'✓ OneDrive conectado · pulsa «Revisar sincronización» antes de la primera importación.':'✓ Microsoft Graph conectado · biblioteca sincronizada.') :
-    s.needs_review?'⚠ Hay otros dispositivos en esta carpeta. Pulsa «Revisar sincronización» antes de publicar cambios.':
-     s.last_error?'⚠ Copia en nube fallida: '+s.last_error:
-     s.sync_paired?'✓ Sincronización automática activada · copias independientes':
-     s.last_backup?'✓ Copia en nube actualizada · '+new Date(s.last_backup).toLocaleString('es-ES'):'✓ Carpeta configurada; revisa antes de combinar';
+   box.textContent=cineGraphConnected?(s.last_error?'⚠ OneDrive conectado, pero la última operación dio un error: '+s.last_error:
+      s.needs_review?'Cuenta Microsoft conectada. La carpeta puede seguir vacía: falta revisar y confirmar las listas en el paso 2.':
+      'Cuenta Microsoft conectada y primera revisión confirmada. Copias en OneDrive: Selector_Cine_365/sincronizacion/dispositivos.') :
+    s.needs_review?'Carpeta local configurada. Revisa y confirma las listas en el paso 2 antes de sincronizar.':
+    s.last_error?'⚠ Copia en nube fallida: '+s.last_error:
+    s.sync_paired?'Carpeta local conectada y revisión inicial confirmada.':
+    s.last_backup?'Copia local de nube actualizada · '+new Date(s.last_backup).toLocaleString('es-ES'):'Carpeta configurada. Revisa antes de combinar.';
  }else{
-   box.textContent='Sin carpeta de nube configurada';
+   box.textContent='Solo guardado local en este ordenador. Conecta OneDrive en el paso 1 si quieres compartir tus listas.';
  }
 }
 async function cloudRefresh(){try{cloudShow(await cloudRequest('/api/cloud/status'))}catch(e){$('cloudStatus').textContent='⚠ No se pudo comprobar la copia en nube';}}
@@ -1949,9 +1982,12 @@ async function desktopGraphStatus(){
  }else{
   if(graphLoginPoll){clearInterval(graphLoginPoll);graphLoginPoll=null;}
   if(s.connected){
-   $('cloudGraphStatus').textContent='✓ Cuenta Microsoft conectada directamente. No necesitas instalar ni elegir carpetas OneDrive.';
+   $('cloudGraphStatus').textContent='✓ Cuenta Microsoft conectada. Continúa con el paso 2 para enviar tus listas.';
    await cloudRefresh();
-  }else if(s.last_error){$('cloudGraphStatus').textContent='⚠ '+s.last_error;}
+  }else if(s.last_error){
+   $('cloudGraphStatus').textContent='⚠ '+s.last_error;
+   await cloudRefresh();
+  }
  }
 }
 $('cloudGraphConnect').addEventListener('click',async()=>{
@@ -1978,8 +2014,8 @@ $('cloudSyncMode').addEventListener('change',async()=>{
  try{
   await cloudRequest('/api/cloud/mode','POST',{auto_sync:field.value==='automatic'});
   $('cloudAutoStatus').textContent=field.value==='manual'
-   ?'Modo manual. Solo se envían o reciben cambios cuando pulsas ↻ y revisas la sincronización.'
-   :'Modo automático. Solo se sincroniza después de la primera revisión confirmada.';
+   ?'Modo manual seleccionado: después de confirmar el paso 2, pulsa «Sincronizar ahora» para enviar y recibir cambios.'
+   :'Modo automático seleccionado: después de confirmar el paso 2, la aplicación buscará cambios periódicamente.';
  }catch(e){$('cloudGraphStatus').textContent='⚠ '+e.message;await refreshDesktopSyncMode();}
  finally{field.disabled=false;}
 });
@@ -1991,8 +2027,8 @@ $('cloudAutoFolder').addEventListener('click',async()=>{
   const data=await cloudRequest('/api/cloud/auto-folder','POST');
   cloudShow(data.status);
   $('cloudStatus').textContent=data.already_connected
-   ? '✓ Se conserva la carpeta ya configurada. Pulsa «Revisar sincronización» antes de cambiar nada.'
-   : '✓ OneDrive detectado. Pulsa «Revisar sincronización» y confirma antes de publicar o recibir datos.';
+   ? '✓ Se conserva la carpeta ya configurada. Continúa con el paso 2.'
+   : '✓ OneDrive detectado. Continúa con el paso 2 y confirma antes de enviar o recibir datos.';
  }catch(error){
   $('cloudStatus').textContent='⚠ '+error.message+' Puedes usar las opciones avanzadas para elegir la carpeta.';
   $('cloudStatus').classList.add('warn');
@@ -2087,7 +2123,7 @@ $('cloudRecoveryRestore').addEventListener('click',async()=>{
 });
 $('cloudSyncNowFast').addEventListener('click',async()=>{
  const button=$('cloudSyncNowFast');button.disabled=true;
- $('cloudSyncManualResult').textContent='Comprobando novedades y revisiones de otros dispositivos…';
+ $('cloudSyncManualResult').textContent='Comprobando OneDrive: leyendo y enviando cambios si corresponde…';
  try{
   await cloudAutoReceive(true);
   await cloudRefresh();await cineRefreshHistory();
@@ -2102,9 +2138,10 @@ $('cloudSyncReview').addEventListener('click',async()=>{
   await saveQueue;
   const data=await cloudRequest('/api/cloud/preview','POST');
   syncPreviewToken=data.token;
-  $('cloudSyncSummary').textContent='Fuentes compartidas: '+data.sources+'. En este PC: '+data.local_lists+
-   ' listas y '+data.local_seen+' vistas. Después de combinar: '+data.result_lists+
-   ' listas y '+data.result_seen+' vistas.';
+  $('cloudSyncSummary').textContent='Copias de otros dispositivos encontradas: '+data.sources+
+   '. En este PC: '+data.local_lists+' listas y '+data.local_seen+
+   ' películas vistas. Resultado previsto al combinar: '+data.result_lists+
+   ' listas y '+data.result_seen+' vistas. Revisa estas cantidades antes de confirmar.';
   const target=$('cloudSyncConflicts');target.replaceChildren();
   for(const conflict of data.conflicts||[]){
    const label=document.createElement('label');label.className='sync-choice';
@@ -2131,10 +2168,18 @@ $('cloudSyncConfirm').addEventListener('click',async()=>{
  try{
   $('cloudSyncSummary').textContent='Combinando y creando copia de recuperación…';
   const data=await cloudRequest('/api/cloud/sync','POST',{token:syncPreviewToken,decisions});
-  $('cloudSyncSummary').textContent='✓ '+data.lists+' listas · '+data.seen+' vistas.';
-  location.reload();
- }catch(e){$('cloudSyncSummary').textContent='⚠ '+e.message+' Comprueba la copia local de recuperación.';}
- finally{button.disabled=false;}
+  syncPreviewToken='';$('cloudSyncPanel').hidden=true;
+  await initLibrary();restartList();
+  await cloudRefresh();void cineRefreshHistory();void cineRefreshRecovery();
+  $('cloudAutoStatus').textContent='✓ Revisión confirmada: '+data.lists+' listas y '+data.seen+' vistas. Copia enviada y verificada en OneDrive.';
+  $('cloudSyncManualResult').textContent='Primera sincronización completada. Puedes seguir con el paso 3.';
+ }catch(e){
+   const timeout=/deadline|timeout|tiempo de espera|context canceled/i.test(e.message);
+   $('cloudSyncSummary').textContent=timeout
+    ?'⚠ Se agotó el tiempo de espera. La copia podría haberse enviado igualmente. Consulta la carpeta de OneDrive y el estado de sincronización antes de repetir la operación.'
+    :'⚠ '+e.message+' No se ha confirmado la subida; tus listas siguen guardadas localmente.';
+   await cloudRefresh().catch(()=>{});
+ }finally{button.disabled=false;}
 });
 // Se activa solo tras la primera revisión manual. No consulta TMDB ni sube fichas.
 let cloudAutoBusy=false,cloudAutoCheckedAt=0;
@@ -2166,7 +2211,9 @@ async function cloudAutoReceive(force=false){
    await cloudRefresh(); // Un GET local: actualiza la hora incluso sin cambios.
    }finally{/* La recepción automática NUNCA bloquea la interfaz. */}
  }catch(error){
-   $('cloudAutoStatus').textContent='⚠ No se pudo comprobar la nube: '+error.message+' · Puedes usar «Revisar sincronización».';
+   $('cloudAutoStatus').textContent=/deadline|timeout|tiempo de espera|context canceled/i.test(error.message)
+     ?'⚠ OneDrive tardó demasiado en responder. La copia puede existir igualmente; comprueba la carpeta y vuelve a revisar el estado.'
+     :'⚠ No se pudo comprobar OneDrive: '+error.message+' · Puedes usar «Revisar cambios o conflictos».';
  }finally{cloudAutoBusy=false;}
 }
 window.addEventListener('focus',()=>void cloudAutoReceive());
