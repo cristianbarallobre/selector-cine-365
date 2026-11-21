@@ -249,6 +249,32 @@ func syncOrderedFilmRows(current,remote string) string {
  return strings.Join(lines,"\n")
 }
 
+// Reject unrelated libraries which happen to reuse a legacy list ID. A new
+// Android installation always starts with "atlas" and can otherwise append
+// hundreds of unrelated film lines into the selected Windows list.
+func syncListFilmKeys(list filmCollection) map[string]bool {
+ keys:=map[string]bool{}
+ for _,line:=range strings.Split(list.Text,"\n"){
+  if f,ok:=parseSyncFilm(line);ok{keys[f.key]=true}
+ }
+ return keys
+}
+func syncListIdentityError(local,remote filmCollection) error {
+ ours,theirs:=syncListFilmKeys(local),syncListFilmKeys(remote)
+ if len(ours)==0||len(theirs)==0{return nil}
+ matches:=0
+ for key:=range theirs{if ours[key]{matches++}}
+ starterA:=strings.HasPrefix(local.Name,"Selector Cine 365 ·")
+ starterB:=strings.HasPrefix(remote.Name,"Selector Cine 365 ·")
+ differentSets:=len(ours)!=len(theirs)||matches!=len(ours)
+ starterCollision:=starterA!=starterB&&differentSets
+ smaller:=len(ours);if len(theirs)<smaller{smaller=len(theirs)}
+ unrelated:=matches*2<smaller
+ if starterCollision||unrelated{
+  return fmt.Errorf("Sincronización detenida: «%s» y «%s» comparten el ID %s pero parecen listas diferentes. No se han mezclado ni enviado datos. Conserva las copias antes de continuar",local.Name,remote.Name,local.ID)
+ }
+ return nil
+}
 func syncMerge(local libraryState,revisions map[string]syncRevision,known map[string]int64,peer syncSnapshot) (libraryState,map[string]syncRevision,map[string]int64,[]syncConflict,error) {
  return syncMergeVersioned(local,revisions,known,peer,false)
 }
@@ -281,6 +307,7 @@ func syncMergeVersioned(local libraryState,revisions map[string]syncRevision,kno
    result.Lists=append(result.Lists,other);continue
   }
   own:=&result.Lists[idx]
+  if err:=syncListIdentityError(*own,other);err!=nil{return local,nil,nil,nil,err}
   if strings.HasPrefix(own.Name,"Selector Cine 365 ·")&&!strings.HasPrefix(other.Name,"Selector Cine 365 ·"){own.Name=other.Name}
   keys:=map[string]bool{}
   for _,line:=range strings.Split(own.Text,"\n"){if f,ok:=parseSyncFilm(line);ok{keys[f.key]=true}}
