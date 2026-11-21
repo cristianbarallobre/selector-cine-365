@@ -1,4 +1,4 @@
-name: CI Android Beta 13.7 - TMDB resume and TXT export
+name: CI Android Beta 13.8 - TMDB resume and TXT export
 on:
   push:
     branches: ['fix/android-beta13-6-tmdb-resume']
@@ -50,6 +50,6 @@ jobs:
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
-          name: Selector_Cine_365_Android_v9_BETA13_7_UNSIGNED
+          name: Selector_Cine_365_Android_v9_BETA13_8_UNSIGNED
           path: android/app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
