@@ -15,6 +15,6 @@ assert.match(html,/cloudRequest\('\/api\/onedrive\/auto','POST'\)/);
 assert.match(html,/<details id="odAdvancedFolders">/);
 assert.match(html,/if\(link\.migration_required\)/);
 assert.match(graph,/OneDrive devolvió demasiadas páginas de carpetas/);
-assert.match(gradle,/versionCode 9021/);
-assert.match(gradle,/versionName '9\.0\.0-beta\.13\.7'/);
+assert.match(gradle,/versionCode 9022/);
+assert.match(gradle,/versionName '9\.0\.0-beta\.13\.8'/);
 console.log('OK: autoconnect, legacy data preservation, explicit sync, safe pagination, 9019');
