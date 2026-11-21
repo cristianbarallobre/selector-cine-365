@@ -1,0 +1,16 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const html=fs.readFileSync('android/app/src/main/assets/index.html','utf8');
+const start=html.indexOf('function exportTxtFilename('),end=html.indexOf("$('exportBtn').addEventListener",start);
+assert.ok(start>=0&&end>start);
+const fn=new Function(html.slice(start,end)+';return exportTxtFilename;')();
+assert.equal(fn('Terror de los 80'),'Terror de los 80.txt');
+assert.equal(fn('Ciencia ficción: 2026/2027'),'Ciencia ficción 2026 2027.txt');
+assert.equal(fn('Mi lista.  '),'Mi lista.txt');
+assert.equal(fn(''), 'Lista de películas.txt');
+assert.match(html,/const filename=exportTxtFilename\(virtualMode\?'Comparación de listas':activeCollection\(\)\?\.name\)/);
+assert.match(html,/CineAndroid\.exportFile\(filename/);
+assert.match(html,/a\.download=filename/);
+assert.doesNotMatch(html,/Mi_lista_de_peliculas\.txt/);
+for(const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g))new Function(m[1]);
+console.log('OK Android: TXT follows active list and native export chooser receives filename');
