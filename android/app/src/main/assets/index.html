@@ -1391,6 +1391,10 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
   </div>
   <div class="mobile-help mobile-sync-caution">La app guarda sus archivos de intercambio dentro de la carpeta que hayas elegido, en <code>Selector_Cine_365_Copias</code>, con copias separadas para cada dispositivo. <strong>No borres las subcarpetas actual ni sincronizacion.</strong> Si ya usabas otra carpeta con listas sincronizadas, no la renombres ni la muevas sin hacer antes una copia JSON.</div>
   <div id="tmdbSettingsTools" class="mobile-setting-actions" aria-label="Ajustes opcionales de TMDB"></div>
+  <div class="mobile-setting-actions" style="margin-top:10px">
+    <button type="button" class="tool" id="tmdbResumeIncomplete">↻ Completar carátulas y plataformas pendientes</button>
+  </div>
+  <p id="tmdbRepairStatus" class="mobile-help" aria-live="polite">Las fichas TMDB se guardan por separado en cada dispositivo. Este botón recupera únicamente las incompletas de la lista actual, sin sincronizar claves privadas.</p>
   <div id="cloudActivityShield" class="cloud-activity-shield" hidden aria-live="assertive" role="status">
     <div class="cloud-activity-message">
       <span class="cloud-activity-spinner" aria-hidden="true"></span>
@@ -1726,22 +1730,27 @@ async function initPlatforms(){
  }
  // Al abrir no hacemos búsquedas de red, ni siquiera si faltan fichas.
  // Las nuevas incorporaciones y «Actualizar» solicitan lo que haga falta.
- updatePlatformProgress();updateListPlatformOptions();renderList();renderStats();
+ updatePlatformProgress();updatePlatformChoices();updateListPlatformOptions();renderList();renderStats();
 }
-async function loadPlatforms(force){
+async function loadPlatforms(force,onlyIncomplete=false){
  if(!platformConfigured){showPlatformModal();return;}
  const current=++platformRun;
  // No vaciar la caché al cambiar de lista ni al reabrir la aplicación.
  // «Actualizar» puede pedir datos nuevos a TMDB; lo demás usa la copia local.
- const all=parsed.entries.map(f=>({...f}));
- const entries=force?all:all.filter(f=>!platformData.has(providerKey(f)));
+ const all=[...new Map(parsed.entries.map(f=>[providerKey(f),{...f}])).values()];
+ const needsRepair=f=>{
+   const r=platformData.get(providerKey(f));
+   return !r||r.state==='error'||r.state==='not-found'||r.metadata_version<3
+     ||(r.state==='ok'&&!r.poster_path);
+ };
+ const entries=onlyIncomplete?all.filter(needsRepair):force?all:all.filter(f=>!platformData.has(providerKey(f)));
  platformTotal=all.length;platformFinished=all.length-entries.length;
  platformActive=entries.length>0;updatePlatformProgress();renderList();
  if(!entries.length){updateListPlatformOptions();return;}
  // Hasta tres consultas simultáneas solamente para películas no cacheadas.
  let idx=0;
  async function worker(){while(current===platformRun){const n=idx++;if(n>=entries.length)break;const f=entries[n];
-   try{const r=await platformApi('/api/platforms/lookup',{title:f.title,year:Number(f.year)||0,force:!!force});if(current===platformRun){platformData.set(providerKey(f),r);if(r?.tmdb_id>0)registerIdentity(f,r.tmdb_id);}}
+   try{const r=await platformApi('/api/platforms/lookup',{title:f.title,year:Number(f.year)||0,force:!!(force||onlyIncomplete)});if(current===platformRun){platformData.set(providerKey(f),r);if(r?.tmdb_id>0)registerIdentity(f,r.tmdb_id);}}
    catch(err){if(current===platformRun)platformData.set(providerKey(f),{state:'error',note:err.message});}
    if(current===platformRun){platformFinished++;if(platformFinished%5===0||platformFinished===platformTotal){updatePlatformProgress();scheduledPlatformRender();}}
  }}
@@ -1753,6 +1762,20 @@ function closePlatformModal(){$('platformOverlay').hidden=true;}
  $('helpConfigureTmdb').addEventListener('click',showPlatformModal);
 $('platformSetup').addEventListener('click',showPlatformModal);
 $('platformRefresh').addEventListener('click',()=>void loadPlatforms(true));
+$('tmdbResumeIncomplete').addEventListener('click',async()=>{
+ const button=$('tmdbResumeIncomplete');
+ if(platformActive){$('tmdbRepairStatus').textContent='Ya se están consultando fichas TMDB. Comprueba el progreso en Tu colección.';return;}
+ if(!platformConfigured){showPlatformModal();$('tmdbRepairStatus').textContent='Conecta tu clave TMDB en este móvil para descargar sus fichas.';return;}
+ button.disabled=true;
+ $('tmdbRepairStatus').textContent='Completando solo fichas faltantes o erróneas de la lista actual…';
+ try{
+   await loadPlatforms(false,true);
+   const entries=[...new Map(parsed.entries.map(f=>[providerKey(f),f])).values()];
+   const incomplete=entries.filter(f=>{const r=platformData.get(providerKey(f));return !r||r.state==='error'||r.state==='not-found';}).length;
+   $('tmdbRepairStatus').textContent='✓ Revisión terminada. '+(entries.length-incomplete)+' fichas disponibles de '+entries.length+'. '+(incomplete?incomplete+' todavía sin identificar o con error. Puedes corregir su ID TMDB.':'');
+ }catch(error){$('tmdbRepairStatus').textContent='⚠ '+error.message;}
+ finally{button.disabled=false;}
+});
 $('closePlatforms').addEventListener('click',closePlatformModal);
 $('cancelPlatforms').addEventListener('click',closePlatformModal);
 $('platformOverlay').addEventListener('click',e=>{if(e.target===$('platformOverlay'))closePlatformModal();});
