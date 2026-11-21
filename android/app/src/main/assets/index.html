@@ -1852,7 +1852,7 @@ function parse(text){
   const f=lineInfo(lines[i],i);
   if(f){
    // Stable ordinal for unnumbered lists; never rewrites the underlying TXT.
-   f.displayNumber=f.number||String(entries.length+1).padStart(3,'0');
+   f.displayNumber=String(entries.length+1).padStart(3,'0');
    entries.push(f);
   }
  }
@@ -1903,7 +1903,7 @@ function renderList(append=false){
    main.appendChild(titleLine);
    const meta=document.createElement('span');meta.className='film-filmmeta';
    if(f.year){const year=document.createElement('span');year.textContent=f.year;meta.appendChild(year);}
-   const displayNumber=f.number||(!global?f.displayNumber:'');
+   const displayNumber=!global?f.displayNumber:'';
    if(displayNumber){const number=document.createElement('span');number.className='film-sequence-number';number.textContent='N.º '+displayNumber;meta.appendChild(number);}
    if(r?.vote_count>0){const rating=document.createElement('span');rating.className='film-rating';rating.textContent='★ '+Number(r.vote_average).toFixed(1)+' TMDB';rating.title='Nota TMDB ('+r.vote_count+' votos), no equivale a IMDb';meta.appendChild(rating);}
    const membership=document.createElement('span');membership.className='film-memberships';
@@ -3100,7 +3100,7 @@ function posterPlaceholder(){const span=document.createElement('span');span.clas
 function updateChoiceMedia(){
  const el=$('resultPoster');el.hidden=true;el.removeAttribute('src');if(!chosen)return;
  const r=platformData.get(providerKey(chosen));if(r?.poster_path){el.src='/api/poster?token='+encodeURIComponent(token)+'&path='+encodeURIComponent(r.poster_path);el.hidden=false;}
- const detail=[chosen.number?'N.º '+chosen.number:'',chosen.year];
+ const detail=[chosen.displayNumber?'N.º '+chosen.displayNumber:'',chosen.year];
  if(r?.vote_count>0)detail.push('★ '+Number(r.vote_average).toFixed(1)+' / 10 · TMDB');
  $('resultDetails').textContent=detail.filter(Boolean).join(' · ');
 }
@@ -3161,7 +3161,7 @@ $('choose').addEventListener('click',()=>{
  const pos=(window.crypto&&crypto.getRandomValues?values[0]:Math.floor(Math.random()*4294967296))%pool.length;
  chosen=pool[pos];lastChoice=chosen.idx;
  $('resultTag').textContent='🍿 LA ELEGIDA';$('resultTitle').textContent=chosen.title;
- $('resultDetails').textContent=[chosen.number?'N.º '+chosen.number:'',chosen.year].filter(Boolean).join(' · ');updateChoicePlatforms();
+ $('resultDetails').textContent=[chosen.displayNumber?'N.º '+chosen.displayNumber:'',chosen.year].filter(Boolean).join(' · ');updateChoicePlatforms();
  $('markWatched').disabled=virtualMode;$('copyChoice').disabled=false;$('message').textContent=virtualMode?'Vista de coincidencias · solo lectura':'';
 });
 $('markWatched').addEventListener('click',()=>{if(chosen)toggle(chosen.idx);});
