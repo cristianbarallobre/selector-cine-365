@@ -509,6 +509,13 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
    Un único responsable para cada inset: nativo, no CSS. */
 .mobile-bottom-nav{padding-bottom:7px!important;bottom:0!important}
 </style>
+<style id="cine-android-manual-onedrive">
+.sync-header-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-height:31px}
+.sync-quick-btn{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;padding:0;border:1px solid #a78444;border-radius:10px;background:#2c3033;color:#f3d08d;cursor:pointer}
+.sync-quick-btn:active{background:#4a3d2c}.sync-quick-btn:focus-visible{outline:2px solid #ffd47e;outline-offset:2px}
+.sync-quick-btn:disabled{opacity:.45;cursor:wait}
+@media(max-width:420px){.sync-header-row{gap:4px}.sync-quick-btn{width:32px;height:32px;flex-basis:32px}.sync-header-row .saved{font-size:10px;max-width:115px;overflow:hidden;text-overflow:ellipsis}}
+</style>
 </head>
 <body>
 <textarea id="initialState" hidden>SELECTOR CINE 365 — 365 PELÍCULAS 
@@ -1250,7 +1257,15 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
     <div><div class="eyebrow">SELECTOR CINE 365</div><h1>¿Qué película veo hoy?</h1></div>
     <div class="header-side">
       <div class="header-tag">🎞️ CINE 365 · ANDROID BETA 13.2</div>
-      <div class="saved" id="saveState" aria-live="polite">✓ Guardado</div>
+      <div class="sync-header-row">
+         <span class="saved" id="saveState" aria-live="polite">✓ En el móvil</span>
+         <button id="cloudSyncQuick" class="sync-quick-btn" type="button" title="Sincronizar manualmente con OneDrive: enviar y recibir cambios" aria-label="Sincronizar con OneDrive: enviar y recibir cambios">
+           <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+             <path d="M20 11a8 8 0 0 0-14.8-4.1L4 9"/><path d="M4 4v5h5"/>
+             <path d="M4 13a8 8 0 0 0 14.8 4.1L20 15"/><path d="M20 20v-5h-5"/>
+           </svg>
+         </button>
+       </div>
       <div class="creator-credit" title="© 2026 Cristian Barallobre Rúa">Hecho por <strong>Cristian Barallobre Rúa</strong></div>
     </div>
   </header>
@@ -1347,7 +1362,7 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
     <h3>Estado de sincronización</h3>
     <p class="mobile-help" id="mobileLastCheck" aria-live="polite">Última comprobación: todavía no realizada.</p>
     <p class="mobile-help" id="mobileLastReceive">Cambios recibidos: ninguno en esta sesión.</p>
-    <button class="primary" id="mobileSyncNowFast" type="button">↻ Sincronizar ahora</button>
+    <button class="primary" id="mobileSyncNowFast" type="button">↻ Revisar, enviar y recibir cambios</button>
     <p id="mobileSyncManualResult" class="mobile-help" aria-live="polite"></p>
     <h3>Actividad reciente de películas</h3>
     <button class="tool" id="mobileHistoryRefresh" type="button">Actualizar historial</button>
@@ -1365,12 +1380,12 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
    <p id="syncPreviewSummary" class="mobile-help"></p>
    <div id="syncPreviewDetails" class="sync-preview-details"></div>
    <p class="mobile-help"><strong>Nunca sobrescribimos</strong> la copia principal del PC. Primero se importan los datos encontrados. Si hay cambios opuestos simultáneos, se detiene la operación.</p>
-   <button id="syncConfirmButton" type="button" class="primary">✓ Importar y activar sincronización</button>
+   <button id="syncConfirmButton" type="button" class="primary">✓ Confirmar y sincronizar</button>
    <button id="syncCancelButton" type="button" class="tool">Cancelar</button>
   </div>
   <div class="cloud-wizard-step">
-    <h3>5 · Sincronización automática y conflictos</h3>
-    <p>Después de la primera revisión, recibirás automáticamente los cambios compatibles al abrir la app y mientras la uses. <strong>Si aparecen marcas contradictorias, pulsa Revisar sincronización</strong> y decide qué conservar.</p>
+    <h3>5 · Sincronización manual y conflictos</h3>
+    <p>Al abrir la aplicación se consulta OneDrive <strong>una sola vez y sin importar ni publicar cambios</strong>. Usa el botón de dos flechas ↻ para revisar, enviar y recibir cambios. Se mostrará una confirmación antes de fusionarlos; los conflictos requieren una decisión. Puedes trabajar sin conexión y guardar todas tus modificaciones en el móvil.</p>
   </div>
   <div class="mobile-help mobile-sync-caution">La app guarda sus archivos de intercambio dentro de la carpeta que hayas elegido, en <code>Selector_Cine_365_Copias</code>, con copias separadas para cada dispositivo. <strong>No borres las subcarpetas actual ni sincronizacion.</strong> Si ya usabas otra carpeta con listas sincronizadas, no la renombres ni la muevas sin hacer antes una copia JSON.</div>
   <div id="tmdbSettingsTools" class="mobile-setting-actions" aria-label="Ajustes opcionales de TMDB"></div>
@@ -1468,16 +1483,16 @@ main{width:100%!important;height:100dvh!important;max-height:100dvh!important;mi
       <div class="backup-bar"><button class="tool" type="button" id="downloadBackup">⬇ Copia de seguridad</button><button class="tool" type="button" id="restoreBackup">↻ Restaurar copia</button></div>
       <input class="upload-input" type="file" id="backupFile" accept=".json,application/json">
       <div class="cloud-box" aria-label="Copias automáticas en tu nube">
-        <div class="cloud-title">☁ Copias y sincronización de la carpeta elegida</div>
+        <div class="cloud-title">☁ OneDrive · sincronización manual</div>
         <input class="cloud-path" id="cloudFolder" type="text" autocomplete="off" placeholder="Carpeta local de OneDrive, Drive, Dropbox…" aria-label="Carpeta para las copias automáticas">
         <div class="cloud-buttons">
           <button class="tool" type="button" id="cloudBrowse">📁 Elegir carpeta local</button>
-          <button class="tool" type="button" id="cloudActivate">✓ Activar copia</button>
-          <button class="tool" type="button" id="cloudBackupNow">↻ Copiar ahora</button>
+          <button class="tool" type="button" id="cloudActivate">✓ Conectar carpeta</button>
+          <button class="tool" type="button" id="cloudBackupNow">⬆ Enviar copia</button>
           <button class="tool" type="button" id="cloudDisable">Desactivar</button>
         </div>
         <div class="cloud-status" id="cloudStatus" aria-live="polite">Comprobando copias…</div>
-        <div class="cloud-status" id="mobileAutoStatus" aria-live="polite">Después de la primera revisión, la app recibirá automáticamente los cambios seguros al abrirla o volver a ella.</div>
+        <div class="cloud-status" id="mobileAutoStatus" aria-live="polite">OneDrive se consulta una vez al abrir. Para enviar o recibir cambios, pulsa ↻ y confirma la revisión.</div>
       </div>
     </div>
   </section>
