@@ -19,7 +19,9 @@ assert.match(html,/#view-collections \.panel::-webkit-scrollbar-track\{[^}]*marg
 for(const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g))new Function(m[1]);
 const metaBlock=html.slice(html.indexOf("const meta=document.createElement('span');meta.className='film-filmmeta';"),html.indexOf("main.appendChild(meta);"));
 assert.ok(metaBlock.indexOf('year.textContent=f.year')>=0);
-assert.ok(metaBlock.indexOf("number.textContent='N.º '+f.number")>metaBlock.indexOf('year.textContent=f.year'));
-assert.ok(metaBlock.indexOf("rating.textContent='★ '")>metaBlock.indexOf("number.textContent='N.º '+f.number"));
+assert.ok(metaBlock.indexOf("number.textContent='N.º '+displayNumber")>metaBlock.indexOf('year.textContent=f.year'));
+assert.ok(metaBlock.indexOf("rating.textContent='★ '")>metaBlock.indexOf("number.textContent='N.º '+displayNumber"));
 assert.equal((metaBlock.match(/number.textContent='N.º '/g)||[]).length,1,'El número aparece una sola vez');
+assert.match(html,/f\.displayNumber=f\.number\|\|String\(entries\.length\+1\)\.padStart\(3,'0'\)/);
+assert.match(metaBlock,/const displayNumber=f\.number\|\|\(!global\?f\.displayNumber:''\)/);
 console.log('OK desktop: TXT follows active list, streaming choices restore, scrollbar inset');
