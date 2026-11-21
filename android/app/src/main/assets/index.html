@@ -2914,50 +2914,38 @@ $('syncConfirmButton')?.addEventListener('click',async()=>{
  }catch(e){$('syncResult').textContent='⚠ '+e.message+' No se ha sobrescrito la copia de Windows.';}
  finally{button.disabled=false;cloudBusyEnd();}
 });
-// Tras la primera revisión manual, se fusionan automáticamente cambios seguros.
-// No se consulta TMDB para revisar OneDrive. Se limita la frecuencia de acceso a Graph.
-let cloudAutoBusy=false,cloudAutoCheckedAt=0;
-async function cloudAutoReceive(force=false,showBusy=false){
- if(document.hidden)return; // Invisible WebView must not poll OneDrive.
- if(cloudAutoBusy||cloudSyncBusy||cloudUserRequests>0||pendingSyncToken||!$('syncPreviewPanel').hidden)return;
- if(!force&&Date.now()-cloudAutoCheckedAt<55000)return;
- if(document.querySelector('.overlay:not([hidden])'))return;
- if(document.activeElement?.matches('input,textarea,select,[contenteditable="true"]'))return;
- if(saveTimer!==null)return;
- cloudAutoBusy=true;
- if(showBusy)cloudBusyStart('/api/cloud/auto');
- const beforeEpoch=saveEpoch;
- const main=document.querySelector('main');
+// Manual-mode OneDrive policy: ONE read-only check on cold application launch.
+// Never import, upload, poll by interval or on every resume/focus. The user
+// must press the two-arrow button and confirm the full merge preview.
+let cloudAutoBusy=false;
+async function cloudCheckOnOpen(){
+ const label=$('mobileAutoStatus');
  try{
-   await saveQueue.catch(()=>{});
-   if(beforeEpoch!==saveEpoch||saveTimer!==null)return;
-   cloudAutoCheckedAt=Date.now();
-   try{
-     const r=await cloudRequest('/api/cloud/auto','POST');
-     if(r.skipped==='background'){
-       // Minimized while a check was queued; allow a fresh check on resume.
-       cloudAutoCheckedAt=0;
-     }else if(r.needs_review){
-       $('mobileAutoStatus').textContent=r.skipped==='not_paired'
-         ?'Primera conexión pendiente: pulsa «Revisar sincronización».'
-         :'⚠ Hay marcas contradictorias. Pulsa «Revisar sincronización» para elegir qué conservar.';
-     }else if(r.changed){
-       await initLibrary();restartList();
-       $('mobileAutoStatus').textContent='✓ Cambios recibidos automáticamente de otro dispositivo.';
-       await cloudRefresh();
-     }else if(!r.skipped){
-       $('mobileAutoStatus').textContent='✓ Sincronización automática al día.';
-     }
-   await cloudRefresh(); // Un GET local: actualiza la hora incluso sin cambios.
-   }finally{/* La recepción automática NUNCA bloquea la interfaz. */}
- }catch(e){
-   $('mobileAutoStatus').textContent='⚠ No se pudo comprobar la nube: '+e.message+'. Puedes seguir utilizando tus listas sin conexión.';
- }finally{cloudAutoBusy=false;if(showBusy)cloudBusyEnd();}
+  const status=await cloudRequest('/api/cloud/status'); // local-only
+  cloudShow(status);
+  if(!status.enabled){
+   label.textContent='Sin OneDrive conectado. Tus cambios se guardan en el móvil.';
+   return;
+  }
+  if(!status.activated){
+   label.textContent='Carpeta elegida. Pulsa ↻ para revisar y activar la primera sincronización.';
+   return;
+  }
+  await saveQueue.catch(()=>{});
+  if(document.hidden)return;
+  // READ-ONLY: /preview builds a plan; only /sync can modify or upload data.
+  const preview=await platformApi('/api/cloud/preview',{});
+  const conflicts=Array.isArray(preview.conflicts)?preview.conflicts.length:0;
+  label.textContent=conflicts
+    ?'⚠ OneDrive consultado al abrir · '+conflicts+' cambios requieren decisión. Pulsa ↻.'
+    :'✓ OneDrive consultado al abrir (sin importar ni enviar). Pulsa ↻ para sincronizar.';
+  await cloudRefresh();
+ }catch(error){
+  label.textContent='⚠ No se pudo consultar OneDrive al abrir: '+error.message+'. Tus datos siguen guardados en el móvil.';
+ }
 }
-window.cineSyncResume=()=>void cloudAutoReceive();
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)void cloudAutoReceive();});
-window.addEventListener('focus',()=>void cloudAutoReceive());
-setInterval(()=>{if(!document.hidden)void cloudAutoReceive();},60000);
+// Android onResume deliberately does not contact OneDrive.
+window.cineSyncResume=()=>{};
 void mobileRefreshHistory();
 void mobileRefreshRecovery();
 
@@ -3174,7 +3162,7 @@ window.addEventListener('pagehide',()=>{
  try{syncActiveText();if(window.CineAndroid)window.CineAndroid.saveOnExit(JSON.stringify(libraryState));else navigator.sendBeacon('/api/library?token='+encodeURIComponent(token),new Blob([JSON.stringify(libraryState)],{type:'application/json'}));}catch(err){}
  try{navigator.sendBeacon('/api/quit?token='+encodeURIComponent(token),'cerrar');}catch(err){}
 });
-updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void initLibrary().then(async()=>{await initIdentities();await initPlatforms();void cloudAutoReceive(true);});
+updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void initLibrary().then(async()=>{await initIdentities();await initPlatforms();await cloudCheckOnOpen();});
 })();
 </script>
 </body>
