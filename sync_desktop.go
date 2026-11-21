@@ -221,6 +221,34 @@ func (s *desktopSyncStore) accept(p syncPlan,decisions map[string]bool,folder st
  s.state.PairedFolder=filepath.Clean(folder)
  return s.saveLocked()
 }
+// syncOrderedFilmRows changes *only* the positions of film rows. It keeps
+// unnumbered headings, blank lines, exact film text, existing marks, and films
+// added locally. A peer's older order cannot roll back a newer local movement.
+func syncOrderedFilmRows(current,remote string) string {
+ lines:=strings.Split(current,"\n")
+ ranks:=map[string]int{}
+ for _,line:=range strings.Split(remote,"\n"){
+  f,ok:=parseSyncFilm(line)
+  if ok {if _,seen:=ranks[f.key];!seen {ranks[f.key]=len(ranks)}}
+ }
+ type row struct { line string; original int; rank int }
+ indices:=[]int{}
+ rows:=[]row{}
+ for i,line:=range lines {
+  f,ok:=parseSyncFilm(line)
+  if !ok{continue}
+  rank,found:=ranks[f.key];if !found{rank=len(ranks)+i}
+  indices=append(indices,i)
+  rows=append(rows,row{line:line,original:i,rank:rank})
+ }
+ sort.SliceStable(rows,func(i,j int)bool{
+  if rows[i].rank==rows[j].rank{return rows[i].original<rows[j].original}
+  return rows[i].rank<rows[j].rank
+ })
+ for i,idx:=range indices{lines[idx]=rows[i].line}
+ return strings.Join(lines,"\n")
+}
+
 func syncMerge(local libraryState,revisions map[string]syncRevision,known map[string]int64,peer syncSnapshot) (libraryState,map[string]syncRevision,map[string]int64,[]syncConflict,error) {
  return syncMergeVersioned(local,revisions,known,peer,false)
 }
@@ -261,6 +289,10 @@ func syncMergeVersioned(local libraryState,revisions map[string]syncRevision,kno
     if own.Text!=""&&!strings.HasSuffix(own.Text,"\n"){own.Text+="\n"}
     own.Text+=line;keys[f.key]=true
    }
+  }
+  if other.OrderChangedAt>own.OrderChangedAt {
+   own.Text=syncOrderedFilmRows(own.Text,other.Text)
+   own.OrderChangedAt=other.OrderChangedAt
   }
  }
  // Eliminar del resultado las listas marcadas como borradas, aunque
