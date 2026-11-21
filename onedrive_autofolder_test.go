@@ -32,7 +32,7 @@ func TestDiscoverPreservesExistingFolder(t *testing.T) {
 
 func TestDiscoverRejectsAmbiguousAccounts(t *testing.T) {
  home:=t.TempDir()
- one:=filepath.Join(home,"First"),two:=filepath.Join(home,"Second")
+ one,two:=filepath.Join(home,"First"),filepath.Join(home,"Second")
  for _,path:=range []string{one,two}{if err:=os.MkdirAll(path,0700);err!=nil{t.Fatal(err)}}
  _,err:=discoverOneDriveFolder(home,"windows",func(k string)string{
   if k=="OneDriveConsumer"{return one}
