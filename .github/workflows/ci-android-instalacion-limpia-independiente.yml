@@ -1,0 +1,45 @@
+name: Android Beta 13.13 - instalación independiente sin conflicto
+on:
+  push:
+    branches: ['fix/android-beta13-6-tmdb-resume']
+    paths:
+      - 'android/**'
+      - '.github/workflows/ci-android-instalacion-limpia-independiente.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  independiente:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      MICROSOFT_CLIENT_ID: '696458fe-0672-47e5-9fdd-aa0332e9884b'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: Install Android SDK
+        shell: bash
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -path '*/bin/sdkmanager' -type f | sort -V | tail -1)"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Compilar APK independiente para instalación desde cero
+        working-directory: android
+        run: gradle --no-daemon testDebugUnitTest assembleRelease -PcineFreshInstall
+      - name: Comprobar que NO usa el identificador de la instalación anterior
+        shell: bash
+        run: |
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging android/app/build/outputs/apk/release/app-release-unsigned.apk | grep -F "package: name='es.cine365.app.limpia' versionCode='9027' versionName='9.0.0-beta.13.13'"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging android/app/build/outputs/apk/release/app-release-unsigned.apk | grep -m 1 'application-label'
+          unzip -t android/app/build/outputs/apk/release/app-release-unsigned.apk | tail -1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Selector_Cine_365_Beta13_13_INDEPENDIENTE_SIN_FIRMAR
+          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+          if-no-files-found: error

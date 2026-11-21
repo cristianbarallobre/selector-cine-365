@@ -188,7 +188,15 @@ final class Tmdb {
         JSONObject saved=cache.optJSONObject(ck);
         // Sin caducidad por tiempo: refrescar solo cuando se pide explícitamente,
         // se incorpora una película nueva o se corrige su identificación.
-        if(!force&&saved!=null&&saved.optInt("metadata_version")>=3)return saved;
+        if(!force&&saved!=null&&saved.optInt("metadata_version")>=3){
+            // A failed TMDB request must not permanently poison a film's cache.
+            // Keep a cooldown to avoid retry storms or battery/network drain.
+            if(!"error".equals(saved.optString("state")))return saved;
+            try{
+                Instant last=Instant.parse(saved.optString("date"));
+                if(last.plusSeconds(30*60).isAfter(Instant.now()))return saved;
+            }catch(Exception ignored){}
+        }
         String api=getKey();if(api.isEmpty())return empty("error","Configura una clave de TMDB");
         JSONObject result;
         try{
