@@ -10,7 +10,11 @@ android {
         if (project.hasProperty('cineFreshInstall')) {
             applicationId 'es.cine365.app.limpia'
         }
-        resValue 'string', 'cine_app_name', project.hasProperty('cineFreshInstall') ? 'Selector Cine 365 (Limpia)' : 'Selector Cine 365'
+        if (project.hasProperty('cineLab')) {
+            // Un APK LAB nunca comparte identificador ni datos privados con producción.
+            applicationId 'es.cine365.app.lab'
+        }
+        resValue 'string', 'cine_app_name', project.hasProperty('cineLab') ? 'Selector Cine 365 LAB' : (project.hasProperty('cineFreshInstall') ? 'Selector Cine 365 (Limpia)' : 'Selector Cine 365')
         minSdk 26
         targetSdk 35
         versionCode 9027
@@ -18,8 +22,13 @@ android {
     }
     buildFeatures { buildConfig true }
     // Public identifier, NOT a secret. Configured by repository owner in GitHub Actions Variables.
-    def microsoftClientId = (System.getenv('MICROSOFT_CLIENT_ID') ?: '').trim()
-    defaultConfig { buildConfigField 'String', 'MICROSOFT_CLIENT_ID', '"' + microsoftClientId.replace('"','') + '"' }
+    // LAB bloquea OAuth/Graph hasta registrar un cliente Microsoft específico para LAB;
+    // el esquema de retorno de la aplicación estable no debe compartirse.
+    def microsoftClientId = project.hasProperty('cineLab') ? '' : (System.getenv('MICROSOFT_CLIENT_ID') ?: '').trim()
+    defaultConfig {
+        buildConfigField 'String', 'MICROSOFT_CLIENT_ID', '"' + microsoftClientId.replace('"','') + '"'
+        buildConfigField 'boolean', 'LAB_MODE', project.hasProperty('cineLab') ? 'true' : 'false'
+    }
     // Identificador permanente, también para futuras actualizaciones firmadas.
     // No utilizar sufijos de versión en applicationId.
     buildTypes {
