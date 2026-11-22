@@ -1,6 +1,20 @@
 # Historial de cambios — Selector Cine 365
 
-**Referencia recomendada para pruebas:** Windows/macOS Beta 14 y Android Beta 13.13 (21/11/2026). `v9.0.0-beta.14`. [Descarga conjunta](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.14).
+## v9.0.0 — estable (22 de noviembre de 2026)
+
+**Estado:** canal estable recomendado, basado en las compilaciones **Windows/macOS Beta 14** y **Android Beta 13.13 Limpia**, sin recompilación de los binarios. El usuario ha comprobado esta combinación en los dispositivos previstos.
+
+- **Publicación coordinada:** Windows EXE, Mac Intel/Apple Silicon y Android APK firmada, junto con manual completo, guía de sincronización, hashes SHA-256 y código fuente fijo en la etiqueta `v9.0.0`.
+- **Correcciones estabilizadas:** protección contra mezcla de listas con ID repetido, primera sincronización Android sin concatenación del catálogo de muestra, vista previa con recuentos por lista, persistencia de Microsoft en Windows mediante DPAPI y carga progresiva local de fichas TMDB.
+- **Compatibilidad Android:** `es.cine365.app.limpia`, versionCode 9027; actualiza la Beta 13.12 Limpia con firma idéntica; no es una actualización de `es.cine365.app`.
+- **Limitaciones:** las bibliotecas históricas ya contaminadas requieren recuperación manual desde copias verificadas; en Mac Microsoft aún no persiste mediante Keychain; la caché TMDB es local por dispositivo.
+- **Mantenimiento:** documentación consolidada, archivos históricos etiquetados, releases redundantes respaldadas antes de retirada. No se han cambiado funcionalidades del ejecutable al promocionarlo a estable.
+
+[Descargar estable](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0) · [Manual completo](docs/MANUAL_COMPLETO_SELECTOR_CINE_365.md) · [Notas](RELEASE_NOTES_v9_ESTABLE.md).
+
+---
+
+## Etapa anterior: Beta 14 / Android Beta 13.13 (21 de noviembre de 2026)
 
 ## v9 Beta 14 / Android Beta 13.13 — candidato recomendado (21/11/2026)
 
