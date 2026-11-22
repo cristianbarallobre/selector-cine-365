@@ -1,0 +1,43 @@
+# LAB-02 — Descubrir y fichas completas (solo Windows)
+
+**Canal:** rama `experimental`. **No está en `main` ni en la release estable `v9.0.0`.**
+
+## Alcance
+
+Esta prueba funciona **únicamente en la versión Windows compilada con `-tags lab`**. Los archivos `lab_discover_windows.go` y `lab_discover_windows.html` se activan exclusivamente en Windows; el archivo `lab_discover_other.go` desactiva explícitamente esta función en macOS y Linux. **No se ha modificado ningún archivo del proyecto Android para LAB-02**. Apple y Android se abordarán por separado cuando apruebes las pruebas de Windows.
+
+## Qué se ha añadido
+
+- Nueva sección **✦ Descubrir** en la navegación de Windows LAB.
+- **Tendencias**, **populares**, **mejor valoradas** y **próximos estrenos** consultados a TMDB en español. Región España para categorías que admiten región.
+- Búsqueda por título, con resultados paginados (hasta cinco páginas por consulta en esta primera prueba).
+- Tarjetas con carátula, título, año y puntuación TMDB, claramente diferenciada de una nota personal.
+- Ficha de película con sinopsis, reparto (hasta diez intérpretes), dirección, géneros, duración, valoración, enlace al tráiler y enlace a TMDB.
+- Disponibilidad de España separada por suscripción, gratis, anuncios, alquiler y compra; enlace a la plataforma cuando TMDB lo facilite.
+- Añadir a **cualquiera de las listas actuales** como película pendiente. Evita duplicados por ID conocido de TMDB o por título y año. No importa ni reemplaza una lista entera.
+- Al pulsar el contenido de la tarjeta de una película en la Biblioteca de Windows LAB (excepto casillas, enlaces y botones), se abre la ficha si está identificada. Cuando el título es ambiguo se muestran los resultados para elegir manualmente.
+
+## Requisitos y seguridad
+
+- Hay que conectar la clave personal de TMDB desde **Biblioteca → Conectar TMDB** en la propia instalación LAB. La clave no se copia automáticamente desde la instalación estable.
+- La búsqueda es optativa y necesita internet; las listas locales siguen funcionando desconectadas.
+- El servidor local exige el token de la sesión para las rutas `/api/discover/*`. No entrega la clave TMDB al navegador; utiliza el conector TMDB existente.
+- Las carátulas usan una ruta proxy limitada a rutas de imagen válidas de TMDB. Los enlaces externos se abren con `noopener noreferrer`.
+- El modo LAB utiliza `Selector_Cine_365_LAB` para los datos locales y otra carpeta en OneDrive; no se deben conectar las copias de producción como destino manual.
+- Los cambios se guardan mediante el procedimiento habitual de la biblioteca y sus precauciones de sincronización; no se hace una importación masiva automática al pulsar una película.
+- Para comprobar las fichas de una película añadida sin conexión, se conserva el título en la biblioteca pero la información TMDB completa no estará disponible hasta volver a conectarse.
+
+## Descargar y probar
+
+Abrir [Actions → LAB - pruebas y compilaciones independientes](https://github.com/cristianbarallobre/selector-cine-365/actions/workflows/ci-lab.yml?query=branch%3Aexperimental) y descargar el artefacto **`Selector_Cine_365_LAB-02_Windows`** de una ejecución correcta.
+
+Se genera un EXE portable de Windows x64 sin firma Authenticode, con datos separados. El botón Descubrir no aparece en la aplicación oficial ni en el canal de laboratorio de Mac. No se publica como release oficial.
+
+## Validación
+
+- Pruebas Go del proyecto y del canal LAB.
+- Comprobación de sintaxis y aislamiento del JavaScript inyectado: `node scripts/test_lab_discover_windows.cjs`.
+- Compilación cruzada de un ejecutable Windows con etiqueta LAB.
+- Pendiente de **prueba manual en Windows con una clave TMDB real** antes de considerar aprobada LAB-02.
+
+**El paso a producción requiere aprobación explícita.** No fusionar `experimental` automáticamente con `main`.
