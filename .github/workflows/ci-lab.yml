@@ -31,14 +31,30 @@ jobs:
           node scripts/test_lab_discover_windows.cjs
       - name: Compilar Windows LAB (sin firma)
         run: |
-          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -tags lab -trimpath -ldflags='-H windowsgui -s -w' -o Selector_Cine_365_LAB-02_Windows.exe .
-          test -s Selector_Cine_365_LAB-02_Windows.exe
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -tags lab -trimpath -ldflags='-H windowsgui -s -w' -o Selector_Cine_365_LAB-02_1_Windows.exe .
+          test -s Selector_Cine_365_LAB-02_1_Windows.exe
       - uses: actions/upload-artifact@v4
         with:
-          name: Selector_Cine_365_LAB-02_Windows
-          path: Selector_Cine_365_LAB-02_Windows.exe
+          name: Selector_Cine_365_LAB-02_1_Windows
+          path: Selector_Cine_365_LAB-02_1_Windows.exe
           retention-days: 14
           if-no-files-found: error
+
+
+  windows-native-tests:
+    name: Windows LAB / caché y precarga nativas
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - name: Probar TTL, persistencia, aislación y cola en Windows
+        shell: pwsh
+        run: |
+          go test -tags lab -run 'TestLab' -count=1 -v .
+
 
   android:
     # Android permanece sin experimentar: compilarlo solo mediante lanzamiento manual.
