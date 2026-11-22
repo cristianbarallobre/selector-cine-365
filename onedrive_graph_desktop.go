@@ -333,12 +333,12 @@ func (g *desktopGraph) list(path string)([]graphDriveItem,error){
 func (g *desktopGraph) ensureRoot()(string,error){
  items,err:=g.list("me/drive/root/children?$select=id,name,folder&$top=200");if err!=nil{return "",err}
  for _,item:=range items{
-  if strings.EqualFold(item.Name,"Selector_Cine_365"){
-   if item.Folder==nil{return "",errors.New("Selector_Cine_365 existe en OneDrive, pero es un archivo")}
+  if strings.EqualFold(item.Name,oneDriveFolderName){
+   if item.Folder==nil{return "",fmt.Errorf("%s existe en OneDrive, pero es un archivo",oneDriveFolderName)}
    return item.ID,nil
   }
  }
- b,_:=json.Marshal(map[string]any{"name":"Selector_Cine_365","folder":map[string]any{},"@microsoft.graph.conflictBehavior":"fail"})
+ b,_:=json.Marshal(map[string]any{"name":oneDriveFolderName,"folder":map[string]any{},"@microsoft.graph.conflictBehavior":"fail"})
  result,err:=g.request("me/drive/root/children","POST",b,"application/json")
  if err!=nil{return "",err}
  var item graphDriveItem
