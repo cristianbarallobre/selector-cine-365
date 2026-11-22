@@ -282,6 +282,24 @@ func (a *runningApp) serveLabPrefetch(w http.ResponseWriter,r *http.Request) {
  }
  _=json.NewEncoder(w).Encode(c.status())
 }
+// Un título preparado puede abrir su ficha sin buscar de nuevo en TMDB.
+func (a *runningApp) labCachedIdentity(w http.ResponseWriter,r *http.Request) {
+ if r.Method!=http.MethodGet {http.Error(w,"Método no permitido",405);return}
+ title:=strings.TrimSpace(r.URL.Query().Get("title"))
+ year,err:=strconv.Atoi(r.URL.Query().Get("year"))
+ if err!=nil||year<0||year>2200||utf8.RuneCountInString(title)<2||utf8.RuneCountInString(title)>150 {
+  http.Error(w,"Título o año no válido",400);return
+ }
+ c:=a.labCatalog()
+ k:=labJobKey(labFilmJob{Title:title,Year:year})
+ c.mu.Lock()
+ id:=c.disk.Resolved[k]
+ if len(c.disk.Items[labID(id)].Data)==0 {id=0}
+ c.mu.Unlock()
+ w.Header().Set("Content-Type","application/json; charset=utf-8")
+ _=json.NewEncoder(w).Encode(map[string]int{"id":id})
+}
+
 func (a *runningApp) labDetailFromCache(w http.ResponseWriter,r *http.Request) {
  w.Header().Set("Content-Type","application/json; charset=utf-8")
  id,err:=strconv.Atoi(r.URL.Query().Get("id"))
