@@ -1,220 +1,104 @@
-> **Actualización 21/11/2026:** Windows Beta 14 conecta Microsoft Graph directamente con PKCE y conserva la sesión con DPAPI. Android Beta 13.13 usa la misma cuenta de OneDrive y sincronización manual; las listas se revisan por nombre y número de películas antes de confirmar. Consulta la [Guía de sincronización segura de la versión recomendada](GUIA_SINCRONIZACION_SEGURA_BETA14_ANDROID13_13.md). El documento que sigue incluye pasos históricos y de configuración avanzada.
+# Selector Cine 365 — Configuración de Microsoft Entra y OneDrive
 
-# Selector Cine 365
-## Guía de configuración de Microsoft Azure, Entra ID y OneDrive
+**Guía vigente para v9.0.0 estable (22 de noviembre de 2026).** Esta distribución conserva Windows/macOS Beta 14 y Android Beta 13.13 como nombres internos. Este documento sustituye la guía Beta 13.1; la edición anterior puede recuperarse desde el historial Git.
 
-**Edición:** actualizada para la release v9 Beta 13.1 Windows/Mac y APK Android Beta 13, 20 de noviembre de 2026  
-**Alcance:** conexión de OneDrive personal con Selector Cine 365 para Android y escritorio Windows/macOS.  
-**Estado comprobado:** el inicio de sesión de Microsoft y la sincronización entre dispositivos llegaron a funcionar tras el cambio al inicio interactivo de Android Beta 7. La sincronización automática y las revisiones causales se conservan en Beta 13, pero deben seguir probándose con dispositivos reales.
+## 1. ¿Tengo que configurar OneDrive?
 
-> **Idea principal:** no necesitas crear una aplicación de Azure por cada teléfono, ni usar códigos de dispositivo, ni contratar servidores. El registro de Microsoft Entra sirve para autorizar el acceso de Android a OneDrive. En Windows y macOS se utiliza la carpeta de OneDrive sincronizada por el cliente instalado en el ordenador.
+**No.** Selector Cine 365 funciona localmente en todos los dispositivos sin configurar Microsoft ni TMDB. OneDrive es opcional y sirve para **compartir bibliotecas y marcas de vistas** entre Windows, Mac y Android.
 
-## 1. Lo que finalmente funcionó
+Si quieres sincronizar, usa **la misma cuenta Microsoft personal** en todos los dispositivos. Las películas, las listas y el estado visto se almacenan primero en la memoria local del programa. Las copias de OneDrive son adicionales.
 
-- **Nombre del registro en Microsoft Entra:** `Selector Cine 365`.
-- **Tipo de cuentas admitidas:** `Solo cuentas personales` de Microsoft (OneDrive personal, Outlook, Hotmail, Live).
-- **Identificador de aplicación (cliente):** `696458fe-0672-47e5-9fdd-aa0332e9884b`.
-- **Plataforma para el retorno de inicio de sesión:** `Aplicaciones móviles y de escritorio`.
-- **URI de redirección exacta:** `msal696458fe-0672-47e5-9fdd-aa0332e9884b://auth`.
-- **Permitir flujos de cliente público:** `Sí`.
-- **Permisos delegados de Microsoft Graph:** `Files.ReadWrite` y `User.Read`.
-- **Permiso que solicita la app para mantener la sesión:** `offline_access`.
-- **Método de inicio de sesión final:** navegador de Microsoft, **OAuth 2.0 Authorization Code + PKCE**. Microsoft devuelve automáticamente el control a Android.
-- **Secreto de cliente:** **NO crear ni introducir** uno. El identificador de cliente es público; los secretos y contraseñas no lo son.
+## 2. Registro Microsoft Entra que utiliza el proyecto
 
-Este resumen sirve para **revisar una instalación que ya está creada**. Los pasos siguientes explican cómo reproducir la configuración desde cero.
+| Campo | Valor comprobado en este proyecto |
+| --- | --- |
+| Nombre de aplicación | Selector Cine 365 |
+| Application (client) ID público | `696458fe-0672-47e5-9fdd-aa0332e9884b` |
+| Tipos de cuenta | Cuentas personales de Microsoft |
+| Tipo de aplicación | Cliente público, móvil y escritorio |
+| Flujo OAuth | Authorization Code + PKCE (S256) |
+| Redirección Android | `msal696458fe-0672-47e5-9fdd-aa0332e9884b://auth` |
+| Redirección Windows/macOS | `http://localhost` |
+| Permisos Graph | `Files.ReadWrite`, `User.Read`, `offline_access` |
 
-## 2. Acceder a Azure y Microsoft Entra
+El ID del cliente es **público**, no una contraseña. **No crees ni copies secretos de cliente** dentro del proyecto. No compartas contraseñas Microsoft, tokens, claves de TMDB ni certificados privados de firma Android.
 
-1. Entra en **https://portal.azure.com/** e inicia sesión con la cuenta Microsoft que administra el registro.
-2. En el buscador del portal escribe **Microsoft Entra ID** y abre el servicio.
-3. En el menú selecciona **Registros de aplicaciones** y busca **Selector Cine 365**.
-4. Si el registro **ya existe y funciona, no lo vuelvas a crear**. Entra en él para comprobar o actualizar su configuración.
-5. Si no existe y necesitas reproducirlo, pulsa **Nuevo registro**.
+### Si el registro ya existe y funciona
 
-**Sobre «Probar Azure gratis»:** durante nuestra configuración se utilizó el acceso a Azure para disponer de un directorio y poder registrar la aplicación. No se necesita crear una máquina virtual, contratar almacenamiento de Azure ni pasar automáticamente a «Pago por uso» para que Selector Cine 365 acceda a OneDrive mediante un registro estándar de Entra. Revisa siempre las condiciones de tu cuenta de Azure por separado.
+**No crees otro.** Solo comprueba en Microsoft Entra → **Registros de aplicaciones → Selector Cine 365 → Autenticación** que estén las dos redirecciones apropiadas; no borres la URI Android al configurar la de escritorio. El registro debe permitir el flujo de cliente público.
 
-## 3. Crear el registro correcto
+### Si necesitas revisar o reproducir la configuración
 
-1. En **Nombre** escribe `Selector Cine 365`.
-2. En **Tipos de cuenta compatibles** abre el desplegable y elige **Solo cuentas personales**. **No** elijas «Solo mi organización» ni «Solo inquilino único».
-3. En el formulario inicial puedes dejar **URI de redirección** vacía: se añadirá después en **Autenticación**.
-4. Pulsa **Registrar**.
-5. En **Información general** localiza **Id. de aplicación (cliente)**. Es el valor que debe usar la APK Android. No lo confundas con el **Identificador de objeto** ni con el **Id. del directorio (inquilino)**.
+1. Accede a [Microsoft Azure Portal](https://portal.azure.com/) con la cuenta autorizada para administrar el registro.
+2. Abre **Microsoft Entra ID → Registros de aplicaciones** y localiza **Selector Cine 365**.
+3. En **Información general**, comprueba el Application (client) ID anterior.
+4. En **Autenticación**, revisa que se permita iniciar sesión con cuentas Microsoft personales y que el cliente tenga las redirecciones Android y `http://localhost` como aplicación móvil/escritorio.
+5. En **Permisos de API**, verifica los permisos delegados requeridos de Microsoft Graph y la posibilidad de acceso offline para renovar autorizaciones.
+6. Guarda los cambios y autoriza desde las aplicaciones, nunca introduciendo contraseñas Microsoft dentro de un formulario de la app.
 
-**Si vuelves a registrar la aplicación desde cero**, Microsoft generará un identificador nuevo. En ese caso habrá que incorporarlo al código/compilación de Selector Cine 365 y actualizar la URI de retorno; las APK existentes no funcionarán automáticamente con otro identificador.
+No es necesario contratar servidores, crear una máquina virtual o un registro distinto por cada dispositivo.
 
-## 4. Corregir el error que apareció al elegir cuentas personales
+## 3. Conectar Windows v9.0.0 (compilación Beta 14)
 
-Durante la configuración encontramos este aviso al intentar guardar «Solo cuentas personales»:
+1. Abre Selector Cine 365 y entra en **Mis listas → Sincronización y copias de seguridad**.
+2. Selecciona **Conectar Microsoft**. La app abre el navegador oficial para completar PKCE.
+3. La app utiliza un puerto local efímero y recibe la autorización; no copies códigos de acceso en chats.
+4. Se localiza/crea la carpeta `Selector_Cine_365` de la cuenta y se prepara la comparación.
+5. **Antes de sincronizar**, revisa las listas del PC y las copias remotas. No confirmes si alguna lista incluye un número inesperado de películas.
 
-`Property api.requestedAccessTokenVersion is invalid`
+La credencial de renovación se almacena cifrada con **DPAPI del usuario de Windows** en `%APPDATA%\Selector_Cine_365\onedrive_sesion_dpapi.bin`. Esto permite continuar la sesión al cerrar la aplicación o sustituir el EXE. Una autorización anterior a DPAPI requiere iniciar sesión una vez. Si Microsoft revoca el permiso o cambias de cuenta, será necesario autorizar de nuevo.
 
-La solución que funcionó fue:
+Para comprobar datos dudosos selecciona **Solo cuando pulse sincronizar** y no permitas que una copia posiblemente mezclada se publique en otros equipos.
 
-1. En el menú del registro de **Selector Cine 365**, abre **Manifiesto**.
-2. Busca con `Ctrl + F` la propiedad `requestedAccessTokenVersion` (dentro de `api`).
-3. Establece su valor numérico en **2**, no en `null` ni en `1`:
+## 4. Conectar Android v9.0.0 (compilación Beta 13.13 Limpia)
 
-```json
-"requestedAccessTokenVersion": 2
-```
+1. Comprueba que tienes instalada `es.cine365.app.limpia` (versionCode 9027).
+2. En **Nube**, elige **Conectar cuenta Microsoft** e inicia sesión con la misma cuenta que en Windows.
+3. La app localiza o crea `Selector_Cine_365` en OneDrive; **conectar no debe importar ni publicar automáticamente las listas**.
+4. Pulsa el botón de sincronización manual **↻**, espera la vista previa y revisa **el nombre y la cantidad de películas de cada lista**.
+5. Solo si el resultado es correcto resuelve posibles conflictos de vistas y elige **Confirmar y sincronizar**.
 
-4. Guarda el manifiesto.
-5. Vuelve a **Autenticación (Preview) → Supported accounts / Tipos de cuenta admitidos**.
-6. Elige **Solo cuentas personales** y pulsa **Guardar**. En nuestra configuración esta vez se guardó **sin error**.
+Android **no sincroniza las ediciones automáticamente en segundo plano**. Marcar películas se guarda en el móvil; enviar/recibir requiere la acción manual con confirmación.
 
-Esta corrección responde al error específico que apareció en nuestro registro. Si Microsoft cambia la interfaz o el manifiesto, modifica solo esa propiedad y comprueba el mensaje mostrado por el portal.
+**Importante para nuevos dispositivos:** la lista inicial de muestra con 365 películas se sustituye por la biblioteca real de la nube únicamente si está intacta. Esto evita añadir todas las películas de muestra a una lista sincronizada.
 
-## 5. Activar la autenticación de una aplicación móvil
+## 5. Conectar Mac (Intel y Apple Silicon)
 
-1. En el registro, entra en **Autenticación** o **Authentication (Preview)**.
-2. Busca la pestaña **Configuración** o el apartado de **Configuración avanzada**.
-3. Ajusta **Permitir flujos de cliente público** a **Sí** y guarda.
-4. Abre **Configuración de URI de redirección**.
-5. Pulsa **Agregar plataforma** y elige **Aplicaciones móviles y de escritorio** (*Mobile and desktop applications*).
-6. Añade como **URI de redirección personalizada** la dirección exacta:
+Mac comparte la lógica de interfaz y las copias de escritorio de Beta 14. Sin embargo, la versión actual **no guarda todavía la sesión Microsoft con Keychain**, por lo que puede solicitar una nueva autorización tras reiniciar. No significa que se haya borrado tu biblioteca: los datos locales se conservan en `~/Library/Application Support/Selector_Cine_365`.
 
-```text
-msal696458fe-0672-47e5-9fdd-aa0332e9884b://auth
-```
+Las versiones para Mac son archivos ZIP que incluyen `.app`; están distribuidas sin firma/notarización de Apple.
 
-7. Guarda y vuelve a abrir el apartado para comprobar que quedó registrada.
+## 6. Qué datos se envían (y cuáles no)
 
-**Es importante conservar todos los caracteres:** `msal` + identificador de aplicación + `://auth`. La app Android espera recibir esa misma dirección cuando termina la autorización.
+| Se comparte mediante OneDrive | Permanece local |
+| --- | --- |
+| Listas y contenido | Clave personal de TMDB |
+| Marcas vistas/pendientes | Carátulas descargadas de TMDB |
+| IDs TMDB corregidos manualmente cuando están en `tmdb_overrides` | Caché de plataformas y valoraciones |
+| Registros de cambios, eliminaciones y snapshots de sincronización | Contraseñas, sesiones Microsoft protegidas y claves de firma |
+| Identificadores de listas y dispositivos | Archivos de recuperación no publicados localmente |
 
-## 5 bis. Beta 14 Windows y Mac: autorizar el navegador de escritorio
+OneDrive mantiene los archivos bajo la carpeta lógica `Selector_Cine_365`, con snapshots en la estructura `Selector_Cine_365_Copias/sincronizacion/dispositivos/` cuando corresponde al modo de sincronización.
 
-A partir de Beta 14, Windows y Mac también pueden acceder directamente a OneDrive mediante Microsoft Graph y OAuth Authorization Code con PKCE, usando **el mismo registro público de Microsoft Entra que Android**.
+**Una carátula visible en Windows no aparece instantáneamente en Android**: cada dispositivo la consulta por separado a TMDB. Este comportamiento no se arregla volviendo a conectar la cuenta Microsoft.
 
-**Configuración obligatoria y única del propietario del registro:**
+## 7. Recuperación y prevención de conflictos
 
-1. Abrir [Microsoft Entra](https://entra.microsoft.com/) → **Registros de aplicaciones** → **Selector Cine 365** (Id. de cliente `696458fe-0672-47e5-9fdd-aa0332e9884b`).
-2. En **Autenticación → Agregar plataforma → Aplicaciones móviles y de escritorio**, agregar `http://localhost` como URI de redirección. Si la plataforma ya existe, añadir esa URI a las existentes.
-3. Mantener **sin modificar** la URI de Android `msal696458fe-0672-47e5-9fdd-aa0332e9884b://auth`.
-4. Guardar y repetir **Conectar con Microsoft** en Selector Cine 365 Windows/Mac.
+La versión estable bloquea mezclas sospechosas de listas que comparten un ID pero contienen películas incompatibles. **No puede separar automáticamente una lista que ya fue mezclada en versiones anteriores**.
 
-La aplicación escucha en el equipo en un puerto local variable y solicita un retorno `http://localhost:PUERTO/`. Microsoft Entra **ignora el número de puerto** para comparar URIs localhost, así que se registra solamente `http://localhost`. No usar una URI de tipo **Web** ni **SPA**: la aplicación es un cliente público de escritorio. El puerto local no debe registrarse ni fijarse, ya que cambia con cada ejecución.
+1. Exporta un JSON de la biblioteca de Windows si allí las listas siguen correctamente separadas.
+2. Guarda ese JSON **fuera** de la carpeta de OneDrive.
+3. Compara nombres y recuentos de cada lista con la vista previa de Android.
+4. Si aparece contenido inesperado, **Cancelar**; no borres snapshots ni pulses sincronizar.
+5. Conserva la copia local de cada dispositivo y los respaldos `sync_recuperacion`. La recuperación debe basarse en una biblioteca buena verificada.
 
-**Síntoma de falta de registro:** Microsoft muestra «No se puede completar la solicitud / invalid_request: The provided value for the input parameter 'redirect_uri' is not valid». No es un fallo de tus listas ni de los permisos de almacenamiento: corresponde a la configuración de la aplicación en Entra.
+## 8. Solución de problemas frecuentes
 
-No hace falta crear una segunda aplicación, generar secretos de cliente, abrir puertos públicos ni cambiar el certificado Android.
+- **No aparece «Conectar Microsoft» o falla el retorno:** comprueba la versión, `http://localhost` para escritorio y la URI `msal...` para Android. Revisa que el navegador no esté bloqueando la devolución a la app.
+- **Se vuelve a solicitar la autorización en Windows:** verifica que usas el mismo usuario de Windows y que Microsoft no haya revocado los permisos. DPAPI protege la credencial pero no impide una revocación.
+- **Mac solicita entrar cada vez:** limitación conocida hasta implementar almacenamiento en Keychain.
+- **Android muestra «Conflicto con un paquete»:** el identificador estable es `es.cine365.app.limpia`, diferente al histórico `es.cine365.app`. No desinstales sin una copia JSON.
+- **Las listas se mezclan o los conteos cambian mucho:** cancela la sincronización y recupera una biblioteca intacta antes de intentar otra vez.
+- **No aparecen carátulas:** configura TMDB en cada dispositivo; OneDrive no lleva esas imágenes.
 
-Referencia oficial: https://learn.microsoft.com/en-us/entra/identity-platform/scenario-desktop-app-configuration
-
----
-
-## 6. Configurar los permisos de Microsoft Graph
-
-1. En el menú del registro abre **Permisos de API**.
-2. Pulsa **Agregar un permiso → Microsoft Graph → Permisos delegados**.
-3. Añade **`Files.ReadWrite`**. La aplicación lo utiliza para leer y escribir los archivos necesarios en OneDrive.
-4. Comprueba que también aparece **`User.Read`**.
-5. Guarda. Al iniciar sesión en Android, Microsoft puede pedir al usuario que acepte estos permisos.
-
-La aplicación solicita además el ámbito `offline_access` para poder renovar la sesión, cuando Microsoft lo permita. **No hace falta crear «Certificados y secretos».**
-
-**Alcance del permiso:** `Files.ReadWrite` no está limitado por Microsoft a la carpeta de pruebas; el permiso delegado permite leer y modificar archivos accesibles para la cuenta. **El diseño de Selector Cine 365 utiliza la carpeta elegida** y guarda allí sus propios archivos. Por prudencia, selecciona siempre una carpeta específica para la app y conserva tus copias importantes fuera de las pruebas.
-
-## 7. Conectar OneDrive desde Android (método que funcionó)
-
-1. Instala una versión de Selector Cine 365 Android con inicio de sesión **PKCE** (introducido en **Beta 7** y mantenido hasta **Beta 12**).
-2. Abre la aplicación y entra en **Nube → Conectar cuenta Microsoft**.
-3. Se abre **automáticamente el navegador del móvil** con la página oficial de Microsoft. **No copies ni pegues códigos temporales**.
-4. Inicia sesión con la cuenta personal de Microsoft que contiene el OneDrive que vas a usar.
-5. Acepta los permisos solicitados si estás de acuerdo con ellos.
-6. Al completar la autorización, el navegador te devuelve a **Selector Cine 365**.
-7. En la aplicación selecciona o crea la carpeta **`Selector_Cine_365`** y pulsa **Utilizar esta carpeta**.
-8. Seleccionar la carpeta **no fusiona todavía las bibliotecas**. La primera vez pulsa **Revisar sincronización**, comprueba los datos y confirma.
-
-Si conservas una beta antigua instalada en paralelo, Android puede preguntar qué aplicación abre el retorno de Microsoft. **Beta 11 y 12** comparten `es.cine365.app`, por lo que Beta 12 firmada con el mismo certificado actualiza Beta 11 sin duplicarla. **Beta 9** usa otro paquete y no puede reemplazarse conservando sus datos privados: exporta e importa JSON antes de retirarla.
-
-## 8. Conectar Windows o macOS a la misma carpeta
-
-1. Instala o abre el cliente de **OneDrive para Windows** y comprueba que sincroniza tu cuenta personal.
-2. Dentro de tu OneDrive crea, si aún no existe, **`Selector_Cine_365`**. Mantenla separada de tus carpetas de trabajo y copias habituales.
-3. Abre **Selector Cine 365 para Windows → Nube / Copias y sincronización**.
-4. Pulsa **Elegir carpeta** y selecciona en el disco la carpeta de OneDrive **`Selector_Cine_365`**.
-5. Comprueba que en Android has seleccionado **esa misma carpeta de OneDrive**, no una carpeta local cualquiera del teléfono.
-6. En la **primera vinculación** pulsa **Revisar sincronización** en ambos dispositivos, verifica las listas y los estados, y confirma.
-
-**Diferencia importante:** Windows accede a una carpeta que sincroniza el cliente de OneDrive. Android accede a OneDrive directamente mediante Microsoft Graph. **El registro de Microsoft Entra es para el acceso autorizado de Android**, no para instalar el cliente de OneDrive en Windows.
-
-## 9. Cómo comprobar que realmente funciona
-
-1. Haz primero una **copia JSON** de tus listas en ambos dispositivos.
-2. Después de vincularlos, en Windows marca una película de prueba como **vista**.
-3. Deja que OneDrive termine de subir los cambios. En Android comprueba que la marca se recibe; si estás usando la versión de sincronización manual, pulsa **Revisar sincronización**.
-4. Repite la prueba al revés: marca otra película distinta en Android y comprueba el cambio en Windows.
-5. En **Beta 8** se añadió recepción automática después de la primera revisión: al abrir, volver a la app y periódicamente mientras se usa. No es inmediata y **el comportamiento completo todavía debe validarse en dispositivos reales**.
-6. Si ambos dispositivos realizan decisiones contrarias sobre la misma película sin haber recibido los cambios del otro, usa **Revisar sincronización** para resolver el conflicto; no debe decidirse silenciosamente.
-
-**No desinstales la última versión que te funciona ni borres las carpetas de OneDrive durante las pruebas.** Los archivos de sincronización se guardan bajo `Selector_Cine_365_Copias/sincronizacion/dispositivos` dentro de la carpeta elegida.
-
-## 10. Errores que encontramos y cómo se resolvieron
-
-### A. `AADSTS16000` al entrar en Microsoft Entra
-
-Ocurrió al intentar usar una cuenta personal en un directorio al que no tenía acceso. Se pudo continuar tras disponer de acceso a Azure y al directorio propio. **No significa que tu OneDrive estuviera dañado.** Si reaparece, comprueba qué directorio y qué cuenta están seleccionados en el portal.
-
-### B. `unauthorized_client` en Android
-
-El registro mostraba **«Solo mi organización»**, incompatible con el OneDrive personal que queríamos utilizar. Cambiamos a **«Solo cuentas personales»** y comprobamos la opción de cliente público. Si el cambio falla con el mensaje de versión de token, aplica primero el apartado 4.
-
-### C. `Property api.requestedAccessTokenVersion is invalid`
-
-Se solucionó estableciendo `"requestedAccessTokenVersion": 2` en **Manifiesto**, guardando y volviendo a elegir **Solo cuentas personales**.
-
-### D. «El código no funcionó» en la página de Microsoft
-
-El primer sistema de Android utilizaba **códigos de dispositivo**. Lo repetimos varias veces sin éxito. La solución definitiva **no fue volver a escribir el código**: se cambió el método de autenticación de la app a **Authorization Code + PKCE**, con navegador y retorno automático. No tiene sentido volver al procedimiento de `microsoft.com/devicelogin` para esta app.
-
-### E. Microsoft no vuelve a Android tras iniciar sesión
-
-Comprueba que está registrada la URI `msal696458fe-0672-47e5-9fdd-aa0332e9884b://auth`, que la app instalada admite PKCE y que Android no está abriendo por defecto una beta anterior.
-
-### F. Parece que no se sincronizan los cambios
-
-Comprueba que Windows y Android apuntan a **la misma carpeta**, que el cliente OneDrive de Windows ha terminado de sincronizarla y que la **primera revisión** fue confirmada en ambos. En betas antiguas la recepción era manual; en Beta 8 hay recepción automática limitada y conflictos que requieren revisión.
-
-## 11. Mantenimiento y seguridad
-
-- El **registro de aplicación** de Microsoft Entra no tiene una fecha de caducidad anual fija. Se conserva mientras el registro y el directorio permanezcan activos y Microsoft permita su uso.
-- La **prueba gratuita o el crédito promocional de Azure** y el **registro de aplicación en Entra ID** son cosas distintas. No conviertas la cuenta a pago por uso solo por creer que Selector Cine 365 lo necesita.
-- La sesión de OneDrive en Android puede solicitar una **nueva autorización** si caduca, es revocada o Microsoft lo requiere; eso no implica registrar otra aplicación.
-- Conserva acceso a la cuenta administradora del registro y atiende los correos oficiales de Microsoft sobre el directorio o la cuenta.
-- **No compartas** contraseñas, tokens, claves privadas o secretos de cliente. El **Id. de aplicación (cliente)** y la URI de retorno que figuran aquí son datos públicos de configuración.
-- Haz copias JSON antes de experimentar con otra cuenta, otra carpeta, otra beta o bibliotecas distintas. El **modo sin nube** sigue siendo válido.
-- La autenticación **no descarga TMDB** por sí misma; la app conserva su caché de películas para evitar consultas innecesarias.
-
-## 12. Enlaces oficiales y archivos del proyecto
-
-- [Portal de Microsoft Azure](https://portal.azure.com/)
-- [Portal Microsoft Entra](https://entra.microsoft.com/)
-- [Registrar una aplicación](https://learn.microsoft.com/en-us/graph/auth-register-app-v2)
-- [Cambiar tipos de cuenta](https://learn.microsoft.com/en-us/entra/identity-platform/howto-modify-supported-accounts)
-- [Versión 2 de tokens y manifiesto](https://learn.microsoft.com/en-us/entra/identity-platform/reference-microsoft-graph-app-manifest)
-- [Registrar una URI de redirección](https://learn.microsoft.com/en-us/entra/identity-platform/how-to-add-redirect-uri)
-- [Flujos de cliente público](https://learn.microsoft.com/en-us/entra/identity-platform/scenario-mobile-app-configuration)
-- [OAuth 2.0 con PKCE](https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-auth-code-flow)
-- [Permisos Microsoft Graph](https://learn.microsoft.com/en-us/graph/permissions-reference)
-- [Repositorio de Selector Cine 365](https://github.com/cristianbarallobre/selector-cine-365)
-
----
-
-**Nota de conservación:** esta guía documenta la configuración que funcionó para Selector Cine 365 y los problemas reales encontrados en el proceso. La interfaz de Azure/Entra puede cambiar de nombre o ubicación; los valores técnicos (tipo de cuenta, permisos, Id. de cliente y URI de retorno) son la referencia principal mientras la app siga usando este registro.
-## Nota sobre Beta 13.1 de escritorio y Beta 13 Android
-
-- El registro público de Microsoft Entra, los permisos delegados y la URI de redirección no han cambiado al avanzar de Beta 12 a Beta 12.2. La corrección de notch y menú inferior solo afecta al diseño Android y no modifica la sincronización.
-- No se necesitan credenciales de Azure para utilizar la biblioteca local. La sincronización es opcional.
-- Android almacena y protege sus tokens en su espacio de aplicación; **no** los exportes en capturas ni los publiques en GitHub.
-- La app solo revisa la carpeta OneDrive seleccionada para su biblioteca; conserva una copia JSON independiente antes de conectar otro dispositivo.
-- Esta guía documenta la configuración, no garantiza instantaneidad ni ausencia de conflictos en la sincronización real.
-
-## Cambio en Android Beta 13.3: sincronización manual, sin tocar Entra
-
-La cuenta Microsoft, permisos y carpeta de OneDrive **no requieren ninguna modificación**. Solo cambia cuándo Android intercambia archivos: se realiza una consulta **de solo lectura al abrir la app**, y después ninguna comprobación programada ni al regresar de segundo plano. Para **enviar o recibir** cambios, pulsa el nuevo icono de dos flechas circulares de la cabecera y confirma el resumen de comparación. La marca «Guardado» indica almacenamiento **en el móvil**, no subida a OneDrive. Se mantienen todas las copias de recuperación y la resolución de conflictos. Windows/Mac Beta 13.1 mantienen sus propios mecanismos automáticos.
-
-## Nota de compatibilidad con Beta 13.1
-
-En esta publicación Windows y Mac incluyen la corrección de caché TMDB del servidor local Go. Android permanece en Beta 13 (versión interna 9015) con su firma persistente. **La corrección TMDB no requiere modificar Microsoft Entra ni volver a iniciar sesión en OneDrive**. Los IDs de películas identificadas manualmente y los marcadores de listas eliminadas se comparten en la biblioteca, pero **la clave privada API TMDB nunca se sincroniza**. Antes de compartir borrados entre dispositivos exporta una copia JSON independiente y actualiza Windows/Mac y Android a estas versiones.
+[Manual completo v9.0.0](MANUAL_COMPLETO_SELECTOR_CINE_365.md) · [Guía de sincronización segura](GUIA_SINCRONIZACION_SEGURA.md) · [Release estable](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0).
