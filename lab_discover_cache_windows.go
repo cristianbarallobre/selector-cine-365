@@ -74,8 +74,9 @@ func (a *runningApp) labCatalog() *labCatalogCache {
 }
 func labID(id int) string{return strconv.Itoa(id)}
 func labJobKey(j labFilmJob) string {
- if j.ID>0{return "tmdb:"+strconv.Itoa(j.ID)}
- return normaliseTitle(j.Title)+"|"+strconv.Itoa(j.Year)
+ // Stable for the entire queue, even after resolving a title to an ID.
+ if strings.TrimSpace(j.Title)!=""{return normaliseTitle(j.Title)+"|"+strconv.Itoa(j.Year)}
+ return "tmdb:"+strconv.Itoa(j.ID)
 }
 func (c *labCatalogCache) fileSaveLocked() error {
  if err:=os.MkdirAll(filepath.Dir(c.file),0700);err!=nil{return err}
