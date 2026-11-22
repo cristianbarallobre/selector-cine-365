@@ -29,6 +29,7 @@ func injectLabDiscovery(page string) string {
  if len(fragments)!=2 { return page }
  nav := `<button class="nav-btn" type="button" id="labDiscoverNav">✦ Descubrir <span class="lab-nav-tag">LAB</span></button>`
  page = strings.Replace(page, `<button class="nav-btn" type="button" data-view="statistics">`, nav+`<button class="nav-btn" type="button" data-view="statistics">`, 1)
+ page = strings.Replace(page, "🧪 SELECTOR CINE 365 LAB ·", "🧪 SELECTOR CINE 365 · LAB-02 ·", 1)
  page = strings.Replace(page, "</main>", fragments[0]+"\n</main>", 1)
  page = strings.Replace(page, "\n})();\n</script>", "\n"+fragments[1]+"\n})();\n</script>", 1)
  return page
