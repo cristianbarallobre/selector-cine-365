@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
-    <application android:label="Selector Cine 365" android:usesCleartextTraffic="false"
+    <application android:label="@string/cine_app_name" android:usesCleartextTraffic="false"
         android:icon="@drawable/cine_icon" android:theme="@style/Theme.Cine365"
         android:allowBackup="false" android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules">
