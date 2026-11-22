@@ -19,9 +19,13 @@
 .lab-result-top h3{font-size:18px;margin:0}
 .lab-status{font-size:13px;color:#b2c2d5;min-height:21px;margin:6px 0}
 .lab-movies-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
-.lab-movie-card{display:flex;min-width:0;flex-direction:column;text-align:left;gap:0;background:linear-gradient(180deg,#273549,#172331);border:1px solid #415168;border-radius:14px;padding:0;overflow:hidden;cursor:pointer;color:#f3f5fb;transition:transform .15s,border-color .15s}
-.lab-movie-card:hover{border-color:#e4b76f;transform:translateY(-3px)}
-.lab-movie-card:focus-visible{outline:2px solid #ffd990}
+.lab-movie-card{display:flex;min-width:0;flex-direction:column;text-align:left;gap:0;background:linear-gradient(180deg,#273549,#172331);border:1px solid #415168;border-radius:14px;padding:0;overflow:hidden;color:#f3f5fb}
+/* Solo los botones Detalles son clicables, no las tarjetas completas. */
+.lab-card-details{width:100%;border:1px solid #c5a062;border-radius:8px;padding:8px 10px;background:#473923;color:#ffe1a2;font-size:13px;font-weight:750;cursor:pointer;margin-top:auto}
+.lab-card-details:hover{background:#654c29}
+.lab-card-details:focus-visible,.lab-film-detail-button:focus-visible{outline:2px solid #ffda91;outline-offset:2px}
+.lab-film-detail-button{border:1px solid #b59660;border-radius:7px;background:#354354;color:#ffe1a5;padding:4px 8px;font-size:11px;font-weight:700;white-space:nowrap;flex:none;cursor:pointer}
+.lab-film-detail-button:hover{background:#51432e;color:#fff0c9}
 .lab-movie-poster{width:100%;aspect-ratio:2/3;object-fit:cover;background:linear-gradient(145deg,#324157,#1a2635);display:block}
 .lab-movie-empty{display:grid;place-items:center;color:#8ca2b7;font-size:35px}
 /* El placeholder no debe seguir visible cuando ya existe una carátula. */
@@ -168,7 +172,7 @@ async function labBrowse(){
  }
 }
 function labCard(film){
- const card=document.createElement('button');card.type='button';card.className='lab-movie-card';card.setAttribute('aria-label','Abrir ficha de '+film.title);
+ const card=document.createElement('article');card.className='lab-movie-card';
  const img=film.poster_path?document.createElement('img'):document.createElement('div');
  img.className=film.poster_path?'lab-movie-poster':'lab-movie-poster lab-movie-empty';
  if(film.poster_path){img.src=labPosterSrc(film.poster_path);img.loading='lazy';img.alt='';img.addEventListener('error',()=>{img.replaceWith(labNoPoster())},{once:true});}
@@ -178,8 +182,10 @@ function labCard(film){
  const meta=document.createElement('div');meta.className='lab-card-info';
  const year=document.createElement('span');year.textContent=String(film.release_date||'').slice(0,4)||'Sin fecha';
  const rating=document.createElement('span');rating.className='lab-card-rating';rating.textContent=film.vote_count?'★ '+Number(film.vote_average).toFixed(1):'—';
- meta.append(year,rating);body.append(title,meta);card.append(img,body);
- card.addEventListener('click',()=>void labShowDetail(film.id));return card;
+ const details=document.createElement('button');details.type='button';details.className='lab-card-details';details.textContent='Detalles';details.setAttribute('aria-label','Ver detalles de '+film.title);
+ details.addEventListener('click',()=>void labShowDetail(film.id));
+ meta.append(year,rating);body.append(title,meta,details);card.append(img,body);
+ return card;
 }
 function labNoPoster(){const x=document.createElement('div');x.className='lab-movie-poster lab-movie-empty';x.textContent='🎞';return x;}
 $('labPrevPage').addEventListener('click',()=>{if(labPage>1){labPage--;void labBrowse();}});
@@ -257,21 +263,24 @@ function labAddCurrentMovie(){
  $('labDetailNote').textContent='✓ Añadida como pendiente a «'+dst.name+'». Guardando…';
 }
 $('labDetailAdd').addEventListener('click',labAddCurrentMovie);
-// Un clic en el contenido de la película abre la ficha; nunca toca el tick,
-// los enlaces, el lápiz de TMDB ni los controles de listas/reordenación.
-$('filmList').addEventListener('click',async e=>{
- if(e.target.closest('button,a'))return;
- const card=e.target.closest('.film-item');if(!card)return;
- const title=card.querySelector('.film-name')?.textContent?.trim();if(!title)return;
- const f=parsed.entries.find(x=>x.idx===Number(card.dataset.idx)&&x.title===title);
- const year=f?.year||'';
- const id=f?knownTMDB(f):0;
+// El título, la imagen y el resto de la fila no abren fichas.
+// La opción existe exclusivamente en Windows LAB, junto al título.
+function labCreateDetailButton(f){
+ const button=document.createElement('button');button.type='button';
+ button.className='lab-film-detail-button';button.textContent='Detalles';
+ button.setAttribute('aria-label','Ver detalles de '+f.title);
+ button.addEventListener('click',e=>{e.stopPropagation();void labOpenFilmDetails(f);});
+ return button;
+}
+async function labOpenFilmDetails(f){
+ if(!f||!f.title)return;
+ const title=f.title,year=f.year||'',id=knownTMDB(f);
  if(id){void labShowDetail(id);return;}
  try{
   const data=await labGet('/api/discover/search?q='+encodeURIComponent(title)+'&page=1');
   const matches=(data.results||[]).filter(m=>labFold(m.title)===labFold(title)&&(!year||String(m.release_date||'').slice(0,4)===String(year)));
   if(matches.length===1){void labShowDetail(matches[0].id);return;}
   labOpen();$('labSearchInput').value=title;labQuery=title;labPage=1;void labBrowse();
-  labStatus('Selecciona la película correcta para abrir su ficha.');
+  labStatus('Selecciona la película correcta para abrir sus detalles.');
  }catch(err){labOpen();labStatus('⚠ '+err.message);}
-});
+}
