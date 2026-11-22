@@ -34,6 +34,22 @@ Abrir [Actions → LAB - pruebas y compilaciones independientes](https://github.
 
 Se genera un EXE portable de Windows x64 sin firma Authenticode, con datos separados. El botón Descubrir no aparece en la aplicación oficial ni en el canal de laboratorio de Mac. No se publica como release oficial.
 
+
+## Revisión LAB-02.1 — caché y botones (solo Windows)
+
+- La biblioteca mantiene el botón **Detalles** al lado del título, la pastilla Vista/Pendiente y el lápiz para corregir TMDB. Se retira el botón externo **↗** de las filas; sus enlaces siguen dentro de la ficha.
+- Descubrir también abre las fichas exclusivamente desde el botón **Detalles**. Ninguna tarjeta completa tiene que ser clicable.
+- Desaparece el recuadro de carátula de reserva cuando ya se cargó la imagen.
+- La primera apertura con TMDB conectado lanza **precarga de fichas de todas las listas**, priorizando la lista activa, sin bloquear la biblioteca. Una misma película se descarga solo una vez si comparte ID o título y año.
+- La cola trabaja **secuencialmente**, espera al menos 900 ms entre películas y respeta las respuestas de límite de TMDB. Hay progreso **Fichas guardadas: N / total** y botones **Pausar / Reanudar**. Si se cierra la app, el progreso de los datos guardados se conserva y las fichas pendientes se reprograman al iniciar.
+- Los detalles se guardan en `%APPDATA%\\Selector_Cine_365_LAB\\tmdb_fichas_lab.json`, por separado de `colecciones.json`. Los identificadores resueltos también se guardan, de modo que una película ya preparada abre «Detalles» sin nueva búsqueda.
+- Actualizaciones de caché: **30 días** para información general, **7 días** para nota/tráiler y **24 horas** para disponibilidad de plataformas. Si la ficha ya existe se muestra al instante, aunque esté obsoleta, y se refresca en segundo plano.
+- Fichas guardadas disponibles **sin internet** (texto y enlaces conservados; las carátulas dependen de la caché del navegador). Las plataformas pueden estar desactualizadas y se indican como tales al refrescar.
+- La caché no copia claves TMDB ni tokens; utiliza la cuenta TMDB ya configurada localmente en LAB. Ni las listas ni los datos compartidos de OneDrive se transforman para esta precarga.
+- **Pendiente de validación manual en Windows:** comprobar primeras 365 fichas, rendimiento real de TMDB, conexión lenta, duplicados, sinopsis y disponibilidad de España. La compilación CI por sí sola no prueba el comportamiento en tu PC.
+
+Descarga el artefacto **`Selector_Cine_365_LAB-02_1_Windows`** desde [GitHub Actions / rama experimental](https://github.com/cristianbarallobre/selector-cine-365/actions/workflows/ci-lab.yml?query=branch%3Aexperimental). No sustituye ni altera `main`, Android o macOS.
+
 ## Validación
 
 - Pruebas Go del proyecto y del canal LAB.
