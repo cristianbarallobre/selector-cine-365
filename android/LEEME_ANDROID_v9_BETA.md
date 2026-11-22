@@ -1,3 +1,5 @@
+> **ESTABLE v9.0.0 (22/11/2026):** esta distribución mantiene **Android Beta 13.13 Limpia** como versión interna y `versionCode 9027`, paquete `es.cine365.app.limpia`, firma privada original. [Descargar APK estable desde GitHub](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0). El texto siguiente es el historial técnico de la beta y no refleja una versión posterior. Para actualizaciones futuras conservar paquete y certificado sin desinstalar.
+
 # Android Beta 13.13 — aislamiento de listas y recuperación segura
 
 - Las versiones anteriores fusionaban automáticamente películas de listas con el mismo ID, especialmente `atlas` después de reinstalar Android. Una lista podía terminar con películas de otras listas dentro de su propio texto, aunque el selector mostrase una sola lista.
