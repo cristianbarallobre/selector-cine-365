@@ -118,6 +118,11 @@ public class MainActivity extends Activity {
                     return new WebResourceResponse(mime, file.endsWith(".png") ? null : "utf-8", input);
                 } catch(Exception e) { return errorResponse(); }
             }
+            @Override public void onPageFinished(WebView view, String url) {
+                if (BuildConfig.LAB_MODE && url != null && url.startsWith(APP_ORIGIN + "/assets/")) {
+                    view.evaluateJavascript("(function(){document.title='Selector Cine 365 LAB';var e=document.querySelector('.eyebrow');if(e)e.textContent='SELECTOR CINE 365 · LAB';var t=document.querySelector('.header-tag');if(t)t.textContent='🧪 CINE 365 · LAB-01';})()", null);
+                }
+            }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri=request.getUrl();
                 if (APP_ORIGIN.equals(uri.getScheme()+"://"+uri.getHost())) return false;
