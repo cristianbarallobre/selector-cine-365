@@ -24,7 +24,7 @@ import java.util.List;
 
 /** Android SAF mirror. Does not overwrite Windows's actual/colecciones.json. */
 final class CloudBackup {
-    private static final String ROOT="Selector_Cine_365_Copias";
+    private static final String ROOT=BuildConfig.LAB_MODE ? "Selector_Cine_365_LAB_Copias" : "Selector_Cine_365_Copias";
     private final MainActivity activity;
     private final File appDir;
     private final SyncStore sync;
@@ -79,7 +79,7 @@ final class CloudBackup {
         if(!folder.isEmpty())return status().put("migration_required",true);
         // Use the same root name supported by previous desktop/Android setups.
         // A missing folder is created once; no library data is uploaded here.
-        JSONObject chosen=oneDrive.createRoot("Selector_Cine_365");
+        JSONObject chosen=oneDrive.createRoot(BuildConfig.LAB_MODE ? "Selector_Cine_365_LAB" : "Selector_Cine_365");
         String id=chosen.getString("id");
         if(id.isEmpty())throw new Exception("OneDrive no devolvió una carpeta válida");
         configure("onedrive://item/"+Uri.encode(id));
