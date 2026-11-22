@@ -38,13 +38,13 @@ func discoverOneDriveFolder(home, platform string, getenv func(string) string) (
  if len(roots)==0{return "",errors.New("No se ha detectado una carpeta OneDrive local. La conexión directa por Microsoft Graph todavía no está activada en escritorio.")}
  existing:=[]string{}
  for _,root:=range roots {
-  target:=filepath.Join(root,"Selector_Cine_365")
+  target:=filepath.Join(root,oneDriveFolderName)
   if info,err:=os.Stat(target);err==nil&&info.IsDir(){existing=append(existing,target)}
  }
  if len(existing)==1{return existing[0],nil}
  if len(existing)>1{return "",errors.New("Se han encontrado varias bibliotecas Selector_Cine_365 en cuentas OneDrive diferentes; selecciona la correcta manualmente")}
  if len(roots)!=1{return "",fmt.Errorf("Se han encontrado %d ubicaciones OneDrive posibles; selecciona la cuenta correcta manualmente",len(roots))}
- return filepath.Join(roots[0],"Selector_Cine_365"),nil
+ return filepath.Join(roots[0],oneDriveFolderName),nil
 }
 
 func discoverCurrentOneDriveFolder() (string,error) {
