@@ -102,6 +102,7 @@ func (a *runningApp) serveLabDiscovery(w http.ResponseWriter,r *http.Request) {
  if r.URL.Path=="/api/discover/prefetch"||r.URL.Path=="/api/discover/prefetch/pause" {a.serveLabPrefetch(w,r);return}
  if r.Method!=http.MethodGet {http.Error(w,"Método no permitido",405);return}
  if r.URL.Path=="/api/discover/detail" {a.labDetailFromCache(w,r);return}
+ if r.URL.Path=="/api/discover/resolve" {a.labCachedIdentity(w,r);return}
  if r.URL.Path=="/api/discover/poster" {a.labDiscoveryPoster(w,r);return}
  w.Header().Set("Content-Type","application/json; charset=utf-8")
  fail:=func(code int,msg string){w.WriteHeader(code);_ =json.NewEncoder(w).Encode(map[string]string{"error":msg})}
