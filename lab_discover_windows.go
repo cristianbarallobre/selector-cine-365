@@ -6,7 +6,6 @@ import (
  "context"
  "embed"
  "encoding/json"
- "fmt"
  "io"
  "net/http"
  "net/url"
@@ -32,6 +31,14 @@ func injectLabDiscovery(page string) string {
  page = strings.Replace(page, "🧪 SELECTOR CINE 365 LAB ·", "🧪 SELECTOR CINE 365 · LAB-02 ·", 1)
  // El botón Detalles se añade solo al renderizado Windows LAB, sin cambiar plantilla.html.
  page = strings.Replace(page, "titleLine.appendChild(title);", "titleLine.append(title,labCreateDetailButton(f));", 1)
+ // En Windows LAB, el enlace externo de cada fila sobra: ya está dentro de Detalles.
+ page = strings.Replace(page, "b.append(togg,pill,fix,link);frag.appendChild(b);", "b.append(togg,pill,fix);frag.appendChild(b);", 1)
+ page = strings.Replace(page, `<input type="search" id="search"`, `<div class="lab-prefetch-banner" id="labPrefetchBanner" role="status" aria-live="polite"><span id="labPrefetchText">Fichas TMDB: comprobando caché…</span><button type="button" id="labPrefetchPause" hidden>Pausar</button></div><input type="search" id="search"`, 1)
+ // La precarga se inicia tras cargar biblioteca e identificaciones TMDB, y se actualiza al editar listas.
+ page = strings.Replace(page, "void cloudAutoReceive(true);});", "void cloudAutoReceive(true);labQueuePrefetchSoon();});", 1)
+ page = strings.Replace(page, "function scheduleSave(){membershipCache=null;", "function scheduleSave(){labQueuePrefetchSoon();membershipCache=null;", 1)
+ page = strings.Replace(page, "function showView(name){if(", "function showView(name){if(name==='library')labQueuePrefetchSoon();if(", 1)
+ page = strings.Replace(page, "platformConfigured=true;identityConfigured=true;closePlatformModal();", "platformConfigured=true;identityConfigured=true;closePlatformModal();labQueuePrefetchSoon();", 1)
  page = strings.Replace(page, "</main>", fragments[0]+"\n</main>", 1)
  page = strings.Replace(page, "\n})();\n</script>", "\n"+fragments[1]+"\n})();\n</script>", 1)
  return page
@@ -92,7 +99,9 @@ func labTrailer(vs []labVideo) string {
 func (a *runningApp) serveLabDiscovery(w http.ResponseWriter,r *http.Request) {
  if !appIsLab {http.NotFound(w,r);return}
  if !a.auth(r) {http.Error(w,"No autorizado",403);return}
+ if r.URL.Path=="/api/discover/prefetch"||r.URL.Path=="/api/discover/prefetch/pause" {a.serveLabPrefetch(w,r);return}
  if r.Method!=http.MethodGet {http.Error(w,"Método no permitido",405);return}
+ if r.URL.Path=="/api/discover/detail" {a.labDetailFromCache(w,r);return}
  if r.URL.Path=="/api/discover/poster" {a.labDiscoveryPoster(w,r);return}
  w.Header().Set("Content-Type","application/json; charset=utf-8")
  fail:=func(code int,msg string){w.WriteHeader(code);_ =json.NewEncoder(w).Encode(map[string]string{"error":msg})}
@@ -127,39 +136,6 @@ func (a *runningApp) serveLabDiscovery(w http.ResponseWriter,r *http.Request) {
   for _,m:=range data.Results {m=safeLabMovie(m);if m.ID>0&&m.Title!="" {filtered=append(filtered,m)}}
   data.Results=filtered
   _=json.NewEncoder(w).Encode(data)
- case "/api/discover/detail":
-  id,err:=strconv.Atoi(r.URL.Query().Get("id"))
-  if err!=nil||id<1||id>999999999 {fail(400,"Identificador de película no válido");return}
-  path:="/movie/"+strconv.Itoa(id)
-  var detail struct {
-   labMovie
-   Runtime int `json:"runtime"`
-   Genres []labGenre `json:"genres"`
-   Credits struct { Cast []labPerson `json:"cast"`; Crew []labPerson `json:"crew"` } `json:"credits"`
-   Videos struct { Results []labVideo `json:"results"` } `json:"videos"`
-  }
-  if err:=requestTMDB(ctx,path,url.Values{"language":{"es-ES"},"append_to_response":{"credits,videos"}},key,&detail);err!=nil {fail(502,err.Error());return}
-  if detail.ID!=id||detail.Title=="" {fail(502,"TMDB devolvió una ficha inválida");return}
-  detail.labMovie=safeLabMovie(detail.labMovie)
-  director:=""
-  for _,p:=range detail.Credits.Crew {if p.Job=="Director"&&p.Name!="" {if director!="" {director+=" / "};director+=p.Name;if len(director)>220{break}}}
-  cast:=make([]map[string]string,0,10)
-  for _,p:=range detail.Credits.Cast {if len(cast)>=10 {break};if p.Name!="" {cast=append(cast,map[string]string{"name":p.Name,"character":p.Character})}}
-  genres:=make([]string,0,len(detail.Genres));for _,g:=range detail.Genres {if g.Name!="" {genres=append(genres,g.Name)}}
-  trailer:=labTrailer(detail.Videos.Results)
-  if trailer=="" {var videos struct{Results []labVideo `json:"results"`};if requestTMDB(ctx,path+"/videos",url.Values{"language":{"en-US"}},key,&videos)==nil {trailer=labTrailer(videos.Results)}}
-  var providers struct{ Results map[string]labProviders `json:"results"` }
-  note:=""
-  if err:=requestTMDB(ctx,path+"/watch/providers",url.Values{},key,&providers);err!=nil {note="La disponibilidad no se ha podido consultar"}
-  es:=providers.Results["ES"]
-  _=json.NewEncoder(w).Encode(map[string]any{
-   "id":detail.ID,"title":detail.Title,"original_title":detail.OriginalTitle,"release_date":detail.ReleaseDate,
-   "overview":detail.Overview,"poster_path":detail.PosterPath,"vote_average":detail.VoteAverage,
-   "vote_count":detail.VoteCount,"runtime":detail.Runtime,"genres":genres,"director":director,"cast":cast,"trailer":trailer,
-   "subscriptions":labProviderNames(es.Flatrate),"free":labProviderNames(es.Free),"ads":labProviderNames(es.Ads),
-   "rent":labProviderNames(es.Rent),"buy":labProviderNames(es.Buy),"watch_link":es.Link,
-   "availability_note":note,"tmdb_url":fmt.Sprintf("https://www.themoviedb.org/movie/%d",id),
-  })
  default:http.NotFound(w,r)
  }
 }
