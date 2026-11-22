@@ -1,89 +1,48 @@
-# Política de publicaciones y recuperación
+# Política de versiones, descargas y recuperación
 
-**Actualizada el 21 de noviembre de 2026**
+**Revisión vigente: 22 de noviembre de 2026.**
 
-## Referencia recomendada (aún en pruebas)
+## Versión recomendada
 
-[Release v9 Beta 14 / Android Beta 13.13](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.14): cuatro descargas verificadas (EXE Windows, ZIP Mac Intel/Apple Silicon, APK Android firmada) más notas, manual actual, historial y SHA-256. Es **prerelease**, no estable definitiva, hasta validar bibliotecas y cuentas Microsoft reales.
+**[Selector Cine 365 v9.0.0 ESTABLE](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0)** es la única versión marcada como **Latest** para nuevos usuarios. Esta release usa **sin recompilar ni modificar** los cuatro ejecutables comprobados en Windows Beta 14, Mac Beta 14 (Intel/Apple Silicon) y Android Beta 13.13 Limpia.
 
-**Identificadores Android:** `es.cine365.app.limpia` es la línea recomendada 13.12 → 13.13, siempre con firma original y versionCode creciente (9027). La línea histórica `es.cine365.app` **no** admite actualización directa desde la variante Limpia. Publicar con el mismo paquete/firma es requisito para preservar datos.
+Aunque la etiqueta general es `v9.0.0`, los binarios conservan «Beta 14» / «Beta 13.13» como versión interna. Los cuatro SHA-256 son los de la [release fuente de referencia](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.14). El archivo `SHA256SUMS.txt` documenta las huellas. No renombrar binarios como si hubieran sido recompilados.
 
-Las betas anteriores y sus tags permanecen disponibles para recuperación. No borrar versiones históricas ni renovar un tag publicado sobre otro commit. Las bibliotecas personales, tokens y claves privadas no se incluyen en ningún artefacto o release.
+**Actualización Android:** paquete estable `es.cine365.app.limpia`, código 9027, firma original. Las futuras actualizaciones deben conservar **el mismo ID de paquete + firma de certificado**, aumentando versionCode. La línea histórica `es.cine365.app` permanece incompatible por identidad y utiliza almacenamiento privado propio. No distribuir firmados con certificados temporales como actualización sobre la línea estable.
 
-**Antes de sincronizar:** comprobar los conteos de películas **por lista**; si ya hubo mezcla, recuperar primero una copia buena. La corrección bloquea fusiones futuras, no separa copias previamente corruptas.
+## Política de retención
 
----
+| Publicación | Función | Estado recomendado |
+| --- | --- | --- |
+| `v9.0.0` | Versión estable multiplataforma | **Última versión (Latest)** |
+| `v9.0.0-beta.14` | Referencia exacta de los binarios ahora estables | Conservar como prerelease histórica |
+| `v9.0.0-beta.13.3` | Última APK histórica de la línea `es.cine365.app` | Conservar para recuperación del paquete antiguo |
+| `v9.0.0-beta.13.1` | Última combinación histórica completa anterior a Beta 14 | Conservar para recuperación |
+| `v9.0.0-beta.9` | Histórico de la primera generación Android/Windows | Conservar por incompatibilidades de identidad |
+| `v8.2` | Histórica pre-v9 (Windows y Mac) | Conservar |
+| `v9.0.0-beta.12`, `beta.12.1`, `beta.12.2`, `beta.13.2`, `v8.1.1` | Betas/versión anterior redundantes | Archivar instaladores, manifiesto y notas **antes** de retirar sus releases públicas |
 
-## Historial previo de releases (archivo; las etiquetas «más reciente» de abajo son históricas)
+Las publicaciones históricas ya archivadas en el borrador privado **`archivo-historico-beta-v9-2026-11`** no deben borrarse sin crear previamente una copia adicional. Para la limpieza de noviembre se conserva un segundo respaldo verificable con los archivos de las releases retiradas. Las etiquetas Git y el historial de commits **no se eliminan**, aunque desaparezca la página pública de una release redundante.
 
-## Releases públicas y versiones históricas
+## Seguridad de la publicación
 
-| Publicación | Estado | Activos |
-|---|---|---|
-| [v9 Beta 13.3 Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13.3) | **Android más reciente, sincronización bajo control del usuario** | APK firmada 9017, icono de doble flecha, consulta al abrir y sincronización confirmada. Windows/Mac Beta 13.1 |
-| [v9 Beta 13.2 Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13.2) | Anterior hotfix Android, batería y segundo plano | APK firmada 9016 + notas; Windows/Mac continúan Beta 13.1 |
-| [v9 Beta 13.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.13.1) | Edición coordinada anterior (Windows/Mac aún vigentes) | Windows/Mac Beta 13.1, Android Beta 13 firmada, manuales PDF e historial Word/PDF |
-| [v9 Beta 12.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.2) | **Beta más reciente**, Android y escritorio sin cambios | APK Android 9014, Windows/Mac Beta 12 y documentación |
-| [v9 Beta 12.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12.1) | Histórica: primer arreglo notch | APK Android 9013 y escritorio original |
-| [v9 Beta 12](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.12) | Beta para pruebas | Windows, Android, Mac Apple Silicon, Mac Intel y dos manuales PDF |
-| [v9 Beta 9](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.9) | Histórica | APK y ZIP de Windows originales |
-| [v8.2](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.2) | Histórica | Windows y dos variantes de Mac |
-| [v8.1.1](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v8.1.1) | Histórica | Paquete de la edición 8.1.1 |
+1. No recompilar binarios de una versión que se declara idéntica a la ya probada. Copiar sus activos y verificar SHA-256.
+2. Antes de publicar, verificar el ZIP del código fuente y comprobar la firma Android original (v2/v3, huella del certificado).
+3. Publicar solo una release marcada **Latest**; las betas anteriores permanecen como prerelease o archivos históricos.
+4. Generar y conservar manual PDF/Word, notas, historial, manifiesto `SHA256SUMS.txt` y ZIP del código fuente.
+5. No publicar jamás `.p12`, `.jks`, contraseñas, tokens Microsoft, claves de TMDB ni bibliotecas personales.
+6. Mantener copia JSON fuera de OneDrive antes de cambios de versión o sincronización; no prometer recuperación automática de copias mezcladas.
+7. Los EXE Windows no están firmados con Authenticode y los ZIP Mac no están notarizados. Documentar estas limitaciones con claridad, sin llamarlos «instaladores firmados».
 
-Las **17 releases redundantes** se retiraron solamente después de verificar que los ejecutables y las APK originales estaban respaldados.
+## Descargas e historial
 
-## Archivo histórico privado
+- [Última versión estable](https://github.com/cristianbarallobre/selector-cine-365/releases/latest)
+- [Lista de releases](https://github.com/cristianbarallobre/selector-cine-365/releases)
+- [Código fuente estable](https://github.com/cristianbarallobre/selector-cine-365/tree/v9.0.0)
+- [Historial de cambios](../CHANGELOG.md) y [guía de sincronización](GUIA_SINCRONIZACION_SEGURA.md)
 
-En **GitHub → Releases → Drafts**, los mantenedores pueden acceder al borrador **Archivo privado de betas históricas v9**, identificado como **archivo-historico-beta-v9-2026-11**.
+**Recuperación:** si un archivo histórico ya no aparece en Releases, consultar los borradores de archivo privados con permisos de mantenimiento y verificar la huella SHA-256 antes de reutilizarlo. Las etiquetas originales siguen accesibles en Git.
 
-Contiene un archivo llamado **Archivo_Instaladores_Betas_Anteriores_v9.zip**, de unos 24 MB, que incluye:
+## Tratamiento de datos de versiones anteriores
 
-- Todos los APK y ZIP originales de las 17 releases retiradas, organizados por el nombre de su tag original.
-- Un **MANIFIESTO.json** con el tamaño, la huella SHA-256 y la referencia de commit.
-- Un archivo **LEEME.txt** con instrucciones.
-
-El proceso comprobó la integridad de los binarios originales, generó el archivo, lo subió a GitHub y **lo descargó de nuevo para confirmar su SHA-256 antes de borrar las releases públicas redundantes**.
-
-Este borrador es visible solamente para quienes tienen permisos de mantenimiento. **No lo borres sin crear otra copia independiente**; es recomendable guardarlo también fuera de GitHub.
-
-## Código fuente y etiquetas conservados
-
-**No se han eliminado ramas, etiquetas Git ni el historial de commits.** Se comprobaron las referencias de los 17 tags históricos después de la limpieza.
-
-El código fuente puede recuperarse desde las ramas y los tags. No obstante, **volver a compilar un APK no garantiza recuperar la misma firma original**. Por eso se conservaron también los binarios históricos en el borrador.
-
-La nueva release combinada de **Beta 9** incluye exactamente los APK/ZIP originales de sus dos releases anteriores, verificados con SHA-256.
-
-## Cómo recuperar un instalador antiguo
-
-1. Abre GitHub con permisos de mantenimiento y entra en **Releases → Drafts → Archivo privado de betas históricas v9**.
-2. Descarga el archivo ZIP de instaladores históricos.
-3. Dentro del ZIP, localiza la carpeta **originales / nombre-del-tag / nombre-del-archivo**.
-4. Comprueba el SHA-256 del instalador con **MANIFIESTO.json**.
-5. Si necesitas republicarlo, utiliza la etiqueta Git original y el commit registrado en el manifiesto.
-
-Para Android, **Beta 9 y Beta 12 no comparten identidad ni firma**: requiere migración JSON. **Beta 11 y Beta 12** usan el mismo identificador estable y requieren el mismo certificado privado de firma.
-
-## Regla para nuevas versiones
-
-1. Publicar **una única release por versión** con Windows, Android y ambas arquitecturas de macOS, si todas superan las verificaciones.
-2. Incluir notas de cambios, manuales PDF y comprobación de integridad de las descargas.
-3. En Android conservar el identificador **es.cine365.app**, aumentar el código de versión y firmar siempre con el mismo certificado. Nunca subir la clave privada ni sus contraseñas al repositorio.
-4. No sustituir datos de usuario ni afirmar que OneDrive sincroniza instantáneamente; conservar el sistema de revisiones causales y resolución de conflictos.
-5. Antes de retirar otras releases, realizar y verificar una copia de sus instaladores y conservar los tags.
-6. Mantener versiones anteriores con valor histórico o de recuperación, así como los manuales editables en la carpeta docs.
-
-## Registro de mantenimiento
-
-- **20-11-2026:** consolidadas 20 releases originales en cuatro visibles: Beta 12, Beta 9 combinada, v8.2 y v8.1.1.
-- Archivados los 17 conjuntos de activos antiguos en un borrador de GitHub con hashes SHA-256.
-- Los PDF actualizados de Manual completo y Guía Microsoft Entra/OneDrive están disponibles en el repositorio y en la release Beta 12.
-- El script utilizado se conserva en la rama **maintenance/organizar-releases-v9-2026-11**, dentro de scripts/maintenance.
-
-## Consulta documental
-
-Los cambios de software de las etapas v1 a v9 Beta 12 están reunidos en [Historial completo v9 Beta 12](HISTORIAL_V9_BETA13_1.md), disponible también en Word y PDF. Se conserva por separado la edición histórica v8.1.1 sin reescribirla.
-
-## Publicación coordinada 13.1 (20-11-2026)
-
-Se publica una única release `v9.0.0-beta.13.1` con **Windows Beta 13.1**, **Mac Intel y Apple Silicon Beta 13.1** y **la APK Android Beta 13 original (código 9015)**. Android no incrementa versión porque la reparación de TMDB era exclusiva del servidor Go de escritorio. Se conservan los tags y las publicaciones previas; ninguna de las antiguas APK ni sus firmas se sobrescribe.
+La versión estable incluye barreras contra la mezcla de listas con el mismo ID. **No reparan automáticamente una colección que ya estuviera mezclada**. Evitar acciones destructivas de sincronización hasta confirmar que cada lista contiene los títulos correctos. Conservar `colecciones.json` y los snapshots anteriores, especialmente cuando los recuentos discrepan.

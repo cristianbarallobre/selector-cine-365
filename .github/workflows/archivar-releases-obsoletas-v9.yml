@@ -1,0 +1,118 @@
+name: Archivar publicaciones anteriores tras v9 estable
+on:
+  workflow_run:
+    workflows: ['Publicar Selector Cine 365 v9.0.0 estable']
+    types: [completed]
+permissions:
+  contents: write
+concurrency:
+  group: selector-cine-archivado-v9
+  cancel-in-progress: false
+jobs:
+  archivar:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Exigir release v9 estable completa antes de archivar
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release view v9.0.0 --json isDraft,isPrerelease,assets \
+            --jq 'select(.isDraft==false and .isPrerelease==false and (.assets | length)>=12) | .assets[].name' \
+            | grep -Fx 'Selector_Cine_365_Android_Beta13_13_Limpia.apk'
+      - name: Descargar íntegramente cada release redundante
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p respaldo
+          for tag in v9.0.0-beta.12 v9.0.0-beta.12.1 v9.0.0-beta.12.2 v9.0.0-beta.13.2 v8.1.1; do
+            test -n "$(gh release view "$tag" --json tagName --jq '.tagName')"
+            mkdir -p "respaldo/$tag"
+            gh release download "$tag" --dir "respaldo/$tag" --pattern '*'
+            test "$(find "respaldo/$tag" -maxdepth 1 -type f | wc -l)" -ge 1
+          done
+      - name: Crear manifiesto con SHA-256, tamaños y referencias Git
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,subprocess,datetime
+          repo='cristianbarallobre/selector-cine-365'
+          tags=['v9.0.0-beta.12','v9.0.0-beta.12.1','v9.0.0-beta.12.2','v9.0.0-beta.13.2','v8.1.1']
+          doc={'created_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+               'reason':'Archivo íntegro y verificable previo a retirar releases públicas redundantes',
+               'stable_tag':'v9.0.0','releases':[]}
+          for tag in tags:
+              source=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/releases/tags/{tag}'],text=True))
+              assets={a['name']:a for a in source['assets']}
+              records=[]
+              for file in sorted((Path('respaldo')/tag).iterdir()):
+                  if not file.is_file():continue
+                  content=file.read_bytes()
+                  if not content:raise SystemExit(f'Archivo vacío {file}')
+                  a=assets.get(file.name)
+                  if not a or len(content)!=a['size']:raise SystemExit(f'Archivo faltante o tamaño incorrecto: {file}')
+                  digest=hashlib.sha256(content).hexdigest()
+                  advertised=a.get('digest')
+                  if advertised and advertised!='sha256:'+digest:raise SystemExit(f'Hash remoto no coincide: {file}')
+                  records.append({'asset':file.name,'size_bytes':len(content),'sha256':digest,'browser_download_url':a['browser_download_url']})
+              if len(records)!=len(assets):raise SystemExit(f'Activos incompletos para {tag}: {len(records)}/{len(assets)}')
+              doc['releases'].append({'tag':tag,'release_id':source['id'],'target':source['target_commitish'],'assets':records})
+          Path('respaldo/MANIFIESTO.json').write_text(json.dumps(doc,ensure_ascii=False,indent=2),encoding='utf-8')
+          Path('respaldo/LEEME.txt').write_text(
+              'Copia privada de publicaciones retiradas después de verificar v9.0.0 estable.\n'
+              'Se conservan los tags Git históricos. Consultar MANIFIESTO.json para SHA-256 y tamaño.\n'
+              'No distribuir a terceros sin comprobar compatibilidad de firma/paquete Android.\n',
+              encoding='utf-8')
+          print('Releases respaldadas:',len(doc['releases']))
+          PY
+          (cd respaldo && zip -q -r ../Archivo_Releases_Sustituidas_v9_2026_11_22.zip .)
+          unzip -t Archivo_Releases_Sustituidas_v9_2026_11_22.zip | tail -1
+          sha256sum Archivo_Releases_Sustituidas_v9_2026_11_22.zip > SHA256_ARCHIVO.txt
+      - name: Subir archivo al borrador privado y verificar la descarga
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG='archivo-releases-redundantes-v9-2026-11-22'
+          NAME='Archivo_Releases_Sustituidas_v9_2026_11_22.zip'
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" "$NAME" SHA256_ARCHIVO.txt \
+              --draft --target "$GITHUB_SHA" \
+              --title 'Archivo privado verificado - versiones sustituidas por v9.0.0' \
+              --notes 'Backup de 5 releases históricas y su manifiesto, previo a la limpieza de publicaciones públicas; conservar tags Git.'
+          else
+            gh release upload "$TAG" "$NAME" SHA256_ARCHIVO.txt --clobber
+          fi
+          mkdir -p revalidacion
+          gh release download "$TAG" --dir revalidacion --pattern "$NAME"
+          cmp "$NAME" "revalidacion/$NAME"
+          unzip -t "revalidacion/$NAME" | tail -1
+          echo 'Respaldo privado y copia re-descargada, idénticos.'
+      - name: Retirar solo releases redundantes, conservar todas sus etiquetas Git
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for tag in v9.0.0-beta.12 v9.0.0-beta.12.1 v9.0.0-beta.12.2 v9.0.0-beta.13.2 v8.1.1; do
+            gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.ref' | grep -Fx "refs/tags/$tag"
+            gh release delete "$tag" --yes
+            gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.ref' | grep -Fx "refs/tags/$tag"
+            if gh release view "$tag" >/dev/null 2>&1; then
+              echo "::error::No pudo retirarse la publicación $tag"
+              exit 1
+            fi
+            echo "Archivada la release $tag, mantenido su tag Git."
+          done
+          echo 'Se conservan: v9.0.0 estable, Beta 14, Beta 13.3, Beta 13.1, Beta 9 y v8.2.'

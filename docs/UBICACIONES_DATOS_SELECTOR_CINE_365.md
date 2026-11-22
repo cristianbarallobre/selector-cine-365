@@ -1,18 +1,20 @@
-# Ubicaciones de datos — Selector Cine 365 (21/11/2026)
+# Ubicaciones de datos — Selector Cine 365 v9.0.0
 
-| Plataforma | Datos privados del programa |
-|---|---|
-| Windows Beta 14 | `%APPDATA%\Selector_Cine_365` |
-| macOS Beta 14 | `~/Library/Application Support/Selector_Cine_365` |
-| Android Beta 13.13 Limpia | `getFilesDir()/Selector_Cine_365`, almacenamiento del paquete **`es.cine365.app.limpia`** |
-| OneDrive | Carpeta `Selector_Cine_365` de la cuenta Microsoft, normalmente con `Selector_Cine_365_Copias/sincronizacion/dispositivos/*.json` |
+**Vigente el 22 de noviembre de 2026.** Estos directorios pertenecen al programa, no a los ejecutables que se descargan.
 
-Windows guarda la autorización Microsoft de renovación **cifrada mediante DPAPI** en `onedrive_sesion_dpapi.bin`, dentro de su carpeta de datos, nunca en la nube. Android protege sus credenciales mediante Android Keystore. Mac no persiste todavía su credencial Microsoft.
+| Plataforma | Datos locales |
+| --- | --- |
+| Windows | `%APPDATA%\Selector_Cine_365` |
+| macOS Intel / Apple Silicon | `~/Library/Application Support/Selector_Cine_365` |
+| Android estable | Almacenamiento privado del paquete **`es.cine365.app.limpia`**, carpeta `Selector_Cine_365` |
+| OneDrive (opcional) | Carpeta lógica `Selector_Cine_365` de la cuenta Microsoft personal conectada; snapshots en `Selector_Cine_365_Copias/sincronizacion/dispositivos/` cuando se utilice ese esquema |
 
-**Android histórico:** `es.cine365.app` es otro paquete; no comparte automáticamente datos privados ni se actualiza directamente con `es.cine365.app.limpia`. Ambas líneas pueden coexistir en un teléfono. Si desinstalas cualquiera de ellas, se elimina normalmente el almacenamiento privado de esa aplicación. OneDrive sigue intacto y la recuperación requiere revisión.
+**Archivos habituales en escritorio:** `colecciones.json` (biblioteca), respaldo `copias_automaticas` y/o `sync_recuperacion` (si se generaron). En Windows la sesión Microsoft tiene un archivo DPAPI denominado `onedrive_sesion_dpapi.bin`, ligado al usuario que autorizó; no se debe copiar a otros equipos ni publicar.
 
-**Biblioteca:** `colecciones.json`; copias en `copias_automaticas` y `sync_recuperacion`, si existen. Las películas vistas y las revisiones causales se sincronizan con snapshots, no con credenciales. No borres una carpeta por encontrarla vacía antes de verificar la cuenta OneDrive activa y su contenido real.
+**Android:** `es.cine365.app.limpia` y `es.cine365.app` son **dos aplicaciones diferentes**, con cachés, datos y preferencias privadas separadas. La APK v9.0.0 actualiza Beta 13.12 Limpia con la misma firma; no instala una actualización de la aplicación histórica. Desinstalar Android elimina normalmente los datos privados del paquete afectado, **pero no borra OneDrive**. Para recuperar listas exporta JSON y revisa las copias en la nube.
 
-**Migración:** no hay importación automática garantizada desde el nombre antiguo de escritorio `AtlasDelCine`; conserva los datos anteriores por separado y usa un JSON de exportación si los necesitas.
+**Cachés TMDB:** se guardan localmente por dispositivo; la carátula descargada en Windows no se comparte a Android. La clave personal de TMDB tampoco viaja con OneDrive.
 
-[Guía de recuperación](GUIA_SINCRONIZACION_SEGURA_BETA14_ANDROID13_13.md).
+**Nombre antiguo:** `AtlasDelCine` no se migra automáticamente a la carpeta actual; conserva los archivos antiguos que necesites por separado.
+
+Consulta [Manual completo](MANUAL_COMPLETO_SELECTOR_CINE_365.md), [Sincronización segura](GUIA_SINCRONIZACION_SEGURA.md) y [Release estable](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0).
