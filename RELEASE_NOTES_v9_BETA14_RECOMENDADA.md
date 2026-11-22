@@ -1,3 +1,5 @@
+> **PUBLICACIÓN HISTÓRICA:** esta Beta 14 / Android 13.13 fue promocionada sin cambiar binarios a la [versión estable v9.0.0](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0) el 22/11/2026. La afirmación posterior de «no estable» corresponde al estado previo a la validación del usuario.
+
 # Selector Cine 365 — v9 Beta 14 / Android Beta 13.13
 
 **21 de noviembre de 2026 · Beta recomendada para pruebas, NO versión estable definitiva.**
