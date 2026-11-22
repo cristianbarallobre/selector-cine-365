@@ -1,3 +1,5 @@
+> **ARCHIVO HISTÓRICO:** esta documentación conserva el estado de una versión anterior. La referencia de instalación y soporte actual es [Selector Cine 365 v9.0.0 estable](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0) y su [manual completo](MANUAL_COMPLETO_SELECTOR_CINE_365.md). No seguir instrucciones de sincronización antiguas sin revisar las nuevas.
+
 # Sincronización segura — Beta 14 Windows/Mac y Beta 13.13 Android
 
 **21/11/2026 · Para pruebas con dos dispositivos y OneDrive.**
