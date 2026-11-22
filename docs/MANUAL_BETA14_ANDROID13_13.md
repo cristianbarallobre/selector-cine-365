@@ -1,3 +1,5 @@
+> **Edición histórica 21/11/2026:** este manual conserva la denominación Beta 14 / Android 13.13. La distribución estable v9.0.0 incluye los **mismos binarios**, sin recompilación. Consulta el [manual vigente](MANUAL_COMPLETO_SELECTOR_CINE_365.md) y la [release estable](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0).
+
 # Manual de Selector Cine 365
 
 ## Edición recomendada para pruebas — Windows/macOS Beta 14 y Android Beta 13.13
