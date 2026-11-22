@@ -19,6 +19,7 @@ assert.match(ui,/syncActiveText\(\)/,'Debe guardar el texto activo antes de aña
 assert.match(ui,/if\(existing\)/,'Debe evitar duplicados');
 assert.match(ui,/scheduleSave\(\)/,'Debe guardar mediante el flujo normal');
 assert.match(ui,/labDetailOverlay\.hidden=true/,'Debe cerrar la ficha');
+assert.match(ui,/#labDetailPlaceholder\[hidden\]\s*\{\s*display\s*:\s*none\s*!important\s*\}/,'El marcador de carátula debe desaparecer al activar hidden');
 assert.match(ui,/^\s*const labNav=/m,'Debe compartir el estado del script existente');
 assert.ok(!fs.readFileSync('android/app/src/main/assets/index.html','utf8').includes('labDiscoverView'),'Android no debe heredar Descubrir');
 console.log('OK: sintaxis, aislamiento Windows y seguridad básica de Descubrir LAB');
