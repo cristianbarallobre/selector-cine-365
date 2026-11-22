@@ -24,6 +24,8 @@
 .lab-movie-card:focus-visible{outline:2px solid #ffd990}
 .lab-movie-poster{width:100%;aspect-ratio:2/3;object-fit:cover;background:linear-gradient(145deg,#324157,#1a2635);display:block}
 .lab-movie-empty{display:grid;place-items:center;color:#8ca2b7;font-size:35px}
+/* El placeholder no debe seguir visible cuando ya existe una carátula. */
+#labDetailPlaceholder[hidden]{display:none!important}
 .lab-card-body{padding:11px 12px 13px;display:flex;flex-direction:column;gap:6px}
 .lab-card-name{font-size:14px;font-weight:790;line-height:1.36;min-height:39px}
 .lab-card-info{display:flex;align-items:center;justify-content:space-between;gap:4px;color:#becad8;font-size:12px}
