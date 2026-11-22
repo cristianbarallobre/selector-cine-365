@@ -402,6 +402,7 @@ func syncApplyDecisions(l libraryState,decisions map[string]bool) libraryState {
  return l
 }
 func cloudSyncRoot(folder string) string {
+ if appIsLab { return filepath.Join(folder,cloudDirectoryName) }
  if _,err:=os.Stat(filepath.Join(folder,"actual"));err==nil{return folder}
  if _,err:=os.Stat(filepath.Join(folder,"sincronizacion"));err==nil{return folder}
  return filepath.Join(folder,cloudDirectoryName)
