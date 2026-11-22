@@ -41,6 +41,8 @@ jobs:
           if-no-files-found: error
 
   android:
+    # Android permanece sin experimentar: compilarlo solo mediante lanzamiento manual.
+    if: github.event_name == 'workflow_dispatch'
     name: Android LAB / paquete separado
     runs-on: ubuntu-latest
     timeout-minutes: 40
@@ -74,6 +76,8 @@ jobs:
           if-no-files-found: error
 
   macos:
+    # Mac conserva su versión LAB anterior hasta aprobar la función de Windows.
+    if: github.event_name == 'workflow_dispatch'
     name: macOS LAB (Intel y Apple Silicon)
     runs-on: macos-15-intel
     timeout-minutes: 45
