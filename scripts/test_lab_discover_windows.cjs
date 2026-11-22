@@ -1,0 +1,24 @@
+'use strict';
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const ui=fs.readFileSync('lab_discover_windows.html','utf8');
+const windows=fs.readFileSync('lab_discover_windows.go','utf8');
+const other=fs.readFileSync('lab_discover_other.go','utf8');
+const core=fs.readFileSync('main.go','utf8');
+const parts=ui.split('<!-- LAB_DISCOVERY_SCRIPT -->');
+assert.equal(parts.length,2,'La pantalla y su JS deben inyectarse por separado');
+new vm.Script('(()=>{\n'+parts[1]+'\n})();',{filename:'lab_discover_windows.js'});
+for(const id of ['labDiscoverView','labDiscoverNav','labSearchForm','labMoviesGrid','labDetailOverlay','labDetailAdd','labAddList'])
+ assert.ok((ui+windows).includes(id),'Falta '+id);
+assert.match(windows,/\/\/go:build windows/);
+assert.match(other,/\/\/go:build !windows/);
+assert.match(core,/out = injectLabDiscovery\(out\)/);
+assert.match(windows,/if !appIsLab/);
+assert.match(ui,/syncActiveText\(\)/,'Debe guardar el texto activo antes de añadir');
+assert.match(ui,/if\(existing\)/,'Debe evitar duplicados');
+assert.match(ui,/scheduleSave\(\)/,'Debe guardar mediante el flujo normal');
+assert.match(ui,/labDetailOverlay\.hidden=true/,'Debe cerrar la ficha');
+assert.match(ui,/^\s*const labNav=/m,'Debe compartir el estado del script existente');
+assert.ok(!fs.readFileSync('android/app/src/main/assets/index.html','utf8').includes('labDiscoverView'),'Android no debe heredar Descubrir');
+console.log('OK: sintaxis, aislamiento Windows y seguridad básica de Descubrir LAB');
