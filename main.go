@@ -69,6 +69,7 @@ func makeHTML(initial, token string) (string, error) {
 		out = strings.Replace(out, `<div class="eyebrow">Selector Cine 365</div>`, `<div class="eyebrow">Selector Cine 365 · LAB</div>`, 1)
 		out = strings.Replace(out, "🎞️ SELECTOR CINE 365 ·", "🧪 SELECTOR CINE 365 LAB ·", 1)
 	}
+	out = injectLabDiscovery(out)
 	return out, nil
 }
 
@@ -143,6 +144,8 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		a.serveCloudHTTP(w, r)
 	case "/api/onedrive-desktop/status", "/api/onedrive-desktop/start", "/api/onedrive-desktop/disconnect":
         a.serveGraphAuthHTTP(w,r)
+	case "/api/discover/list", "/api/discover/search", "/api/discover/detail", "/api/discover/poster":
+		a.serveLabDiscovery(w, r)
 	case "/api/poster":
 		a.servePosterHTTP(w, r)
 	case "/api/identities", "/api/identities/resolve":
