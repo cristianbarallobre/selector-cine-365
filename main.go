@@ -41,7 +41,7 @@ func getSavePath() string {
 	if err != nil {
 		config = os.TempDir()
 	}
-	return filepath.Join(config, "Selector_Cine_365", "mis_365_peliculas.txt")
+	return filepath.Join(config, appDataDirectoryName, "mis_365_peliculas.txt")
 }
 
 func getInitialState(savePath string) (string, error) {
@@ -64,6 +64,11 @@ func makeHTML(initial, token string) (string, error) {
 	out = strings.ReplaceAll(out, "__ATLAS_TOKEN__", token)
 	out = strings.ReplaceAll(out, "__APP_AUTHOR__", html.EscapeString(appAuthor))
 	out = strings.ReplaceAll(out, "__APP_COPYRIGHT__", html.EscapeString(appCopyright))
+	if appIsLab {
+		out = strings.Replace(out, "<title>Selector Cine 365", "<title>Selector Cine 365 LAB", 1)
+		out = strings.Replace(out, `<div class="eyebrow">Selector Cine 365</div>`, `<div class="eyebrow">Selector Cine 365 · LAB</div>`, 1)
+		out = strings.Replace(out, "🎞️ SELECTOR CINE 365 ·", "🧪 SELECTOR CINE 365 LAB ·", 1)
+	}
 	return out, nil
 }
 
