@@ -27,8 +27,8 @@ final class Backend {
     Backend(MainActivity activity){
         this.activity=activity;
         // Only the new directory is used. Old storage is intentionally not migrated.
-        dir=new File(activity.getFilesDir(),"Selector_Cine_365");
-        if(!dir.isDirectory()&&!dir.mkdirs())throw new IllegalStateException("No se pudo crear la carpeta Selector_Cine_365");
+        dir=new File(activity.getFilesDir(),BuildConfig.LAB_MODE ? "Selector_Cine_365_LAB" : "Selector_Cine_365");
+        if(!dir.isDirectory()&&!dir.mkdirs())throw new IllegalStateException("No se pudo crear la carpeta de datos");
         sync=new SyncStore(dir);
         tmdb=new Tmdb(dir);
         onedrive=new OneDriveCloud(activity);
