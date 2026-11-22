@@ -46,7 +46,7 @@ assert.match(cache,/if labNeedsRefresh\(prior\)/,'La actualización obsoleta deb
 assert.match(ui,/function labCollectFilms/,'Precargar biblioteca completa');
 assert.match(ui,/for\(const list of ordered\)/,'Recorrer todas las listas');
 assert.match(ui,/function labQueuePrefetchSoon/,'Programar precarga no bloqueante');
-assert.match(windows,/id=\\"labPrefetchPause\\"/,'Debe haber botón de pausa en la UI Windows inyectada');
+assert.match(windows,/id="labPrefetchPause"/,'Debe haber botón de pausa en la UI Windows inyectada');
 assert.match(windows,/b\.append\(togg,pill,fix\);frag\.appendChild\(b\);/,'La fila LAB no debe incluir acceso externo ↗');
 assert.match(windows,/void cloudAutoReceive\(true\);labQueuePrefetchSoon\(\);/,'Lanzar precarga tras cargar TMDB');
 assert.match(windows,/function scheduleSave\(\)\{labQueuePrefetchSoon\(\)/,'Preparar películas agregadas tras guardar');
