@@ -15,7 +15,8 @@ Esta prueba funciona **únicamente en la versión Windows compilada con `-tags l
 - Ficha de película con sinopsis, reparto (hasta diez intérpretes), dirección, géneros, duración, valoración, enlace al tráiler y enlace a TMDB.
 - Disponibilidad de España separada por suscripción, gratis, anuncios, alquiler y compra; enlace a la plataforma cuando TMDB lo facilite.
 - Añadir a **cualquiera de las listas actuales** como película pendiente. Evita duplicados por ID conocido de TMDB o por título y año. No importa ni reemplaza una lista entera.
-- Al pulsar el contenido de la tarjeta de una película en la Biblioteca de Windows LAB (excepto casillas, enlaces y botones), se abre la ficha si está identificada. Cuando el título es ambiguo se muestran los resultados para elegir manualmente.
+- **Botón «Detalles» explícito** junto al título en Biblioteca y dentro de cada tarjeta de Descubrir. Las fichas ya no se abren al pulsar cualquier punto de la fila o carátula. Cuando la identificación es ambigua, el botón lleva a resultados para elegir manualmente.
+- **Corrección visual:** el recuadro de reserva se oculta al cargar correctamente la carátula en la ficha.
 
 ## Requisitos y seguridad
 
