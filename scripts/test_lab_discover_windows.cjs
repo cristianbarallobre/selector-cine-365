@@ -31,4 +31,25 @@ assert.doesNotMatch(ui,/\$\('filmList'\)\.addEventListener\('click'/,'Clicar la 
 assert.match(ui,/#labDetailPlaceholder\[hidden\]\{display:none!important\}/,'El cartel de reserva debe ocultarse si se cargó la carátula');
 assert.ok(fs.readFileSync('plantilla.html','utf8').includes('titleLine.appendChild(title);'),'El canal oficial mantiene el código original');
 assert.ok(!fs.readFileSync('android/app/src/main/assets/index.html','utf8').includes('labDiscoverView'),'Android no debe heredar Descubrir');
+
+const cache=fs.readFileSync('lab_discover_cache_windows.go','utf8');
+assert.match(cache,/\/\/go:build windows/,'La caché sólo debe compilarse en Windows');
+assert.match(cache,/tmdb_fichas_lab\.json/,'La caché debe estar en un archivo LAB independiente');
+assert.match(cache,/labMetaTTL\s*=\s*30\*24\*time\.Hour/,'Metadatos refrescados cada 30 días');
+assert.match(cache,/labExtraTTL\s*=\s*7\*24\*time\.Hour/,'Notas y tráiler refrescados cada 7 días');
+assert.match(cache,/labProvidersTTL\s*=\s*24\*time\.Hour/,'Plataformas refrescadas cada 24 horas');
+assert.match(cache,/labPrefetchDelay\s*=\s*900\*time\.Millisecond/,'Descargas limitadas para respetar TMDB');
+assert.match(cache,/func \(c \*labCatalogCache\) runWorker/,'Debe descargar fichas de forma secuencial');
+assert.match(cache,/func \(c \*labCatalogCache\) fileSaveLocked/,'Debe persistir sin cambiar las listas');
+assert.match(cache,/if prior,ok:=c\.record\(id\);ok/,'La apertura debe consultar primero la caché');
+assert.match(cache,/if labNeedsRefresh\(prior\)/,'La actualización obsoleta debe ser diferida');
+assert.match(ui,/function labCollectFilms/,'Precargar biblioteca completa');
+assert.match(ui,/for\(const list of ordered\)/,'Recorrer todas las listas');
+assert.match(ui,/function labQueuePrefetchSoon/,'Programar precarga no bloqueante');
+assert.match(ui,/id='labPrefetchPause'/,'Debe haber botón de pausa');
+assert.match(windows,/b\.append\(togg,pill,fix\);frag\.appendChild\(b\);/,'La fila LAB no debe incluir acceso externo ↗');
+assert.match(windows,/void cloudAutoReceive\(true\);labQueuePrefetchSoon\(\);/,'Lanzar precarga tras cargar TMDB');
+assert.match(windows,/function scheduleSave\(\)\{labQueuePrefetchSoon\(\)/,'Preparar películas agregadas tras guardar');
+assert.match(core,/\/api\/discover\/prefetch/,'Ruta autenticada para precarga');
+
 console.log('OK: sintaxis, aislamiento Windows y seguridad básica de Descubrir LAB');
