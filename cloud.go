@@ -43,8 +43,6 @@ type cloudBackups struct {
 	lastError    string
 }
 
-const cloudDirectoryName = "Selector_Cine_365_Copias"
-
 func newCloudBackups(dir string) *cloudBackups {
 	c := &cloudBackups{sourceDir: dir, settingsFile: filepath.Join(dir, "copia_nube_ajustes.json"),modeFile:filepath.Join(dir,"modo_sincronizacion.json"),autoEnabled:true}
  var mode struct{ AutoSync *bool `json:"auto_sync"` }
@@ -205,7 +203,7 @@ func (a *runningApp) cloudDisplayStatus() cloudStatus {
   id:=a.graph.pairingID()
   a.graph.mu.Lock();graphError:=a.graph.lastError;a.graph.mu.Unlock()
   return cloudStatus{
-   Enabled:true,Folder:id,Target:"OneDrive / Selector_Cine_365",Provider:"onedrive-direct",LastError:graphError,AutoSync:a.cloud.autoMode(),SyncMode:func()string{if a.cloud.autoMode(){return "automatic"};return "manual"}(),
+   Enabled:true,Folder:id,Target:"OneDrive / "+oneDriveFolderName,Provider:"onedrive-direct",LastError:graphError,AutoSync:a.cloud.autoMode(),SyncMode:func()string{if a.cloud.autoMode(){return "automatic"};return "manual"}(),
    SyncPaired:a.syncStore!=nil&&a.syncStore.isPaired(id),
    NeedsReview:a.syncStore==nil||!a.syncStore.isPaired(id)||a.syncPendingConflict.Load(),
    LastCheckMS:a.syncLastCheck.Load(),LastReceivedMS:a.syncLastReceived.Load(),
