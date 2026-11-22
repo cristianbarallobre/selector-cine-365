@@ -353,6 +353,8 @@ async function labOpenFilmDetails(f){
  const title=f.title,year=f.year||'',id=knownTMDB(f);
  if(id){void labShowDetail(id);return;}
  try{
+  const cached=await labGet('/api/discover/resolve?title='+encodeURIComponent(title)+'&year='+encodeURIComponent(Number(year)||0));
+  if(cached.id>0){void labShowDetail(cached.id);return;}
   const data=await labGet('/api/discover/search?q='+encodeURIComponent(title)+'&page=1');
   const matches=(data.results||[]).filter(m=>labFold(m.title)===labFold(title)&&(!year||String(m.release_date||'').slice(0,4)===String(year)));
   if(matches.length===1){void labShowDetail(matches[0].id);return;}
