@@ -59,6 +59,10 @@
 .lab-detail-actions label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:#bbc9d7;flex:1;min-width:150px}
 .lab-detail-actions select{border:1px solid #50647e;background:#112031;color:#fff;border-radius:8px;padding:11px;width:100%}
 .lab-detail-note{color:#afd1bb;font-size:12px;min-height:20px;margin-top:9px}
+.lab-prefetch-banner{display:flex;align-items:center;gap:9px;justify-content:space-between;min-height:27px;font-size:11px;color:#c3d1e2;line-height:1.3;overflow:hidden}
+.lab-prefetch-banner span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.lab-prefetch-banner button{font-size:11px;white-space:nowrap;background:#293c4e;color:#f2d499;border:1px solid #8d724e;border-radius:7px;padding:4px 8px;cursor:pointer}
+.lab-prefetch-banner button[hidden]{display:none!important}
 @media(max-width:650px){.lab-discover .panel{padding:14px}.lab-discover-search{flex-wrap:wrap}.lab-discover-search button{width:100%}.lab-movies-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.lab-detail-content{grid-template-columns:1fr;padding:16px}.lab-detail-poster{max-width:170px}.lab-detail-modal{max-height:none}.lab-detail-content h3{font-size:21px}}
 </style>
 <section class="lab-discover view" id="labDiscoverView" hidden aria-label="Descubrir películas">
@@ -116,6 +120,75 @@
 </div>
 <!-- LAB_DISCOVERY_SCRIPT -->
 const labNav=$('labDiscoverNav'),labView=$('labDiscoverView'),labDetailOverlay=$('labDetailOverlay');
+
+let labPrefetchTimer=null,labPrefetchPaused=false;
+function labCollectFilms(){
+ // La lista abierta se prioriza, después las demás. Una película repetida se descarga una sola vez.
+ const active=activeCollection();
+ const ordered=[active,...libraryState.lists.filter(x=>x.id!==active.id)];
+ const seen=new Set(),items=[];
+ for(const list of ordered){
+  for(const film of parse(list.text||'').entries){
+   const id=knownTMDB(film)||0,year=Number(film.year)||0;
+   const k=id?'id:'+id:providerKey(film);
+   if(seen.has(k))continue;
+   seen.add(k);
+   items.push({title:film.title,year,id});
+   if(items.length>=1200)return items;
+  }
+ }
+ return items;
+}
+function labPrefetchLabel(status){
+ const text=$('labPrefetchText'),control=$('labPrefetchPause');
+ if(!platformConfigured){
+  text.textContent='Fichas: configura TMDB para preparar la caché automáticamente.';
+  control.hidden=true;return;
+ }
+ const total=Number(status.total)||0,cached=Number(status.cached)||0;
+ const pending=Number(status.pending)||0;
+ const errors=Number(status.errors)||0;
+ const waiting=status.running?' · descargando en segundo plano':status.paused?' · en pausa':pending?' · pendientes '+pending:' · al día';
+ let msg='Fichas guardadas: '+cached+' / '+total+waiting;
+ if(!status.running&&!pending&&cached<total&&errors)msg+=' · '+(total-cached)+' sin completar';
+ text.textContent=msg;
+ text.title=msg+(status.last_error?' · Último aviso: '+status.last_error:'');
+ labPrefetchPaused=Boolean(status.paused);
+ control.hidden=total===0||(!status.running&&!pending&&!status.paused);
+ control.textContent=status.paused?'Reanudar':'Pausar';
+}
+async function labPrefetchStatus(){
+ try{
+  const status=await labGet('/api/discover/prefetch');
+  labPrefetchLabel(status);
+ }catch(err){$('labPrefetchText').textContent='Fichas: no se pudo consultar el progreso.';}
+}
+async function labSendPrefetch(){
+ if(!platformConfigured){labPrefetchLabel({total:0});return;}
+ const films=labCollectFilms();
+ if(!films.length){labPrefetchLabel({total:0});return;}
+ try{
+  const r=await fetch('/api/discover/prefetch',{method:'POST',
+    headers:{'Content-Type':'application/json','X-Atlas-Token':token},body:JSON.stringify({films}),cache:'no-store'});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  labPrefetchLabel(await r.json());
+ }catch(err){$('labPrefetchText').textContent='No se pudo iniciar la precarga; la biblioteca sigue disponible.';}
+}
+function labQueuePrefetchSoon(){
+ clearTimeout(labPrefetchTimer);
+ labPrefetchTimer=setTimeout(()=>{labPrefetchTimer=null;void labSendPrefetch();},1100);
+}
+$('labPrefetchPause').addEventListener('click',async()=>{
+ try{
+  const r=await fetch('/api/discover/prefetch/pause',{method:'POST',
+   headers:{'Content-Type':'application/json','X-Atlas-Token':token},
+   body:JSON.stringify({paused:!labPrefetchPaused}),cache:'no-store'});
+  if(!r.ok)throw new Error('No se pudo cambiar el estado');
+  labPrefetchLabel(await r.json());
+ }catch(e){$('labPrefetchText').textContent='No se pudo pausar o reanudar la precarga.';}
+});
+setInterval(()=>{if(!document.hidden)void labPrefetchStatus();},4000);
+
 let labKind='trending',labQuery='',labPage=1,labPages=1,labRequestSerial=0,labDetailSerial=0,labCurrentMovie=null;
 const labFold=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es').replace(/[^\p{L}\p{N}]+/gu,' ').trim();
 const labPosterSrc=path=>'/api/discover/poster?path='+encodeURIComponent(path)+'&token='+encodeURIComponent(token);
@@ -234,7 +307,10 @@ async function labShowDetail(id){
   for(const list of libraryState.lists){const o=document.createElement('option');o.value=list.id;o.textContent=list.name;select.appendChild(o);}
   select.value=libraryState.active_id;
   $('labDetailAdd').disabled=false;
-  $('labDetailNote').textContent='Selecciona una lista para añadir la película como pendiente.';
+  const note=m.cache_state==='actualizando'?'Ficha guardada · actualizando datos antiguos en segundo plano.':
+    m.cache_state==='guardada'?'Ficha cargada de la caché local.':
+    'Ficha descargada y guardada localmente.';
+  $('labDetailNote').textContent=note+' Puedes añadirla a una lista.';
  }catch(e){if(serial===labDetailSerial){$('labDetailTitle').textContent='Ficha no disponible';$('labDetailNote').textContent='⚠ '+e.message;}}
 }
 function labAddCurrentMovie(){
