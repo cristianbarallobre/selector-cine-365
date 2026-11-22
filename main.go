@@ -144,7 +144,7 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		a.serveCloudHTTP(w, r)
 	case "/api/onedrive-desktop/status", "/api/onedrive-desktop/start", "/api/onedrive-desktop/disconnect":
         a.serveGraphAuthHTTP(w,r)
-	case "/api/discover/list", "/api/discover/search", "/api/discover/detail", "/api/discover/poster", "/api/discover/prefetch", "/api/discover/prefetch/pause":
+	case "/api/discover/list", "/api/discover/search", "/api/discover/detail", "/api/discover/resolve", "/api/discover/poster", "/api/discover/prefetch", "/api/discover/prefetch/pause":
 		a.serveLabDiscovery(w, r)
 	case "/api/poster":
 		a.servePosterHTTP(w, r)
