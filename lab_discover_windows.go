@@ -30,6 +30,8 @@ func injectLabDiscovery(page string) string {
  nav := `<button class="nav-btn" type="button" id="labDiscoverNav">✦ Descubrir <span class="lab-nav-tag">LAB</span></button>`
  page = strings.Replace(page, `<button class="nav-btn" type="button" data-view="statistics">`, nav+`<button class="nav-btn" type="button" data-view="statistics">`, 1)
  page = strings.Replace(page, "🧪 SELECTOR CINE 365 LAB ·", "🧪 SELECTOR CINE 365 · LAB-02 ·", 1)
+ // El botón Detalles se añade solo al renderizado Windows LAB, sin cambiar plantilla.html.
+ page = strings.Replace(page, "titleLine.appendChild(title);", "titleLine.append(title,labCreateDetailButton(f));", 1)
  page = strings.Replace(page, "</main>", fragments[0]+"\n</main>", 1)
  page = strings.Replace(page, "\n})();\n</script>", "\n"+fragments[1]+"\n})();\n</script>", 1)
  return page
