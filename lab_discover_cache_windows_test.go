@@ -8,6 +8,7 @@ import (
  "path/filepath"
  "testing"
  "time"
+ "strings"
 )
 
 func TestLabCacheTTL(t *testing.T) {
@@ -49,4 +50,21 @@ func TestLabPrefetchDeduplicatesAndPauses(t *testing.T){
  if len(c.queue)!=1||len(c.targets)!=1||c.running {t.Fatal("la precarga en pausa debe crear un solo trabajo")}
  c.enqueue([]labFilmJob{{Title:"El padrino",Year:1972,ID:238}})
  if len(c.queue)!=1{t.Fatal("resolver un ID no debe duplicar el trabajo")}
+}
+
+func TestLabWindowsHTMLInjection(t *testing.T) {
+ page,err:=makeHTML("☐ El padrino (1972)","test-token")
+ if err!=nil{t.Fatal(err)}
+ for _,required:=range []string{
+  "labCreateDetailButton(f)",
+  "b.append(togg,pill,fix);frag.appendChild(b);",
+  "labPrefetchBanner",
+  "labQueuePrefetchSoon()",
+  "labDetailOverlay",
+ } {
+  if !strings.Contains(page,required){t.Errorf("falta elemento LAB en Windows: %s",required)}
+ }
+ if strings.Contains(page,"b.append(togg,pill,fix,link);frag.appendChild(b);"){
+  t.Fatal("el acceso ↗ externo no debe mostrarse en la fila de Windows LAB")
+ }
 }
