@@ -48,6 +48,18 @@ func injectLabDiscovery(page string) string {
   "if(!confirm('¿Eliminar «'+l.name+'»? Esta lista dejará de aparecer en la aplicación.'))return;",
   "if(!await labConfirmDeleteList(l))return; if(libraryState.lists.length<2||!libraryState.lists.some(item=>item.id===id))return;", 1)
 
+ // Los números de «Listas» deben abrir la lista íntegra y señalar la película,
+ // nunca introducir su título en el buscador de Biblioteca.
+ page = strings.Replace(page,
+  "function openFilmInList(m){",
+  "function openFilmInList(m){labJumpToFilmList(m);return;\n",
+  1)
+ // El resaltado también se aplica al volver a dibujar las filas por cambios de
+ // caché, plataformas o tamaño durante los segundos de localización.
+ page = strings.Replace(page,
+  "b.dataset.idx=f.idx;b.setAttribute('role','listitem');",
+  "b.dataset.idx=f.idx;b.setAttribute('role','listitem');if(labListJumpHighlight&&labListJumpHighlight.listID===libraryState.active_id&&labListJumpHighlight.rawIndex===f.idx)b.classList.add('lab-list-jump-target');",
+  1)
  // Aprovecha el hueco sin reducir el número de filas: conserva la capacidad de 96px+7px.
  // Cuando sobra espacio, estira proporcionalmente hasta 110px; en ventanas ajustadas mantiene 96px.
  page = strings.Replace(page,
