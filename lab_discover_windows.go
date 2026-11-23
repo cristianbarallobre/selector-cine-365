@@ -48,6 +48,13 @@ func injectLabDiscovery(page string) string {
   "if(!confirm('¿Eliminar «'+l.name+'»? Esta lista dejará de aparecer en la aplicación.'))return;",
   "if(!await labConfirmDeleteList(l))return; if(libraryState.lists.length<2||!libraryState.lists.some(item=>item.id===id))return;", 1)
 
+ // El gesto de arrastre nativo se interrumpe al reconstruir las filas durante
+ // el cambio de página. En Windows LAB usamos Pointer Events con captura en
+ // document.body, conservando el gesto incluso tras renderList().
+ page = strings.Replace(page,
+  " handle.draggable=true;",
+  " handle.draggable=false;",
+  1)
  // Los números de «Listas» deben abrir la lista íntegra y señalar la película,
  // nunca introducir su título en el buscador de Biblioteca.
  page = strings.Replace(page,
