@@ -26,7 +26,7 @@ assert.match(ui,/function labCreateDetailButton\(f\)/,'Debe existir el botón de
 assert.match(ui,/button\.textContent='Detalles'/,'El botón de Biblioteca ha de indicar Detalles');
 assert.match(ui,/details\.textContent='Detalles'/,'Cada tarjeta de Descubrir ha de incluir Detalles');
 assert.match(ui,/details\.addEventListener\('click'/,'El botón Detalles debe abrir fichas en Descubrir');
-assert.match(ui,/card\.addEventListener\('click'/,'La tarjeta de Descubrir debe abrir la ficha al clicar sobre ella');
+assert.doesNotMatch(ui,/card\.addEventListener\('click'/,'La tarjeta completa de Descubrir no debe ser clicable');
 assert.doesNotMatch(ui,/\$\('filmList'\)\.addEventListener\('click'/,'Clicar la fila de Biblioteca no abre la ficha');
 assert.match(ui,/#labDetailPlaceholder\[hidden\]\{display:none!important\}/,'El cartel de reserva debe ocultarse si se cargó la carátula');
 assert.ok(fs.readFileSync('plantilla.html','utf8').includes('titleLine.appendChild(title);'),'El canal oficial mantiene el código original');
@@ -55,14 +55,19 @@ assert.match(core,/\/api\/discover\/prefetch/,'Ruta autenticada para precarga');
 assert.match(ui,/\.lab-discover\.view\{[^}]*overflow-y:auto/,'Descubrir debe tener scroll vertical propio');
 assert.match(ui,/\.lab-discover \.panel\{height:auto/,'Los paneles no pueden ocupar cada uno el 100% de la altura y recortar las tarjetas');
 assert.match(ui,/\.lab-discover \[hidden\]\{display:none!important\}/,'Respetar elementos ocultos de la paginación');
-assert.match(ui,/id="labTopPager"/,'Paginación accesible encima de las carátulas');
-assert.match(ui,/id="labDiscoverPager"/,'Paginación también debajo de las carátulas');
+assert.doesNotMatch(ui,/id="labTopPager"|labTopNext|labTopPrev/,'La paginación superior debe haberse eliminado');
+assert.match(ui,/id="labDiscoverPager"/,'La paginación inferior debe mantenerse');
 assert.match(ui,/Math\.min\(500,Number\(data\.total_pages\)/,'Mostrar más allá de las cinco primeras páginas');
 assert.match(ui,/total\.toLocaleString\('es-ES'\)/,'Mostrar número total de resultados');
-assert.match(ui,/function labGoPage\(direction\)/,'Ambas paginaciones deben navegar');
+assert.match(ui,/function labGoPage\(direction\)/,'La paginación inferior debe navegar');
 assert.match(windows,/n>500/,'El servidor acepta páginas más allá de 5');
 assert.match(windows,/TotalResults int/,'El servidor incluye el total de resultados de TMDB');
-assert.doesNotMatch(ui,/Sólo los botones Detalles son clicables/,'Descubrir permite clicar las tarjetas completas');
+assert.match(ui,/margin:7px 13px 7px 5px/,'Detalles y lápiz deben tener espacio visible');
+assert.match(ui,/addEventListener\('click',labLeave,true\)/,'Descubrir debe ocultarse en fase capture antes del renderizado de Biblioteca');
+assert.match(ui,/ResizeObserver/,'La lista debe recuperar la paginación tras cambios de tamaño');
+assert.match(ui,/if\(height<160\|\|Math\.abs\(height-labLastListHeight\)<4\)return/,'No debe recalcularse con altura colapsada');
+assert.match(ui,/details\.addEventListener\('click'/,'Solo Detalles abrirá la ficha desde Descubrir');
+assert.doesNotMatch(ui,/card\.tabIndex|card\.addEventListener\('keydown'/,'Las tarjetas completas no son objetivos de teclado');
 
 
 console.log('OK: sintaxis, aislamiento Windows y seguridad básica de Descubrir LAB');
