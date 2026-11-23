@@ -59,9 +59,10 @@ func prunePosterCache(dir string,maxFiles int,maxBytes int64,expiry time.Duratio
   total+=info.Size()
  }
  sort.Slice(items,func(i,j int)bool{return items[i].modified.Before(items[j].modified)})
+ remaining:=len(items)
  for _,item:=range items{
-  if len(items)-removed<=maxFiles&&total<=maxBytes{break}
-  if os.Remove(filepath.Join(dir,item.name))==nil {removed++;total-=item.size}
+  if remaining<=maxFiles&&total<=maxBytes{break}
+  if os.Remove(filepath.Join(dir,item.name))==nil {removed++;remaining--;total-=item.size}
  }
  return removed,nil
 }
