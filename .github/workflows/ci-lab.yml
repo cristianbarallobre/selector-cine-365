@@ -29,14 +29,15 @@ jobs:
           node scripts/test_v9_beta13.cjs
           node scripts/test_beta14_desktop_dropdowns.cjs
           node scripts/test_lab_discover_windows.cjs
+          node scripts/test_lab_appearance_windows.cjs
       - name: Compilar Windows LAB (sin firma)
         run: |
-          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -tags lab -trimpath -ldflags='-H windowsgui -s -w' -o Selector_Cine_365_LAB-02_4_Windows.exe .
-          test -s Selector_Cine_365_LAB-02_4_Windows.exe
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -tags lab -trimpath -ldflags='-H windowsgui -s -w' -o Selector_Cine_365_LAB-03_Windows.exe .
+          test -s Selector_Cine_365_LAB-03_Windows.exe
       - uses: actions/upload-artifact@v4
         with:
-          name: Selector_Cine_365_LAB-02_4_Windows
-          path: Selector_Cine_365_LAB-02_4_Windows.exe
+          name: Selector_Cine_365_LAB-03_Windows
+          path: Selector_Cine_365_LAB-03_Windows.exe
           retention-days: 14
           if-no-files-found: error
 
