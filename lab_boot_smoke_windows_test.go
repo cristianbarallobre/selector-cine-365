@@ -1,0 +1,154 @@
+//go:build windows && lab
+
+package main
+
+import (
+ "context"
+ "fmt"
+ "net/http"
+ "net/http/httptest"
+ "os"
+ "os/exec"
+ "path/filepath"
+ "strings"
+ "testing"
+ "time"
+)
+
+// La regresión LAB-02.10: antes se llamaba update() (que invoca renderList)
+// cuando todavía no se había inicializado const labFilterDecade.
+// El HTML compilado debe instalar TODOS los módulos antes del arranque.
+func TestLabStartupAfterAllModules(t *testing.T){
+ page,err:=makeHTML("☐ Ejemplo (2024)\n☑ Otra (1988)","smoke-token")
+ if err!=nil{t.Fatal(err)}
+ boot:=`updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void initLibrary().then(async()=>{await initIdentities();await initPlatforms();void cloudAutoReceive(true);});`
+ if strings.Count(page,boot)!=1{t.Fatalf("el arranque debe existir exactamente una vez; hay %d",strings.Count(page,boot))}
+ bootAt:=strings.Index(page,boot)
+ required:=[]string{
+  "const labSmartEnable=$('labSmartEnabled');",
+  "const labFilterDecade=$('labFilterDecade')",
+  "document.body.appendChild(labFiltersOverlay);",
+  "window.fetch=labResilientFetch;",
+  "function labFiltersRefreshChoices(){",
+  "function labFiltersMatches(f){",
+  "function labFiltersSort(matches){",
+  "labFilterScopeSlot.appendChild(",
+  "labFilterStatusSlot.appendChild(",
+  "labFilterPlatformSlot.appendChild(",
+ }
+ for _,snippet:=range required {
+  at:=strings.Index(page,snippet)
+  if at<0{t.Errorf("falta inicialización: %s",snippet);continue}
+  if at>=bootAt{t.Errorf("componente sin inicializar al arrancar: %s",snippet)}
+ }
+ if strings.Count(page,`id="labFilterOpen"`)!=1{t.Fatal("botón de filtros ausente/duplicado")}
+ if strings.Count(page,`id="labFiltersOverlay"`)!=1{t.Fatal("ventana de filtros ausente/duplicada")}
+ if strings.Contains(page,"function renderList(){labFiltersRefreshChoices();")&&
+  strings.Index(page,"const labFilterDecade=")>bootAt {
+  t.Fatal("ReferenceError por acceso a const labFilterDecade antes de inicializar")
+ }
+}
+
+// Verificar SINTAXIS DEL JS COMPLETO INYECTADO, no solo cada módulo por separado.
+// Son las mismas cadenas que ejecuta WebView2.
+func TestLabMergedJavaScriptSyntax(t *testing.T){
+ node,err:=exec.LookPath("node")
+ if err!=nil{t.Skip("Node no disponible para verificación sintáctica")}
+ page,err:=makeHTML("☐ Ejemplo (2024)","smoke-token")
+ if err!=nil{t.Fatal(err)}
+ lastStart:=strings.LastIndex(page,"<script>")
+ lastEnd:=strings.LastIndex(page,"</script>")
+ if lastStart<0||lastEnd<=lastStart{t.Fatal("no se encontró el script principal")}
+ src:=page[lastStart+len("<script>"):lastEnd]
+ path:=filepath.Join(t.TempDir(),"app-lab.js")
+ if err:=os.WriteFile(path,[]byte(src),0600);err!=nil{t.Fatal(err)}
+ cmd:=exec.Command(node,"--check",path)
+ out,err:=cmd.CombinedOutput()
+ if err!=nil{t.Fatalf("JavaScript completo no compila: %v\n%s",err,out)}
+}
+
+// Prueba de integración con un navegador real en Windows; detecta excepciones
+// iniciales, no solo compilaciones de Go y presencia de elementos HTML.
+func TestLabStartupHeadlessBrowser(t *testing.T){
+ if os.Getenv("CI")==""{t.Skip("Prueba de navegador habilitada en CI de Windows")}
+ var browser string
+ candidates:=[]string{
+  filepath.Join(os.Getenv("ProgramFiles(x86)"),"Microsoft","Edge","Application","msedge.exe"),
+  filepath.Join(os.Getenv("ProgramFiles"),"Google","Chrome","Application","chrome.exe"),
+  filepath.Join(os.Getenv("ProgramFiles(x86)"),"Google","Chrome","Application","chrome.exe"),
+ }
+ for _,p:=range candidates{if info,err:=os.Stat(p);err==nil&&!info.IsDir(){browser=p;break}}
+ if browser==""{t.Skip("No hay Edge/Chrome instalados para prueba de interfaz")}
+ page,err:=makeHTML("☐ Ejemplo de prueba (2024)\n☑ Otra película (1988)","smoke-token")
+ if err!=nil{t.Fatal(err)}
+ watchScript:=`<script>
+ window.__labSmokeErrors=[];
+ window.addEventListener('error',e=>window.__labSmokeErrors.push(e.message||String(e.error)));
+ window.addEventListener('unhandledrejection',e=>window.__labSmokeErrors.push(String(e.reason)));
+ window.addEventListener('DOMContentLoaded',()=>{
+   setTimeout(()=>{
+     try{
+       const list=document.getElementById('filmList');
+       const films=list?list.querySelectorAll('.film-item').length:0;
+       const outside=document.querySelector('#view-library .search-scope')!==null||
+         document.querySelector('#view-library .filters')!==null||
+         document.querySelector('#view-library .library-platform-row')!==null;
+       const filters=document.getElementById('labFilterOpen');
+       filters?.click();
+       const filtersOpened=!document.getElementById('labFiltersOverlay')?.hidden;
+       document.getElementById('labFilterDone')?.click();
+       const filtersClosed=document.getElementById('labFiltersOverlay')?.hidden===true;
+       document.querySelector('[data-view="statistics"]')?.click();
+       const statsVisible=document.getElementById('view-statistics')?.hidden===false;
+       document.querySelector('[data-view="library"]')?.click();
+       const libraryVisible=document.getElementById('view-library')?.hidden===false;
+       const result={films,outside,filtersOpened,filtersClosed,statsVisible,libraryVisible,
+         errors:window.__labSmokeErrors.slice(0,4)};
+       document.body.setAttribute('data-lab-smoke',encodeURIComponent(JSON.stringify(result)));
+     }catch(err){
+       document.body.setAttribute('data-lab-smoke',encodeURIComponent(JSON.stringify({error:String(err)})));
+     }
+   },1000);
+ });
+ </script>`
+ // El detector debe instalarse antes del script principal y su evento DCL
+ // se dispara incluso cuando el arranque de la app no llega a completarse.
+ page=strings.Replace(page,"</head>",watchScript+"\n</head>",1)
+ srv:=httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
+  if r.URL.Path=="/"{
+   w.Header().Set("Content-Type","text/html; charset=utf-8")
+   _,_=w.Write([]byte(page));return
+  }
+  w.Header().Set("Content-Type","application/json")
+  w.WriteHeader(http.StatusNotFound)
+  _,_=w.Write([]byte(`{"error":"sin backend en prueba UI"}`))
+ }))
+ defer srv.Close()
+ ctx,cancel:=context.WithTimeout(context.Background(),35*time.Second);defer cancel()
+ args:=[]string{
+  "--headless=new","--disable-gpu","--no-first-run","--no-default-browser-check",
+  "--disable-background-networking","--disable-extensions","--no-sandbox",
+  "--user-data-dir="+filepath.Join(t.TempDir(),"chrome-profile"),
+  "--virtual-time-budget=4500","--dump-dom",srv.URL+"/",
+ }
+ cmd:=exec.CommandContext(ctx,browser,args...)
+ out,err:=cmd.CombinedOutput()
+ if err!=nil{t.Fatalf("el navegador de prueba falló: %v\n%s",err,string(out[max(0,len(out)-1500):]))}
+ marker:=`data-lab-smoke="`
+ index:=strings.Index(string(out),marker)
+ if index<0{t.Fatalf("el navegador no completó la prueba de arranque: %s",string(out[max(0,len(out)-1200):]))}
+ end:=strings.Index(string(out)[index+len(marker):],`"`)
+ if end<0{t.Fatal("marcador de humo truncado")}
+ value:=string(out)[index+len(marker):index+len(marker)+end]
+ // Los valores JSON están percent-encoded para evitar escapes HTML.
+ if strings.Contains(value,"films%22%3A0")||strings.Contains(value,"outside%22%3Atrue")||
+  strings.Contains(value,"filtersOpened%22%3Afalse")||strings.Contains(value,"filtersClosed%22%3Afalse")||
+  strings.Contains(value,"statsVisible%22%3Afalse")||strings.Contains(value,"libraryVisible%22%3Afalse")||
+  strings.Contains(value,"error%22%3A"){
+   t.Fatalf("arranque no funcional en navegador: %s",value)
+ }
+ for _,expected:=range []string{"films%22%3A","outside%22%3Afalse","filtersOpened%22%3Atrue","filtersClosed%22%3Atrue","statsVisible%22%3Atrue","libraryVisible%22%3Atrue"}{
+  if !strings.Contains(value,expected){t.Errorf("prueba de navegador sin verificar %s: %s",expected,value)}
+ }
+ if t.Failed(){t.Log(fmt.Sprintf("Edge/Chrome devolvió %d bytes",len(out)))}
+}
