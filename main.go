@@ -71,6 +71,7 @@ func makeHTML(initial, token string) (string, error) {
 	}
 	out = injectLabDiscovery(out)
 	out = injectLabSmartSort(out)
+	out = injectLabNetwork(out)
 	return out, nil
 }
 
@@ -145,6 +146,8 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		a.serveCloudHTTP(w, r)
 	case "/api/onedrive-desktop/status", "/api/onedrive-desktop/start", "/api/onedrive-desktop/disconnect":
         a.serveGraphAuthHTTP(w,r)
+	case "/api/lab/network-log":
+		a.serveLabNetworkLog(w,r)
 	case "/api/discover/smart-cache":
 		a.serveLabSmartCache(w,r)
 	case "/api/discover/list", "/api/discover/search", "/api/discover/detail", "/api/discover/resolve", "/api/discover/poster", "/api/discover/prefetch", "/api/discover/prefetch/pause":
