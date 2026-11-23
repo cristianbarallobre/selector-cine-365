@@ -154,8 +154,12 @@ func TestLabStartupHeadlessBrowser(t *testing.T){
        const extra=document.createElement('div');extra.style.height='1300px';
        collectionsPanel?.appendChild(extra);
        if(collectionsView)collectionsView.scrollTop=300;
-       const collectionsMoves=!!collectionsView&&collectionsView.scrollTop>50&&
-         Math.abs((document.querySelector('.top-nav')?.getBoundingClientRect().top||0)-navTop)<1;
+       const scrollInfo={top:collectionsView?.scrollTop||0,
+         full:collectionsView?.scrollHeight||0,viewport:collectionsView?.clientHeight||0,
+         navBefore:navTop,navAfter:document.querySelector('.top-nav')?.getBoundingClientRect().top||0,
+         panelHeight:collectionsPanel?.getBoundingClientRect().height||0};
+       const collectionsMoves=!!collectionsView&&scrollInfo.top>50&&
+         Math.abs(scrollInfo.navAfter-scrollInfo.navBefore)<1;
        extra.remove();
        document.querySelector('[data-view="instructions"]')?.click();
        const instructionsVisible=document.getElementById('view-instructions')?.hidden===false;
@@ -171,7 +175,7 @@ func TestLabStartupHeadlessBrowser(t *testing.T){
          noPlatformDropdown,platformsVisible,platformOptionsPresent,
          allDeselectedAfterFilter,resetOutside,allRestoredAfterReset,statsVisible,statsCards,
          discoverVisible,discoverFiltersVisible,discoverFiltersSelected,helpSameHeight,
-         collectionsVisible,collectionsOuterScroll,collectionsMoves,instructionsVisible,libraryVisible,
+         collectionsVisible,collectionsOuterScroll,collectionsMoves,scrollInfo,instructionsVisible,libraryVisible,
          sortWorked,detailsVisible,errors:window.__labSmokeErrors.slice(0,5)};
        document.body.setAttribute('data-lab-smoke',encodeURIComponent(JSON.stringify(result)));
      }catch(err){
