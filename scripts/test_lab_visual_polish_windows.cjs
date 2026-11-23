@@ -16,8 +16,12 @@ assert.match(lab,/class="page-btn" id="labPrevPage" type="button">‹ Anterior<\
 assert.match(lab,/class="page-btn" id="labNextPage" type="button">Siguiente ›<\/button>/,
  'Siguiente en Descubrir reutiliza la clase y texto de la biblioteca');
 assert.match(lab,/class="page-label" id="labPageLabel"/,'Etiqueta de páginas con mismo estilo');
-assert.match(lab,/class="page-btn" id="labDetailClose" type="button" aria-label="Cerrar ficha" title="Cerrar ficha">✕<\/button>/,
- 'Cierre como cruz, con etiqueta accesible y el estilo de paginación');
+assert.match(lab,/class="page-btn" id="labDetailClose" type="button" aria-label="Cerrar todas las fichas" title="Cerrar todas las fichas">✕<\/button>/,
+ 'La X debe cerrar todas las fichas y mantener el estilo compacto');
+assert.match(lab,/id="labDetailBack"[^>]*aria-label="Volver a la ficha anterior"/,
+ 'Atrás está accesible en las fichas de película');
+assert.match(lab,/id="labPersonBack"[^>]*aria-label="Volver a la ficha anterior"/,
+ 'Atrás está accesible en las fichas de intérprete');
 assert.ok(!lab.includes('✕ Cerrar'),'No debe quedar el texto Cerrar al lado de la X');
 assert.match(lab,/\.lab-detail-top \.page-btn\{[^}]*width:34px/,'La cruz mantiene botón compacto');
 assert.match(lab,/\.header-side \.header-tag\{order:1\}/,'Versión arriba');
