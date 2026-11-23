@@ -123,5 +123,5 @@ async function flush(){await Promise.resolve();await Promise.resolve();await Pro
  await flush();
  assert.equal(test.calls.filter(x=>x.url==='/api/lab/network-log').length,1,'Registrar final de una lectura fallida');
 
- console.log('OK: LAB-02.10 reintentos GET, errores HTTP/red, no duplicar escrituras, registro privado y aislamiento');
+ console.log('OK: LAB-02.11 reintentos GET, errores HTTP/red, no duplicar escrituras, registro privado y aislamiento');
 })().catch(e=>{console.error(e);process.exitCode=1});
