@@ -22,9 +22,12 @@ const labDiscoverySeparator = "<!-- LAB_DISCOVERY_SCRIPT -->"
 
 func injectLabDiscovery(page string) string {
  if !appIsLab { return page }
+ // Git convierte los HTML a CRLF en runners Windows; unificar LF ANTES
+ // de insertar JS, evitando dejar botones sin sus manejadores.
+ page=strings.ReplaceAll(page,"\r\n","\n")
  raw, err := labDiscoveryFiles.ReadFile("lab_discover_windows.html")
  if err != nil { return page }
- fragments := strings.SplitN(string(raw), labDiscoverySeparator, 2)
+ fragments := strings.SplitN(strings.ReplaceAll(string(raw),"\r\n","\n"), labDiscoverySeparator, 2)
  if len(fragments)!=2 { return page }
  nav := `<button class="nav-btn" type="button" id="labDiscoverNav">✦ Descubrir <span class="lab-nav-tag">LAB</span></button>`
  page = strings.Replace(page, `<button class="nav-btn" type="button" data-view="statistics">`, nav+`<button class="nav-btn" type="button" data-view="statistics">`, 1)
