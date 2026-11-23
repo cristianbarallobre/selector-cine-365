@@ -83,3 +83,17 @@ func TestLabAppearanceUploadAndRestore(t *testing.T) {
  if a.labAppearanceLoad().Preset!="original"{t.Fatal("Restablecer debe devolver el fondo original")}
  if len(get.Body.Bytes())!=len(buf.Bytes()){t.Fatal("los bytes de imagen recuperados son diferentes")}
 }
+
+func TestLabAppearanceRenderedOnlyInLab(t *testing.T) {
+ page,err:=makeHTML("☐ El padrino (1972)","test-token")
+ if err!=nil{t.Fatal(err)}
+ for _,fragment:=range []string{
+  "labAppearanceNav","labAppearanceView","labAppearanceOpacity",
+  "labAppearanceBlur","labAppearanceChoose","labAppearanceReset",
+  "body.lab-appearance-on::before","labAppearanceLeave();",
+ } {
+  if !strings.Contains(page,fragment){t.Errorf("falta elemento Apariencia: %s",fragment)}
+ }
+ if !strings.Contains(page,"labDiscoverView"){t.Fatal("Apariencia no debe eliminar Descubrir")}
+ if strings.Count(page,"id=\"labAppearanceNav\"")!=1{t.Fatal("debe existir una sola pestaña Apariencia")}
+}
