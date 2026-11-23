@@ -55,7 +55,18 @@ window.addEventListener('DOMContentLoaded',()=>{
          pageLabel:document.getElementById('labPageLabel')?.textContent||'',
          discoverVisible:document.getElementById('labDiscoverView')?.hidden===false
        };
-       document.body.setAttribute('data-lab-grid',encodeURIComponent(JSON.stringify({initial,filtered})));
+       grid?.querySelector('.lab-card-details')?.click();
+       setTimeout(()=>{
+         const castNode=document.getElementById('labDetailCast');
+         const cast={
+           actor:castNode?.querySelector('.lab-cast-actor')?.textContent||'',
+           role:castNode?.querySelector('.lab-cast-role')?.textContent||'',
+           roleLabel:castNode?.querySelector('.lab-cast-role')?getComputedStyle(castNode.querySelector('.lab-cast-role'),'::before').content:'',
+           director:castNode?.querySelector('.lab-cast-director strong')?.textContent||'',
+           visible:document.getElementById('labDetailOverlay')?.hidden===false
+         };
+         document.body.setAttribute('data-lab-grid',encodeURIComponent(JSON.stringify({initial,filtered,cast})));
+       },450);
      },1000);
    },1000);
  },100);
@@ -68,6 +79,19 @@ window.addEventListener('DOMContentLoaded',()=>{
   if r.URL.Path=="/"{
    w.Header().Set("Content-Type","text/html; charset=utf-8")
    _,_=w.Write([]byte(page));return
+  }
+  if r.URL.Path=="/api/discover/detail"{
+   w.Header().Set("Content-Type","application/json")
+   _=json.NewEncoder(w).Encode(map[string]any{
+     "id":101,"title":"Película de prueba","release_date":"2026-10-01","poster_path":"",
+     "runtime":110,"vote_count":77,"vote_average":7.7,"director":"Kitao Sakurai",
+     "cast":[]map[string]string{
+       {"name":"Andrew Koji","character":"Ryu"},
+       {"name":"Noah Centineo","character":"Ken Masters"},
+     },
+     "genres":[]string{"Acción"},"tmdb_url":"https://www.themoviedb.org/movie/101",
+   })
+   return
   }
   if r.URL.Path=="/api/discover/list"{
    pg,_:=strconv.Atoi(r.URL.Query().Get("page"))
@@ -94,7 +118,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   "--disable-background-networking","--disable-extensions","--no-sandbox",
   "--window-size=1480,960",
   "--user-data-dir="+filepath.Join(t.TempDir(),"profile"),
-  "--virtual-time-budget=6500","--dump-dom",server.URL+"/",
+  "--virtual-time-budget=7600","--dump-dom",server.URL+"/",
  }
  output,err:=exec.CommandContext(ctx,browser,args...).CombinedOutput()
  if err!=nil{t.Fatalf("Edge no completó prueba de rejilla: %v (%s)",err,string(output[max(0,len(output)-900):]))}
@@ -109,6 +133,7 @@ window.addEventListener('DOMContentLoaded',()=>{
  var result struct {
   Initial struct{ Cards int; Rows int; Width int; PageLabel string } `json:"initial"`
   Filtered struct{ Cards int; Rows int; Genre string; Duration string; PageLabel string; DiscoverVisible bool } `json:"filtered"`
+  Cast struct{ Actor string; Role string; RoleLabel string; Director string; Visible bool } `json:"cast"`
  }
  if err:=json.Unmarshal([]byte(decoded),&result);err!=nil{t.Fatalf("JSON de navegador inválido: %v (%s)",err,decoded)}
  if result.Initial.Width<850{t.Errorf("No se ha reproducido el tamaño de la captura (ancho %d)",result.Initial.Width)}
@@ -118,6 +143,13 @@ window.addEventListener('DOMContentLoaded',()=>{
  if result.Filtered.Cards<18||result.Filtered.Rows<3||result.Filtered.Genre!="878"||
     result.Filtered.Duration!="short"||!result.Filtered.DiscoverVisible {
   t.Errorf("La rejilla con filtros de género y duración no se completa: %+v",result.Filtered)
+ }
+ if result.Cast.Actor!="Andrew Koji"||result.Cast.Role!="Ryu"||
+   result.Cast.Director!="Kitao Sakurai"||!result.Cast.Visible{
+  t.Errorf("Los créditos de la ficha no se distinguen en Edge: %+v",result.Cast)
+ }
+ if !strings.Contains(result.Cast.RoleLabel,"Personaje:"){
+  t.Errorf("El personaje no está etiquetado en la ficha: %+v",result.Cast)
  }
  mu.Lock()
  general:=requests["|"]
