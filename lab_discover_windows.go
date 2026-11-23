@@ -223,6 +223,9 @@ type labPersonFilm struct {
  ReleaseDate string `json:"release_date"`
  Character string `json:"character"`
  Popularity float64 `json:"popularity"`
+ VoteAverage float64 `json:"vote_average"`
+ VoteCount int `json:"vote_count"`
+ CastOrder int `json:"order"`
 }
 func (a *runningApp) labPersonDetail(w http.ResponseWriter,r *http.Request) {
  w.Header().Set("Content-Type","application/json; charset=utf-8")
@@ -260,11 +263,13 @@ func (a *runningApp) labPersonDetail(w http.ResponseWriter,r *http.Request) {
   film.Character=limit(film.Character,100)
   films=append(films,film)
  }
+ // La clasificación se hace en la interfaz sobre toda la filmografía.
+ // No recortar a 16 aquí: una obra importante podría quedar fuera de los
+ // primeros puestos por popularidad, bloqueando otros criterios.
  sort.SliceStable(films,func(i,j int)bool{
-  if films[i].Popularity!=films[j].Popularity{return films[i].Popularity>films[j].Popularity}
-  return films[i].ReleaseDate>films[j].ReleaseDate
+  if films[i].ID!=films[j].ID{return films[i].ID<films[j].ID}
+  return films[i].Title<films[j].Title
  })
- if len(films)>16{films=films[:16]}
  if !validPosterPath(p.ProfilePath){p.ProfilePath=""}
  _=json.NewEncoder(w).Encode(map[string]any{
   "id":p.ID,"name":limit(p.Name,180),"biography":limit(p.Biography,6500),
