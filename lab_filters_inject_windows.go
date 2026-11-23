@@ -88,8 +88,15 @@ func injectLabLibraryFilters(page string) string {
  page=strings.Replace(page,
   `for(const [label,val] of [['Películas vistas',seen.length],['Pendientes',parsed.pending.length],['Horas registradas',minutes?Math.floor(minutes/60)+' h '+(minutes%60)+' min':'—'],['Fichas TMDB',known.filter(x=>x.metadata_version>=2).length]]){`,
   `for(const [label,val] of labStatsHeroValues(seen,known,minutes)){`,1)
+ // La inicialización original llamaba a renderList() ANTES de que const
+ // labFilterDecade/Genre/... hubiera sido inicializado. Eso provoca una
+ // ReferenceError (temporal dead zone) e impide arrancar la aplicación.
+ // Mover TODO el arranque al final, después de Descubrir, Sorteo, Red y Filtros.
+ boot:=`updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void initLibrary().then(async()=>{await initIdentities();await initPlatforms();void cloudAutoReceive(true);});`
+ if strings.Count(page,boot)!=1{return page}
+ page=strings.Replace(page,boot,"",1)
  end:=strings.LastIndex(page,"})();")
  script:=strings.LastIndex(page,"</script>")
  if end<0||script<0||end>=script{return page}
- return page[:end]+"\n"+fragments[1]+"\n"+page[end:]
+ return page[:end]+"\n"+fragments[1]+"\n"+boot+"\n"+page[end:]
 }
