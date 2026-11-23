@@ -36,7 +36,7 @@ func injectLabDiscovery(page string) string {
  // La precarga se inicia tras cargar biblioteca e identificaciones TMDB, y se actualiza al editar listas.
  page = strings.Replace(page, "void cloudAutoReceive(true);});", "void cloudAutoReceive(true);labQueuePrefetchSoon();});", 1)
  page = strings.Replace(page, "function scheduleSave(){membershipCache=null;", "function scheduleSave(){labQueuePrefetchSoon();membershipCache=null;", 1)
- page = strings.Replace(page, "function showView(name){if(", "function showView(name){if(name==='library')labQueuePrefetchSoon();if(", 1)
+ page = strings.Replace(page, "function showView(name){if(", "function showView(name){labLeave();if(name==='library')labQueuePrefetchSoon();if(", 1)
  page = strings.Replace(page, "platformConfigured=true;identityConfigured=true;closePlatformModal();", "platformConfigured=true;identityConfigured=true;closePlatformModal();labQueuePrefetchSoon();", 1)
  page = strings.Replace(page, "</main>", fragments[0]+"\n</main>", 1)
  page = strings.Replace(page, "\n})();\n</script>", "\n"+fragments[1]+"\n})();\n</script>", 1)
