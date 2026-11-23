@@ -202,6 +202,7 @@ func TestLabStartupHeadlessBrowser(t *testing.T){
   "--headless=new","--disable-gpu","--no-first-run","--no-default-browser-check",
   "--disable-background-networking","--disable-extensions","--no-sandbox",
   "--user-data-dir="+filepath.Join(t.TempDir(),"chrome-profile"),
+  "--window-size=1360,920", // evita el CSS especial para pantallas de menos de 590px
   "--virtual-time-budget=4500","--dump-dom",srv.URL+"/",
  }
  cmd:=exec.CommandContext(ctx,browser,args...)
