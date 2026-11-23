@@ -36,7 +36,9 @@ const el={
  labResultsCount:{textContent:''},
  labPageLabel:{textContent:''},
  labPrevPage:{disabled:false},
- labNextPage:{disabled:false}
+ labNextPage:{disabled:false},
+ labDiscoverGenre:{value:'any',disabled:false},
+ labDiscoverDuration:{value:'any',disabled:false}
 };
 let calls=[],nextError=false;
 const context={
@@ -48,6 +50,7 @@ const context={
  },
  labView:{getBoundingClientRect:()=>({bottom:900}),hidden:false},
  labStatus:s=>{el.labDiscoverStatus.textContent=s},
+ labSyncDiscoverFilters:()=>{},
  labCard:x=>x,
  labKind:'upcoming',labQuery:'',labPage:1,labPages:1,
  labPageStarts:[1],labPageEnds:[],labMovieResponseCache:new Map(),
@@ -70,23 +73,23 @@ vm.createContext(context);
 vm.runInContext(code,context);
 (async()=>{
  const expectedTarget=context.labDiscoverFillTarget();
- assert.equal(expectedTarget,12,'Seis columnas requieren doce tarjetas para completar dos filas');
+ assert.equal(expectedTarget,18,'Seis columnas deben solicitar tres filas: no dejar huecos tras ocho tarjetas');
  assert.match(script,/availableWidth=Math\.max\(180,grid\.getBoundingClientRect\(\)\.width\|\|grid\.clientWidth\)/,
   'El número de columnas debe calcularse por ancho, sin depender de grid-template-columns none');
  await context.labBrowse();
- assert.deepEqual(calls,[1,2],'Cargar una segunda página TMDB si la primera solo devuelve 8 películas');
- assert.equal(grid.items.length,16,'Rellenar el espacio con resultados adicionales');
- assert.equal(context.labPageStarts[1],3,'La siguiente página visual empieza en TMDB 3, sin repetir TMDB 2');
+ assert.deepEqual(calls,[1,2,3],'Completar tres filas con tres páginas TMDB de ocho películas');
+ assert.equal(grid.items.length,24,'Seis columnas: mostrar cuatro filas completas si TMDB entrega ocho por página');
+ assert.equal(context.labPageStarts[1],4,'La siguiente página visual empieza en TMDB 4, sin repetir TMDB 3');
  assert.equal(el.labNextPage.disabled,false,'La navegación debe permanecer disponible');
- assert.match(el.labPageLabel.textContent,/TMDB 1–2 \/ 500/);
+ assert.match(el.labPageLabel.textContent,/TMDB 1–3 \/ 500/);
  const ids1=grid.items.map(x=>x.id);
  context.labPage=2;await context.labBrowse();
- assert.deepEqual(calls,[1,2,3,4]);
- assert.equal(grid.items.length,16);
+ assert.deepEqual(calls,[1,2,3,4,5,6]);
+ assert.equal(grid.items.length,24);
  assert.ok(grid.items.every(x=>!ids1.includes(x.id)),'La página 2 no contiene películas de la página 1');
- assert.equal(context.labPageStarts[2],5);
+ assert.equal(context.labPageStarts[2],7);
  context.labPage=1;await context.labBrowse();
- assert.deepEqual(calls,[1,2,3,4],'Volver a una página anterior reutiliza caché de sesión');
+ assert.deepEqual(calls,[1,2,3,4,5,6],'Volver a una página anterior reutiliza caché de sesión');
  assert.deepEqual(grid.items.map(x=>x.id),ids1);
  assert.equal(el.labPrevPage.disabled,true);
 
@@ -97,5 +100,5 @@ vm.runInContext(code,context);
  assert.equal(el.labResultsCount.textContent,'Página 1');
  assert.equal(grid.items.length,0,'Ante error completo no deben quedar tarjetas anteriores');
  assert.ok(labelBefore.includes('TMDB'));
- console.log('OK: Descubrir rellena 8+8 tarjetas, navega sin repetición, reutiliza caché y maneja errores de red');
+ console.log('OK: Descubrir completa tres filas con 8+8+8, navega sin repetir títulos y reutiliza caché');
 })().catch(err=>{console.error(err);process.exitCode=1});
