@@ -220,6 +220,10 @@ $('labPrefetchPause').addEventListener('click',async()=>{
 setInterval(()=>{if(!document.hidden)void labPrefetchStatus();},4000);
 
 let labKind='trending',labQuery='',labPage=1,labPages=1,labRequestSerial=0,labDetailSerial=0,labCurrentMovie=null;
+let labPageStarts=[1],labPageEnds=[],labMovieResponseCache=new Map(),labLastFillTarget=0,labResizeTimer=null;
+function labResetBrowsePages(){
+ labPage=1;labPages=1;labPageStarts=[1];labPageEnds=[];labMovieResponseCache.clear();labLastFillTarget=0;
+}
 const labFold=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es').replace(/[^\p{L}\p{N}]+/gu,' ').trim();
 const labPosterSrc=path=>'/api/discover/poster?path='+encodeURIComponent(path)+'&token='+encodeURIComponent(token);
 function labLeave(){labView.hidden=true;labNav.classList.remove('active');}
@@ -259,7 +263,7 @@ async function labGet(path){
 }
 function labStatus(s){$('labDiscoverStatus').textContent=s;}
 function labKindSelect(kind){
- labKind=kind;labQuery='';labPage=1;$('labSearchInput').value='';
+ labKind=kind;labQuery='';labResetBrowsePages();$('labSearchInput').value='';
  document.querySelectorAll('[data-lab-kind]').forEach(b=>b.classList.toggle('active',b.dataset.labKind===kind));
  void labBrowse();
 }
@@ -267,32 +271,93 @@ document.querySelectorAll('[data-lab-kind]').forEach(b=>b.addEventListener('clic
 $('labSearchForm').addEventListener('submit',e=>{
  e.preventDefault();const q=$('labSearchInput').value.trim();
  if(q.length<2){labStatus('Escribe al menos dos caracteres.');return;}
- labQuery=q;labPage=1;document.querySelectorAll('[data-lab-kind]').forEach(b=>b.classList.remove('active'));void labBrowse();
+ labQuery=q;labResetBrowsePages();document.querySelectorAll('[data-lab-kind]').forEach(b=>b.classList.remove('active'));void labBrowse();
 });
+// Calcular tarjetas necesarias a partir de las columnas reales y el alto visible.
+// Se piden páginas TMDB consecutivas sin repetirlas en la siguiente página visual.
+function labDiscoverFillTarget(){
+ const grid=$('labMoviesGrid'),rect=grid.getBoundingClientRect();
+ const style=window.getComputedStyle(grid);
+ const gap=Number.parseFloat(style.columnGap)||14;
+ const cssColumns=style.gridTemplateColumns.split(' ').filter(Boolean).length;
+ const columns=cssColumns||Math.max(1,Math.floor((grid.clientWidth+gap)/(180+gap)));
+ const width=Math.max(175,(grid.clientWidth-gap*(columns-1))/columns);
+ const approxCardHeight=width*1.5+130;
+ const height=Math.max(120,labView.getBoundingClientRect().bottom-rect.top-75);
+ const rows=Math.max(2,Math.ceil((height+gap)/(approxCardHeight+gap)));
+ return Math.max(columns,Math.min(80,columns*rows));
+}
 async function labBrowse(){
  const stamp=++labRequestSerial,grid=$('labMoviesGrid');grid.replaceChildren();
  labStatus('Consultando TMDB…');$('labDiscoverPager').hidden=true;
  const headings={trending:'Tendencias de la semana',popular:'Películas populares',top:'Mejor valoradas',upcoming:'Próximos estrenos'};
  $('labResultsHeading').textContent=labQuery?'Resultados para «'+labQuery+'»':headings[labKind];
- try{
-  const path=labQuery?'/api/discover/search?q='+encodeURIComponent(labQuery):'/api/discover/list?kind='+encodeURIComponent(labKind);
-  const data=await labGet(path+'&page='+labPage);
+ const path=labQuery?'/api/discover/search?q='+encodeURIComponent(labQuery):'/api/discover/list?kind='+encodeURIComponent(labKind);
+ const startPage=labPageStarts[labPage-1]||1;
+ const fixedNext=labPageStarts[labPage]||0;
+ const target=labDiscoverFillTarget();
+ labLastFillTarget=target;
+ let current=startPage,requested=0,total=0,partialError=null;
+ const movies=[],seenIDs=new Set();
+ // Tope de ocho llamadas por página visual. Evita ráfagas contra TMDB.
+ while(requested<8&&movies.length<target&&current<=labPages&&(!fixedNext||current<fixedNext)){
+  const cacheKey=(labQuery?'q:'+labQuery:'k:'+labKind)+'|'+current;
+  let data=labMovieResponseCache.get(cacheKey);
+  try{
+   if(!data){
+    data=await labGet(path+'&page='+current);
+    if(stamp!==labRequestSerial)return;
+    if(labMovieResponseCache.size>=90)labMovieResponseCache.clear();
+    labMovieResponseCache.set(cacheKey,data);
+   }
+  }catch(err){
+   if(stamp!==labRequestSerial)return;
+   partialError=err;
+   break;
+  }
   if(stamp!==labRequestSerial)return;
   labPages=Math.max(1,Math.min(500,Number(data.total_pages)||1));
-  const films=Array.isArray(data.results)?data.results:[];
-  for(const film of films)grid.appendChild(labCard(film));
-  labStatus(films.length?'Pulsa Detalles para consultar la ficha y añadirla a una lista.':'No se encontraron películas en esta página.');
-  const total=Number(data.total_results)||0;
-  $('labResultsCount').textContent=total?total.toLocaleString('es-ES')+' resultados':'Página '+labPage;
-  $('labDiscoverPager').hidden=labPages<=1;
-  $('labPageLabel').textContent=labPage+' / '+labPages;
-  $('labPrevPage').disabled=labPage===1;$('labNextPage').disabled=labPage>=labPages;
- }catch(e){
-  if(stamp!==labRequestSerial)return;
-  labStatus('⚠ '+e.message);
-  $('labResultsCount').textContent='Sin resultados';
+  total=Number(data.total_results)||total;
+  for(const movie of Array.isArray(data.results)?data.results:[]){
+   if(!movie||!Number.isInteger(Number(movie.id))||seenIDs.has(String(movie.id)))continue;
+   seenIDs.add(String(movie.id));movies.push(movie);
+  }
+  requested++;current++;
  }
+ if(stamp!==labRequestSerial)return;
+ const endPage=current-1;
+ if(!requested&&partialError)throw partialError;
+ labPageEnds[labPage-1]=endPage;
+ if(!fixedNext&&endPage<labPages)labPageStarts[labPage]=endPage+1;
+ for(const film of movies)grid.appendChild(labCard(film));
+ if(movies.length){
+  labStatus(partialError?'⚠ No se pudieron cargar más resultados: '+partialError.message:
+   'Pulsa Detalles para consultar la ficha y añadirla a una lista.');
+ }else{
+  labStatus(partialError?'⚠ '+partialError.message:'No se encontraron películas en estas páginas.');
+ }
+ $('labResultsCount').textContent=total?total.toLocaleString('es-ES')+' resultados':'Página '+labPage;
+ const more=labPageEnds[labPage-1]<labPages&&!!labPageStarts[labPage];
+ $('labDiscoverPager').hidden=labPage===1&&!more;
+ $('labPageLabel').textContent='Página '+labPage+' · TMDB '+startPage+(endPage>startPage?'–'+endPage:'')+' / '+labPages;
+ $('labPrevPage').disabled=labPage===1;
+ $('labNextPage').disabled=!more;
 }
+function labDiscoverOnResize(){
+ if(labResizeTimer)clearTimeout(labResizeTimer);
+ labResizeTimer=setTimeout(()=>{
+  labResizeTimer=null;
+  if(activeView!=='discover'||labView.hidden)return;
+  const target=labDiscoverFillTarget();
+  if(target>labLastFillTarget&&$('labMoviesGrid').childElementCount<target){
+   // Las páginas ya visitadas conservan rangos; al redimensionar se reconstruye
+   // desde la primera para que nunca se dupliquen películas entre páginas.
+   labResetBrowsePages();
+   void labBrowse();
+  }
+ },220);
+}
+window.addEventListener('resize',labDiscoverOnResize);
 function labCard(film){
  const card=document.createElement('article');card.className='lab-movie-card';
  const img=film.poster_path?document.createElement('img'):document.createElement('div');
@@ -312,7 +377,7 @@ function labCard(film){
 function labNoPoster(){const x=document.createElement('div');x.className='lab-movie-poster lab-movie-empty';x.textContent='🎞';return x;}
 function labGoPage(direction){
  const next=labPage+direction;
- if(next<1||next>labPages)return;
+ if(next<1||!labPageStarts[next-1])return;
  labPage=next;void labBrowse();
  $('labResultsHeading').scrollIntoView({block:'start',behavior:'auto'});
 }
