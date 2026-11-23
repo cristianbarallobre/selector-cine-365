@@ -7,8 +7,8 @@ const source=fs.readFileSync('lab_discover_windows.go','utf8');
 const workflow=fs.readFileSync('.github/workflows/ci-lab.yml','utf8');
 
 assert.match(source,/\/\/go:build windows/,'Cambios únicamente en Windows');
-assert.match(source,/LAB-02\.10 WINDOWS/,'Cabecera de la última versión');
-assert.match(workflow,/Selector_Cine_365_LAB-02_10_Windows/,'Artefacto nuevo');
+assert.match(source,/LAB-02\.11 WINDOWS/,'Cabecera de la última versión');
+assert.match(workflow,/Selector_Cine_365_LAB-02_11_Windows/,'Artefacto nuevo');
 assert.match(common,/class="page-btn" id="filmPrev">‹ Anterior/,'Botón de la biblioteca de referencia');
 assert.match(common,/class="page-btn" id="filmNext">Siguiente ›/,'Botón siguiente de referencia');
 assert.match(lab,/class="page-btn" id="labPrevPage" type="button">‹ Anterior<\/button>/,
@@ -32,4 +32,4 @@ assert.match(lab,/#labDiscoverView button:not\(:disabled\),#labDetailOverlay but
  'Cursor de mano para botones interactivos');
 assert.match(lab,/#labDiscoverView button:disabled,#labDetailOverlay button:disabled\{cursor:not-allowed\}/,
  'No dar cursor de mano a botones deshabilitados');
-console.log('OK: LAB-02.10 orden de cabecera, paginación unificada, X y hover Windows');
+console.log('OK: LAB-02.11 orden de cabecera, paginación unificada, X y hover Windows');
