@@ -131,7 +131,13 @@ func labFreshDetail(ctx context.Context,id int,key string,prior labDetailRecord)
   director:=""
   for _,p:=range d.Credits.Crew {if p.Job=="Director"&&p.Name!="" {if director!=""{director+=" / "};director+=p.Name;if len(director)>220{break}}}
   cast:=make([]map[string]any,0,10)
-  for _,p:=range d.Credits.Cast {if len(cast)>=10{break};if p.Name!=""{cast=append(cast,map[string]any{"name":p.Name,"character":p.Character,"id":p.ID})}}
+  for _,p:=range d.Credits.Cast {
+   if len(cast)>=10{break}
+   if p.Name==""{continue}
+   photo:=p.ProfilePath
+   if !validPosterPath(photo){photo=""}
+   cast=append(cast,map[string]any{"name":p.Name,"character":p.Character,"id":p.ID,"profile_path":photo})
+  }
   genres:=make([]string,0,len(d.Genres))
   for _,g:=range d.Genres{if g.Name!=""{genres=append(genres,g.Name)}}
   trailer:=labTrailer(d.Videos.Results)
@@ -300,15 +306,19 @@ func (a *runningApp) labCachedIdentity(w http.ResponseWriter,r *http.Request) {
  _=json.NewEncoder(w).Encode(map[string]int{"id":id})
 }
 
-// Las fichas guardadas antes de las fichas de actores carecen de ID de reparto.
-// Detectarlas permite actualizar cada ficha al abrirla, sin borrar la caché.
+// Los créditos antiguos pueden carecer de ID o de la propiedad profile_path.
+// Actualizarlos una sola vez al abrir la ficha permite el hover sin peticiones
+// adicionales por actor; el campo vacío significa que TMDB no tiene retrato.
 func labCastWithoutIDs(data map[string]any) bool {
  if data==nil{return false}
+ needsRefresh:=func(p map[string]any)bool{
+  return p["name"]!=""&&(p["id"]==nil||p["profile_path"]==nil)
+ }
  switch cast:=data["cast"].(type){
  case []any:
-  for _,entry:=range cast{if p,ok:=entry.(map[string]any);ok&&p["name"]!=""&&p["id"]==nil{return true}}
+  for _,entry:=range cast{if p,ok:=entry.(map[string]any);ok&&needsRefresh(p){return true}}
  case []map[string]any:
-  for _,p:=range cast{if p["name"]!=""&&p["id"]==nil{return true}}
+  for _,p:=range cast{if needsRefresh(p){return true}}
  }
  return false
 }
