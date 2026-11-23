@@ -15,6 +15,13 @@
 #view-library .panel.lab-smart-panel-open{overflow-y:auto;scrollbar-color:#566a81 transparent;overscroll-behavior-y:contain}
 #view-library .lab-smart-status{font-size:11px;color:#c5d5e6;margin:6px 0 0;line-height:1.4}
 @media(max-height:760px){#view-library .lab-smart-controls{gap:5px}#view-library .lab-smart-field select{padding:5px 7px;min-height:29px}#view-library .lab-smart-box{padding:7px 9px}}
+/* El botón pertenece a la tarjeta de resultado; no abre detalles el resto de la tarjeta. */
+#view-library .pick{position:relative}
+#view-library .lab-smart-details-btn{position:absolute;top:11px;right:12px;z-index:2;border:1px solid #b99b67;border-radius:9px;background:#26384c;color:#ffdfad;padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer}
+#view-library .lab-smart-details-btn[hidden]{display:none!important}
+#view-library .lab-smart-details-btn:hover:not(:disabled){background:#38516a;border-color:#f6d28f}
+#view-library .lab-smart-details-btn:focus-visible{outline:2px solid #ffe39c;outline-offset:3px}
+#view-library .lab-smart-result-has-details .result-copy{padding-top:27px}
 </style>
 <!-- LAB_SMART_HTML -->
 <div class="lab-smart-box" id="labSmartBox">
@@ -44,6 +51,19 @@
   <div class="lab-smart-status" id="labSmartStatus" hidden aria-live="polite"></div>
 </div>
 <!-- LAB_SMART_SCRIPT -->
+// El botón de la esquina aparece tras cualquier sorteo (clásico o inteligente).
+function labSmartSyncDetailsButton(){
+ const button=$('labSmartResultDetails');
+ if(!button)return;
+ const hasFilm=!!(chosen&&chosen.title);
+ button.hidden=!hasFilm;
+ button.disabled=!hasFilm;
+ button.setAttribute('aria-label',hasFilm?'Ver detalles de '+chosen.title:'Ver detalles de la película sorteada');
+ $('resultPoster').closest('.pick')?.classList.toggle('lab-smart-result-has-details',hasFilm);
+}
+$('labSmartResultDetails').addEventListener('click',()=>{
+ if(chosen)void labOpenFilmDetails(chosen);
+});
 const labSmartEnable=$('labSmartEnabled');
 const labSmartMood=$('labSmartMood'),labSmartDuration=$('labSmartDuration'),labSmartGenre=$('labSmartGenre');
 const labSmartPanel=$('labSmartBox').closest('.panel');
