@@ -302,9 +302,13 @@ $('labPrefetchPause').addEventListener('click',async()=>{
 setInterval(()=>{if(!document.hidden)void labPrefetchStatus();},4000);
 
 let labKind='trending',labQuery='',labPage=1,labPages=1,labRequestSerial=0,labDetailSerial=0,labCurrentMovie=null;
-let labPageStarts=[1],labPageEnds=[],labMovieResponseCache=new Map(),labLastFillTarget=0,labResizeTimer=null;
+// Paginación por PELÍCULAS, independiente de las páginas de 20 resultados de TMDB.
+// Los resultados sobrantes se guardan y aparecen en la siguiente pantalla visual.
+let labMoviePool=[],labMovieIDs=new Set(),labTMDBNextPage=1,labTMDBTotal=0;
+let labMovieResponseCache=new Map(),labLastFillTarget=0,labResizeTimer=null;
 function labResetBrowsePages(){
- labPage=1;labPages=1;labPageStarts=[1];labPageEnds=[];labMovieResponseCache.clear();labLastFillTarget=0;
+ labPage=1;labPages=1;labMoviePool=[];labMovieIDs.clear();labTMDBNextPage=1;labTMDBTotal=0;
+ labMovieResponseCache.clear();labLastFillTarget=0;
 }
 const labFold=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es').replace(/[^\p{L}\p{N}]+/gu,' ').trim();
 const labPosterSrc=path=>'/api/discover/poster?path='+encodeURIComponent(path)+'&token='+encodeURIComponent(token);
@@ -374,47 +378,43 @@ function labDiscoverFillTarget(){
  const grid=$('labMoviesGrid'),rect=grid.getBoundingClientRect();
  const style=window.getComputedStyle(grid);
  const gap=Number.parseFloat(style.columnGap)||14;
- // CSS auto-fill no crea pistas al principio si el grid está vacío.
- // getComputedStyle(...).gridTemplateColumns puede ser "none" y aparentar
- // una sola columna: causaba que paráramos tras solo 8 películas de TMDB.
- // Usar el ancho real del contenedor, incluso antes de dibujar tarjetas.
  const availableWidth=Math.max(180,
-  grid.getBoundingClientRect().width||0,grid.clientWidth||0,
+  rect.width||0,grid.clientWidth||0,
   (grid.parentElement?.clientWidth||0)-44,(labView.clientWidth||0)-44);
  const columns=Math.max(1,Math.floor((availableWidth+gap)/(180+gap)));
  const width=Math.max(180,(availableWidth-gap*(columns-1))/columns);
  const approxCardHeight=width*1.5+130;
  const height=Math.max(120,labView.getBoundingClientRect().bottom-rect.top-75);
- // Nunca parar después de una sola página incompleta: en pantallas anchas
- // hay espacio para tres filas y TMDB puede devolver solo 8 títulos/página.
  const rows=Math.max(3,Math.ceil((height+gap)/(approxCardHeight+gap)));
- return Math.max(columns,Math.min(80,columns*rows));
+ // Página visual con FILAS COMPLETAS. Si TMDB entrega 20 títulos para
+ // seis columnas, mostramos 18 y guardamos 2 para la página siguiente.
+ return columns*Math.max(1,Math.min(rows,Math.floor(80/columns)||1));
 }
 async function labBrowse(){
- const stamp=++labRequestSerial,grid=$('labMoviesGrid');grid.replaceChildren();
+ const stamp=++labRequestSerial,grid=$('labMoviesGrid');
+ grid.replaceChildren();
  labSyncDiscoverFilters();
  labStatus('Consultando TMDB…');$('labDiscoverPager').hidden=true;
  const headings={trending:'Tendencias de la semana',popular:'Películas populares',top:'Mejor valoradas',upcoming:'Próximos estrenos'};
  $('labResultsHeading').textContent=labQuery?'Resultados para «'+labQuery+'»':headings[labKind];
  const genre=$('labDiscoverGenre').value;
  const path=labQuery?'/api/discover/search?q='+encodeURIComponent(labQuery):
-  '/api/discover/list?kind='+encodeURIComponent(labKind)+
-  (genre==='any'?'':'&genre='+encodeURIComponent(genre));
- const startPage=labPageStarts[labPage-1]||1;
- const fixedNext=labPageStarts[labPage]||0;
+  '/api/discover/list?kind='+encodeURIComponent(labKind)+(genre==='any'?'':'&genre='+encodeURIComponent(genre));
  const target=labDiscoverFillTarget();
+ const startIndex=(labPage-1)*target,required=startIndex+target;
  labLastFillTarget=target;
- let current=startPage,requested=0,total=0,partialError=null;
- const movies=[],seenIDs=new Set();
- // Tope de ocho llamadas por página visual. Evita ráfagas contra TMDB.
- while(requested<8&&movies.length<target&&current<=labPages&&(!fixedNext||current<fixedNext)){
-  const cacheKey=path+'|'+current;
+ let partialError=null,requested=0;
+ // TMDB pagina de 20 en 20 y la interfaz por filas de columnas.
+ // Nunca cerrar la pantalla visual a mitad de fila si aún hay títulos.
+ // Un máximo preventivo limita consultas por pantalla incluso con páginas vacías.
+ while(labMoviePool.length<required&&labTMDBNextPage<=labPages&&requested<25){
+  const page=labTMDBNextPage,cacheKey=path+'|'+page;
   let data=labMovieResponseCache.get(cacheKey);
   try{
    if(!data){
-    data=await labGet(path+'&page='+current);
+    data=await labGet(path+'&page='+page);
     if(stamp!==labRequestSerial)return;
-    if(labMovieResponseCache.size>=90)labMovieResponseCache.clear();
+    if(labMovieResponseCache.size>=100)labMovieResponseCache.clear();
     labMovieResponseCache.set(cacheKey,data);
    }
   }catch(err){
@@ -423,30 +423,34 @@ async function labBrowse(){
    break;
   }
   if(stamp!==labRequestSerial)return;
-  labPages=Math.max(1,Math.min(500,Number(data.total_pages)||1));
-  total=Number(data.total_results)||total;
+  labPages=Math.max(page,Math.min(500,Number(data.total_pages)||page));
+  labTMDBTotal=Math.max(0,Number(data.total_results)||labTMDBTotal);
   for(const movie of Array.isArray(data.results)?data.results:[]){
-   if(!movie||!Number.isInteger(Number(movie.id))||seenIDs.has(String(movie.id)))continue;
-   seenIDs.add(String(movie.id));movies.push(movie);
+   const id=Number(movie?.id);
+   if(!Number.isSafeInteger(id)||id<=0||labMovieIDs.has(id)||!movie?.title)continue;
+   labMovieIDs.add(id);
+   labMoviePool.push(movie);
   }
-  requested++;current++;
+  labTMDBNextPage=page+1;
+  requested++;
  }
  if(stamp!==labRequestSerial)return;
- const endPage=current-1;
- // Un fallo antes de recibir resultados se muestra en el panel, nunca como promesa rechazada.
- labPageEnds[labPage-1]=endPage;
- if(!fixedNext&&endPage<labPages)labPageStarts[labPage]=endPage+1;
- for(const film of movies)grid.appendChild(labCard(film));
- if(movies.length){
+ const visible=labMoviePool.slice(startIndex,required);
+ for(const film of visible)grid.appendChild(labCard(film));
+ const more=labMoviePool.length>required||labTMDBNextPage<=labPages;
+ const finished=labTMDBNextPage>labPages;
+ if(visible.length){
   labStatus(partialError?'⚠ No se pudieron cargar más resultados: '+partialError.message:
+   finished&&!more?'Estos son los últimos resultados disponibles en TMDB.':
    'Pulsa Detalles para consultar la ficha y añadirla a una lista.');
  }else{
-  labStatus(partialError?'⚠ '+partialError.message:'No se encontraron películas en estas páginas.');
+  labStatus(partialError?'⚠ '+partialError.message:'No se encontraron más películas para esta búsqueda.');
  }
- $('labResultsCount').textContent=total?total.toLocaleString('es-ES')+' resultados':'Página '+labPage;
- const more=labPageEnds[labPage-1]<labPages&&!!labPageStarts[labPage];
+ $('labResultsCount').textContent=labTMDBTotal?labTMDBTotal.toLocaleString('es-ES')+' resultados':'Página '+labPage;
  $('labDiscoverPager').hidden=labPage===1&&!more;
- $('labPageLabel').textContent='Página '+labPage+' · TMDB '+startPage+(endPage>startPage?'–'+endPage:'')+' / '+labPages;
+ $('labPageLabel').textContent=visible.length?
+  'Página '+labPage+' · Películas '+(startIndex+1)+'–'+(startIndex+visible.length)+(labTMDBTotal?' de '+labTMDBTotal:''):
+  'Página '+labPage+' · Sin resultados';
  $('labPrevPage').disabled=labPage===1;
  $('labNextPage').disabled=!more;
 }
@@ -456,12 +460,11 @@ function labDiscoverOnResize(){
   labResizeTimer=null;
   if(activeView!=='discover'||labView.hidden)return;
   const target=labDiscoverFillTarget();
-  if(target>labLastFillTarget&&$('labMoviesGrid').childElementCount<target){
-   // Las páginas ya visitadas conservan rangos; al redimensionar se reconstruye
-   // desde la primera para que nunca se dupliquen películas entre páginas.
-   // Retener la posición actual, invalidando únicamente los límites posteriores.
-   labPageStarts=labPageStarts.slice(0,labPage);
-   labPageEnds=labPageEnds.slice(0,labPage-1);
+  if(target!==labLastFillTarget){
+   // Reagrupar el catálogo ya obtenido según el nuevo número de columnas.
+   // Mantener el índice de inicio aproximado sin perder ni duplicar películas.
+   const oldIndex=(labPage-1)*Math.max(1,labLastFillTarget);
+   labPage=Math.floor(oldIndex/target)+1;
    void labBrowse();
   }
  },220);
@@ -486,7 +489,7 @@ function labCard(film){
 function labNoPoster(){const x=document.createElement('div');x.className='lab-movie-poster lab-movie-empty';x.textContent='🎞';return x;}
 function labGoPage(direction){
  const next=labPage+direction;
- if(next<1||!labPageStarts[next-1])return;
+ if(next<1||(direction>0&&$('labNextPage').disabled))return;
  labPage=next;void labBrowse();
  $('labResultsHeading').scrollIntoView({block:'start',behavior:'auto'});
 }
