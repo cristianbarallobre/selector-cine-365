@@ -48,7 +48,7 @@ func TestLabSmartInjectedOnlyWindowsLab(t *testing.T){
  page,err:=makeHTML("☐ Ejemplo (2024)","token")
  if err!=nil{t.Fatal(err)}
  for _,snippet:=range []string{
-  "labSmartEnabled","labSmartMood","labSmartDuration","labSmartGenre",
+  "labSmartEnabled","labSmartSeen","labSmartDuration","labSmartGenre",
   "labSmartReason","labSmartChoose","labSmartFetchCache","labSmartResultDetails","labSmartSyncDetailsButton",
   "LAB-02.7 WINDOWS","labDiscoverView",
   "function updateSortAvailability(){queueMicrotask(labSmartUpdateCount);",
@@ -62,4 +62,11 @@ func TestLabSmartInjectedOnlyWindowsLab(t *testing.T){
  if strings.Count(page,"Todas las plataformas")<2 {t.Fatal("el selector y su reconstrucción deben usar Todas las plataformas")}
  if strings.Count(page,`id="labSmartResultDetails"`)!=1 {t.Fatal("debe haber un solo botón Detalles en la tarjeta sorteada")}
  if !strings.Contains(page,"labOpenFilmDetails(chosen)") {t.Fatal("la tarjeta sorteada debe abrir la ficha de detalle existente")}
+ if strings.Contains(page,"labSmartMood")||strings.Contains(page,"labSmartInfo"){t.Fatal("el selector ¿Qué te apetece? y las aclaraciones deben desaparecer")}
+ for _,label:=range []string{"No vistas (pendientes)","Vistas","Vistas y no vistas"}{
+  if !strings.Contains(page,label){t.Errorf("opción de estado ausente: %s",label)}
+ }
+ if !strings.Contains(page,"function labSmartPool()"){t.Fatal("el modo inteligente debe incluir estados vistos y pendientes")}
+ if !strings.Contains(page,"labSmartSyncSeenAction"){t.Fatal("la acción vista/pendiente debe ajustarse a la película")}
+ if strings.Contains(page,"swShowMaximized"){t.Fatal("el tamaño de ventana no debe inyectarse mediante JavaScript")}
 }
