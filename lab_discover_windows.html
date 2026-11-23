@@ -173,6 +173,12 @@ button.lab-cast-actor:focus-visible{outline:2px solid #ffda91;outline-offset:3px
   50%{box-shadow:inset 0 0 0 2px #ffdc87,0 0 23px #ffd77f99}
  }
 }
+/* Arrastre de películas entre páginas: el origen no depende del DOM de la página. */
+body.lab-crosspage-dragging,body.lab-crosspage-dragging *{user-select:none!important}
+#filmPaging .lab-crosspage-nav-target{outline:2px dashed #ffdc88;outline-offset:3px;background:#685034;color:#fff4d7}
+#filmList .film-item.lab-crosspage-row-target{outline:2px solid #ffda87;outline-offset:-2px;background:#304158}
+.lab-crosspage-drag-ghost{position:fixed;z-index:180;max-width:min(320px,75vw);background:#2a394d;border:1px solid #ffd18a;border-radius:10px;box-shadow:0 14px 32px #0009;color:#fff4d8;padding:9px 13px;pointer-events:none;font-size:12px;font-weight:750;line-height:1.4;white-space:normal}
+.lab-crosspage-drag-ghost small{display:block;color:#ced9e8;font-size:11px;font-weight:500;margin-top:2px}
 </style>
 <section class="lab-discover view" id="labDiscoverView" hidden aria-label="Descubrir películas">
   <div class="panel lab-discover-hero">
@@ -916,6 +922,153 @@ async function labOpenFilmDetails(f){
   labStatus('Selecciona la película correcta para abrir sus detalles.');
  }catch(err){labOpen();labStatus('⚠ '+err.message);}
 }
+
+// Arrastre de escritorio entre páginas. HTML5 dragstart se cancela cuando la
+// fila original desaparece en renderList(): Pointer Events con captura en BODY
+// conservan el gesto y permiten navegar por «Siguiente», «Anterior» y números.
+let labCrossPageDrag=null;
+function labReorderPageSize(){
+ const height=Math.max(0,($('filmList').clientHeight||370)-2);
+ return Math.max(1,Math.floor((height+7)/103));
+}
+function labReorderPageTarget(element){
+ const button=element?.closest?.('#filmPaging button');
+ if(!button||button.disabled)return null;
+ const last=(Number(String($('filmPageTotal').textContent||'').replace(/[^0-9]/g,''))||1)-1;
+ let target=null;
+ if(button.id==='filmNext')target=filmPage+1;
+ else if(button.id==='filmPrev')target=filmPage-1;
+ else if(button.closest('#filmPageNumbers')){
+  if(button.classList.contains('page-number'))target=Number(button.textContent)-1;
+  else if(button.classList.contains('page-skip'))target=filmPage+(button.textContent==='»'?10:-10);
+ }
+ return Number.isInteger(target)&&target>=0&&target<=last?target:null;
+}
+function labReorderRowAt(element){
+ const row=element?.closest?.('#filmList .film-item');
+ if(!row)return null;
+ const idx=Number(row.dataset.idx);
+ return Number.isSafeInteger(idx)&&idx>=0?idx:null;
+}
+function labCrossPageClearTargets(){
+ for(const row of document.querySelectorAll('#filmList .lab-crosspage-row-target'))row.classList.remove('lab-crosspage-row-target');
+ for(const nav of document.querySelectorAll('#filmPaging .lab-crosspage-nav-target'))nav.classList.remove('lab-crosspage-nav-target');
+}
+function labCrossPageCancelHover(state){
+ if(state.hoverTimer!==null)clearTimeout(state.hoverTimer);
+ state.hoverTimer=null;state.hoverPage=null;
+}
+function labCrossPageMove(e){
+ const state=labCrossPageDrag;
+ if(!state||e.pointerId!==state.pointerId)return;
+ if(!state.started){
+  if(Math.hypot(e.clientX-state.startX,e.clientY-state.startY)<7)return;
+  state.started=true;
+  document.body.classList.add('lab-crosspage-dragging');
+  state.ghost=document.createElement('div');
+  state.ghost.className='lab-crosspage-drag-ghost';
+  state.ghost.setAttribute('aria-hidden','true');
+  const name=document.createElement('span');name.textContent='Moviendo: '+state.name;
+  const hint=document.createElement('small');hint.textContent='Pasa por otra página y suelta sobre una película';
+  state.ghost.append(name,hint);
+  document.body.appendChild(state.ghost);
+ }
+ if(e.cancelable)e.preventDefault();
+ if(!filmOrderEditable()||libraryState.active_id!==state.listID){
+  labCrossPageFinish(e,true);return;
+ }
+ const width=window.innerWidth||document.documentElement.clientWidth;
+ const height=window.innerHeight||document.documentElement.clientHeight;
+ state.ghost.style.left=Math.max(8,Math.min(e.clientX+16,width-255))+'px';
+ state.ghost.style.top=Math.max(8,Math.min(e.clientY+15,height-70))+'px';
+ const element=document.elementFromPoint(e.clientX,e.clientY);
+ const row=element?.closest?.('#filmList .film-item');
+ const destination=labReorderRowAt(element);
+ const page=labReorderPageTarget(element);
+ labCrossPageClearTargets();
+ state.to=destination;
+ if(row&&destination!==null){
+  row.classList.add('lab-crosspage-row-target');
+  labCrossPageCancelHover(state);
+ }else if(page!==null&&page!==filmPage){
+  const button=element.closest('#filmPaging button');
+  button?.classList.add('lab-crosspage-nav-target');
+  if(state.hoverPage!==page){
+   labCrossPageCancelHover(state);
+   state.hoverPage=page;
+   state.hoverTimer=setTimeout(()=>{
+    state.hoverTimer=null;
+    if(labCrossPageDrag!==state||!state.started||!filmOrderEditable()||
+       libraryState.active_id!==state.listID)return;
+    filmPage=page;
+    state.to=null;state.hoverPage=null;
+    renderList();
+    labCrossPageClearTargets();
+  },460);
+  }
+ }else{
+  labCrossPageCancelHover(state);
+ }
+}
+function labCrossPageFinish(e,cancel=false){
+ const state=labCrossPageDrag;
+ if(!state||e.pointerId!==state.pointerId)return;
+ // La película se identifica por su índice RAW, no por el número de página:
+ // el movimiento reordena el TXT completo y no solo las filas visibles.
+ let target=null,destinationPage=filmPage;
+ if(!cancel&&state.started&&filmOrderEditable()&&libraryState.active_id===state.listID){
+  const element=document.elementFromPoint(e.clientX,e.clientY);
+  target=labReorderRowAt(element);
+  const page=labReorderPageTarget(element);
+  if(target===null&&page!==null){
+   const index=Math.min(page*labReorderPageSize(),parsed.entries.length-1);
+   target=parsed.entries[index]?.idx??null;
+   destinationPage=page;
+  }
+ }
+ labCrossPageDrag=null;
+ labCrossPageCancelHover(state);
+ labCrossPageClearTargets();
+ document.body.classList.remove('lab-crosspage-dragging');
+ state.ghost?.remove();
+ try{
+  if(document.body.hasPointerCapture?.(state.pointerId))document.body.releasePointerCapture(state.pointerId);
+ }catch(_){}
+ if(target!==null&&target!==state.from){
+  filmPage=destinationPage;
+  if(moveFilmInCurrentList(state.from,target))renderList();
+ }
+}
+document.addEventListener('pointerdown',e=>{
+ if(window.CineAndroid||e.button!==0||!filmOrderEditable())return;
+ const grip=e.target.closest?.('#filmList .film-reorder-handle');
+ if(!grip)return;
+ const row=grip.closest('.film-item');
+ const idx=Number(row?.dataset.idx);
+ if(!Number.isSafeInteger(idx)||idx<0)return;
+ const movie=parsed.entries.find(f=>f.idx===idx);
+ if(!movie)return;
+ if(labCrossPageDrag)return;
+ labCrossPageDrag={
+  pointerId:e.pointerId,from:idx,to:null,listID:libraryState.active_id,
+  name:movie.title||movie.name||'Película',startX:e.clientX,startY:e.clientY,
+  started:false,hoverPage:null,hoverTimer:null,ghost:null
+ };
+ try{document.body.setPointerCapture?.(e.pointerId);}catch(_){}
+ e.preventDefault();
+},true);
+document.addEventListener('pointermove',labCrossPageMove,{capture:true,passive:false});
+document.addEventListener('pointerup',e=>labCrossPageFinish(e),true);
+document.addEventListener('pointercancel',e=>labCrossPageFinish(e,true),true);
+window.addEventListener('blur',()=>{
+ if(labCrossPageDrag)labCrossPageFinish({pointerId:labCrossPageDrag.pointerId},true);
+});
+window.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&labCrossPageDrag){
+  e.preventDefault();e.stopImmediatePropagation();
+  labCrossPageFinish({pointerId:labCrossPageDrag.pointerId},true);
+ }
+},true);
 
 // Abrir una lista desde su número: mostrarla entera y señalar dónde está la
 // película incluso cuando aparece en una página posterior. No alterar las listas.
