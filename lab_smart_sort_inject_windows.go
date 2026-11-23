@@ -46,9 +46,9 @@ func injectLabSmartSort(page string) string {
  page=strings.Replace(page,"function updateSortAvailability(){",
   "function updateSortAvailability(){queueMicrotask(labSmartUpdateCount);",1)
  page=strings.Replace(page,"function updateChoicePlatforms(){",
-  "function updateChoicePlatforms(){labSmartSyncDetailsButton();",1)
+  "function updateChoicePlatforms(){labSmartSyncDetailsButton();labSmartSyncSeenAction();",1)
  page=strings.Replace(page,"function resetChoice(){chosen=null;",
-  "function resetChoice(){chosen=null;labSmartSyncDetailsButton();$('labSmartReason').hidden=true;",1)
+  "function resetChoice(){chosen=null;labSmartSyncDetailsButton();labSmartSyncSeenAction();$('labSmartReason').hidden=true;",1)
  // Descubrir ya insertó JS en la IIFE, así que se busca su último cierre real.
  closeAt:=strings.LastIndex(page,"})();")
  scriptEnd:=strings.LastIndex(page,"</script>")
