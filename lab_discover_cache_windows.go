@@ -300,12 +300,33 @@ func (a *runningApp) labCachedIdentity(w http.ResponseWriter,r *http.Request) {
  _=json.NewEncoder(w).Encode(map[string]int{"id":id})
 }
 
+// Las fichas guardadas antes de las fichas de actores carecen de ID de reparto.
+// Detectarlas permite actualizar cada ficha al abrirla, sin borrar la caché.
+func labCastWithoutIDs(data map[string]any) bool {
+ if data==nil{return false}
+ switch cast:=data["cast"].(type){
+ case []any:
+  for _,entry:=range cast{if p,ok:=entry.(map[string]any);ok&&p["name"]!=""&&p["id"]==nil{return true}}
+ case []map[string]any:
+  for _,p:=range cast{if p["name"]!=""&&p["id"]==nil{return true}}
+ }
+ return false
+}
 func (a *runningApp) labDetailFromCache(w http.ResponseWriter,r *http.Request) {
  w.Header().Set("Content-Type","application/json; charset=utf-8")
  id,err:=strconv.Atoi(r.URL.Query().Get("id"))
  if err!=nil||id<=0||id>999999999{http.Error(w,"ID de película no válido",400);return}
  c:=a.labCatalog()
  if prior,ok:=c.record(id);ok{
+  if labCastWithoutIDs(prior.Data){
+   if key:=a.platforms.getKey();key!=""{
+    ctx,cancel:=context.WithTimeout(r.Context(),22*time.Second)
+    stale:=prior;stale.MetaAt=0
+    fresh,err:=labFreshDetail(ctx,id,key,stale)
+    cancel()
+    if err==nil{prior=fresh;c.remember(id,fresh,"")}
+   }
+  }
   data:=labCopyMap(prior.Data)
   data["cache_state"]="guardada"
   if labNeedsRefresh(prior){
