@@ -153,6 +153,21 @@ button.lab-cast-actor:focus-visible{outline:2px solid #ffda91;outline-offset:3px
 #labActorPhotoTooltip img{display:block;width:100%;height:212px;object-fit:cover;object-position:top center;background:#1b2739;border-radius:7px}
 #labActorPhotoTooltip .lab-actor-photo-label{display:block;text-align:center;font-size:12px;font-weight:760;line-height:1.3;padding:7px 3px 2px;overflow-wrap:anywhere}
 @media(hover:none){#labActorPhotoTooltip{display:none!important}}
+/* Salto desde el número de lista: destacar sin filtrar ni modificar el TXT. */
+#view-library .film-item.lab-list-jump-target{
+ outline:2px solid #ffdc87;
+ outline-offset:-2px;
+ border-radius:12px;
+ background:linear-gradient(120deg,#5b4728,#2e4050 65%);
+ box-shadow:inset 0 0 0 1px #e3b75b,0 0 17px #f2bf6244;
+}
+@media(prefers-reduced-motion:no-preference){
+ #view-library .film-item.lab-list-jump-target{animation:lab-list-jump-pulse 1.1s ease-in-out 2}
+ @keyframes lab-list-jump-pulse{
+  0%,100%{box-shadow:inset 0 0 0 1px #e3b75b,0 0 12px #f2bf6255}
+  50%{box-shadow:inset 0 0 0 2px #ffdc87,0 0 23px #ffd77f99}
+ }
+}
 </style>
 <section class="lab-discover view" id="labDiscoverView" hidden aria-label="Descubrir películas">
   <div class="panel lab-discover-hero">
@@ -845,6 +860,47 @@ async function labOpenFilmDetails(f){
  }catch(err){labOpen();labStatus('⚠ '+err.message);}
 }
 
+// Abrir una lista desde su número: mostrarla entera y señalar dónde está la
+// película incluso cuando aparece en una página posterior. No alterar las listas.
+let labListJumpHighlight=null,labListJumpTimer=null,labListJumpSerial=0;
+function labClearListJumpHighlight(){
+ if(labListJumpTimer!==null)clearTimeout(labListJumpTimer);
+ labListJumpTimer=null;labListJumpHighlight=null;
+ for(const node of document.querySelectorAll('#filmList .lab-list-jump-target'))node.classList.remove('lab-list-jump-target');
+}
+function labJumpToFilmList(m){
+ if(!m||!libraryState.lists.some(list=>list.id===m.id))return;
+ const serial=++labListJumpSerial;
+ labClearListJumpHighlight();
+ // No arrastrar búsquedas, estados o filtros que ocultarían la película.
+ search='';$('search').value='';filter='all';
+ document.querySelectorAll('.filter').forEach(b=>b.classList.toggle('selected',b.dataset.filter==='all'));
+ selectedListPlatforms.clear();closeListPlatformMenu();updateListPlatformOptions();
+ labFiltersResetForList();
+ if(m.id!==libraryState.active_id||virtualMode)switchCollection(m.id);
+ else showView('library');
+ selectSearchScope('current');
+ // En filmMembershipIndex() el título y el año proceden precisamente del
+ // registro de la lista destino, no de una búsqueda aproximada en TMDB.
+ const target=parsed.entries.find(f=>f.title===m.title&&String(f.year||'')===String(m.year||''));
+ if(!target)return;
+ const index=parsed.entries.indexOf(target);
+ // La primera página ya está dibujada: su longitud revela la capacidad
+ // REAL, incluida la altura adaptable de Biblioteca LAB.
+ const capacity=Math.max(1,$('filmList').querySelectorAll('.film-item').length);
+ filmPage=Math.floor(index/capacity);
+ labListJumpHighlight={listID:m.id,rawIndex:target.idx};
+ renderList();
+ requestAnimationFrame(()=>{
+  if(serial!==labListJumpSerial||!labListJumpHighlight||libraryState.active_id!==m.id)return;
+  const row=Array.from($('filmList').querySelectorAll('.film-item')).find(el=>String(el.dataset.idx)===String(target.idx));
+  if(row)row.scrollIntoView({block:'center',behavior:'smooth'});
+ });
+ labListJumpTimer=setTimeout(()=>{
+  if(serial!==labListJumpSerial)return;
+  labClearListJumpHighlight();
+ },4200);
+}
 // Confirmación visual exclusiva de LAB; mantener el borrado y su sincronización originales.
 let labDeleteListResolver=null,labDeleteListPriorFocus=null;
 function labConfirmDeleteList(list){
