@@ -52,9 +52,9 @@ func TestLabSmartInjectedOnlyWindowsLab(t *testing.T){
   "labSmartReason","labSmartChoose","labSmartFetchCache","labSmartResultDetails","labSmartSyncDetailsButton",
   "LAB-02.6 WINDOWS","labDiscoverView",
   "function updateSortAvailability(){queueMicrotask(labSmartUpdateCount);",
-  "function resetChoice(){chosen=null;$('labSmartReason').hidden=true;",
+  "function resetChoice(){chosen=null;labSmartSyncDetailsButton();$('labSmartReason').hidden=true;",
  } {
-  if !strings.Contains(page,snippet){t.Errorf("elemento LAB-02.5 ausente: %s",snippet)}
+  if !strings.Contains(page,snippet){t.Errorf("elemento LAB-02.6 ausente: %s",snippet)}
  }
  if strings.Count(page,`id="labSmartEnabled"`)!=1 {t.Fatal("el interruptor debe existir solo una vez")}
  if !strings.Contains(page,"Elegir una película al azar"){t.Fatal("el sorteo clásico debe conservarse")}
