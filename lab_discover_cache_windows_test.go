@@ -61,6 +61,9 @@ func TestLabWindowsHTMLInjection(t *testing.T) {
   "labPrefetchBanner",
   "labQueuePrefetchSoon()",
   "labDetailOverlay",
+  "--lab-film-row-height",
+  "labUsableHeight",
+  "labRowHeight",
  } {
   if !strings.Contains(page,required){t.Errorf("falta elemento LAB en Windows: %s",required)}
  }
