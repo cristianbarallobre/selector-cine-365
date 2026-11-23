@@ -45,6 +45,13 @@ func TestLabSmartMetaReadOnlyEndpoint(t *testing.T) {
  }
 }
 func TestLabSmartInjectedOnlyWindowsLab(t *testing.T){
+ raw,_:=resources.ReadFile("plantilla.html")
+ start:=injectLabDiscovery(string(raw))
+ for _,marker:=range []string{"</head>",`<div id="sortCount" class="sort-count" aria-live="polite"></div>`,`<div class="platform-detail" id="resultPlatforms"></div>`,"function updateSortAvailability(){","function resetChoice(){chosen=null;","\n})();\n</script>"} {
+  if !strings.Contains(start,marker){t.Logf("Marcador ausente tras Descubrir: %q",marker)}
+ }
+ rawSmart,readErr:=labSmartSortAssets.ReadFile("lab_smart_sort_windows.html")
+ if readErr!=nil{t.Logf("Error recurso: %v",readErr)}else{t.Logf("Recurso smart: %d bytes. Marcadores: %d/%d",len(rawSmart),strings.Count(string(rawSmart),"<!-- LAB_SMART_HTML -->"),strings.Count(string(rawSmart),"<!-- LAB_SMART_SCRIPT -->"))}
  page,err:=makeHTML("☐ Ejemplo (2024)","token")
  if err!=nil{t.Fatal(err)}
  for _,snippet:=range []string{
