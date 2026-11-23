@@ -22,14 +22,12 @@
 .lab-result-top h3{font-size:18px;margin:0}
 .lab-status{font-size:13px;color:#b2c2d5;min-height:21px;margin:6px 0}
 .lab-movies-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;align-items:stretch;min-width:0}
-.lab-movie-card{display:flex;min-width:0;flex-direction:column;text-align:left;gap:0;background:linear-gradient(180deg,#273549,#172331);border:1px solid #415168;border-radius:14px;padding:0;overflow:hidden;color:#f3f5fb;cursor:pointer;transition:border-color .16s,transform .16s}
-.lab-movie-card:hover{border-color:#dda95d;transform:translateY(-2px)}
-.lab-movie-card:focus-visible{outline:2px solid #ffd990;outline-offset:2px}
-/* En Descubrir, la carátula y el título abren la ficha igual que el botón Detalles. */
+.lab-movie-card{display:flex;min-width:0;flex-direction:column;text-align:left;gap:0;background:linear-gradient(180deg,#273549,#172331);border:1px solid #415168;border-radius:14px;padding:0;overflow:hidden;color:#f3f5fb}
+/* Solo el botón Detalles abre fichas: las tarjetas no son clicables. */
 .lab-card-details{width:100%;border:1px solid #c5a062;border-radius:8px;padding:8px 10px;background:#473923;color:#ffe1a2;font-size:13px;font-weight:750;cursor:pointer;margin-top:auto}
 .lab-card-details:hover{background:#654c29}
 .lab-card-details:focus-visible,.lab-film-detail-button:focus-visible{outline:2px solid #ffda91;outline-offset:2px}
-.lab-film-detail-button{border:1px solid #b59660;border-radius:7px;background:#354354;color:#ffe1a5;padding:4px 8px;font-size:11px;font-weight:700;white-space:nowrap;flex:none;cursor:pointer}
+.lab-film-detail-button{border:1px solid #b59660;border-radius:7px;background:#354354;color:#ffe1a5;padding:4px 8px;font-size:11px;font-weight:700;white-space:nowrap;flex:none;cursor:pointer;margin:7px 13px 7px 5px}
 .lab-film-detail-button:hover{background:#51432e;color:#fff0c9}
 .lab-movie-poster{width:100%;aspect-ratio:2/3;object-fit:cover;background:linear-gradient(145deg,#324157,#1a2635);display:block}
 .lab-movie-empty{display:grid;place-items:center;color:#8ca2b7;font-size:35px}
@@ -40,10 +38,6 @@
 .lab-card-info{display:flex;align-items:center;justify-content:space-between;gap:4px;color:#becad8;font-size:12px}
 .lab-card-rating{color:#ffd17e;font-weight:700}
 .lab-pager{display:flex;align-items:center;justify-content:center;gap:12px;padding-top:20px;flex-wrap:wrap}
-.lab-top-pager{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-left:auto}
-.lab-top-pager button{background:#26364b;border:1px solid #546982;border-radius:8px;color:#f4e3be;padding:7px 10px;cursor:pointer}
-.lab-top-pager button:disabled{opacity:.4;cursor:default}
-.lab-top-pager span{color:#d3dfeb;font-size:12px;white-space:nowrap}
 .lab-result-top h3{min-width:0;overflow-wrap:anywhere}
 .lab-pager button{border:1px solid #52657e;border-radius:9px;padding:9px 14px;color:#fff;background:#24354a;cursor:pointer}
 .lab-pager button:disabled{opacity:.35;cursor:default}
@@ -93,7 +87,7 @@
     </div>
   </div>
   <div class="panel lab-results-panel">
-    <div class="lab-result-top"><h3 id="labResultsHeading">Tendencias de la semana</h3><span class="count-tag" id="labResultsCount">TMDB · España cuando esté disponible</span><div class="lab-top-pager" id="labTopPager" hidden><button id="labTopPrev" type="button" aria-label="Página anterior">‹</button><span id="labTopPageLabel">1 / 1</span><button id="labTopNext" type="button" aria-label="Página siguiente">›</button></div></div>
+    <div class="lab-result-top"><h3 id="labResultsHeading">Tendencias de la semana</h3><span class="count-tag" id="labResultsCount">TMDB · España cuando esté disponible</span></div>
     <p class="lab-status" id="labDiscoverStatus" aria-live="polite">Abre Descubrir para consultar las películas.</p>
     <div class="lab-movies-grid" id="labMoviesGrid" aria-live="polite"></div>
     <div class="lab-pager" id="labDiscoverPager" hidden>
@@ -210,7 +204,25 @@ function labOpen(){
  if(!$('labMoviesGrid').childElementCount)void labBrowse();
 }
 labNav.addEventListener('click',labOpen);
-document.querySelectorAll('.top-nav [data-view]').forEach(b=>b.addEventListener('click',labLeave));
+// Es imprescindible ocultar Descubrir ANTES del showView original.
+ // Sin esta captura, renderList mide Biblioteca cuando ambas vistas flex siguen abiertas;
+ // el cálculo deja una sola película por página.
+ document.querySelectorAll('.top-nav [data-view]').forEach(b=>b.addEventListener('click',labLeave,true));
+ // Si cambia el tamaño después (redimensionar, modales, cambio de vistas), recalcular.
+ let labLastListHeight=0,labListResizeFrame=0;
+ if(typeof ResizeObserver!=='undefined'){
+  new ResizeObserver(()=>{
+   if(activeView!=='library'||$('view-library').hidden||!labView.hidden)return;
+   const height=$('filmList').clientHeight;
+   if(height<160||Math.abs(height-labLastListHeight)<4)return;
+   labLastListHeight=height;
+   if(labListResizeFrame)cancelAnimationFrame(labListResizeFrame);
+   labListResizeFrame=requestAnimationFrame(()=>{
+    labListResizeFrame=0;
+    if(activeView==='library'&&!$('view-library').hidden&&labView.hidden)renderList();
+   });
+  }).observe($('filmList'));
+ }
 $('labConfigureTMDB').addEventListener('click',()=>{labLeave();showView('library');$('platformSetup').click();});
 async function labGet(path){
  const r=await fetch(path,{headers:{'X-Atlas-Token':token},cache:'no-store'});
@@ -233,7 +245,7 @@ $('labSearchForm').addEventListener('submit',e=>{
 });
 async function labBrowse(){
  const stamp=++labRequestSerial,grid=$('labMoviesGrid');grid.replaceChildren();
- labStatus('Consultando TMDB…');$('labDiscoverPager').hidden=true;$('labTopPager').hidden=true;
+ labStatus('Consultando TMDB…');$('labDiscoverPager').hidden=true;
  const headings={trending:'Tendencias de la semana',popular:'Películas populares',top:'Mejor valoradas',upcoming:'Próximos estrenos'};
  $('labResultsHeading').textContent=labQuery?'Resultados para «'+labQuery+'»':headings[labKind];
  try{
@@ -243,13 +255,9 @@ async function labBrowse(){
   labPages=Math.max(1,Math.min(500,Number(data.total_pages)||1));
   const films=Array.isArray(data.results)?data.results:[];
   for(const film of films)grid.appendChild(labCard(film));
-  labStatus(films.length?'Pulsa una película o su botón Detalles para consultar la ficha y añadirla a una lista.':'No se encontraron películas en esta página.');
+  labStatus(films.length?'Pulsa Detalles para consultar la ficha y añadirla a una lista.':'No se encontraron películas en esta página.');
   const total=Number(data.total_results)||0;
   $('labResultsCount').textContent=total?total.toLocaleString('es-ES')+' resultados':'Página '+labPage;
-  $('labTopPager').hidden=labPages<=1;
-  $('labTopPageLabel').textContent=labPage+' / '+labPages;
-  $('labTopPrev').disabled=labPage===1;
-  $('labTopNext').disabled=labPage>=labPages;
   $('labDiscoverPager').hidden=labPages<=1;
   $('labPageLabel').textContent=labPage+' / '+labPages;
   $('labPrevPage').disabled=labPage===1;$('labNextPage').disabled=labPage>=labPages;
@@ -260,7 +268,7 @@ async function labBrowse(){
  }
 }
 function labCard(film){
- const card=document.createElement('article');card.className='lab-movie-card';card.tabIndex=0;card.setAttribute('aria-label','Abrir detalles de '+film.title);
+ const card=document.createElement('article');card.className='lab-movie-card';
  const img=film.poster_path?document.createElement('img'):document.createElement('div');
  img.className=film.poster_path?'lab-movie-poster':'lab-movie-poster lab-movie-empty';
  if(film.poster_path){img.src=labPosterSrc(film.poster_path);img.loading='lazy';img.alt='';img.addEventListener('error',()=>{img.replaceWith(labNoPoster())},{once:true});}
@@ -273,8 +281,6 @@ function labCard(film){
  const details=document.createElement('button');details.type='button';details.className='lab-card-details';details.textContent='Detalles';details.setAttribute('aria-label','Ver detalles de '+film.title);
  details.addEventListener('click',e=>{e.stopPropagation();void labShowDetail(film.id);});
  meta.append(year,rating);body.append(title,meta,details);card.append(img,body);
- card.addEventListener('click',e=>{if(!e.target.closest('button'))void labShowDetail(film.id);});
- card.addEventListener('keydown',e=>{if(e.target===card&&(e.key==='Enter'||e.key===' ')){e.preventDefault();void labShowDetail(film.id);}});
  return card;
 }
 function labNoPoster(){const x=document.createElement('div');x.className='lab-movie-poster lab-movie-empty';x.textContent='🎞';return x;}
@@ -286,8 +292,6 @@ function labGoPage(direction){
 }
 $('labPrevPage').addEventListener('click',()=>labGoPage(-1));
 $('labNextPage').addEventListener('click',()=>labGoPage(1));
-$('labTopPrev').addEventListener('click',()=>labGoPage(-1));
-$('labTopNext').addEventListener('click',()=>labGoPage(1));
 function labCloseDetail(){++labDetailSerial;labDetailOverlay.hidden=true;labCurrentMovie=null;}
 $('labDetailClose').addEventListener('click',labCloseDetail);
 labDetailOverlay.addEventListener('click',e=>{if(e.target===labDetailOverlay)labCloseDetail();});
