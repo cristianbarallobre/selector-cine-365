@@ -71,7 +71,8 @@ ctx.labSmartGenre.value='any';
 assert.equal(ctx.labSmartCandidates().length,3,'Sin filtros no excluir títulos sin datos TMDB');
 
 const picker=extract('function labSmartPickWeighted(items,weights){','function labSmartGenreExposure(){');
-const randomCtx={window:{crypto:{getRandomValues:v=>{v[0]=0}}},Uint32Array,Math};
+const fakeCrypto={getRandomValues:v=>{v[0]=0}};
+const randomCtx={window:{crypto:fakeCrypto},crypto:fakeCrypto,Uint32Array,Math};
 vm.createContext(randomCtx);
 vm.runInContext(picker,randomCtx);
 assert.equal(randomCtx.labSmartPickWeighted(['A','B'],[1,9]),'A','El primer tramo elige la primera');
