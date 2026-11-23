@@ -65,5 +65,13 @@ assert.match(body,/Number\(info\.tmdb_id\)===Number\(movie\.id\)/,
  await Promise.resolve();await Promise.resolve();
  assert.equal(data.get('la película recién añadida|2026').tmdb_id,998877,'No sustituir por un resultado distinto');
  assert.equal(data.get('la película recién añadida|2026').poster_path,'/poster.png');
- console.log('OK: Descubrir rellena la ficha de Biblioteca al instante y protege la identidad TMDB');
+ backend=null;src.labHydrateAddedMovie(movie,film);
+ backend({state:'ok',tmdb_id:998877,poster_path:'',runtime:0,genres:[],vote_count:0,vote_average:0});
+ await Promise.resolve();await Promise.resolve();
+ const retained=data.get('la película recién añadida|2026');
+ assert.equal(retained.poster_path,'/poster.png','Un backend parcial no borra la carátula');
+ assert.equal(retained.runtime,105,'Un backend parcial no borra la duración');
+ assert.equal(retained.vote_average,8.6,'Un backend parcial no borra la nota');
+ assert.deepEqual(Array.from(retained.genres),['Drama','Misterio'],'Un backend parcial no borra géneros');
+ console.log('OK: Descubrir rellena la ficha de Biblioteca al instante y protege identidad y metadatos TMDB');
 })().catch(error=>{console.error(error);process.exitCode=1});
