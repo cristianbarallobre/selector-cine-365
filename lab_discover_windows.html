@@ -35,6 +35,13 @@
 .lab-discover-search input:focus{border-color:#f0be69}
 .lab-discover-search button,.lab-detail-add,.lab-detail-cta{border-radius:10px;border:1px solid #efbd71;background:linear-gradient(125deg,#f6d895,#dba857);color:#25190b;padding:12px 18px;font-weight:800;cursor:pointer}
 .lab-discover-filters{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 0}
+.lab-discover-criteria{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin:12px 0 0}
+.lab-discover-criteria label{display:flex;flex-direction:column;gap:5px;color:#e4c58d;font-size:12px;font-weight:750;min-width:170px;flex:0 1 240px}
+.lab-discover-criteria select{min-width:0;width:100%;border:1px solid #526880;border-radius:8px;background:#223348;color:#f6f7fb;height:36px;padding:6px 9px;cursor:pointer;font-size:12px}
+.lab-discover-criteria select:hover:not(:disabled){border-color:#edc07c}
+.lab-discover-criteria select:disabled{opacity:.5;cursor:not-allowed}
+.lab-discover-criteria p{flex:1 1 230px;margin:0 0 6px;font-size:11px;line-height:1.35;color:#c5d2df}
+.lab-discover-criteria p[hidden]{display:none!important}
 .lab-filter{border:1px solid #47576c;background:#1a2738;color:#d5e0ee;padding:9px 14px;border-radius:999px;font-weight:700;cursor:pointer}
 .lab-filter.active{background:#493b25;color:#ffe0a0;border-color:#d4a85b}
 .lab-discover .lab-results-panel{padding-top:17px}
@@ -110,6 +117,41 @@
       <button class="lab-filter" data-lab-kind="popular" type="button">Populares</button>
       <button class="lab-filter" data-lab-kind="top" type="button">Mejor valoradas</button>
       <button class="lab-filter" data-lab-kind="upcoming" type="button">Próximos estrenos</button>
+    </div>
+    <div class="lab-discover-criteria" aria-label="Filtrar películas descubiertas">
+      <label for="labDiscoverGenre">Género
+        <select id="labDiscoverGenre">
+          <option value="any">Todos los géneros</option>
+          <option value="28">Acción</option>
+          <option value="12">Aventura</option>
+          <option value="16">Animación</option>
+          <option value="35">Comedia</option>
+          <option value="80">Crimen</option>
+          <option value="99">Documental</option>
+          <option value="18">Drama</option>
+          <option value="10751">Familiar</option>
+          <option value="14">Fantasía</option>
+          <option value="36">Historia</option>
+          <option value="27">Terror</option>
+          <option value="10402">Música</option>
+          <option value="9648">Misterio</option>
+          <option value="10749">Romance</option>
+          <option value="878">Ciencia ficción</option>
+          <option value="10770">Película de TV</option>
+          <option value="53">Suspense</option>
+          <option value="10752">Bélica</option>
+          <option value="37">Western</option>
+        </select>
+      </label>
+      <label for="labDiscoverDuration">Duración
+        <select id="labDiscoverDuration">
+          <option value="any">Cualquier duración</option>
+          <option value="short">Hasta 90 minutos</option>
+          <option value="medium">De 91 a 120 minutos</option>
+          <option value="long">Más de 120 minutos</option>
+        </select>
+      </label>
+      <p id="labDiscoverFilterHint" hidden></p>
     </div>
   </div>
   <div class="panel lab-results-panel">
@@ -262,16 +304,31 @@ async function labGet(path){
  return value;
 }
 function labStatus(s){$('labDiscoverStatus').textContent=s;}
+function labDiscoverFiltered(){
+ return !labQuery&&($('labDiscoverGenre').value!=='any'||$('labDiscoverDuration').value!=='any');
+}
+function labSyncDiscoverFilters(){
+ const search=!!labQuery,genre=$('labDiscoverGenre'),duration=$('labDiscoverDuration');
+ genre.disabled=search;duration.disabled=search;
+ const hint=$('labDiscoverFilterHint');
+ hint.hidden=!search&&!(labKind==='trending'&&labDiscoverFiltered());
+ hint.textContent=search
+  ?'Los filtros de género y duración se aplican al explorar categorías; la búsqueda por título no los aplica.'
+  :'Con filtros, Tendencias se ordena por popularidad (TMDB no permite filtrar el ranking semanal).';
+}
+for(const id of ['labDiscoverGenre','labDiscoverDuration']){
+ $(id).addEventListener('change',()=>{labResetBrowsePages();labSyncDiscoverFilters();void labBrowse();});
+}
 function labKindSelect(kind){
  labKind=kind;labQuery='';labResetBrowsePages();$('labSearchInput').value='';
  document.querySelectorAll('[data-lab-kind]').forEach(b=>b.classList.toggle('active',b.dataset.labKind===kind));
- void labBrowse();
+ labSyncDiscoverFilters();void labBrowse();
 }
 document.querySelectorAll('[data-lab-kind]').forEach(b=>b.addEventListener('click',()=>labKindSelect(b.dataset.labKind)));
 $('labSearchForm').addEventListener('submit',e=>{
  e.preventDefault();const q=$('labSearchInput').value.trim();
  if(q.length<2){labStatus('Escribe al menos dos caracteres.');return;}
- labQuery=q;labResetBrowsePages();document.querySelectorAll('[data-lab-kind]').forEach(b=>b.classList.remove('active'));void labBrowse();
+ labQuery=q;labResetBrowsePages();document.querySelectorAll('[data-lab-kind]').forEach(b=>b.classList.remove('active'));labSyncDiscoverFilters();void labBrowse();
 });
 // Calcular tarjetas necesarias a partir de las columnas reales y el alto visible.
 // Se piden páginas TMDB consecutivas sin repetirlas en la siguiente página visual.
@@ -283,20 +340,29 @@ function labDiscoverFillTarget(){
  // getComputedStyle(...).gridTemplateColumns puede ser "none" y aparentar
  // una sola columna: causaba que paráramos tras solo 8 películas de TMDB.
  // Usar el ancho real del contenedor, incluso antes de dibujar tarjetas.
- const availableWidth=Math.max(180,grid.getBoundingClientRect().width||grid.clientWidth);
+ const availableWidth=Math.max(180,
+  grid.getBoundingClientRect().width||0,grid.clientWidth||0,
+  (grid.parentElement?.clientWidth||0)-44,(labView.clientWidth||0)-44);
  const columns=Math.max(1,Math.floor((availableWidth+gap)/(180+gap)));
  const width=Math.max(180,(availableWidth-gap*(columns-1))/columns);
  const approxCardHeight=width*1.5+130;
  const height=Math.max(120,labView.getBoundingClientRect().bottom-rect.top-75);
- const rows=Math.max(2,Math.ceil((height+gap)/(approxCardHeight+gap)));
+ // Nunca parar después de una sola página incompleta: en pantallas anchas
+ // hay espacio para tres filas y TMDB puede devolver solo 8 títulos/página.
+ const rows=Math.max(3,Math.ceil((height+gap)/(approxCardHeight+gap)));
  return Math.max(columns,Math.min(80,columns*rows));
 }
 async function labBrowse(){
  const stamp=++labRequestSerial,grid=$('labMoviesGrid');grid.replaceChildren();
+ labSyncDiscoverFilters();
  labStatus('Consultando TMDB…');$('labDiscoverPager').hidden=true;
  const headings={trending:'Tendencias de la semana',popular:'Películas populares',top:'Mejor valoradas',upcoming:'Próximos estrenos'};
  $('labResultsHeading').textContent=labQuery?'Resultados para «'+labQuery+'»':headings[labKind];
- const path=labQuery?'/api/discover/search?q='+encodeURIComponent(labQuery):'/api/discover/list?kind='+encodeURIComponent(labKind);
+ const genre=$('labDiscoverGenre').value,duration=$('labDiscoverDuration').value;
+ const path=labQuery?'/api/discover/search?q='+encodeURIComponent(labQuery):
+  '/api/discover/list?kind='+encodeURIComponent(labKind)+
+  (genre==='any'?'':'&genre='+encodeURIComponent(genre))+
+  (duration==='any'?'':'&duration='+encodeURIComponent(duration));
  const startPage=labPageStarts[labPage-1]||1;
  const fixedNext=labPageStarts[labPage]||0;
  const target=labDiscoverFillTarget();
@@ -305,7 +371,7 @@ async function labBrowse(){
  const movies=[],seenIDs=new Set();
  // Tope de ocho llamadas por página visual. Evita ráfagas contra TMDB.
  while(requested<8&&movies.length<target&&current<=labPages&&(!fixedNext||current<fixedNext)){
-  const cacheKey=(labQuery?'q:'+labQuery:'k:'+labKind)+'|'+current;
+  const cacheKey=path+'|'+current;
   let data=labMovieResponseCache.get(cacheKey);
   try{
    if(!data){
