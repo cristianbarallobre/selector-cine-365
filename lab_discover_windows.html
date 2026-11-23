@@ -279,9 +279,13 @@ function labDiscoverFillTarget(){
  const grid=$('labMoviesGrid'),rect=grid.getBoundingClientRect();
  const style=window.getComputedStyle(grid);
  const gap=Number.parseFloat(style.columnGap)||14;
- const cssColumns=style.gridTemplateColumns.split(' ').filter(Boolean).length;
- const columns=cssColumns||Math.max(1,Math.floor((grid.clientWidth+gap)/(180+gap)));
- const width=Math.max(175,(grid.clientWidth-gap*(columns-1))/columns);
+ // CSS auto-fill no crea pistas al principio si el grid está vacío.
+ // getComputedStyle(...).gridTemplateColumns puede ser "none" y aparentar
+ // una sola columna: causaba que paráramos tras solo 8 películas de TMDB.
+ // Usar el ancho real del contenedor, incluso antes de dibujar tarjetas.
+ const availableWidth=Math.max(180,grid.getBoundingClientRect().width||grid.clientWidth);
+ const columns=Math.max(1,Math.floor((availableWidth+gap)/(180+gap)));
+ const width=Math.max(180,(availableWidth-gap*(columns-1))/columns);
  const approxCardHeight=width*1.5+130;
  const height=Math.max(120,labView.getBoundingClientRect().bottom-rect.top-75);
  const rows=Math.max(2,Math.ceil((height+gap)/(approxCardHeight+gap)));
