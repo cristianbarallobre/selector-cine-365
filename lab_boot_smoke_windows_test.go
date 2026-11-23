@@ -18,6 +18,18 @@ import (
 // La regresión LAB-02.10: antes se llamaba update() (que invoca renderList)
 // cuando todavía no se había inicializado const labFilterDecade.
 // El HTML compilado debe instalar TODOS los módulos antes del arranque.
+func TestLabDiscoveryScriptInjection(t *testing.T){
+ raw,err:=resources.ReadFile("plantilla.html");if err!=nil{t.Fatal(err)}
+ labRaw,err:=labDiscoveryFiles.ReadFile("lab_discover_windows.html");if err!=nil{t.Fatal(err)}
+ parts:=strings.SplitN(string(labRaw),labDiscoverySeparator,2)
+ if len(parts)!=2{t.Fatal("el separador de Descubrir ha desaparecido")}
+ prior:=string(raw)
+ after:=injectLabDiscovery(prior)
+ t.Logf("HTML original: cierre IIFE=%d; fragmento Discover=%d bytes; JS inyectado=%t; cierre resultante=%d",strings.Count(prior,"\n})();\n</script>"),len(parts[1]),strings.Contains(after,"function labLeave(){"),strings.Count(after,"\n})();\n</script>"))
+ if !strings.Contains(after,"function labLeave(){"){t.Fatal("Descubrir no ha insertado labLeave en el script original")}
+ if !strings.Contains(after,"function labCreateDetailButton(f)"){t.Fatal("Descubrir no ha insertado el botón Detalles en JS")}
+}
+
 func TestLabStartupAfterAllModules(t *testing.T){
  page,err:=makeHTML("☐ Ejemplo (2024)\n☑ Otra (1988)","smoke-token")
  if err!=nil{t.Fatal(err)}
