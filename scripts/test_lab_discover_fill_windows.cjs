@@ -92,7 +92,7 @@ vm.runInContext(code,context);
  await context.labBrowse();
  assert.match(el.labDiscoverStatus.textContent,/No se encontraron|conexión/i,'Mostrar error de red sin promesa rechazada');
  assert.equal(el.labResultsCount.textContent,'Página 1');
- assert.equal(el.labNextPage.disabled,true);
+ assert.equal(grid.items.length,0,'Ante error completo no deben quedar tarjetas anteriores');
  assert.ok(labelBefore.includes('TMDB'));
  console.log('OK: Descubrir rellena 8+8 tarjetas, navega sin repetición, reutiliza caché y maneja errores de red');
 })().catch(err=>{console.error(err);process.exitCode=1});
