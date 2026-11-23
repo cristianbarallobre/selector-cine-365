@@ -42,7 +42,8 @@ let calls=[],nextError=false;
 const context={
  $:id=>{assert.ok(id in el,'Falta elemento '+id);return el[id];},
  window:{
-  getComputedStyle:()=>({gridTemplateColumns:'190px '.repeat(6).trim(),columnGap:'14px'}),
+  // Cuando auto-fill aún no tiene tarjetas, CSS devuelve 'none' en algunas versiones de Edge.
+  getComputedStyle:()=>({gridTemplateColumns:'none',columnGap:'14px'}),
   addEventListener:()=>{}
  },
  labView:{getBoundingClientRect:()=>({bottom:900}),hidden:false},
@@ -70,6 +71,8 @@ vm.runInContext(code,context);
 (async()=>{
  const expectedTarget=context.labDiscoverFillTarget();
  assert.equal(expectedTarget,12,'Seis columnas requieren doce tarjetas para completar dos filas');
+ assert.match(script,/availableWidth=Math\.max\(180,grid\.getBoundingClientRect\(\)\.width\|\|grid\.clientWidth\)/,
+  'El número de columnas debe calcularse por ancho, sin depender de grid-template-columns none');
  await context.labBrowse();
  assert.deepEqual(calls,[1,2],'Cargar una segunda página TMDB si la primera solo devuelve 8 películas');
  assert.equal(grid.items.length,16,'Rellenar el espacio con resultados adicionales');
