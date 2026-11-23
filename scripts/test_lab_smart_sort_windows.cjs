@@ -24,7 +24,7 @@ assert.match(injector,/if !appIsLab/);
 assert.match(windows,/if !appIsLab/);
 assert.match(main,/out = injectLabSmartSort\(out\)/);
 assert.match(main,/a\.serveLabSmartCache\(w,r\)/);
-assert.match(discover,/LAB-02\.9 WINDOWS/);
+assert.match(discover,/LAB-02\.10 WINDOWS/);
 assert.match(windows,/!a\.auth\(r\)/,'La caché de metadatos requiere token');
 assert.match(windows,/c\.mu\.Lock\(\)/,'Caché local protegida');
 assert.match(windows,/len\(reply\.Items\)>=2500/,'Acotar respuesta de caché');
@@ -178,4 +178,4 @@ const low={metadata:{vote_count:800,vote_average:5.3,genres:['Drama']}};
 const high={metadata:{vote_count:800,vote_average:8.4,genres:['Drama']}};
 assert.ok(weightCtx.labSmartWeight(high,new Map())>weightCtx.labSmartWeight(low,new Map()),'Mantener ponderación por calidad');
 
-console.log('OK: LAB-02.9 Windows; estados pendientes/vistas/ambas, duración, género, plataforma, Detalles, maximizado e aislamiento');
+console.log('OK: LAB-02.10 Windows; estados pendientes/vistas/ambas, duración, género, plataforma, Detalles, maximizado e aislamiento');
