@@ -7,14 +7,15 @@ const ui=fs.readFileSync('lab_smart_sort_windows.html','utf8');
 const injector=fs.readFileSync('lab_smart_sort_inject_windows.go','utf8');
 const windows=fs.readFileSync('lab_smart_sort_windows.go','utf8');
 const other=fs.readFileSync('lab_smart_sort_other.go','utf8');
+const winShell=fs.readFileSync('window_windows.go','utf8');
 const main=fs.readFileSync('main.go','utf8');
 const discover=fs.readFileSync('lab_discover_windows.go','utf8');
 const base=fs.readFileSync('plantilla.html','utf8');
 const parts=ui.split('<!-- LAB_SMART_HTML -->');
-assert.equal(parts.length,2);
-const components=parts[1].split('<!-- LAB_SMART_SCRIPT -->');
-assert.equal(components.length,2);
-const script=components[1];
+assert.equal(parts.length,2,'HTML debe tener marcador de controles');
+const pieces=parts[1].split('<!-- LAB_SMART_SCRIPT -->');
+assert.equal(pieces.length,2,'JS debe tener marcador propio');
+const script=pieces[1];
 new vm.Script('(()=>{\n'+script+'\n})();',{filename:'lab_smart_sort_windows.js'});
 assert.match(injector,/\/\/go:build windows/);
 assert.match(other,/\/\/go:build !windows/);
@@ -23,126 +24,158 @@ assert.match(injector,/if !appIsLab/);
 assert.match(windows,/if !appIsLab/);
 assert.match(main,/out = injectLabSmartSort\(out\)/);
 assert.match(main,/a\.serveLabSmartCache\(w,r\)/);
-assert.match(discover,/LAB-02\.6 WINDOWS/);
-assert.match(windows,/!a\.auth\(r\)/,'Exigir autenticación local');
-assert.match(windows,/c\.mu\.Lock\(\)/,'Leer la caché protegida');
-assert.match(windows,/len\(reply\.Items\)>=2500/,'Acotar el tamaño de respuesta');
-assert.ok(!base.includes('labSmartEnabled'),'La plantilla compartida no puede modificarse');
-for(const id of ['labSmartBox','labSmartEnabled','labSmartMood','labSmartDuration','labSmartGenre','labSmartStatus']){
+assert.match(discover,/LAB-02\.7 WINDOWS/);
+assert.match(windows,/!a\.auth\(r\)/,'La caché de metadatos requiere token');
+assert.match(windows,/c\.mu\.Lock\(\)/,'Caché local protegida');
+assert.match(windows,/len\(reply\.Items\)>=2500/,'Acotar respuesta de caché');
+assert.ok(!base.includes('labSmartEnabled'),'La plantilla compartida no debe cambiarse');
+assert.ok(!base.includes('labSmartSeen'),'El filtro de vistas solo existe en Windows LAB');
+for(const id of ['labSmartEnabled','labSmartSeen','labSmartDuration','labSmartGenre','labSmartStatus','labSmartBox']){
  assert.ok(ui.includes('id="'+id+'"'),'Falta '+id);
 }
-for(const v of ['balanced','quick','top','surprise'])assert.match(ui,new RegExp('value="'+v+'"'));
-for(const v of ['any','short','medium','long'])assert.match(ui,new RegExp('value="'+v+'"'));
-assert.match(script,/eligibleFilms\(\)/,'Debe respetar el filtro de plataformas y las pendientes');
-assert.match(script,/\.checked/,'Debe distinguir pendientes de vistas');
-assert.match(script,/labSmartHistory=.*\.slice\(0,8\)/,'No repetir últimas 8 elecciones si existen alternativas');
-assert.match(script,/e\.stopImmediatePropagation\(\)/,'Interceptar el botón solo en modo inteligente');
-assert.match(script,/if\(!labSmartEnable\.checked\)return/,'El sorteo clásico no debe bloquearse');
-assert.match(script,/labSmartPickWeighted/,'Selección ponderada y aleatoria');
-assert.match(script,/labSmartMetadata/,'Datos de TMDB');
-assert.match(script,/getRandomValues/,'Fuente aleatoria criptográfica cuando exista');
-assert.match(injector,/queueMicrotask\(labSmartUpdateCount\)/,'Actualizar filtros al cambiar de lista y plataformas');
-assert.match(injector,/labSmartReason.*hidden/,'Borrar la explicación cuando el resultado se reinicia');
-assert.match(injector,/Todas las películas pendientes.*Todas las plataformas/,'La etiqueta visual del selector debe decir Todas las plataformas');
-assert.match(injector,/id="labSmartResultDetails"/,'La tarjeta debe recibir su botón Detalles');
-assert.match(injector,/function updateChoicePlatforms\(\)\{labSmartSyncDetailsButton\(\);/,'Mostrar Detalles también tras el sorteo clásico');
-assert.match(injector,/function resetChoice\(\)\{chosen=null;labSmartSyncDetailsButton\(\);/,'Ocultar Detalles cuando no haya película elegida');
-assert.match(script,/labOpenFilmDetails\(chosen\)/,'Detalles debe reutilizar la ficha real de Descubrir/Biblioteca');
-assert.match(ui,/lab-smart-details-btn\[hidden\]/,'No presentar el botón hasta que haya película elegida');
-assert.ok(!base.includes('labSmartResultDetails'),'El botón es exclusivo Windows LAB');
+for(const option of ['pending','seen','both'])assert.match(ui,new RegExp('value="'+option+'"'));
+for(const option of ['any','short','medium','long'])assert.match(ui,new RegExp('value="'+option+'"'));
+assert.ok(!ui.includes('labSmartMood'),'Se debe quitar ¿Qué te apetece? y toda su lógica');
+assert.ok(!ui.includes('labSmartInfo'),'Se deben quitar las aclaraciones de los filtros');
+assert.ok(!ui.includes('lab-smart-explain'),'No debe quedar espacio de aclaraciones');
+assert.match(script,/function labSmartPool\(\)/,'Filtrar por estado antes de género y duración');
+assert.match(script,/status==='both'/,'Incluir películas vistas y pendientes si ambas');
+assert.match(script,/status==='seen'\?f\.checked:!f\.checked/,'Separar vistas/no vistas');
+assert.match(script,/selectedSortPlatform==='all'/,'Mantener plataforma seleccionada');
+assert.match(script,/subscriptions\(r\)/,'Solo streaming permitido cuando se elige plataforma');
+assert.match(script,/labSmartHistory=.*\.slice\(0,8\)/,'No repetir últimas 8 elecciones');
+assert.match(script,/e\.stopImmediatePropagation\(\)/,'No disparar sorteo clásico al usar el inteligente');
+assert.match(script,/if\(!labSmartEnable\.checked\)return/,'Sorteo clásico intacto al desactivar modo');
+assert.match(script,/labSmartPickWeighted/,'Sorteo ponderado');
+assert.match(script,/getRandomValues/,'Aleatoriedad criptográfica si está disponible');
+assert.match(script,/labOpenFilmDetails\(chosen\)/,'Ficha de Detalles existente');
+assert.match(injector,/labSmartSyncSeenAction\(\)/,'Actualiza el botón vista/pendiente');
+assert.match(injector,/function resetChoice\(\)\{chosen=null;labSmartSyncDetailsButton\(\);labSmartSyncSeenAction\(\)/,'Reinicia botón al limpiar selección');
+assert.match(injector,/Todas las películas pendientes.*Todas las plataformas/,'Etiqueta de plataforma');
+assert.match(winShell,/swShowMaximized\s*=\s*3/,'La ventana puede mostrarse maximizada');
+assert.match(winShell,/if appIsLab \{ showMode = uintptr\(swShowMaximized\) \}/,'Solo maximiza Windows LAB');
+assert.match(winShell,/procShowWindow\.Call\(hwnd, showMode\)/,'Aplica el modo al mostrar WebView2');
+assert.match(winShell,/if appIsLab \{\s*args = append\(args, "--start-maximized"\)/,'El navegador de respaldo también maximiza');
+assert.match(winShell,/else \{\s*args = append\(args, "--window-size=1200,820"\)/,'El Windows estable mantiene sus medidas');
 
 function extract(start,end){
  const i=script.indexOf(start),j=script.indexOf(end,i+start.length);
  assert.ok(i>=0&&j>i,'No se pudo extraer '+start);
  return script.slice(i,j);
 }
-const candidatesCode=extract('function labSmartCandidates(){','function labSmartGenres(){');
-const movies=[
- {title:'Corta',metadata:{runtime:80,genres:['Comedia']}},
- {title:'Límite',metadata:{runtime:90,genres:['Comedia']}},
- {title:'Casi corta',metadata:{runtime:91,genres:['Comedia']}},
- {title:'Lo que el viento se llevó',metadata:{runtime:238,genres:['Drama']}},
- {title:'Desconocida',metadata:{runtime:0,genres:[]}}
+// Los filtros deben actuar sobre el estado de visionado, además de duración,
+// género y plataforma. La selección clásica usa la función original.
+const candidatesCode=extract('function labSmartPool(){','function labSmartGenres(){');
+const films=[
+ {title:'Corta pendiente',checked:false,metadata:{runtime:80,genres:['Comedia']}},
+ {title:'Corta vista',checked:true,metadata:{runtime:85,genres:['Ciencia ficción']}},
+ {title:'Límite pendiente',checked:false,metadata:{runtime:90,genres:['Ciencia ficción']}},
+ {title:'Casi corta vista',checked:true,metadata:{runtime:91,genres:['Drama']}},
+ {title:'Muy larga vista',checked:true,metadata:{runtime:238,genres:['Ciencia ficción']}},
+ {title:'Sin duración pendiente',checked:false,metadata:{runtime:0,genres:[]}}
 ];
-const ctx={
- eligibleFilms:()=>movies,
+const providers=new Map([
+ ['Corta pendiente',{state:'ok',subscriptions:['Netflix']}],
+ ['Corta vista',{state:'ok',subscriptions:['Netflix']}],
+ ['Límite pendiente',{state:'ok',subscriptions:['Filmin']}],
+ ['Casi corta vista',{state:'ok',subscriptions:['Filmin']}],
+ ['Muy larga vista',{state:'ok',subscriptions:[]}],
+]);
+const context={
+ parsed:{entries:films},
+ platformData:providers,
+ selectedSortPlatform:'all',
+ providerKey:f=>f.title,
+ subscriptions:r=>r.subscriptions,
  labSmartMetadata:f=>f.metadata,
+ labSmartSeen:{value:'pending'},
+ labSmartDuration:{value:'any'},
  labSmartGenre:{value:'any'},
- labSmartDuration:{value:'short'},
- labSmartMood:{value:'balanced'},
- labSmartNormalize:s=>s.toLowerCase()
+ labSmartNormalize:s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
 };
-vm.createContext(ctx);
-vm.runInContext(candidatesCode,ctx);
-assert.deepEqual(Array.from(ctx.labSmartCandidates(),x=>x.title),['Corta','Límite'],'El límite de 90 minutos incluye 90 y descarta 91 y 238');
-ctx.labSmartDuration.value='any';ctx.labSmartGenre.value='drama';
-assert.deepEqual(Array.from(ctx.labSmartCandidates(),x=>x.title),['Lo que el viento se llevó'],'Género debe respetarse');
-ctx.labSmartGenre.value='any';
-assert.equal(ctx.labSmartCandidates().length,5,'Sin filtros no excluir títulos sin datos TMDB');
-ctx.labSmartMood.value='quick';
-assert.deepEqual(Array.from(ctx.labSmartCandidates(),x=>x.title),['Corta','Límite'],
- 'Algo corto debe descartar incluso una película de 238 minutos cuando Duración indica Cualquiera');
-ctx.labSmartGenre.value='drama';
-assert.equal(ctx.labSmartCandidates().length,0,'No usar películas largas para rellenar un filtro corto vacío');
-ctx.labSmartGenre.value='any';ctx.labSmartMood.value='balanced';
+vm.createContext(context);
+vm.runInContext(candidatesCode,context);
+const names=()=>Array.from(context.labSmartCandidates(),f=>f.title);
+assert.deepEqual(names(),['Corta pendiente','Límite pendiente','Sin duración pendiente'],'Por defecto solo no vistas');
+context.labSmartSeen.value='seen';
+assert.deepEqual(names(),['Corta vista','Casi corta vista','Muy larga vista'],'El modo Vistas incluye también películas de 238 minutos sin filtro');
+context.labSmartSeen.value='both';
+assert.equal(names().length,6,'Ambas permite todas las películas de la lista');
+context.labSmartDuration.value='short';
+assert.deepEqual(names(),['Corta pendiente','Corta vista','Límite pendiente'],'Hasta 90 min excluye 91, 238 y sin duración');
+context.labSmartDuration.value='medium';
+assert.deepEqual(names(),['Casi corta vista'],'De 91 a 120 min incluye 91');
+context.labSmartDuration.value='long';
+assert.deepEqual(names(),['Muy larga vista'],'Más de 120 min');
+context.labSmartDuration.value='any';context.labSmartGenre.value='ciencia ficcion';
+assert.deepEqual(names(),['Corta vista','Límite pendiente','Muy larga vista'],'Filtrado de género en ambas');
+context.labSmartSeen.value='seen';context.labSmartDuration.value='short';
+assert.deepEqual(names(),['Corta vista'],'Vistas + ciencia ficción + hasta 90');
+context.labSmartGenre.value='any';context.labSmartDuration.value='any';
+context.selectedSortPlatform='Netflix';
+assert.deepEqual(names(),['Corta vista'],'Vistas + Netflix');
+context.labSmartSeen.value='both';
+assert.deepEqual(names(),['Corta pendiente','Corta vista'],'Ambas + Netflix');
+context.selectedSortPlatform='any';
+assert.equal(names().length,4,'Solo streaming: excluir películas sin ofertas registradas');
+context.selectedSortPlatform='all';
+assert.equal(names().length,6,'Todas las plataformas incluye títulos sin streaming');
+assert.match(script,/status==='seen'\?'vistas':status==='both'\?'películas':'pendientes'/,'El contador se adapta al estado');
 
-const listeners={};
-const eventsCode=extract("labSmartMood.addEventListener('change',","setInterval(");
+const controlEvents=extract("for(const id of ['labSmartSeen','labSmartDuration','labSmartGenre']){","setInterval(");
+const handlers={},elements={};
+for(const id of ['labSmartSeen','labSmartDuration','labSmartGenre']){
+ elements[id]={addEventListener:(name,fn)=>{handlers[id]=fn;}};
+}
+let resets=0,updates=0;
 const eventCtx={
- labSmartMood:{value:'balanced',addEventListener:(type,fn)=>{listeners.mood=fn;}},
- labSmartDuration:{value:'any',addEventListener:(type,fn)=>{listeners.duration=fn;}},
- labSmartGenre:{value:'any',addEventListener:(type,fn)=>{listeners.genre=fn;}},
- resetChoice:()=>{},labSmartUpdateCount:()=>{}
+ $:name=>elements[name],
+ resetChoice:()=>{resets++;},
+ labSmartUpdateCount:()=>{updates++;}
 };
-vm.createContext(eventCtx);vm.runInContext(eventsCode,eventCtx);
-eventCtx.labSmartMood.value='quick';listeners.mood();
-assert.equal(eventCtx.labSmartDuration.value,'short','Algo corto debe mostrar automáticamente Hasta 90 minutos');
-eventCtx.labSmartDuration.value='any';listeners.duration();
-assert.equal(eventCtx.labSmartMood.value,'balanced','Cambiar duración a Cualquiera no debe dejar seleccionado Algo corto');
+vm.createContext(eventCtx);vm.runInContext(controlEvents,eventCtx);
+for(const id of Object.keys(elements))handlers[id]();
+assert.equal(resets,3,'Cambiar estado, duración o género reinicia la elección');
+assert.equal(updates,3,'Los tres filtros actualizan los resultados');
 
-const detailsCode=extract('function labSmartSyncDetailsButton(){',"const labSmartEnable=");
-const selected={title:'Película elegida',year:2020};
+const detailsCode=extract('function labSmartSyncSeenAction(){','const labSmartEnable=');
+const resultButton={hidden:true,disabled:true,setAttribute(name,value){this[name]=value;},addEventListener(type,fn){this.clickHandler=fn;}};
+const watchedButton={textContent:''};
 let clicked=null,visibleClass=false;
-const detailsButton={hidden:true,disabled:true,setAttribute(k,v){this[k]=v;},addEventListener(type,fn){this.clickHandler=fn;}};
 const detailCtx={
  chosen:null,
- $:id=>id==='labSmartResultDetails'?detailsButton:id==='resultPoster'?{closest:()=>({classList:{toggle:(key,show)=>{visibleClass=show;}}})}:null,
+ $:id=>id==='markWatched'?watchedButton:id==='labSmartResultDetails'?resultButton:id==='resultPoster'?{closest:()=>({classList:{toggle:(key,show)=>{visibleClass=show;}}})}:null,
  labOpenFilmDetails:film=>{clicked=film;}
 };
 vm.createContext(detailCtx);vm.runInContext(detailsCode,detailCtx);
-detailCtx.labSmartSyncDetailsButton();
-assert.equal(detailsButton.hidden,true,'Sin película no hay botón Detalles');
-detailCtx.chosen=selected;detailCtx.labSmartSyncDetailsButton();
-assert.equal(detailsButton.hidden,false,'El botón aparece tras un sorteo');
-assert.equal(detailsButton.disabled,false,'El botón está activo con película elegida');
-assert.equal(visibleClass,true,'La tarjeta reserva espacio para el botón');
-detailsButton.clickHandler();assert.equal(clicked,selected,'Detalles debe abrir la película sorteada');
+detailCtx.labSmartSyncSeenAction();detailCtx.labSmartSyncDetailsButton();
+assert.equal(watchedButton.textContent,'✓ Marcar como vista','Valor inicial');
+assert.equal(resultButton.hidden,true,'Detalles oculto sin título');
+const seen={title:'Película vista',checked:true};
+detailCtx.chosen=seen;detailCtx.labSmartSyncSeenAction();detailCtx.labSmartSyncDetailsButton();
+assert.equal(watchedButton.textContent,'↩ Marcar como pendiente','No marcar otra vez como vista una película ya vista');
+assert.equal(resultButton.hidden,false,'Detalles visible tras sorteo');
+assert.equal(visibleClass,true,'Dejar espacio al botón en la tarjeta');
+resultButton.clickHandler();assert.equal(clicked,seen,'Detalles abre el título elegido');
+detailCtx.chosen={title:'Película pendiente',checked:false};
+detailCtx.labSmartSyncSeenAction();
+assert.equal(watchedButton.textContent,'✓ Marcar como vista');
 detailCtx.chosen=null;detailCtx.labSmartSyncDetailsButton();
-assert.equal(detailsButton.hidden,true,'Reset elimina el botón para evitar detalles anteriores');
+assert.equal(resultButton.hidden,true,'Limpiar elección también oculta Detalles');
 
-const picker=extract('function labSmartPickWeighted(items,weights){','function labSmartGenreExposure(){');
+const pickCode=extract('function labSmartPickWeighted(items,weights){','function labSmartGenreExposure(){');
 const fakeCrypto={getRandomValues:v=>{v[0]=0}};
-const randomCtx={window:{crypto:fakeCrypto},crypto:fakeCrypto,Uint32Array,Math};
-vm.createContext(randomCtx);
-vm.runInContext(picker,randomCtx);
-assert.equal(randomCtx.labSmartPickWeighted(['A','B'],[1,9]),'A','El primer tramo elige la primera');
-randomCtx.window.crypto.getRandomValues=v=>{v[0]=0xffffffff};
-assert.equal(randomCtx.labSmartPickWeighted(['A','B'],[1,9]),'B','El último tramo elige la segunda');
+const randCtx={window:{crypto:fakeCrypto},crypto:fakeCrypto,Uint32Array,Math};
+vm.createContext(randCtx);vm.runInContext(pickCode,randCtx);
+assert.equal(randCtx.labSmartPickWeighted(['A','B'],[1,9]),'A');
+fakeCrypto.getRandomValues=v=>{v[0]=0xffffffff};
+assert.equal(randCtx.labSmartPickWeighted(['A','B'],[1,9]),'B');
 
 const weights=extract('function labSmartWeight(f,exposure){','function labSmartChoose(){');
-const weightContext={
- labSmartMetadata:f=>f.metadata,
- labSmartMood:{value:'top'},
- labSmartNormalize:s=>s.toLowerCase()
-};
-vm.createContext(weightContext);
-vm.runInContext(weights,weightContext);
-const votes=new Map();
-const low={metadata:{vote_count:800,vote_average:5.5,runtime:100,genres:['Drama']}};
-const high={metadata:{vote_count:800,vote_average:8.4,runtime:100,genres:['Drama']}};
-assert.ok(weightContext.labSmartWeight(high,votes)>weightContext.labSmartWeight(low,votes),'Las buenas notas deben tener más peso');
-weightContext.labSmartMood.value='quick';
-const short={metadata:{vote_count:800,vote_average:7.5,runtime:85,genres:['Drama']}};
-const long={metadata:{vote_count:800,vote_average:7.5,runtime:165,genres:['Drama']}};
-assert.ok(weightContext.labSmartWeight(short,votes)>weightContext.labSmartWeight(long,votes),'El modo corto debe favorecer duración corta');
-console.log('OK: LAB-02.6; limite 90 min, sincronizacion controles, plataformas y Detalles en ambos sorteos');
+const weightCtx={labSmartMetadata:f=>f.metadata,labSmartNormalize:s=>s.toLowerCase()};
+vm.createContext(weightCtx);vm.runInContext(weights,weightCtx);
+const low={metadata:{vote_count:800,vote_average:5.3,genres:['Drama']}};
+const high={metadata:{vote_count:800,vote_average:8.4,genres:['Drama']}};
+assert.ok(weightCtx.labSmartWeight(high,new Map())>weightCtx.labSmartWeight(low,new Map()),'Mantener ponderación por calidad');
+
+console.log('OK: LAB-02.7 Windows; estados pendientes/vistas/ambas, duración, género, plataforma, Detalles, maximizado e aislamiento');
