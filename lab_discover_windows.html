@@ -21,6 +21,13 @@
 #view-library .film-poster,#view-library .poster-placeholder{width:42px;height:60px;align-self:center}
 .lab-nav-tag{margin-left:3px;border:1px solid #e3c785;border-radius:5px;padding:1px 4px;font-size:9px;color:#ffde94;letter-spacing:.06em}
 .lab-discover.view{display:flex;flex-direction:column;gap:16px;min-width:0;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:0 3px 24px 0;scrollbar-color:#51667f transparent}
+/* Windows LAB: Mis listas desplaza la VISTA igual que Descubrir; no su panel.
+   La cabecera de la aplicación y las pestañas permanecen fuera del scroll. */
+#view-collections.view{display:flex;flex-direction:column;gap:16px;min-width:0;min-height:0;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain;padding:0 3px 24px 0;scrollbar-color:#51667f transparent;scrollbar-width:auto}
+#view-collections.view[hidden]{display:none!important}
+#view-collections > .panel{height:auto!important;min-height:0!important;flex:0 0 auto;overflow:visible!important;clip-path:none!important;scrollbar-gutter:auto!important}
+#view-collections > .panel::-webkit-scrollbar{display:none}
+
 .lab-discover .panel{height:auto;min-height:0;flex:0 0 auto;overflow:visible}
 .lab-discover .platform-credit{flex:0 0 auto;margin:0 0 8px}
 .lab-discover [hidden]{display:none!important}
