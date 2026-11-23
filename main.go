@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -42,6 +43,15 @@ func getSavePath() string {
 		config = os.TempDir()
 	}
 	return filepath.Join(config, appDataDirectoryName, "mis_365_peliculas.txt")
+}
+
+// Las cachés desechables de Windows LAB se guardan en LocalAppData;
+// los TXT, las listas, la nube y las identificaciones permanecen en Roaming.
+func appCacheRoot(dataDir string) string {
+ if !appIsLab || runtime.GOOS!="windows"{return dataDir}
+ root,err:=os.UserCacheDir()
+ if err!=nil||root=="" {return dataDir} // no bloquear la aplicación por un error de entorno
+ return filepath.Join(root,appDataDirectoryName,"cache_lab")
 }
 
 func getInitialState(savePath string) (string, error) {
@@ -243,7 +253,7 @@ func serve() error {
   // Un fallo en el estado de sincronización no debe impedir usar datos locales.
   logDiagnostic("Sincronización no disponible: "+syncErr.Error())
  }
- app := &runningApp{html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath)), cloud: newCloudBackups(filepath.Dir(savePath)), graph:newDesktopGraph(filepath.Dir(savePath)), graphUploadCh:make(chan struct{},1), syncStore:syncStore, token: token, stopCh: make(chan struct{})}
+ app := &runningApp{html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath),appCacheRoot(filepath.Dir(savePath))), cloud: newCloudBackups(filepath.Dir(savePath)), graph:newDesktopGraph(filepath.Dir(savePath)), graphUploadCh:make(chan struct{},1), syncStore:syncStore, token: token, stopCh: make(chan struct{})}
 	app.touch()
 	go app.graphPublisher()
 	listener, err := net.Listen("tcp4", "127.0.0.1:0")
@@ -256,7 +266,7 @@ func serve() error {
 	go func() { _ = server.Serve(listener) }()
 	url := "http://" + listener.Addr().String() + "/"
 	logDiagnostic("Servidor local activo en " + url)
-	if err := launchVisualWindow(url, filepath.Join(filepath.Dir(savePath), "perfil_webview2_v7_3"), app.stop, func() bool { return app.pageHeartbeat.Load() }); err != nil {
+	if err := launchVisualWindow(url, filepath.Join(appCacheRoot(filepath.Dir(savePath)), "perfil_webview2_v7_3"), app.stop, func() bool { return app.pageHeartbeat.Load() }); err != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 		server.Shutdown(ctx)
