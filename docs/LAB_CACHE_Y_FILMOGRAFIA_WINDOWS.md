@@ -44,7 +44,7 @@ reutilizan puntualmente sin necesidad de duplicar todos al iniciar.
 | Fichas TMDB | 2.800 fichas y aproximadamente 14 MiB máximo de archivo; al crecer, expulsar menos usadas hasta objetivo ~11 MiB |
 | Índice de títulos resueltos, regenerable | Máximo 5.500 entradas; no afecta identificaciones corregidas |
 | Resultados de plataformas | Máximo 3.200 películas o 10 MiB; se descartan registros más antiguos |
-| Carteles pequeños | Hasta 900 archivos o 48 MiB, y caducidad de 120 días |
+| Carteles pequeños | Hasta 2.500 archivos o 150 MiB, y caducidad de 120 días |
 | Diagnósticos de red | Rotación de archivo de ~256 KiB, más un histórico del mismo tamaño |
 | WebView2 | Carpeta LocalAppData; caché de navegador gestionada por Chromium/WebView2, sin límite duro añadido por nuestra aplicación |
 
