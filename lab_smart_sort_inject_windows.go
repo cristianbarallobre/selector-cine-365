@@ -25,7 +25,6 @@ func injectLabSmartSort(page string) string {
   `<div class="platform-detail" id="resultPlatforms"></div>`,
   "function updateSortAvailability(){",
   "function resetChoice(){chosen=null;",
-  "\n})();\n</script>",
  }
  for _,marker:=range required {if !strings.Contains(page,marker){return page}}
  page=strings.Replace(page,"</head>",parts[0]+"\n</head>",1)
@@ -39,6 +38,11 @@ func injectLabSmartSort(page string) string {
   "function updateSortAvailability(){queueMicrotask(labSmartUpdateCount);",1)
  page=strings.Replace(page,"function resetChoice(){chosen=null;",
   "function resetChoice(){chosen=null;$('labSmartReason').hidden=true;",1)
- page=strings.Replace(page,"\n})();\n</script>","\n"+fragments[1]+"\n})();\n</script>",1)
+ // Descubrir inserta código en la IIFE principal, así que el cierre puede no conservar
+ // la misma secuencia literal de saltos de línea. Anclar al último cierre real.
+ closeAt:=strings.LastIndex(page,"})();")
+ scriptEnd:=strings.LastIndex(page,"</script>")
+ if closeAt<0||scriptEnd<0||closeAt>=scriptEnd{return page}
+ page=page[:closeAt]+"\n"+fragments[1]+"\n"+page[closeAt:]
  return page
 }
