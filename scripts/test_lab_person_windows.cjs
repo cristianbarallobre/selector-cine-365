@@ -38,7 +38,7 @@ const ctx={
  labOpenPerson:async id=>{actorID=id;},labHideActorPhoto:()=>{}
 };
 vm.createContext(ctx);
-const render=js.slice(js.indexOf('function labRenderCredits(movie){'),js.indexOf('async function labOpenPerson(id,record=true){'));
+const render=js.slice(js.indexOf('function labRenderCredits(movie){'),js.indexOf('// Clasificaciones locales:',js.indexOf('function labRenderCredits(movie){')));
 assert.ok(render.startsWith('function labRenderCredits(movie){'));
 vm.runInContext(render,ctx);
 ctx.labRenderCredits({director:'Director de prueba',cast:[
