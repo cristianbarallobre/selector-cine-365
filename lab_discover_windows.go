@@ -91,7 +91,7 @@ var labDiscoverGenreIDs=map[int]bool{
  10770:true,53:true,10752:true,37:true,
 }
 type labGenre struct { Name string `json:"name"` }
-type labPerson struct { ID int `json:"id"`; Name string `json:"name"`; Character string `json:"character"`; Job string `json:"job"` }
+type labPerson struct { ID int `json:"id"`; Name string `json:"name"`; Character string `json:"character"`; Job string `json:"job"`; ProfilePath string `json:"profile_path"` }
 type labVideo struct { Key string `json:"key"`; Site string `json:"site"`; Type string `json:"type"`; Official bool `json:"official"` }
 type labProvider struct { ProviderName string `json:"provider_name"` }
 type labProviders struct {
