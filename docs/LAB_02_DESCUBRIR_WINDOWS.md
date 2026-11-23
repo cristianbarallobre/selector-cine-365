@@ -35,6 +35,15 @@ Abrir [Actions → LAB - pruebas y compilaciones independientes](https://github.
 Se genera un EXE portable de Windows x64 sin firma Authenticode, con datos separados. El botón Descubrir no aparece en la aplicación oficial ni en el canal de laboratorio de Mac. No se publica como release oficial.
 
 
+## Revisión LAB-02.4 — altura de filas y centrado (solo Windows)
+
+- **Biblioteca Windows LAB**: se optimiza la ocupación vertical de las fichas. En la plantilla compartida existían reglas antiguas de 85 px y una posterior de 96 px (altura efectiva); se deja intacta la plantilla.
+- Las filas de LAB ahora se ajustan automáticamente desde **96 px (si falta espacio) hasta 110 px (cuando sobra)**. Se usa la altura real disponible en cada renderizado y se conserva el número de películas por página que cabía antes, para evitar que hacer las fichas algo más altas provoque todavía más hueco vacío.
+- Carátulas ligeramente más grandes (42 × 60 px), centradas junto al texto y los botones. El aspecto, la altura de otras vistas y la navegación de la aplicación estable siguen inalterados.
+- **Pruebas**: validación estática de las reglas de estilo e inyección solo en LAB; casos de distintas alturas de ventana para evitar recortes y pérdidas de capacidad; compilación Windows y pruebas Windows nativas.
+- **Prueba manual recomendada**: abrir una lista con varias películas, mirar cómo se distribuyen sus filas; agrandar y reducir la ventana; pasar de página y volver de Descubrir para comprobar que todo sigue alineado.
+- Descarga: `Selector_Cine_365_LAB-02_4_Windows` de una ejecución correcta de [Actions LAB](https://github.com/cristianbarallobre/selector-cine-365/actions/workflows/ci-lab.yml?query=branch%3Aexperimental).
+
 ## Revisión LAB-02.3 — Correcciones de interacción y paginación (solo Windows)
 
 - En **Descubrir**, se elimina por completo la **paginación superior**. Se mantiene únicamente la inferior, debajo de las tarjetas.
