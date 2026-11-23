@@ -148,30 +148,19 @@ func (a *runningApp) serveLabDiscovery(w http.ResponseWriter,r *http.Request) {
    default:fail(400,"Categoría no válida");return
    }
    if kind!="trending" {params.Set("region","ES")}
-   // Con filtros se utiliza /discover/movie: TMDB admite género y duración
-   // en el servidor, evitando 20 consultas individuales por página.
+   // Géneros filtrados directamente en TMDB, sin consultas por película.
    genreText:=r.URL.Query().Get("genre")
-   duration:=r.URL.Query().Get("duration")
    genreID:=0
    if genreText!=""&&genreText!="any" {
     n,err:=strconv.Atoi(genreText)
     if err!=nil||!labDiscoverGenreIDs[n] {fail(400,"Género no válido");return}
     genreID=n
    }
-   switch duration {
-   case "","any","short","medium","long":
-   default:fail(400,"Duración no válida");return
-   }
-   if genreID>0||duration=="short"||duration=="medium"||duration=="long" {
+   if genreID>0 {
     endpoint="/discover/movie"
     params.Set("region","ES")
     params.Set("sort_by","popularity.desc")
     if genreID>0 {params.Set("with_genres",strconv.Itoa(genreID))}
-    switch duration {
-    case "short":params.Set("with_runtime.lte","90")
-    case "medium":params.Set("with_runtime.gte","91");params.Set("with_runtime.lte","120")
-    case "long":params.Set("with_runtime.gte","121")
-    }
     switch kind {
     case "top":params.Set("sort_by","vote_average.desc");params.Set("vote_count.gte","200")
     case "upcoming":
