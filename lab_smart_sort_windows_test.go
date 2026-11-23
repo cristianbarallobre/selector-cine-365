@@ -49,8 +49,8 @@ func TestLabSmartInjectedOnlyWindowsLab(t *testing.T){
  if err!=nil{t.Fatal(err)}
  for _,snippet:=range []string{
   "labSmartEnabled","labSmartMood","labSmartDuration","labSmartGenre",
-  "labSmartReason","labSmartChoose","labSmartFetchCache",
-  "LAB-02.5 WINDOWS","labDiscoverView",
+  "labSmartReason","labSmartChoose","labSmartFetchCache","labSmartResultDetails","labSmartSyncDetailsButton",
+  "LAB-02.6 WINDOWS","labDiscoverView",
   "function updateSortAvailability(){queueMicrotask(labSmartUpdateCount);",
   "function resetChoice(){chosen=null;$('labSmartReason').hidden=true;",
  } {
@@ -58,4 +58,8 @@ func TestLabSmartInjectedOnlyWindowsLab(t *testing.T){
  }
  if strings.Count(page,`id="labSmartEnabled"`)!=1 {t.Fatal("el interruptor debe existir solo una vez")}
  if !strings.Contains(page,"Elegir una película al azar"){t.Fatal("el sorteo clásico debe conservarse")}
+ if strings.Contains(page,"Todas las películas pendientes"){t.Fatal("el selector superior debe decir Todas las plataformas")}
+ if strings.Count(page,"Todas las plataformas")<2 {t.Fatal("el selector y su reconstrucción deben usar Todas las plataformas")}
+ if strings.Count(page,`id="labSmartResultDetails"`)!=1 {t.Fatal("debe haber un solo botón Detalles en la tarjeta sorteada")}
+ if !strings.Contains(page,"labOpenFilmDetails(chosen)") {t.Fatal("la tarjeta sorteada debe abrir la ficha de detalle existente")}
 }
