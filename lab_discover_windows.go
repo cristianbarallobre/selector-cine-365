@@ -28,11 +28,11 @@ func injectLabDiscovery(page string) string {
  if len(fragments)!=2 { return page }
  nav := `<button class="nav-btn" type="button" id="labDiscoverNav">✦ Descubrir <span class="lab-nav-tag">LAB</span></button>`
  page = strings.Replace(page, `<button class="nav-btn" type="button" data-view="statistics">`, nav+`<button class="nav-btn" type="button" data-view="statistics">`, 1)
- page = strings.Replace(page, "🧪 SELECTOR CINE 365 LAB ·", "🧪 SELECTOR CINE 365 · LAB-02 ·", 1)
+ page = strings.Replace(page, "🧪 SELECTOR CINE 365 LAB ·", "🧪 SELECTOR CINE 365 · LAB-02.2 ·", 1)
  // El botón Detalles se añade solo al renderizado Windows LAB, sin cambiar plantilla.html.
- page = strings.Replace(page, "titleLine.appendChild(title);", "titleLine.append(title,labCreateDetailButton(f));", 1)
+ page = strings.Replace(page, "titleLine.appendChild(title);", "titleLine.appendChild(title);", 1)
  // En Windows LAB, el enlace externo de cada fila sobra: ya está dentro de Detalles.
- page = strings.Replace(page, "b.append(togg,pill,fix,link);frag.appendChild(b);", "b.append(togg,pill,fix);frag.appendChild(b);", 1)
+ page = strings.Replace(page, "b.append(togg,pill,fix,link);frag.appendChild(b);", "b.append(togg,pill,labCreateDetailButton(f),fix);frag.appendChild(b);", 1)
  page = strings.Replace(page, `<input type="search" id="search"`, `<div class="lab-prefetch-banner" id="labPrefetchBanner" role="status" aria-live="polite"><span id="labPrefetchText">Fichas TMDB: comprobando caché…</span><button type="button" id="labPrefetchPause" hidden>Pausar</button></div><input type="search" id="search"`, 1)
  // La precarga se inicia tras cargar biblioteca e identificaciones TMDB, y se actualiza al editar listas.
  page = strings.Replace(page, "void cloudAutoReceive(true);});", "void cloudAutoReceive(true);labQueuePrefetchSoon();});", 1)
@@ -64,6 +64,7 @@ func safeLabMovie(m labMovie) labMovie {
 type labMoviePage struct {
  Page int `json:"page"`
  TotalPages int `json:"total_pages"`
+ TotalResults int `json:"total_results"`
  Results []labMovie `json:"results"`
 }
 type labGenre struct { Name string `json:"name"` }
@@ -112,7 +113,7 @@ func (a *runningApp) serveLabDiscovery(w http.ResponseWriter,r *http.Request) {
  switch r.URL.Path {
  case "/api/discover/list", "/api/discover/search":
   page:=1
-  if raw:=r.URL.Query().Get("page");raw!="" {n,err:=strconv.Atoi(raw);if err!=nil||n<1||n>5 {fail(400,"Página no válida");return};page=n}
+  if raw:=r.URL.Query().Get("page");raw!="" {n,err:=strconv.Atoi(raw);if err!=nil||n<1||n>500 {fail(400,"Página no válida");return};page=n}
   endpoint:="/search/movie"
   params:=url.Values{"language":{"es-ES"},"include_adult":{"false"},"page":{strconv.Itoa(page)}}
   if r.URL.Path=="/api/discover/search" {
@@ -132,7 +133,7 @@ func (a *runningApp) serveLabDiscovery(w http.ResponseWriter,r *http.Request) {
   }
   var data labMoviePage
   if err:=requestTMDB(ctx,endpoint,params,key,&data);err!=nil {fail(502,err.Error());return}
-  if data.TotalPages>5 {data.TotalPages=5}
+  if data.TotalPages>500 {data.TotalPages=500}
   filtered:=make([]labMovie,0,len(data.Results))
   for _,m:=range data.Results {m=safeLabMovie(m);if m.ID>0&&m.Title!="" {filtered=append(filtered,m)}}
   data.Results=filtered
