@@ -76,6 +76,13 @@ type labMoviePage struct {
  TotalResults int `json:"total_results"`
  Results []labMovie `json:"results"`
 }
+// Géneros de película TMDB; validar la lista de IDs antes de construir
+// consultas externas (nunca reenviar parámetros arbitrarios desde la UI).
+var labDiscoverGenreIDs=map[int]bool{
+ 28:true,12:true,16:true,35:true,80:true,99:true,18:true,10751:true,
+ 14:true,36:true,27:true,10402:true,9648:true,10749:true,878:true,
+ 10770:true,53:true,10752:true,37:true,
+}
 type labGenre struct { Name string `json:"name"` }
 type labPerson struct { Name string `json:"name"`; Character string `json:"character"`; Job string `json:"job"` }
 type labVideo struct { Key string `json:"key"`; Site string `json:"site"`; Type string `json:"type"`; Official bool `json:"official"` }
@@ -139,6 +146,37 @@ func (a *runningApp) serveLabDiscovery(w http.ResponseWriter,r *http.Request) {
    default:fail(400,"Categoría no válida");return
    }
    if kind!="trending" {params.Set("region","ES")}
+   // Con filtros se utiliza /discover/movie: TMDB admite género y duración
+   // en el servidor, evitando 20 consultas individuales por página.
+   genreText:=r.URL.Query().Get("genre")
+   duration:=r.URL.Query().Get("duration")
+   genreID:=0
+   if genreText!=""&&genreText!="any" {
+    n,err:=strconv.Atoi(genreText)
+    if err!=nil||!labDiscoverGenreIDs[n] {fail(400,"Género no válido");return}
+    genreID=n
+   }
+   switch duration {
+   case "","any","short","medium","long":
+   default:fail(400,"Duración no válida");return
+   }
+   if genreID>0||duration=="short"||duration=="medium"||duration=="long" {
+    endpoint="/discover/movie"
+    params.Set("region","ES")
+    params.Set("sort_by","popularity.desc")
+    if genreID>0 {params.Set("with_genres",strconv.Itoa(genreID))}
+    switch duration {
+    case "short":params.Set("with_runtime.lte","90")
+    case "medium":params.Set("with_runtime.gte","91");params.Set("with_runtime.lte","120")
+    case "long":params.Set("with_runtime.gte","121")
+    }
+    switch kind {
+    case "top":params.Set("sort_by","vote_average.desc");params.Set("vote_count.gte","200")
+    case "upcoming":
+     params.Set("sort_by","primary_release_date.asc")
+     params.Set("primary_release_date.gte",time.Now().Format("2006-01-02"))
+    }
+   }
   }
   var data labMoviePage
   if err:=requestTMDB(ctx,endpoint,params,key,&data);err!=nil {fail(502,err.Error());return}
