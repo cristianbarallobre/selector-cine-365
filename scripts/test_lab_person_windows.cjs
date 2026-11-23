@@ -35,7 +35,7 @@ let actorID=0;
 const ctx={
  $:id=>{assert.equal(id,'labDetailCast');return credits;},
  document:{createElement:tag=>new FakeElement(tag)},
- labOpenPerson:async id=>{actorID=id;}
+ labOpenPerson:async id=>{actorID=id;},labHideActorPhoto:()=>{}
 };
 vm.createContext(ctx);
 const render=js.slice(js.indexOf('function labRenderCredits(movie){'),js.indexOf('async function labOpenPerson(id,record=true){'));
@@ -68,6 +68,7 @@ const person={
 const detailCtx={
  $:get,document:{activeElement:new FakeElement('button'),createElement:tag=>new FakeElement(tag)},
  labPersonSerial:0,labPersonOverlay:overlay,
+ labHideActorPhoto:()=>{},
  labEnterDetail:()=>{},labDetailCurrent:()=>({kind:'person',scrollTop:0}),
  labPosterSrc:path=>'/api/discover/poster?path='+encodeURIComponent(path),
  labGet:async url=>{request=url;return person;},
