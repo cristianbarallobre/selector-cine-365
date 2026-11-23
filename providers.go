@@ -92,6 +92,14 @@ func newAvailabilityServer(base string, cacheDirs ...string) *availabilityServer
 		if json.Unmarshal(b, &c) == nil && c.Entries != nil {
    p.cache = c.Entries
    p.pruneCacheLocked()
+   if trimmed,err:=json.Marshal(platformCache{Entries:p.cache});err==nil&&len(trimmed)<10<<20 {
+    // Mantener la copia local ajustada incluso antes de recibir nuevas fichas.
+    if len(trimmed)<len(b) {
+     if err:=os.MkdirAll(filepath.Dir(p.cachePath),0700);err==nil{
+      _=os.WriteFile(p.cachePath,trimmed,0600)
+     }
+    }
+   }
   }
 	}
 	if data, e := os.ReadFile(p.overridesPath); e == nil {
@@ -806,6 +814,7 @@ func (a *runningApp) servePosterHTTP(w http.ResponseWriter, r *http.Request) {
   if b,err:=os.ReadFile(old);err==nil&&len(b)>100&&len(b)<=1<<20{
    _=os.MkdirAll(a.platforms.posterDir,0700)
    _=os.WriteFile(file,b,0600)
+   if appIsLab{_,_=prunePosterCache(a.platforms.posterDir,appPosterMaxFiles,appPosterMaxBytes,appPosterMaxAge)}
    w.Header().Set("Content-Type",mime.TypeByExtension(filepath.Ext(file)))
    w.Header().Set("Cache-Control","private, max-age=604800")
    _,_=w.Write(b)
