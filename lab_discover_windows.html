@@ -326,7 +326,7 @@ async function labBrowse(){
  }
  if(stamp!==labRequestSerial)return;
  const endPage=current-1;
- if(!requested&&partialError)throw partialError;
+ // Un fallo antes de recibir resultados se muestra en el panel, nunca como promesa rechazada.
  labPageEnds[labPage-1]=endPage;
  if(!fixedNext&&endPage<labPages)labPageStarts[labPage]=endPage+1;
  for(const film of movies)grid.appendChild(labCard(film));
@@ -352,7 +352,9 @@ function labDiscoverOnResize(){
   if(target>labLastFillTarget&&$('labMoviesGrid').childElementCount<target){
    // Las páginas ya visitadas conservan rangos; al redimensionar se reconstruye
    // desde la primera para que nunca se dupliquen películas entre páginas.
-   labResetBrowsePages();
+   // Retener la posición actual, invalidando únicamente los límites posteriores.
+   labPageStarts=labPageStarts.slice(0,labPage);
+   labPageEnds=labPageEnds.slice(0,labPage-1);
    void labBrowse();
   }
  },220);
