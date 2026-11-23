@@ -23,7 +23,7 @@ assert.match(injector,/if !appIsLab/);
 assert.match(windows,/if !appIsLab/);
 assert.match(main,/out = injectLabSmartSort\(out\)/);
 assert.match(main,/a\.serveLabSmartCache\(w,r\)/);
-assert.match(discover,/LAB-02\.5 WINDOWS/);
+assert.match(discover,/LAB-02\.6 WINDOWS/);
 assert.match(windows,/!a\.auth\(r\)/,'Exigir autenticación local');
 assert.match(windows,/c\.mu\.Lock\(\)/,'Leer la caché protegida');
 assert.match(windows,/len\(reply\.Items\)>=2500/,'Acotar el tamaño de respuesta');
@@ -43,6 +43,13 @@ assert.match(script,/labSmartMetadata/,'Datos de TMDB');
 assert.match(script,/getRandomValues/,'Fuente aleatoria criptográfica cuando exista');
 assert.match(injector,/queueMicrotask\(labSmartUpdateCount\)/,'Actualizar filtros al cambiar de lista y plataformas');
 assert.match(injector,/labSmartReason.*hidden/,'Borrar la explicación cuando el resultado se reinicia');
+assert.match(injector,/Todas las películas pendientes.*Todas las plataformas/,'La etiqueta visual del selector debe decir Todas las plataformas');
+assert.match(injector,/id="labSmartResultDetails"/,'La tarjeta debe recibir su botón Detalles');
+assert.match(injector,/function updateChoicePlatforms\(\)\{labSmartSyncDetailsButton\(\);/,'Mostrar Detalles también tras el sorteo clásico');
+assert.match(injector,/function resetChoice\(\)\{chosen=null;labSmartSyncDetailsButton\(\);/,'Ocultar Detalles cuando no haya película elegida');
+assert.match(script,/labOpenFilmDetails\(chosen\)/,'Detalles debe reutilizar la ficha real de Descubrir/Biblioteca');
+assert.match(ui,/lab-smart-details-btn\[hidden\]/,'No presentar el botón hasta que haya película elegida');
+assert.ok(!base.includes('labSmartResultDetails'),'El botón es exclusivo Windows LAB');
 
 function extract(start,end){
  const i=script.indexOf(start),j=script.indexOf(end,i+start.length);
@@ -52,7 +59,9 @@ function extract(start,end){
 const candidatesCode=extract('function labSmartCandidates(){','function labSmartGenres(){');
 const movies=[
  {title:'Corta',metadata:{runtime:80,genres:['Comedia']}},
- {title:'Larga',metadata:{runtime:155,genres:['Drama']}},
+ {title:'Límite',metadata:{runtime:90,genres:['Comedia']}},
+ {title:'Casi corta',metadata:{runtime:91,genres:['Comedia']}},
+ {title:'Lo que el viento se llevó',metadata:{runtime:238,genres:['Drama']}},
  {title:'Desconocida',metadata:{runtime:0,genres:[]}}
 ];
 const ctx={
@@ -60,15 +69,56 @@ const ctx={
  labSmartMetadata:f=>f.metadata,
  labSmartGenre:{value:'any'},
  labSmartDuration:{value:'short'},
+ labSmartMood:{value:'balanced'},
  labSmartNormalize:s=>s.toLowerCase()
 };
 vm.createContext(ctx);
 vm.runInContext(candidatesCode,ctx);
-assert.deepEqual(Array.from(ctx.labSmartCandidates(),x=>x.title),['Corta'],'El filtro corto exige duración conocida');
+assert.deepEqual(Array.from(ctx.labSmartCandidates(),x=>x.title),['Corta','Límite'],'El límite de 90 minutos incluye 90 y descarta 91 y 238');
 ctx.labSmartDuration.value='any';ctx.labSmartGenre.value='drama';
-assert.deepEqual(Array.from(ctx.labSmartCandidates(),x=>x.title),['Larga'],'Género debe respetarse');
+assert.deepEqual(Array.from(ctx.labSmartCandidates(),x=>x.title),['Lo que el viento se llevó'],'Género debe respetarse');
 ctx.labSmartGenre.value='any';
-assert.equal(ctx.labSmartCandidates().length,3,'Sin filtros no excluir títulos sin datos TMDB');
+assert.equal(ctx.labSmartCandidates().length,5,'Sin filtros no excluir títulos sin datos TMDB');
+ctx.labSmartMood.value='quick';
+assert.deepEqual(Array.from(ctx.labSmartCandidates(),x=>x.title),['Corta','Límite'],
+ 'Algo corto debe descartar incluso una película de 238 minutos cuando Duración indica Cualquiera');
+ctx.labSmartGenre.value='drama';
+assert.equal(ctx.labSmartCandidates().length,0,'No usar películas largas para rellenar un filtro corto vacío');
+ctx.labSmartGenre.value='any';ctx.labSmartMood.value='balanced';
+
+const listeners={};
+const eventsCode=extract("labSmartMood.addEventListener('change',","setInterval(");
+const eventCtx={
+ labSmartMood:{value:'balanced',addEventListener:(type,fn)=>{listeners.mood=fn;}},
+ labSmartDuration:{value:'any',addEventListener:(type,fn)=>{listeners.duration=fn;}},
+ labSmartGenre:{value:'any',addEventListener:(type,fn)=>{listeners.genre=fn;}},
+ resetChoice:()=>{},labSmartUpdateCount:()=>{}
+};
+vm.createContext(eventCtx);vm.runInContext(eventsCode,eventCtx);
+eventCtx.labSmartMood.value='quick';listeners.mood();
+assert.equal(eventCtx.labSmartDuration.value,'short','Algo corto debe mostrar automáticamente Hasta 90 minutos');
+eventCtx.labSmartDuration.value='any';listeners.duration();
+assert.equal(eventCtx.labSmartMood.value,'balanced','Cambiar duración a Cualquiera no debe dejar seleccionado Algo corto');
+
+const detailsCode=extract('function labSmartSyncDetailsButton(){',"const labSmartEnable=");
+const selected={title:'Película elegida',year:2020};
+let clicked=null,visibleClass=false;
+const detailsButton={hidden:true,disabled:true,setAttribute(k,v){this[k]=v;},addEventListener(type,fn){this.clickHandler=fn;}};
+const detailCtx={
+ chosen:null,
+ $:id=>id==='labSmartResultDetails'?detailsButton:id==='resultPoster'?{closest:()=>({classList:{toggle:(key,show)=>{visibleClass=show;}}})}:null,
+ labOpenFilmDetails:film=>{clicked=film;}
+};
+vm.createContext(detailCtx);vm.runInContext(detailsCode,detailCtx);
+detailCtx.labSmartSyncDetailsButton();
+assert.equal(detailsButton.hidden,true,'Sin película no hay botón Detalles');
+detailCtx.chosen=selected;detailCtx.labSmartSyncDetailsButton();
+assert.equal(detailsButton.hidden,false,'El botón aparece tras un sorteo');
+assert.equal(detailsButton.disabled,false,'El botón está activo con película elegida');
+assert.equal(visibleClass,true,'La tarjeta reserva espacio para el botón');
+detailsButton.clickHandler();assert.equal(clicked,selected,'Detalles debe abrir la película sorteada');
+detailCtx.chosen=null;detailCtx.labSmartSyncDetailsButton();
+assert.equal(detailsButton.hidden,true,'Reset elimina el botón para evitar detalles anteriores');
 
 const picker=extract('function labSmartPickWeighted(items,weights){','function labSmartGenreExposure(){');
 const fakeCrypto={getRandomValues:v=>{v[0]=0}};
@@ -95,4 +145,4 @@ weightContext.labSmartMood.value='quick';
 const short={metadata:{vote_count:800,vote_average:7.5,runtime:85,genres:['Drama']}};
 const long={metadata:{vote_count:800,vote_average:7.5,runtime:165,genres:['Drama']}};
 assert.ok(weightContext.labSmartWeight(short,votes)>weightContext.labSmartWeight(long,votes),'El modo corto debe favorecer duración corta');
-console.log('OK: sorteo inteligente Windows LAB-02.5; algoritmos, filtros, seguridad, sintaxis y aislamiento');
+console.log('OK: LAB-02.6; limite 90 min, sincronizacion controles, plataformas y Detalles en ambos sorteos');
