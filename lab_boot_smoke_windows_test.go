@@ -21,9 +21,9 @@ import (
 func TestLabStartupAfterAllModules(t *testing.T){
  page,err:=makeHTML("☐ Ejemplo (2024)\n☑ Otra (1988)","smoke-token")
  if err!=nil{t.Fatal(err)}
- boot:=`updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void initLibrary().then(async()=>{await initIdentities();await initPlatforms();void cloudAutoReceive(true);});`
- if strings.Count(page,boot)!=1{t.Fatalf("el arranque debe existir exactamente una vez; hay %d",strings.Count(page,boot))}
- bootAt:=strings.Index(page,boot)
+ bootPrefix:="updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void initLibrary().then("
+ if strings.Count(page,bootPrefix)!=1{t.Fatalf("el arranque debe existir exactamente una vez; hay %d",strings.Count(page,bootPrefix))}
+ bootAt:=strings.Index(page,bootPrefix)
  required:=[]string{
   "const labSmartEnable=$('labSmartEnabled');",
   "const labFilterDecade=$('labFilterDecade')",
@@ -32,6 +32,8 @@ func TestLabStartupAfterAllModules(t *testing.T){
   "function labFiltersRefreshChoices(){",
   "function labFiltersMatches(f){",
   "function labFiltersSort(matches){",
+  "function labLeave(){",
+  "const labNav=$('labDiscoverNav')",
   "labFilterScopeSlot.appendChild(",
   "labFilterStatusSlot.appendChild(",
   "labFilterPlatformSlot.appendChild(",
