@@ -38,6 +38,7 @@ jobs:
           node scripts/test_lab_discover_add_windows.cjs
           node scripts/test_lab_cast_collections_scroll_windows.cjs
           node scripts/test_lab_person_windows.cjs
+          node scripts/test_lab_person_sort_windows.cjs
           node scripts/test_lab_actor_hover_windows.cjs
           node scripts/test_lab_list_number_jump_windows.cjs
           node scripts/test_lab_detail_history_windows.cjs
