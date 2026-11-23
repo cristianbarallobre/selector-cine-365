@@ -439,6 +439,35 @@ async function labShowDetail(id){
   $('labDetailNote').textContent=note+' Puedes añadirla a una lista.';
  }catch(e){if(serial===labDetailSerial){$('labDetailTitle').textContent='Ficha no disponible';$('labDetailNote').textContent='⚠ '+e.message;}}
 }
+// Descubrir ya tiene esta ficha TMDB completa en memoria y en caché LAB.
+ // Aprovecharla inmediatamente en Biblioteca; no esperar a la precarga lenta.
+function labHydrateAddedMovie(movie,film){
+ const key=providerKey(film);
+ const old=platformData.get(key)||{};
+ const data={
+  ...old,state:'ok',tmdb_id:Number(movie.id)||0,
+  metadata_version:2,poster_path:movie.poster_path||'',
+  vote_average:Number(movie.vote_average)||0,vote_count:Number(movie.vote_count)||0,
+  runtime:Number(movie.runtime)||0,genres:Array.isArray(movie.genres)?movie.genres:[],
+  subscriptions:Array.isArray(movie.subscriptions)?movie.subscriptions:[],
+  free:Array.isArray(movie.free)?movie.free:[],
+  ads:Array.isArray(movie.ads)?movie.ads:[],
+  rent:Array.isArray(movie.rent)?movie.rent:[],
+  buy:Array.isArray(movie.buy)?movie.buy:[],
+  film_url:movie.watch_link||movie.tmdb_url||''
+ };
+ platformData.set(key,data);
+ // Refrescar también la caché nativa de plataformas de manera asíncrona.
+ // No bloquear el guardado de la lista ni perder el contenido ya visible
+ // si hay un error de TMDB o la consulta devuelve datos incompletos.
+ void platformApi('/api/platforms/lookup',{title:film.title,year:Number(film.year)||0,force:false})
+  .then(info=>{
+   if(info?.state==='ok'&&Number(info.tmdb_id)===Number(movie.id)){
+    platformData.set(key,{...data,...info});
+    scheduledPlatformRender();
+   }
+  }).catch(()=>{});
+}
 function labAddCurrentMovie(){
  const movie=labCurrentMovie;if(!movie)return;
  const dst=libraryState.lists.find(x=>x.id===$('labAddList').value);
@@ -461,6 +490,8 @@ function labAddCurrentMovie(){
  dst.text=joined;
  if(dst.id===libraryState.active_id&&!virtualMode)rawText=joined;
  libraryState.tmdb_overrides=known;known[identity]=movie.id;identityMap.set(identity,movie.id);
+ // La ficha debe aparecer al instante aunque la consulta de plataformas tarde.
+ labHydrateAddedMovie(movie,{title,year});
  update();renderCollectionControls();scheduleSave();
  $('labDetailNote').textContent='✓ Añadida como pendiente a «'+dst.name+'». Guardando…';
 }
