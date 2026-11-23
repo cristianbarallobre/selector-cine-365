@@ -134,7 +134,7 @@ function labAppearanceOpen(){
 }
 labAppearanceNav.addEventListener('click',labAppearanceOpen);
 document.querySelectorAll('.top-nav [data-view]').forEach(b=>b.addEventListener('click',labAppearanceLeave,true));
-labDiscoverNav.addEventListener('click',labAppearanceLeave,true);
+labNav.addEventListener('click',labAppearanceLeave,true);
 function labAppearanceMessage(msg){$('labAppearanceStatus').textContent=msg;}
 function labAppearanceClamp(n,lo,hi,def){const v=Number(n);return Number.isFinite(v)?Math.max(lo,Math.min(hi,Math.round(v))):def;}
 function labAppearanceApply(){
