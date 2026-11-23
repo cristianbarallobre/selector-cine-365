@@ -56,7 +56,7 @@ assert.equal(cards[1].children[0].tagName,'strong','No abrir identidades dudosas
 const elements={};
 const get=id=>elements[id]??(elements[id]=new FakeElement());
 const overlay=new FakeElement();
-let request='',selectedMovie=0,closeCount=0;
+let request='',selectedMovie=0;
 const person={
  id:1234,name:'Actriz de prueba',biography:'Una biografía de TMDB.',
  birthday:'1988-01-01',deathday:'',place_of_birth:'Ciudad de prueba',
@@ -67,10 +67,10 @@ const person={
 };
 const detailCtx={
  $:get,document:{activeElement:new FakeElement('button'),createElement:tag=>new FakeElement(tag)},
- labPersonSerial:0,labPersonReturnFocus:null,labPersonOverlay:overlay,
+ labPersonSerial:0,labPersonOverlay:overlay,
+ labEnterDetail:()=>{},labDetailCurrent:()=>({kind:'person',scrollTop:0}),
  labPosterSrc:path=>'/api/discover/poster?path='+encodeURIComponent(path),
  labGet:async url=>{request=url;return person;},
- labClosePerson:()=>{closeCount++;overlay.hidden=true;},
  labShowDetail:id=>{selectedMovie=id;}
 };
 vm.createContext(detailCtx);
@@ -90,7 +90,7 @@ vm.runInContext(open,detailCtx);
  assert.equal(get('labPersonFilms').children[0].children[0].textContent,'Película A (2026)');
  assert.equal(get('labPersonLinks').children[0].href,'https://www.themoviedb.org/person/1234');
  get('labPersonFilms').children[0].click();
- assert.equal(closeCount,1,'Salir de la ficha del actor al elegir película');
+ assert.equal(overlay.hidden,false,'La navegación a la nueva película la gestiona labShowDetail');
  assert.equal(selectedMovie,77,'La filmografía abre la ficha de la película');
  console.log('OK: reparto accesible por ID, ficha personal TMDB, filmografía navegable y duración ausente');
 })().catch(err=>{console.error(err);process.exitCode=1;});
