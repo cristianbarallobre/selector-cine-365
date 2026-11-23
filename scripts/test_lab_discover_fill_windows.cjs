@@ -74,8 +74,8 @@ vm.runInContext(code,context);
 (async()=>{
  const expectedTarget=context.labDiscoverFillTarget();
  assert.equal(expectedTarget,18,'Seis columnas deben solicitar tres filas: no dejar huecos tras ocho tarjetas');
- assert.match(script,/availableWidth=Math\.max\(180,grid\.getBoundingClientRect\(\)\.width\|\|grid\.clientWidth\)/,
-  'El número de columnas debe calcularse por ancho, sin depender de grid-template-columns none');
+ assert.match(script,/grid\.parentElement\?\.clientWidth/,
+  'El número de columnas se basa también en el ancho del panel aunque el grid aún esté vacío');
  await context.labBrowse();
  assert.deepEqual(calls,[1,2,3],'Completar tres filas con tres páginas TMDB de ocho películas');
  assert.equal(grid.items.length,24,'Seis columnas: mostrar cuatro filas completas si TMDB entrega ocho por página');
