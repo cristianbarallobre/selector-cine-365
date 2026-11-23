@@ -132,11 +132,9 @@ func TestLabStartupHeadlessBrowser(t *testing.T){
        const discoverVisible=document.getElementById('labDiscoverView')?.hidden===false;
        const genreControl=document.getElementById('labDiscoverGenre');
        const durationControl=document.getElementById('labDiscoverDuration');
-       const discoverFiltersVisible=!!genreControl&&!genreControl.disabled&&
-         !!durationControl&&!durationControl.disabled;
+       const discoverFiltersVisible=!!genreControl&&!genreControl.disabled&&!durationControl;
        if(genreControl){genreControl.value='878';genreControl.dispatchEvent(new Event('change',{bubbles:true}));}
-       if(durationControl){durationControl.value='short';durationControl.dispatchEvent(new Event('change',{bubbles:true}));}
-       const discoverFiltersSelected=genreControl?.value==='878'&&durationControl?.value==='short';
+       const discoverFiltersSelected=genreControl?.value==='878'&&!durationControl;
        const baseNav=document.querySelector('.top-nav [data-view="library"]');
        const helpNav=document.querySelector('.top-nav [data-view="instructions"]');
        const helpSameHeight=Math.abs((baseNav?.getBoundingClientRect().height||0)-
