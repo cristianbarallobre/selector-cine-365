@@ -37,8 +37,7 @@ const el={
  labPageLabel:{textContent:''},
  labPrevPage:{disabled:false},
  labNextPage:{disabled:false},
- labDiscoverGenre:{value:'any',disabled:false},
- labDiscoverDuration:{value:'any',disabled:false}
+ labDiscoverGenre:{value:'any',disabled:false}
 };
 let calls=[],nextError=false;
 const context={
