@@ -344,17 +344,17 @@ function labAddCurrentMovie(){
  if(!dst){$('labDetailNote').textContent='Selecciona una lista válida.';return;}
  const title=String(movie.title||'').replace(/[\u0000-\u001f\u007f]+/g,' ').replace(/\s+/g,' ').trim();
  const year=String(movie.release_date||'').slice(0,4);
- if(!title||title.length>220||!/^\d{4}$/.test(year)||Number(year)<1880||Number(year)>2200){
+ if(!title||title.length>220||(year&&(!/^(18|19|20|21)\d{2}$/.test(year)||Number(year)>2200))){
   $('labDetailNote').textContent='La película no tiene un título o año válido para guardarla.';return;
  }
  syncActiveText();
  const identity=filmKey({title,year}),known=libraryState.tmdb_overrides||{};
  const existing=parse(dst.text).entries.some(f=>{
   const fid=knownTMDB(f)||known[filmKey(f)]||0;
-  return Number(fid)===Number(movie.id)||labFold(f.title)===labFold(title)&&(!f.year||f.year===year);
+  return Number(fid)===Number(movie.id)||labFold(f.title)===labFold(title)&&(!f.year||!year||f.year===year);
  });
  if(existing){$('labDetailNote').textContent='Esta película ya existe en «'+dst.name+'». No se ha duplicado.';return;}
- const line='☐ '+title+' ('+year+')';
+ const line='☐ '+title+(year?' ('+year+')':'');
  const joined=dst.text.trimEnd()+(dst.text.trim()?'\n':'')+line;
  if(joined.length>900000||Object.keys(known).length>=9999){$('labDetailNote').textContent='La lista o el catálogo de identidades ha alcanzado su límite.';return;}
  dst.text=joined;
@@ -365,7 +365,7 @@ function labAddCurrentMovie(){
 }
 $('labDetailAdd').addEventListener('click',labAddCurrentMovie);
 // El título, la imagen y el resto de la fila no abren fichas.
-// La opción existe exclusivamente en Windows LAB, junto al título.
+// Exclusivo Windows LAB: el botón aparece a la derecha del estado Vista/Pendiente.
 function labCreateDetailButton(f){
  const button=document.createElement('button');button.type='button';
  button.className='lab-film-detail-button';button.textContent='Detalles';
