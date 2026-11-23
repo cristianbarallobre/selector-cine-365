@@ -463,7 +463,16 @@ function labHydrateAddedMovie(movie,film){
  void platformApi('/api/platforms/lookup',{title:film.title,year:Number(film.year)||0,force:false})
   .then(info=>{
    if(info?.state==='ok'&&Number(info.tmdb_id)===Number(movie.id)){
-    platformData.set(key,{...data,...info});
+    // La consulta de plataformas puede no incluir todos los metadatos:
+    // conservar la ficha ya obtenida si llegan campos vacíos o parciales.
+    platformData.set(key,{
+     ...data,...info,
+     poster_path:info.poster_path||data.poster_path,
+     runtime:Number(info.runtime)>0?Number(info.runtime):data.runtime,
+     genres:Array.isArray(info.genres)&&info.genres.length?info.genres:data.genres,
+     vote_count:Number(info.vote_count)>0?Number(info.vote_count):data.vote_count,
+     vote_average:Number(info.vote_count)>0?Number(info.vote_average)||0:data.vote_average
+    });
     scheduledPlatformRender();
    }
   }).catch(()=>{});
