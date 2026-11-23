@@ -71,6 +71,9 @@ func injectLabLibraryFilters(page string) string {
   `$('filmPrev').disabled=filmPage===0; $('filmNext').disabled=filmPage>=pageCount-1;`,
   `$('filmPrev').disabled=filmPage===0; $('filmNext').disabled=filmPage>=pageCount-1;labFiltersUpdateSummary(matches.length);`,1)
  page=strings.Replace(page,
+  "function restartList(){",
+  "function restartList(){labFiltersResetForList();",1)
+ page=strings.Replace(page,
   `return !virtualMode&&searchScope==='current'&&filter==='all'&&!search.trim()&&!selectedListPlatforms.size;`,
   `return !virtualMode&&searchScope==='current'&&filter==='all'&&!search.trim()&&!selectedListPlatforms.size&&labFiltersCanReorder();`,1)
  page=strings.Replace(page,
