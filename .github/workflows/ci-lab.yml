@@ -32,6 +32,8 @@ jobs:
           node scripts/test_lab_smart_sort_windows.cjs
           node scripts/test_lab_network_windows.cjs
           node scripts/test_lab_visual_polish_windows.cjs
+          node scripts/test_lab_filters_windows.cjs
+          node scripts/test_lab_discover_fill_windows.cjs
       - name: Compilar Windows LAB (sin firma)
         run: |
           GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -tags lab -trimpath -ldflags='-H windowsgui -s -w' -o Selector_Cine_365_LAB-02_10_Windows.exe .
