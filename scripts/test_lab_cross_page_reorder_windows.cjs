@@ -11,7 +11,7 @@ assert.match(injection,/handle\.draggable=false/);
 assert.match(base,/handle\.draggable=true/,'La versión estable conserva arrastre nativo');
 assert.match(js,/document\.body\.setPointerCapture/);
 assert.match(js,/document\.elementFromPoint/);
-assert.match(js,/filmPage=page;\s*state\.to=null;state\.hoverPage=null;\s*renderList\(\)/);
+assert.match(js,/filmPage=page;\s*state\.to=null;state\.hoverPage=null;state\.lastNavigatedButton=button;\s*renderList\(\)/);
 assert.match(js,/moveFilmInCurrentList\(state\.from,target\)/);
 assert.match(js,/setTimeout\(\(\)=>\{/);
 assert.match(html,/#filmPaging \.lab-crosspage-nav-target/);
@@ -125,4 +125,19 @@ assert.equal(saveCount,2,'Escape cancela sin modificar la lista');
 enabled=false;
 docEvents.pointerdown({button:0,target:grip,pointerId:10,clientX:30,clientY:100,preventDefault(){}});
 assert.equal(body.capture,null,'No iniciar arrastres cuando hay filtros activos');
-console.log('OK: arrastre cruzando páginas con captura, número de destino, cancelar y guardado una sola vez');
+
+// Si la página cambió al mantener el cursor sobre «Siguiente»,
+// soltar en ese mismo botón debe llevar al INICIO de la página mostrada,
+// no producir otro salto accidental.
+enabled=true;ctx.filmPage=0;ctx.renderList();view='row';
+row=visible[2];grip=new El('grip');grip.parent=row;
+docEvents.pointerdown({button:0,target:grip,pointerId:11,clientX:30,clientY:100,preventDefault(){}});
+view='next';
+docEvents.pointermove({pointerId:11,clientX:400,clientY:550,cancelable:true,preventDefault(){}});
+assert.equal(timers.size,1);
+for(const {cb} of [...timers.values()])cb();timers.clear();
+assert.equal(ctx.filmPage,1);
+docEvents.pointerup({pointerId:11,clientX:400,clientY:550});
+assert.deepEqual(ctx.moves[2],{from:2,to:4,page:1},'No saltar una página extra al soltar sobre Siguiente');
+assert.equal(saveCount,3);
+console.log('OK: arrastre entre páginas, soltar en números o Siguiente, Escape y límites de filtros');
