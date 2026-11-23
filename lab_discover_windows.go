@@ -9,6 +9,7 @@ import (
  "io"
  "net/http"
  "net/url"
+ "sort"
  "strconv"
  "strings"
  "time"
@@ -84,7 +85,7 @@ var labDiscoverGenreIDs=map[int]bool{
  10770:true,53:true,10752:true,37:true,
 }
 type labGenre struct { Name string `json:"name"` }
-type labPerson struct { Name string `json:"name"`; Character string `json:"character"`; Job string `json:"job"` }
+type labPerson struct { ID int `json:"id"`; Name string `json:"name"`; Character string `json:"character"`; Job string `json:"job"` }
 type labVideo struct { Key string `json:"key"`; Site string `json:"site"`; Type string `json:"type"`; Official bool `json:"official"` }
 type labProvider struct { ProviderName string `json:"provider_name"` }
 type labProviders struct {
@@ -119,6 +120,7 @@ func (a *runningApp) serveLabDiscovery(w http.ResponseWriter,r *http.Request) {
  if r.URL.Path=="/api/discover/prefetch"||r.URL.Path=="/api/discover/prefetch/pause" {a.serveLabPrefetch(w,r);return}
  if r.Method!=http.MethodGet {http.Error(w,"Método no permitido",405);return}
  if r.URL.Path=="/api/discover/detail" {a.labDetailFromCache(w,r);return}
+ if r.URL.Path=="/api/discover/person" {a.labPersonDetail(w,r);return}
  if r.URL.Path=="/api/discover/resolve" {a.labCachedIdentity(w,r);return}
  if r.URL.Path=="/api/discover/poster" {a.labDiscoveryPoster(w,r);return}
  w.Header().Set("Content-Type","application/json; charset=utf-8")
@@ -200,4 +202,64 @@ func (a *runningApp) labDiscoveryPoster(w http.ResponseWriter,r *http.Request) {
  mime:="image/jpeg";if strings.HasSuffix(path,".png"){mime="image/png"}else if strings.HasSuffix(path,".webp"){mime="image/webp"}
  w.Header().Set("Content-Type",mime);w.Header().Set("Cache-Control","private, max-age=86400")
  _,_=io.Copy(w,io.LimitReader(resp.Body,2<<20))
+}
+
+  
+// Fichas de intérpretes de TMDB: se sirven desde el backend LAB, nunca con la API key en el navegador.
+type labPersonFilm struct {
+ ID int `json:"id"`
+ Title string `json:"title"`
+ ReleaseDate string `json:"release_date"`
+ Character string `json:"character"`
+ Popularity float64 `json:"popularity"`
+}
+func (a *runningApp) labPersonDetail(w http.ResponseWriter,r *http.Request) {
+ w.Header().Set("Content-Type","application/json; charset=utf-8")
+ fail:=func(code int,msg string){w.WriteHeader(code);_ =json.NewEncoder(w).Encode(map[string]string{"error":msg})}
+ id,err:=strconv.Atoi(r.URL.Query().Get("id"))
+ if err!=nil||id<=0||id>999999999{fail(400,"ID de persona no válido");return}
+ key:=a.platforms.getKey()
+ if key==""{fail(412,"Conecta TMDB para consultar intérpretes.");return}
+ ctx,cancel:=context.WithTimeout(r.Context(),22*time.Second);defer cancel()
+ var p struct {
+  ID int `json:"id"`
+  Name string `json:"name"`
+  Biography string `json:"biography"`
+  Birthday string `json:"birthday"`
+  Deathday string `json:"deathday"`
+  PlaceOfBirth string `json:"place_of_birth"`
+  KnownFor string `json:"known_for_department"`
+  ProfilePath string `json:"profile_path"`
+  Credits struct{Cast []labPersonFilm `json:"cast"`} `json:"movie_credits"`
+ }
+ params:=url.Values{"language":{"es-ES"},"append_to_response":{"movie_credits"}}
+ if err:=requestTMDB(ctx,"/person/"+strconv.Itoa(id),params,key,&p);err!=nil{fail(502,err.Error());return}
+ if p.ID!=id||strings.TrimSpace(p.Name)==""{fail(502,"TMDB no devolvió una persona válida");return}
+ if strings.TrimSpace(p.Biography)=="" {
+  var english struct{Biography string `json:"biography"`}
+  if requestTMDB(ctx,"/person/"+strconv.Itoa(id),url.Values{"language":{"en-US"}},key,&english)==nil{p.Biography=english.Biography}
+ }
+ limit:=func(s string,n int)string{v:=[]rune(strings.TrimSpace(s));if len(v)>n{v=v[:n]};return string(v)}
+ films:=make([]labPersonFilm,0,len(p.Credits.Cast))
+ seen:=map[int]bool{}
+ for _,film:=range p.Credits.Cast {
+  if film.ID<=0||film.ID>999999999||seen[film.ID]||strings.TrimSpace(film.Title)==""{continue}
+  seen[film.ID]=true
+  film.Title=limit(film.Title,180)
+  film.Character=limit(film.Character,100)
+  films=append(films,film)
+ }
+ sort.SliceStable(films,func(i,j int)bool{
+  if films[i].Popularity!=films[j].Popularity{return films[i].Popularity>films[j].Popularity}
+  return films[i].ReleaseDate>films[j].ReleaseDate
+ })
+ if len(films)>16{films=films[:16]}
+ if !validPosterPath(p.ProfilePath){p.ProfilePath=""}
+ _=json.NewEncoder(w).Encode(map[string]any{
+  "id":p.ID,"name":limit(p.Name,180),"biography":limit(p.Biography,6500),
+  "birthday":limit(p.Birthday,10),"deathday":limit(p.Deathday,10),
+  "place_of_birth":limit(p.PlaceOfBirth,200),"known_for_department":limit(p.KnownFor,80),
+  "profile_path":p.ProfilePath,"movies":films,
+  "tmdb_url":"https://www.themoviedb.org/person/"+strconv.Itoa(id),
+ })
 }
