@@ -142,7 +142,21 @@ func TestLabStartupHeadlessBrowser(t *testing.T){
        const helpSameHeight=Math.abs((baseNav?.getBoundingClientRect().height||0)-
          (helpNav?.getBoundingClientRect().height||-100))<=1;
        document.querySelector('[data-view="collections"]')?.click();
-       const collectionsVisible=document.getElementById('view-collections')?.hidden===false;
+       const collectionsView=document.getElementById('view-collections');
+       const collectionsVisible=collectionsView?.hidden===false;
+       const collectionsPanel=collectionsView?.querySelector(':scope > .panel');
+       const collectionsOuterScroll=collectionsView&&
+         ['auto','scroll'].includes(getComputedStyle(collectionsView).overflowY)&&
+         getComputedStyle(collectionsPanel).overflowY==='visible';
+       // Comprobar que la rueda desplaza toda la vista, no una barra dentro
+       // de la tarjeta de Mis listas, y que la navegación permanece fija.
+       const navTop=document.querySelector('.top-nav')?.getBoundingClientRect().top;
+       const extra=document.createElement('div');extra.style.height='1300px';
+       collectionsPanel?.appendChild(extra);
+       if(collectionsView)collectionsView.scrollTop=300;
+       const collectionsMoves=!!collectionsView&&collectionsView.scrollTop>50&&
+         Math.abs((document.querySelector('.top-nav')?.getBoundingClientRect().top||0)-navTop)<1;
+       extra.remove();
        document.querySelector('[data-view="instructions"]')?.click();
        const instructionsVisible=document.getElementById('view-instructions')?.hidden===false;
        document.querySelector('[data-view="library"]')?.click();
@@ -157,7 +171,7 @@ func TestLabStartupHeadlessBrowser(t *testing.T){
          noPlatformDropdown,platformsVisible,platformOptionsPresent,
          allDeselectedAfterFilter,resetOutside,allRestoredAfterReset,statsVisible,statsCards,
          discoverVisible,discoverFiltersVisible,discoverFiltersSelected,helpSameHeight,
-         collectionsVisible,instructionsVisible,libraryVisible,
+         collectionsVisible,collectionsOuterScroll,collectionsMoves,instructionsVisible,libraryVisible,
          sortWorked,detailsVisible,errors:window.__labSmokeErrors.slice(0,5)};
        document.body.setAttribute('data-lab-smoke',encodeURIComponent(JSON.stringify(result)));
      }catch(err){
@@ -208,6 +222,8 @@ func TestLabStartupHeadlessBrowser(t *testing.T){
   strings.Contains(value,"discoverFiltersSelected%22%3Afalse")||
   strings.Contains(value,"helpSameHeight%22%3Afalse")||
   strings.Contains(value,"collectionsVisible%22%3Afalse")||
+  strings.Contains(value,"collectionsOuterScroll%22%3Afalse")||
+  strings.Contains(value,"collectionsMoves%22%3Afalse")||
   strings.Contains(value,"instructionsVisible%22%3Afalse")||strings.Contains(value,"libraryVisible%22%3Afalse")||
   strings.Contains(value,"sortWorked%22%3Afalse")||strings.Contains(value,"detailsVisible%22%3Afalse")||
   strings.Contains(value,"error%22%3A"){
@@ -217,7 +233,7 @@ func TestLabStartupHeadlessBrowser(t *testing.T){
  "allSelectedByDefault%22%3Atrue","noPlatformDropdown%22%3Atrue","platformsVisible%22%3Atrue",
  "platformOptionsPresent%22%3Atrue","allDeselectedAfterFilter%22%3Atrue",
  "resetOutside%22%3Atrue","allRestoredAfterReset%22%3Atrue","statsVisible%22%3Atrue","statsCards%22%3A5","discoverVisible%22%3Atrue","discoverFiltersVisible%22%3Atrue",
- "discoverFiltersSelected%22%3Atrue","helpSameHeight%22%3Atrue","collectionsVisible%22%3Atrue","instructionsVisible%22%3Atrue","libraryVisible%22%3Atrue","sortWorked%22%3Atrue","detailsVisible%22%3Atrue"}{
+ "discoverFiltersSelected%22%3Atrue","helpSameHeight%22%3Atrue","collectionsVisible%22%3Atrue","collectionsOuterScroll%22%3Atrue","collectionsMoves%22%3Atrue","instructionsVisible%22%3Atrue","libraryVisible%22%3Atrue","sortWorked%22%3Atrue","detailsVisible%22%3Atrue"}{
   if !strings.Contains(value,expected){t.Errorf("prueba de navegador sin verificar %s: %s",expected,value)}
  }
  if t.Failed(){t.Log(fmt.Sprintf("Edge/Chrome devolvió %d bytes",len(out)))}
