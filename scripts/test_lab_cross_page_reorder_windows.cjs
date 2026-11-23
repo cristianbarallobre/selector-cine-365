@@ -50,7 +50,7 @@ body.hasPointerCapture=id=>body.capture===id;
 body.releasePointerCapture=id=>{if(body.capture===id)body.capture=null;};
 const docEvents={},winEvents={},timers=new Map();
 let nextTimer=0,view='row',offset=0,enabled=true,renderCount=0,saveCount=0;
-const dom={filmList,filmPaging,filmPageTotal};
+const dom={filmList,filmPaging,filmPageTotal:pageTotal};
 const doc={
  body,documentElement:{clientWidth:1024,clientHeight:720},
  createElement:tag=>new El(tag),
