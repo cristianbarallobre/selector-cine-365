@@ -92,9 +92,16 @@ func injectLabLibraryFilters(page string) string {
  // labFilterDecade/Genre/... hubiera sido inicializado. Eso provoca una
  // ReferenceError (temporal dead zone) e impide arrancar la aplicación.
  // Mover TODO el arranque al final, después de Descubrir, Sorteo, Red y Filtros.
- boot:=`updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void initLibrary().then(async()=>{await initIdentities();await initPlatforms();void cloudAutoReceive(true);});`
- if strings.Count(page,boot)!=1{return page}
- page=strings.Replace(page,boot,"",1)
+ // Descubrir inserta labQueuePrefetchSoon() en esa misma línea.
+ // Buscar el prefijo estable y mover la línea REAL completa, no una copia
+ // antigua que no coincide después de las demás inyecciones LAB.
+ bootPrefix:="updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void initLibrary().then("
+ if strings.Count(page,bootPrefix)!=1{return page}
+ bootStart:=strings.Index(page,bootPrefix)
+ bootEnd:=strings.IndexByte(page[bootStart:],'\\n')
+ if bootEnd<0{return page}
+ boot:=page[bootStart:bootStart+bootEnd]
+ page=page[:bootStart]+page[bootStart+bootEnd:]
  end:=strings.LastIndex(page,"})();")
  script:=strings.LastIndex(page,"</script>")
  if end<0||script<0||end>=script{return page}
