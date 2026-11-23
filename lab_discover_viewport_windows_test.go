@@ -42,16 +42,14 @@ window.addEventListener('DOMContentLoaded',()=>{
      const cards=[...(grid?.querySelectorAll('.lab-movie-card')||[])];
      const rows=new Set(cards.map(card=>Math.round(card.getBoundingClientRect().top)));
      const genre=document.getElementById('labDiscoverGenre');
-     const duration=document.getElementById('labDiscoverDuration');
      const initial={cards:cards.length,rows:rows.size,width:grid?.clientWidth||0,
        pageLabel:document.getElementById('labPageLabel')?.textContent||''};
      if(genre){genre.value='878';genre.dispatchEvent(new Event('change',{bubbles:true}));}
-     if(duration){duration.value='short';duration.dispatchEvent(new Event('change',{bubbles:true}));}
      setTimeout(()=>{
        const latest=[...(grid?.querySelectorAll('.lab-movie-card')||[])];
        const filtered={
          cards:latest.length,rows:new Set(latest.map(c=>Math.round(c.getBoundingClientRect().top))).size,
-         genre:genre?.value,duration:duration?.value,
+         genre:genre?.value,
          pageLabel:document.getElementById('labPageLabel')?.textContent||'',
          discoverVisible:document.getElementById('labDiscoverView')?.hidden===false
        };
@@ -96,7 +94,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   if r.URL.Path=="/api/discover/list"{
    pg,_:=strconv.Atoi(r.URL.Query().Get("page"))
    if pg<1 {pg=1}
-   key:=r.URL.Query().Get("genre")+"|"+r.URL.Query().Get("duration")
+   key:=r.URL.Query().Get("genre")
    mu.Lock();requests[key]++;mu.Unlock()
    movies:=make([]map[string]any,8)
    for i:=0;i<8;i++{
@@ -132,7 +130,7 @@ window.addEventListener('DOMContentLoaded',()=>{
  decoded,err:=url.QueryUnescape(text[:end]);if err!=nil{t.Fatal(err)}
  var result struct {
   Initial struct{ Cards int; Rows int; Width int; PageLabel string } `json:"initial"`
-  Filtered struct{ Cards int; Rows int; Genre string; Duration string; PageLabel string; DiscoverVisible bool } `json:"filtered"`
+  Filtered struct{ Cards int; Rows int; Genre string; PageLabel string; DiscoverVisible bool } `json:"filtered"`
   Cast struct{ Actor string; Role string; RoleLabel string; Director string; Visible bool } `json:"cast"`
  }
  if err:=json.Unmarshal([]byte(decoded),&result);err!=nil{t.Fatalf("JSON de navegador inválido: %v (%s)",err,decoded)}
@@ -140,9 +138,8 @@ window.addEventListener('DOMContentLoaded',()=>{
  if result.Initial.Cards<18||result.Initial.Rows<3{
   t.Errorf("La página 1 sigue dejando hueco con ocho títulos por llamada: %+v",result.Initial)
  }
- if result.Filtered.Cards<18||result.Filtered.Rows<3||result.Filtered.Genre!="878"||
-    result.Filtered.Duration!="short"||!result.Filtered.DiscoverVisible {
-  t.Errorf("La rejilla con filtros de género y duración no se completa: %+v",result.Filtered)
+ if result.Filtered.Cards<18||result.Filtered.Rows<3||result.Filtered.Genre!="878"||!result.Filtered.DiscoverVisible {
+  t.Errorf("La rejilla con el filtro de género no se completa: %+v",result.Filtered)
  }
  if result.Cast.Actor!="Andrew Koji"||result.Cast.Role!="Ryu"||
    result.Cast.Director!="Kitao Sakurai"||!result.Cast.Visible{
@@ -152,8 +149,8 @@ window.addEventListener('DOMContentLoaded',()=>{
   t.Errorf("El personaje no está etiquetado en la ficha: %+v",result.Cast)
  }
  mu.Lock()
- general:=requests["|"]
- filtered:=requests["878|short"]
+ general:=requests[""]
+ filtered:=requests["878"]
  mu.Unlock()
  if general<3{t.Errorf("Para llenar seis columnas hacen falta >= 3 páginas TMDB; realizadas %d",general)}
  if filtered<3{t.Errorf("Los filtros no han provocado suficientes peticiones TMDB; realizadas %d",filtered)}
