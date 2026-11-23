@@ -27,6 +27,12 @@ func TestCacheFileMigrationRejectsOversized(t *testing.T){
  if err:=copyLegacyCacheIfMissing(old,dest,32);err!=nil{t.Fatal(err)}
  if _,err:=os.Stat(dest);!os.IsNotExist(err){t.Fatalf("copió un archivo demasiado grande: %v",err)}
 }
+func TestPosterPolicyLimits(t *testing.T) {
+ if appPosterMaxFiles!=2500 {t.Fatalf("Máximo de carteles inesperado: %d",appPosterMaxFiles)}
+ if appPosterMaxBytes!=int64(150<<20) {t.Fatalf("Presupuesto de carteles inesperado: %d",appPosterMaxBytes)}
+ if appPosterMaxAge!=120*24*time.Hour {t.Fatalf("No cambiar caducidad de carteles: %s",appPosterMaxAge)}
+}
+
 func TestPosterBudgetDeletesOldestButNotUserFiles(t *testing.T){
  dir:=t.TempDir()
  now:=time.Now()
