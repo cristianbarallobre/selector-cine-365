@@ -48,7 +48,7 @@ const ctx={
 };
 vm.createContext(ctx);
 const start=js.indexOf('let labActorPhotoTimer=null,labActorPhotoTarget=null;');
-const end=js.indexOf('async function labOpenPerson(id,record=true){',start);
+const end=js.indexOf('// Clasificaciones locales:',start);
 assert.ok(start>0&&end>start);
 vm.runInContext(js.slice(start,end),ctx);
 assert.equal(ctx.labActorPhotoPath({profile_path:'/safe_profile.jpg'}),'/safe_profile.jpg');
