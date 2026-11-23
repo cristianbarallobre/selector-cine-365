@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+ "sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -60,6 +61,7 @@ type availabilityServer struct {
 	settingsPath  string
 	cachePath     string
 	posterDir     string
+ legacyPosterDir string
 	overridesPath string
 	overrides     map[string]int
 	identityPath  string
@@ -68,8 +70,15 @@ type availabilityServer struct {
 	cache         map[string]providerResult
 }
 
-func newAvailabilityServer(base string) *availabilityServer {
-	p := &availabilityServer{settingsPath: filepath.Join(base, "plataformas_ajustes.json"), cachePath: filepath.Join(base, "plataformas_cache.json"), posterDir: filepath.Join(base, "carteles"), overridesPath: filepath.Join(base, "identificaciones_tmdb.json"), overrides: make(map[string]int), identityPath: filepath.Join(base, "identidades_cine.json"), identities: make(map[string]filmIdentityRecord), cache: make(map[string]providerResult)}
+func newAvailabilityServer(base string, cacheDirs ...string) *availabilityServer {
+ cacheDir:=base
+ if len(cacheDirs)>0&&cacheDirs[0]!=""{cacheDir=cacheDirs[0]}
+ p := &availabilityServer{settingsPath: filepath.Join(base, "plataformas_ajustes.json"), cachePath: filepath.Join(cacheDir, "plataformas_cache.json"), posterDir: filepath.Join(cacheDir, "carteles"), overridesPath: filepath.Join(base, "identificaciones_tmdb.json"), overrides: make(map[string]int), identityPath: filepath.Join(base, "identidades_cine.json"), identities: make(map[string]filmIdentityRecord), cache: make(map[string]providerResult)}
+ if cacheDir!=base{
+  p.legacyPosterDir=filepath.Join(base,"carteles")
+  _=copyLegacyCacheIfMissing(filepath.Join(base,"plataformas_cache.json"),p.cachePath,12<<20)
+  _,_=prunePosterCache(p.posterDir,appPosterMaxFiles,appPosterMaxBytes,appPosterMaxAge)
+ }
 	b, e := os.ReadFile(p.settingsPath)
 	if e == nil {
 		var s platformSettings
@@ -81,8 +90,9 @@ func newAvailabilityServer(base string) *availabilityServer {
 	if e == nil {
 		var c platformCache
 		if json.Unmarshal(b, &c) == nil && c.Entries != nil {
-			p.cache = c.Entries
-		}
+   p.cache = c.Entries
+   p.pruneCacheLocked()
+  }
 	}
 	if data, e := os.ReadFile(p.overridesPath); e == nil {
 		var overrides map[string]int
@@ -186,10 +196,39 @@ func (p *availabilityServer) cachedEntries() map[string]providerResult {
     for k,v:=range p.cache{result[k]=v}
     return result
 }
+// Mantener un catálogo acotado. Las identificaciones confirmadas viven en
+// identidades_cine.json, separado de esta caché regenerable.
+func (p *availabilityServer) pruneCacheLocked(){
+ const maxEntries=3200
+ const maxJSONBytes=10<<20
+ if p.cache==nil{return}
+ type entry struct {key string;date time.Time}
+ rows:=make([]entry,0,len(p.cache))
+ for key,record:=range p.cache{
+  date,_:=time.Parse(time.RFC3339,record.Date)
+  rows=append(rows,entry{key,date})
+ }
+ sort.Slice(rows,func(i,j int)bool{
+  if rows[i].date.Equal(rows[j].date){return rows[i].key<rows[j].key}
+  return rows[i].date.Before(rows[j].date)
+ })
+ for len(rows)>maxEntries {
+  delete(p.cache,rows[0].key)
+  rows=rows[1:]
+ }
+ // Eliminar primero las fichas menos recientes si el tamaño serializado
+ // supera el presupuesto. No afecta las identidades ni las listas.
+ for len(rows)>0 {
+  b,err:=json.Marshal(platformCache{Entries:p.cache})
+  if err!=nil||len(b)<=maxJSONBytes{break}
+  delete(p.cache,rows[0].key);rows=rows[1:]
+ }
+}
 func (p *availabilityServer) putCached(k string, r providerResult) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.cache[k] = r
+ p.cache[k] = r
+ p.pruneCacheLocked()
 	if r.TMDBID > 0 {
 		p.identities[k] = filmIdentityRecord{TMDBID: r.TMDBID, State: "ok", Updated: time.Now().Format(time.RFC3339)}
 		p.saveIdentityCacheLocked()
@@ -760,6 +799,19 @@ func (a *runningApp) servePosterHTTP(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write(b)
 		return
 	}
+ // Copia bajo demanda el cartel de Roaming si existe; otra versión puede
+ // seguir usando ese directorio, por eso no se borra su copia.
+ if a.platforms.legacyPosterDir!=""{
+  old:=filepath.Join(a.platforms.legacyPosterDir,strings.TrimPrefix(path,"/"))
+  if b,err:=os.ReadFile(old);err==nil&&len(b)>100&&len(b)<=1<<20{
+   _=os.MkdirAll(a.platforms.posterDir,0700)
+   _=os.WriteFile(file,b,0600)
+   w.Header().Set("Content-Type",mime.TypeByExtension(filepath.Ext(file)))
+   w.Header().Set("Cache-Control","private, max-age=604800")
+   _,_=w.Write(b)
+   return
+  }
+ }
 	ctx, cancel := context.WithTimeout(r.Context(), 12*time.Second)
 	defer cancel()
 	req, e := http.NewRequestWithContext(ctx, "GET", "https://image.tmdb.org/t/p/w92"+path, nil)
@@ -783,7 +835,8 @@ func (a *runningApp) servePosterHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_ = os.MkdirAll(a.platforms.posterDir, 0700)
-	_ = os.WriteFile(file, body, 0600)
+ _ = os.WriteFile(file,body,0600)
+ if appIsLab{_,_=prunePosterCache(a.platforms.posterDir,appPosterMaxFiles,appPosterMaxBytes,appPosterMaxAge)}
 	w.Header().Set("Content-Type", mime.TypeByExtension(filepath.Ext(file)))
 	_, _ = w.Write(body)
 }
