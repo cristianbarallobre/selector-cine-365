@@ -1,4 +1,20 @@
 <style>
+/* LAB Windows: filas algo más altas que producción, distribuidas según el espacio real. */
+#view-library .film-item{
+ height:var(--lab-film-row-height,104px);
+ min-height:var(--lab-film-row-height,104px);
+ max-height:var(--lab-film-row-height,104px);
+ flex:0 0 var(--lab-film-row-height,104px);
+ align-items:center;
+}
+#view-library .film-toggle{
+ min-height:calc(var(--lab-film-row-height,104px) - 6px);
+ align-items:center;
+ padding-top:11px;
+ padding-bottom:11px;
+}
+#view-library .film-main{align-self:center}
+#view-library .film-poster,#view-library .poster-placeholder{width:42px;height:60px;align-self:center}
 .lab-nav-tag{margin-left:3px;border:1px solid #e3c785;border-radius:5px;padding:1px 4px;font-size:9px;color:#ffde94;letter-spacing:.06em}
 .lab-discover.view{display:flex;flex-direction:column;gap:16px;min-width:0;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:0 3px 24px 0;scrollbar-color:#51667f transparent}
 .lab-discover .panel{height:auto;min-height:0;flex:0 0 auto;overflow:visible}
