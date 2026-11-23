@@ -114,10 +114,24 @@ func TestLabStartupHeadlessBrowser(t *testing.T){
        const filtersClosed=document.getElementById('labFiltersOverlay')?.hidden===true;
        document.querySelector('[data-view="statistics"]')?.click();
        const statsVisible=document.getElementById('view-statistics')?.hidden===false;
+       const statsCards=document.getElementById('statsHero')?.children.length||0;
+       document.getElementById('labDiscoverNav')?.click();
+       const discoverVisible=document.getElementById('labDiscoverView')?.hidden===false;
+       document.querySelector('[data-view="collections"]')?.click();
+       const collectionsVisible=document.getElementById('view-collections')?.hidden===false;
+       document.querySelector('[data-view="instructions"]')?.click();
+       const instructionsVisible=document.getElementById('view-instructions')?.hidden===false;
        document.querySelector('[data-view="library"]')?.click();
        const libraryVisible=document.getElementById('view-library')?.hidden===false;
-       const result={films,outside,filtersOpened,filtersClosed,statsVisible,libraryVisible,
-         errors:window.__labSmokeErrors.slice(0,4)};
+       // Validar el sorteo clásico, cuya acción se había roto al no
+       // insertar labCreateDetailButton en algunos entornos.
+       document.getElementById('choose')?.click();
+       const resultText=document.getElementById('resultTitle')?.textContent?.trim()||'';
+       const sortWorked=resultText.length>0&&!resultText.includes('aparecerá aquí');
+       const detailsVisible=document.getElementById('labSmartResultDetails')?.hidden===false;
+       const result={films,outside,filtersOpened,filtersClosed,statsVisible,statsCards,
+         discoverVisible,collectionsVisible,instructionsVisible,libraryVisible,
+         sortWorked,detailsVisible,errors:window.__labSmokeErrors.slice(0,5)};
        document.body.setAttribute('data-lab-smoke',encodeURIComponent(JSON.stringify(result)));
      }catch(err){
        document.body.setAttribute('data-lab-smoke',encodeURIComponent(JSON.stringify({error:String(err)})));
@@ -157,11 +171,14 @@ func TestLabStartupHeadlessBrowser(t *testing.T){
  // Los valores JSON están percent-encoded para evitar escapes HTML.
  if strings.Contains(value,"films%22%3A0")||strings.Contains(value,"outside%22%3Atrue")||
   strings.Contains(value,"filtersOpened%22%3Afalse")||strings.Contains(value,"filtersClosed%22%3Afalse")||
-  strings.Contains(value,"statsVisible%22%3Afalse")||strings.Contains(value,"libraryVisible%22%3Afalse")||
+  strings.Contains(value,"statsVisible%22%3Afalse")||strings.Contains(value,"statsCards%22%3A0")||
+  strings.Contains(value,"discoverVisible%22%3Afalse")||strings.Contains(value,"collectionsVisible%22%3Afalse")||
+  strings.Contains(value,"instructionsVisible%22%3Afalse")||strings.Contains(value,"libraryVisible%22%3Afalse")||
+  strings.Contains(value,"sortWorked%22%3Afalse")||strings.Contains(value,"detailsVisible%22%3Afalse")||
   strings.Contains(value,"error%22%3A"){
    t.Fatalf("arranque no funcional en navegador: %s",value)
  }
- for _,expected:=range []string{"films%22%3A","outside%22%3Afalse","filtersOpened%22%3Atrue","filtersClosed%22%3Atrue","statsVisible%22%3Atrue","libraryVisible%22%3Atrue"}{
+ for _,expected:=range []string{"films%22%3A","outside%22%3Afalse","filtersOpened%22%3Atrue","filtersClosed%22%3Atrue","statsVisible%22%3Atrue","statsCards%22%3A5","discoverVisible%22%3Atrue","collectionsVisible%22%3Atrue","instructionsVisible%22%3Atrue","libraryVisible%22%3Atrue","sortWorked%22%3Atrue","detailsVisible%22%3Atrue"}{
   if !strings.Contains(value,expected){t.Errorf("prueba de navegador sin verificar %s: %s",expected,value)}
  }
  if t.Failed(){t.Log(fmt.Sprintf("Edge/Chrome devolvió %d bytes",len(out)))}
