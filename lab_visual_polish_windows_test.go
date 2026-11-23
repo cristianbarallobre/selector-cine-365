@@ -11,7 +11,7 @@ func TestLabVisualPolishWindows(t *testing.T) {
  page,err:=makeHTML("☐ Prueba (2026)","token")
  if err!=nil{t.Fatal(err)}
  required:=[]string{
-  "LAB-02.9 WINDOWS",
+  "LAB-02.10 WINDOWS",
   ".header-side .header-tag{order:1}",
   ".header-side .creator-credit{order:2}",
   ".header-side .saved{order:3}",
