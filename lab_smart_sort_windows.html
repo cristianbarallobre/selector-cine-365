@@ -23,7 +23,7 @@
     <label class="lab-smart-field" for="labSmartMood">¿Qué te apetece?
       <select id="labSmartMood">
         <option value="balanced">Equilibrado · descubre algo nuevo</option>
-        <option value="quick">Algo corto</option>
+        <option value="quick">Algo corto · hasta 90 min</option>
         <option value="top">Una buena valoración</option>
         <option value="surprise">Sorpréndeme</option>
       </select>
@@ -39,7 +39,7 @@
     <label class="lab-smart-field" for="labSmartGenre">Género
       <select id="labSmartGenre"><option value="any">Todos los géneros</option></select>
     </label>
-    <p class="lab-smart-explain" id="labSmartInfo">Se excluyen las vistas, se respeta la plataforma elegida y se evitan las últimas 8 elecciones de esta sesión cuando hay alternativas.</p>
+    <p class="lab-smart-explain" id="labSmartInfo">«Algo corto» limita el sorteo a películas de hasta 90 min. Se excluyen las vistas, se respeta la plataforma y se evitan las últimas 8 elecciones cuando hay alternativas.</p>
   </div>
   <div class="lab-smart-status" id="labSmartStatus" hidden aria-live="polite"></div>
 </div>
@@ -71,9 +71,13 @@ function labSmartMetadata(f){
 }
 function labSmartCandidates(){
  const genre=labSmartGenre.value,duration=labSmartDuration.value;
+ const quick=labSmartMood.value==='quick';
  return eligibleFilms().filter(f=>{
   const d=labSmartMetadata(f);
   if(genre!=='any'&&!d.genres.some(x=>labSmartNormalize(x)===genre))return false;
+  // «Algo corto» es un límite real, no solo un peso estadístico.
+  // Los títulos sin duración confirmada no se pueden garantizar como cortos.
+  if(quick&&!(d.runtime>0&&d.runtime<=90))return false;
   if(duration==='short'&&!(d.runtime>0&&d.runtime<=90))return false;
   if(duration==='medium'&&!(d.runtime>90&&d.runtime<=120))return false;
   if(duration==='long'&&!(d.runtime>120))return false;
@@ -110,7 +114,9 @@ function labSmartUpdateCount(){
  $('sortCount').textContent=candidates.length+' de '+total+' pendientes cumplen tus filtros';
  $('labSmartStatus').hidden=candidates.length>0;
  $('labSmartStatus').textContent=candidates.length?'':
-  (labSmartGenre.value!=='any'||labSmartDuration.value!=='any'?
+  (labSmartMood.value==='quick'?
+   'No hay películas de hasta 90 min que cumplan estos filtros. Prueba otro género o el modo Equilibrado; se necesita la duración de TMDB.':
+   labSmartGenre.value!=='any'||labSmartDuration.value!=='any'?
    'Prueba a ampliar el género o la duración; los filtros específicos necesitan datos TMDB.':
    'No hay películas pendientes en la plataforma seleccionada.');
 }
@@ -140,9 +146,17 @@ labSmartEnable.addEventListener('change',()=>{
  if(active){labSmartUpdateCount();void labSmartFetchCache();}
  else{updateSortAvailability();}
 });
-for(const id of ['labSmartMood','labSmartDuration','labSmartGenre']){
- $(id).addEventListener('change',()=>{resetChoice();labSmartUpdateCount();});
-}
+// Sincronizar ambos selectores para no mostrar «Algo corto» + «Cualquier duración».
+labSmartMood.addEventListener('change',()=>{
+ if(labSmartMood.value==='quick')labSmartDuration.value='short';
+ resetChoice();labSmartUpdateCount();
+});
+labSmartDuration.addEventListener('change',()=>{
+ // Si se cambia el intervalo, deja de aplicarse el modo corto para evitar contradicciones.
+ if(labSmartMood.value==='quick'&&labSmartDuration.value!=='short')labSmartMood.value='balanced';
+ resetChoice();labSmartUpdateCount();
+});
+labSmartGenre.addEventListener('change',()=>{resetChoice();labSmartUpdateCount();});
 setInterval(()=>{if(labSmartEnable.checked&&!document.hidden)void labSmartFetchCache();},30000);
 // Las últimas elecciones no se guardan en las listas ni se sincronizan.
 function labSmartPickWeighted(items,weights){
@@ -177,7 +191,7 @@ function labSmartWeight(f,exposure){
    weight*=1+0.75/(1+avg/4);
   }
  }else if(mood==='quick'){
-  if(runtime>0)weight*=runtime<=90?3:runtime<=110?1.5:.45;
+  if(runtime>0)weight*=Math.max(.85,Math.min(2.4,1+(95-runtime)/35));
   if(trustworthy)weight*=Math.max(.8,Math.min(1.4,.9+(score-5)*.12));
  }else if(mood==='top'){
   if(trustworthy)weight*=Math.max(.25,Math.min(5,Math.pow(1.6,score-6)));
@@ -208,7 +222,7 @@ function labSmartChoose(){
  const data=labSmartMetadata(winner);
  const reasons=[];
  if(labSmartMood.value==='balanced')reasons.push('Selección equilibrada con variedad de géneros');
- else if(labSmartMood.value==='quick')reasons.push(data.runtime&&data.runtime<=90?'Duración corta': 'Preferencia por películas más cortas');
+ else if(labSmartMood.value==='quick')reasons.push('Duración corta (máximo 90 min)');
  else if(labSmartMood.value==='top')reasons.push(data.vote_count>=50?'Valoración TMDB tenida en cuenta':'Faltan valoraciones fiables; selección aproximada');
  else reasons.push('Una elección menos habitual');
  if(data.runtime>0)reasons.push(data.runtime+' min');
