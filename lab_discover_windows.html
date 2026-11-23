@@ -131,6 +131,22 @@ button.lab-cast-actor:focus-visible{outline:2px solid #ffda91;outline-offset:3px
 #labDiscoverView a[href],#labDetailOverlay a[href]{cursor:pointer}
 #labDiscoverView button:disabled,#labDetailOverlay button:disabled{cursor:not-allowed}
 @media(max-width:650px){.lab-discover .panel{padding:14px}.lab-discover-search{flex-wrap:wrap}.lab-discover-search button{width:100%}.lab-movies-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.lab-detail-content{grid-template-columns:1fr;padding:16px}.lab-detail-poster{max-width:170px}.lab-detail-modal{max-height:none}.lab-detail-content h3{font-size:21px}}
+/* Confirmación de borrado integrada: sin cuadros confirm() del navegador ni IP localhost. */
+#labDeleteListOverlay{z-index:130}
+#labDeleteListOverlay[hidden]{display:none!important}
+#labDeleteListOverlay .lab-list-confirm-card{width:min(460px,100%);background:#1a2636;border:1px solid #536780;border-radius:17px;padding:24px;box-shadow:0 24px 75px #000a}
+#labDeleteListOverlay .lab-list-confirm-tag{font-size:11px;font-weight:850;letter-spacing:.08em;color:#f3c66d;margin:0 0 9px}
+#labDeleteListOverlay h2{font-size:21px;line-height:1.25;margin:0 0 12px;color:#f8f5ee}
+#labDeleteListOverlay .lab-list-confirm-message{font-size:14px;line-height:1.6;color:#d9e2ed;margin:0 0 8px;overflow-wrap:anywhere}
+#labDeleteListOverlay .lab-list-confirm-note{font-size:12px;line-height:1.5;color:#a9b9cd;margin:0}
+#labDeleteListOverlay .lab-list-confirm-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:25px}
+#labDeleteListOverlay .lab-list-confirm-actions button{width:auto;min-width:120px;min-height:42px;padding:9px 15px;border-radius:9px;font-size:13px;font-weight:780;cursor:pointer}
+#labDeleteListOverlay #labDeleteListCancel{color:#eff5fc;background:#26364a;border:1px solid #62758a}
+#labDeleteListOverlay #labDeleteListCancel:hover{background:#354960}
+#labDeleteListOverlay #labDeleteListConfirm{color:#fff;background:#963e3b;border:1px solid #ca7773}
+#labDeleteListOverlay #labDeleteListConfirm:hover{background:#b24d46}
+#labDeleteListOverlay button:focus-visible{outline:2px solid #f3c66d;outline-offset:3px}
+@media(max-width:420px){#labDeleteListOverlay .lab-list-confirm-actions button{flex:1;min-width:0}}
 </style>
 <section class="lab-discover view" id="labDiscoverView" hidden aria-label="Descubrir películas">
   <div class="panel lab-discover-hero">
@@ -227,6 +243,18 @@ button.lab-cast-actor:focus-visible{outline:2px solid #ffda91;outline-offset:3px
         <div class="lab-detail-links" id="labPersonLinks"></div>
         <p class="lab-detail-note" id="labPersonNote" aria-live="polite"></p>
       </div>
+    </div>
+  </section>
+</div>
+<div class="overlay" id="labDeleteListOverlay" hidden>
+  <section class="lab-list-confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="labDeleteListTitle" aria-describedby="labDeleteListMessage">
+    <p class="lab-list-confirm-tag">SELECTOR CINE 365 · LAB</p>
+    <h2 id="labDeleteListTitle">¿Eliminar lista?</h2>
+    <p class="lab-list-confirm-message" id="labDeleteListMessage">¿Seguro que quieres eliminar «<strong id="labDeleteListName"></strong>»?</p>
+    <p class="lab-list-confirm-note">Esta lista dejará de aparecer en la aplicación.</p>
+    <div class="lab-list-confirm-actions">
+      <button type="button" id="labDeleteListCancel">Cancelar</button>
+      <button type="button" id="labDeleteListConfirm">Eliminar lista</button>
     </div>
   </section>
 </div>
@@ -764,3 +792,42 @@ async function labOpenFilmDetails(f){
   labStatus('Selecciona la película correcta para abrir sus detalles.');
  }catch(err){labOpen();labStatus('⚠ '+err.message);}
 }
+
+// Confirmación visual exclusiva de LAB; mantener el borrado y su sincronización originales.
+let labDeleteListResolver=null,labDeleteListPriorFocus=null;
+function labConfirmDeleteList(list){
+ const overlay=$('labDeleteListOverlay');
+ if(!overlay.hidden)return Promise.resolve(false);
+ $('labDeleteListName').textContent=list.name;
+ labDeleteListPriorFocus=document.activeElement;
+ overlay.hidden=false;
+ $('labDeleteListCancel').focus();
+ return new Promise(resolve=>{labDeleteListResolver=resolve;});
+}
+function labFinishDeleteListConfirmation(accepted){
+ const overlay=$('labDeleteListOverlay');
+ if(overlay.hidden)return;
+ overlay.hidden=true;
+ const resolve=labDeleteListResolver;
+ labDeleteListResolver=null;
+ const previous=labDeleteListPriorFocus;
+ labDeleteListPriorFocus=null;
+ if(previous&&previous.isConnected&&typeof previous.focus==='function')previous.focus();
+ if(resolve)resolve(accepted);
+}
+$('labDeleteListCancel').addEventListener('click',()=>labFinishDeleteListConfirmation(false));
+$('labDeleteListConfirm').addEventListener('click',()=>labFinishDeleteListConfirmation(true));
+$('labDeleteListOverlay').addEventListener('click',e=>{
+ if(e.target===$('labDeleteListOverlay'))labFinishDeleteListConfirmation(false);
+});
+window.addEventListener('keydown',e=>{
+ if($('labDeleteListOverlay').hidden)return;
+ if(e.key==='Escape'){
+  e.preventDefault();e.stopImmediatePropagation();labFinishDeleteListConfirmation(false);return;
+ }
+ if(e.key==='Tab'){
+  const first=$('labDeleteListCancel'),last=$('labDeleteListConfirm');
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+  else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+ }
+},true);
