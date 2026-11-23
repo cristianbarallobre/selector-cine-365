@@ -34,6 +34,7 @@ jobs:
           node scripts/test_lab_visual_polish_windows.cjs
           node scripts/test_lab_filters_windows.cjs
           node scripts/test_lab_discover_fill_windows.cjs
+          node scripts/test_lab_discover_filters_windows.cjs
           node scripts/test_lab_discover_add_windows.cjs
       - name: Compilar Windows LAB (sin firma)
         run: |
