@@ -58,7 +58,7 @@ assert.match(ui,/\.lab-discover \[hidden\]\{display:none!important\}/,'Respetar 
 assert.doesNotMatch(ui,/id="labTopPager"|labTopNext|labTopPrev/,'La paginación superior debe haberse eliminado');
 assert.match(ui,/id="labDiscoverPager"/,'La paginación inferior debe mantenerse');
 assert.match(ui,/Math\.min\(500,Number\(data\.total_pages\)/,'Mostrar más allá de las cinco primeras páginas');
-assert.match(ui,/total\.toLocaleString\('es-ES'\)/,'Mostrar número total de resultados');
+assert.match(ui,/labTMDBTotal\.toLocaleString\('es-ES'\)/,'Mostrar número total de resultados');
 assert.match(ui,/function labGoPage\(direction\)/,'La paginación inferior debe navegar');
 assert.match(windows,/n>500/,'El servidor acepta páginas más allá de 5');
 assert.match(windows,/TotalResults int/,'El servidor incluye el total de resultados de TMDB');
