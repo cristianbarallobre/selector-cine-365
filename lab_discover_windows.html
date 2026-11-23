@@ -81,6 +81,9 @@
 .lab-detail-top h2{margin:0;font-size:17px}
 .lab-detail-top .page-btn{width:34px;min-width:34px;height:34px;display:grid;place-items:center;padding:0;font-size:18px;font-weight:750;cursor:pointer}
 .lab-detail-top .page-btn:hover{background:#384b64}
+.lab-detail-nav{display:flex;align-items:center;gap:8px}
+.lab-detail-top .lab-detail-back{width:auto;min-width:0;padding:0 12px;font-size:12px;white-space:nowrap}
+.lab-detail-back[hidden]{display:none!important}
 .lab-detail-content{padding:22px;display:grid;grid-template-columns:185px minmax(0,1fr);gap:24px}
 .lab-detail-poster{width:100%;aspect-ratio:2/3;object-fit:cover;border:1px solid #3b4f65;border-radius:12px;background:#233249}
 .lab-detail-content h3{font-size:27px;line-height:1.2;margin:0 0 8px}
@@ -185,7 +188,7 @@ button.lab-cast-actor:focus-visible{outline:2px solid #ffda91;outline-offset:3px
 </section>
 <div class="overlay lab-detail-overlay" id="labDetailOverlay" hidden>
   <section class="lab-detail-modal" role="dialog" aria-modal="true" aria-labelledby="labDetailHeading">
-    <div class="lab-detail-top"><h2 id="labDetailHeading">Ficha de película</h2><button class="page-btn" id="labDetailClose" type="button" aria-label="Cerrar ficha" title="Cerrar ficha">✕</button></div>
+    <div class="lab-detail-top"><h2 id="labDetailHeading">Ficha de película</h2><div class="lab-detail-nav"><button class="page-btn lab-detail-back" id="labDetailBack" type="button" aria-label="Volver a la ficha anterior" title="Volver a la ficha anterior" hidden>← Atrás</button><button class="page-btn" id="labDetailClose" type="button" aria-label="Cerrar todas las fichas" title="Cerrar todas las fichas">✕</button></div></div>
     <div class="lab-detail-content">
       <div><img id="labDetailPoster" class="lab-detail-poster" alt="Carátula de la película" hidden><div class="lab-movie-empty lab-detail-poster" id="labDetailPlaceholder">🎞</div></div>
       <div>
@@ -211,7 +214,7 @@ button.lab-cast-actor:focus-visible{outline:2px solid #ffda91;outline-offset:3px
 </div>
 <div class="overlay lab-detail-overlay lab-person-overlay" id="labPersonOverlay" hidden>
   <section class="lab-detail-modal" role="dialog" aria-modal="true" aria-labelledby="labPersonHeading">
-    <div class="lab-detail-top"><h2 id="labPersonHeading">Ficha de intérprete</h2><button class="page-btn" type="button" id="labPersonClose" aria-label="Volver a la película" title="Volver a la película">←</button></div>
+    <div class="lab-detail-top"><h2 id="labPersonHeading">Ficha de intérprete</h2><div class="lab-detail-nav"><button class="page-btn lab-detail-back" type="button" id="labPersonBack" aria-label="Volver a la ficha anterior" title="Volver a la ficha anterior" hidden>← Atrás</button><button class="page-btn" type="button" id="labPersonClose" aria-label="Cerrar todas las fichas" title="Cerrar todas las fichas">✕</button></div></div>
     <div class="lab-detail-content">
       <div><img id="labPersonPortrait" class="lab-detail-poster" alt="Fotografía del intérprete" hidden><div class="lab-movie-empty lab-detail-poster" id="labPersonPlaceholder">👤</div></div>
       <div>
@@ -490,21 +493,54 @@ function labGoPage(direction){
 $('labPrevPage').addEventListener('click',()=>labGoPage(-1));
 $('labNextPage').addEventListener('click',()=>labGoPage(1));
 const labPersonOverlay=$('labPersonOverlay');
-let labPersonSerial=0,labPersonReturnFocus=null;
-function labClosePerson(){
- ++labPersonSerial;labPersonOverlay.hidden=true;
- if(labPersonReturnFocus&&labPersonReturnFocus.isConnected)labPersonReturnFocus.focus();
- labPersonReturnFocus=null;
+let labPersonSerial=0,labDetailTrail=[];
+function labDetailCurrent(){return labDetailTrail[labDetailTrail.length-1];}
+function labRememberDetailScroll(){
+ const current=labDetailCurrent();
+ if(!current)return;
+ const overlay=current.kind==='person'?labPersonOverlay:labDetailOverlay;
+ current.scrollTop=overlay.scrollTop||0;
 }
-function labCloseDetail(){labClosePerson();++labDetailSerial;labDetailOverlay.hidden=true;labCurrentMovie=null;}
+function labSyncDetailNavigation(){
+ const canGoBack=labDetailTrail.length>1;
+ $('labDetailBack').hidden=!canGoBack;
+ $('labPersonBack').hidden=!canGoBack;
+}
+function labEnterDetail(kind,id,record=true){
+ if(record){
+  // Una apertura desde Biblioteca o Descubrir inicia un historial independiente.
+  if(labDetailOverlay.hidden&&labPersonOverlay.hidden){labDetailTrail=[];}
+  else labRememberDetailScroll();
+  const last=labDetailCurrent();
+  if(!last||last.kind!==kind||last.id!==id)labDetailTrail.push({kind,id,scrollTop:0});
+ }
+ labSyncDetailNavigation();
+}
+function labHidePerson(){++labPersonSerial;labPersonOverlay.hidden=true;}
+function labCloseDetail(){
+ labHidePerson();++labDetailSerial;
+ labDetailOverlay.hidden=true;labCurrentMovie=null;labDetailTrail=[];
+ labSyncDetailNavigation();
+}
+function labDetailBack(){
+ if(labDetailTrail.length<=1)return;
+ labRememberDetailScroll();
+ labDetailTrail.pop();
+ const previous=labDetailCurrent();
+ if(previous.kind==='person'){void labOpenPerson(previous.id,false);}
+ else{void labShowDetail(previous.id,false);}
+}
+$('labDetailBack').addEventListener('click',labDetailBack);
+$('labPersonBack').addEventListener('click',labDetailBack);
 $('labDetailClose').addEventListener('click',labCloseDetail);
-$('labPersonClose').addEventListener('click',labClosePerson);
+$('labPersonClose').addEventListener('click',labCloseDetail);
 labDetailOverlay.addEventListener('click',e=>{if(e.target===labDetailOverlay)labCloseDetail();});
-labPersonOverlay.addEventListener('click',e=>{if(e.target===labPersonOverlay)labClosePerson();});
+labPersonOverlay.addEventListener('click',e=>{if(e.target===labPersonOverlay)labCloseDetail();});
 window.addEventListener('keydown',e=>{
- if(e.key!=='Escape')return;
- if(!labPersonOverlay.hidden){labClosePerson();return;}
- if(!labDetailOverlay.hidden)labCloseDetail();
+ if(e.key!=='Escape'||labDetailOverlay.hidden)return;
+ e.preventDefault();
+ if(labDetailTrail.length>1)labDetailBack();
+ else labCloseDetail();
 });
 function labDetailLink(label,url){
  if(typeof url!=='string'||!/^https:\/\//.test(url))return;
@@ -543,11 +579,11 @@ function labRenderCredits(movie){
  }
  root.appendChild(entries);
 }
-async function labOpenPerson(id){
+async function labOpenPerson(id,record=true){
+ labEnterDetail('person',id,record);
  const serial=++labPersonSerial;
- labPersonReturnFocus=document.activeElement;
- labPersonOverlay.hidden=false;
- $('labPersonClose').focus();
+ labPersonOverlay.hidden=false;labPersonOverlay.scrollTop=0;
+ $('labPersonBack').focus();
  $('labPersonName').textContent='Cargando intérprete…';
  $('labPersonSubtitle').textContent='';$('labPersonBio').textContent='';
  $('labPersonFilms').replaceChildren();$('labPersonLinks').replaceChildren();
@@ -574,7 +610,7 @@ async function labOpenPerson(id){
    title.textContent=film.title+(film.release_date?' ('+String(film.release_date).slice(0,4)+')':'');
    btn.appendChild(title);
    if(film.character){const role=document.createElement('span');role.className='lab-person-film-role';role.textContent='Como '+film.character;btn.appendChild(role);}
-   btn.addEventListener('click',()=>{labClosePerson();void labShowDetail(Number(film.id));});
+   btn.addEventListener('click',()=>{void labShowDetail(Number(film.id));});
    movies.appendChild(btn);
   }
   if(!movies.childElementCount){movies.textContent='No hay películas registradas en TMDB.';}
@@ -583,10 +619,15 @@ async function labOpenPerson(id){
    $('labPersonLinks').appendChild(link);
   }
   $('labPersonNote').textContent='Ficha de intérprete consultada en TMDB.';
+  labPersonOverlay.scrollTop=labDetailCurrent()?.kind==='person'?labDetailCurrent().scrollTop||0:0;
  }catch(e){if(serial===labPersonSerial){$('labPersonName').textContent='Ficha no disponible';$('labPersonNote').textContent='⚠ '+e.message;}}
 }
-async function labShowDetail(id){
+async function labShowDetail(id,record=true){
+ labEnterDetail('movie',id,record);
+ labHidePerson();
  const serial=++labDetailSerial;labCurrentMovie=null;labDetailOverlay.hidden=false;
+ labDetailOverlay.scrollTop=0;
+ (labDetailTrail.length>1?$('labDetailBack'):$('labDetailClose')).focus();
  $('labDetailTitle').textContent='Cargando ficha…';$('labDetailSubtitle').textContent='';
  $('labDetailOverview').textContent='';$('labDetailCast').textContent='';
  $('labDetailGenres').replaceChildren();$('labDetailPlatforms').replaceChildren();$('labDetailLinks').replaceChildren();
@@ -620,6 +661,7 @@ async function labShowDetail(id){
     m.cache_state==='guardada'?'Ficha cargada de la caché local.':
     'Ficha descargada y guardada localmente.';
   $('labDetailNote').textContent=note+' Puedes añadirla a una lista.';
+  labDetailOverlay.scrollTop=labDetailCurrent()?.kind==='movie'?labDetailCurrent().scrollTop||0:0;
  }catch(e){if(serial===labDetailSerial){$('labDetailTitle').textContent='Ficha no disponible';$('labDetailNote').textContent='⚠ '+e.message;}}
 }
 // Descubrir ya tiene esta ficha TMDB completa en memoria y en caché LAB.
