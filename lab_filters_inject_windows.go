@@ -98,7 +98,7 @@ func injectLabLibraryFilters(page string) string {
  bootPrefix:="updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void initLibrary().then("
  if strings.Count(page,bootPrefix)!=1{return page}
  bootStart:=strings.Index(page,bootPrefix)
- bootEnd:=strings.IndexByte(page[bootStart:],'\\n')
+ bootEnd:=strings.IndexByte(page[bootStart:],'\n')
  if bootEnd<0{return page}
  boot:=page[bootStart:bootStart+bootEnd]
  page=page[:bootStart]+page[bootStart+bootEnd:]
