@@ -70,7 +70,8 @@ const ctx={
   const start=ctx.filmPage*4;
   visible.splice(0,visible.length,...source.slice(start,start+4).map(movie=>{
    const row=new Row(movie);
-   if(ctx.labListJumpHighlight?.listID===ctx.libraryState.active_id&&ctx.labListJumpHighlight.rawIndex===movie.idx)row.classList.add('lab-list-jump-target');
+   const marker=vm.runInContext('labListJumpHighlight',ctx);
+   if(marker?.listID===ctx.libraryState.active_id&&marker.rawIndex===movie.idx)row.classList.add('lab-list-jump-target');
    return row;
   }));
  },
