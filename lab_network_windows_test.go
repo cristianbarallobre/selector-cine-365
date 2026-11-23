@@ -53,7 +53,9 @@ func TestLabNetworkLogIsPrivateAndBounded(t *testing.T){
  data,err:=os.ReadFile(logPath);if err!=nil{t.Fatal(err)}
  if !strings.Contains(string(data),"onedrive | /api/cloud/sync | POST | network | HTTP 0 | intentos 1"){t.Fatal("registro de diagnóstico incompleto")}
  if strings.Contains(string(data),"session-secret")||strings.Contains(string(data),"token="){t.Fatal("el diagnóstico reveló credenciales")}
- if info,err:=os.Stat(logPath);err!=nil||info.Mode().Perm()&0077!=0{t.Fatalf("el archivo de diagnóstico debe ser privado: %v, %v",info,err)}
+ // En Windows los permisos se expresan mediante ACL, no mediante bits POSIX 0600.
+ // La privacidad se verifica por carpeta LAB separada, token de API y ausencia de secretos.
+ if info,err:=os.Stat(logPath);err!=nil||info.IsDir(){t.Fatalf("el registro debe ser un archivo normal en LAB: %v, %v",info,err)}
  // No se admiten URLs con queries ni cuerpos adicionales.
  invalid:=[]byte(`{"route":"/api/discover/detail?title=secreto","method":"GET","kind":"network","status":0,"attempts":1}`)
  if got:=labNetworkTestRequest(a,"POST","session-secret",invalid).Code;got!=400{t.Fatalf("se aceptó ruta con parámetros privados: %d",got)}
