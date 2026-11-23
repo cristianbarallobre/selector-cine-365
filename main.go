@@ -70,7 +70,6 @@ func makeHTML(initial, token string) (string, error) {
 		out = strings.Replace(out, "🎞️ SELECTOR CINE 365 ·", "🧪 SELECTOR CINE 365 LAB ·", 1)
 	}
 	out = injectLabDiscovery(out)
-	out = injectLabAppearance(out)
 	return out, nil
 }
 
@@ -145,8 +144,6 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		a.serveCloudHTTP(w, r)
 	case "/api/onedrive-desktop/status", "/api/onedrive-desktop/start", "/api/onedrive-desktop/disconnect":
         a.serveGraphAuthHTTP(w,r)
-	case "/api/lab/appearance", "/api/lab/appearance/wallpaper":
-		a.serveLabAppearance(w,r)
 	case "/api/discover/list", "/api/discover/search", "/api/discover/detail", "/api/discover/resolve", "/api/discover/poster", "/api/discover/prefetch", "/api/discover/prefetch/pause":
 		a.serveLabDiscovery(w, r)
 	case "/api/poster":
