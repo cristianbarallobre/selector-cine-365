@@ -72,6 +72,7 @@ func makeHTML(initial, token string) (string, error) {
 	out = injectLabDiscovery(out)
 	out = injectLabSmartSort(out)
 	out = injectLabNetwork(out)
+	out = injectLabLibraryFilters(out)
 	return out, nil
 }
 
