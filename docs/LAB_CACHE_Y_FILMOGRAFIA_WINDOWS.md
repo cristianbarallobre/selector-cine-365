@@ -22,11 +22,11 @@ la clasificación «Destacadas» como oficial de TMDB.
 ## Ubicaciones
 
 - **Datos del usuario (permanentes)**:
-  `%APPDATA%\Selector_Cine_365\` (Roaming). Se mantienen allí las listas,
+  `%APPDATA%\Selector_Cine_365_LAB\` (Roaming). Se mantienen allí las listas,
   el TXT, la sincronización, las identificaciones manuales y los tokens de
   OneDrive cifrados con DPAPI. Nunca se borran al limpiar una caché.
 - **Windows LAB, caché regenerable**:
-  `%LOCALAPPDATA%\Selector_Cine_365\cache_lab\`.
+  `%LOCALAPPDATA%\Selector_Cine_365_LAB\cache_lab\`.
   Aquí se guardan `tmdb_fichas_lab.json`, `plataformas_cache.json`,
   `carteles\`, diagnósticos LAB y el perfil WebView2 de LAB.
 - **Versión estable**: no se cambia su ubicación de archivos ni se borran
