@@ -53,14 +53,18 @@ func injectLabLibraryFilters(page string) string {
  page=strings.Replace(page,
   `if(!global&&selectedListPlatforms.size)`,
   `if(selectedListPlatforms.size)`,1)
+ // Buscar el último "return true" dentro del predicado de renderList,
+ // porque otras inyecciones LAB alteran el cuerpo antes de llegar a esta función.
+ filterStart:=strings.Index(page,"let matches=source.filter(f=>{")
+ heightStart:=strings.Index(page," const areaHeight=parent.clientHeight||370;")
+ if filterStart<0||heightStart<=filterStart{return page}
+ matchEnd:=strings.LastIndex(page[filterStart:heightStart],"return true;")
+ if matchEnd<0{return page}
+ pos:=filterStart+matchEnd
+ page=page[:pos]+"return labFiltersMatches(f);"+page[pos+len("return true;"):]
  page=strings.Replace(page,
-  `   return true;
- });
- const areaHeight=parent.clientHeight||370;`,
-  `   return labFiltersMatches(f);
- });
- matches=labFiltersSort(matches);
- const areaHeight=parent.clientHeight||370;`,1)
+  " const areaHeight=parent.clientHeight||370;",
+  " matches=labFiltersSort(matches);\n const areaHeight=parent.clientHeight||370;",1)
  page=strings.Replace(page,
   `global&&!needle?'Escribe para buscar en todas las listas':`,
   `global&&!source.length?'No hay películas en las listas':`,1)
