@@ -11,6 +11,7 @@ import (
  "net/url"
  "os"
  "path/filepath"
+ "sort"
  "strconv"
  "strings"
  "sync"
@@ -32,6 +33,7 @@ type labFilmJob struct {
 }
 type labDetailRecord struct {
  Data map[string]any `json:"data"`
+ LastUsedAt int64 `json:"last_used_at,omitempty"`
  MetaAt int64 `json:"meta_at"`
  ExtraAt int64 `json:"extra_at"`
  ProvidersAt int64 `json:"providers_at"`
@@ -58,7 +60,9 @@ type labCatalogCache struct {
 var labCatalogMu sync.Mutex
 var labCatalogByPath=map[string]*labCatalogCache{}
 func (a *runningApp) labCatalog() *labCatalogCache {
- path:=filepath.Join(filepath.Dir(a.savePath),"tmdb_fichas_lab.json")
+ legacy:=filepath.Join(filepath.Dir(a.savePath),"tmdb_fichas_lab.json")
+ path:=filepath.Join(appCacheRoot(filepath.Dir(a.savePath)),"tmdb_fichas_lab.json")
+ if path!=legacy{_ =copyLegacyCacheIfMissing(legacy,path,25<<20)}
  labCatalogMu.Lock();defer labCatalogMu.Unlock()
  if c:=labCatalogByPath[path];c!=nil{return c}
  c:=&labCatalogCache{file:path,app:a,disk:labCacheDisk{Version:1,Items:map[string]labDetailRecord{},Resolved:map[string]int{}},targets:map[string]labFilmJob{},queued:map[string]bool{}}
@@ -69,6 +73,9 @@ func (a *runningApp) labCatalog() *labCatalogCache {
    if saved.Resolved!=nil{c.disk.Resolved=saved.Resolved}
   }
  }
+ c.mu.Lock()
+ if c.pruneLocked(){_ =c.fileSaveLocked()}
+ c.mu.Unlock()
  labCatalogByPath[path]=c
  return c
 }
@@ -78,10 +85,66 @@ func labJobKey(j labFilmJob) string {
  if strings.TrimSpace(j.Title)!=""{return normaliseTitle(j.Title)+"|"+strconv.Itoa(j.Year)}
  return "tmdb:"+strconv.Itoa(j.ID)
 }
+const (
+ labCacheMaxEntries=2800
+ labCacheMaxBytes=14<<20
+ labCacheTargetBytes=11<<20
+ labCacheMaxResolved=5500
+)
+func labDetailLastUsed(rec labDetailRecord) int64 {
+ last:=rec.LastUsedAt
+ if rec.MetaAt>last{last=rec.MetaAt}
+ if rec.ExtraAt>last{last=rec.ExtraAt}
+ if rec.ProvidersAt>last{last=rec.ProvidersAt}
+ return last
+}
+// Descartar fichas desechables menos usadas en vez de bloquear las nuevas
+// cuando el JSON alcance su límite. Las listas y sus identificaciones manuales
+// se guardan en otros archivos y no son objeto de esta limpieza.
+func (c *labCatalogCache) pruneLocked() bool {
+ changed:=false
+ type cacheEntry struct{key string;last int64;bytes int}
+ rows:=make([]cacheEntry,0,len(c.disk.Items))
+ for key,rec:=range c.disk.Items {
+  b,_:=json.Marshal(rec)
+  rows=append(rows,cacheEntry{key,labDetailLastUsed(rec),len(b)+len(key)+8})
+ }
+ sort.Slice(rows,func(i,j int)bool{
+  if rows[i].last==rows[j].last{return rows[i].key<rows[j].key}
+  return rows[i].last<rows[j].last
+ })
+ data,_:=json.Marshal(c.disk)
+ size:=len(data)
+ if len(rows)>labCacheMaxEntries||size>labCacheMaxBytes {
+  count:=len(rows)
+  for _,row:=range rows{
+   if count<=labCacheMaxEntries&&size<=labCacheTargetBytes{break}
+   delete(c.disk.Items,row.key)
+   size-=row.bytes;count--;changed=true
+  }
+ }
+ if len(c.disk.Resolved)>labCacheMaxResolved{
+  // Si desapareció una ficha, su coincidencia vuelve a resolverse de TMDB.
+  keys:=make([]string,0,len(c.disk.Resolved))
+  for key:=range c.disk.Resolved{keys=append(keys,key)}
+  sort.Strings(keys)
+  for _,key:=range keys{
+   if len(c.disk.Resolved)<=labCacheMaxResolved{break}
+   if len(c.disk.Items[labID(c.disk.Resolved[key])].Data)==0 {
+    delete(c.disk.Resolved,key);changed=true
+   }
+  }
+  for _,key:=range keys {
+   if len(c.disk.Resolved)<=labCacheMaxResolved{break}
+   delete(c.disk.Resolved,key);changed=true
+  }
+ }
+ return changed
+}
 func (c *labCatalogCache) fileSaveLocked() error {
  if err:=os.MkdirAll(filepath.Dir(c.file),0700);err!=nil{return err}
  data,err:=json.Marshal(c.disk);if err!=nil{return err}
- if len(data)>25<<20{return errors.New("Caché de fichas demasiado grande")}
+ if len(data)>labCacheMaxBytes{return errors.New("Caché de fichas excede el presupuesto tras limpieza")}
  f,err:=os.CreateTemp(filepath.Dir(c.file),".fichas-lab-*");if err!=nil{return err}
  defer os.Remove(f.Name())
  if err=f.Chmod(0600);err!=nil{_ =f.Close();return err}
@@ -92,14 +155,16 @@ func (c *labCatalogCache) fileSaveLocked() error {
 func (c *labCatalogCache) record(id int) (labDetailRecord,bool) {
  c.mu.Lock();defer c.mu.Unlock()
  v,ok:=c.disk.Items[labID(id)]
+ if ok&&len(v.Data)>0 {v.LastUsedAt=time.Now().Unix();c.disk.Items[labID(id)]=v}
  return v,ok&&len(v.Data)>0
 }
 func (c *labCatalogCache) remember(id int,rec labDetailRecord,identity string) {
  if id<=0||len(rec.Data)==0{return}
  c.mu.Lock();defer c.mu.Unlock()
- if len(c.disk.Items)>8000{return}
+ rec.LastUsedAt=time.Now().Unix()
  c.disk.Items[labID(id)]=rec
- if identity!=""&&len(c.disk.Resolved)<12000{c.disk.Resolved[identity]=id}
+ if identity!=""{c.disk.Resolved[identity]=id}
+ c.pruneLocked()
  if err:=c.fileSaveLocked();err!=nil{c.lastError="No se pudo guardar la caché: "+err.Error()}
 }
 func labExpired(at int64,ttl time.Duration) bool{return at<=0||time.Since(time.Unix(at,0))>=ttl}
