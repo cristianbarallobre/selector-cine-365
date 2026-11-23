@@ -35,6 +35,18 @@ Abrir [Actions → LAB - pruebas y compilaciones independientes](https://github.
 Se genera un EXE portable de Windows x64 sin firma Authenticode, con datos separados. El botón Descubrir no aparece en la aplicación oficial ni en el canal de laboratorio de Mac. No se publica como release oficial.
 
 
+## Revisión LAB-02.2 — Descubrir y orden de botones (solo Windows)
+
+- La sección **Descubrir** utiliza un scroll vertical propio. Sus paneles ajustan la altura al contenido y ya no recortan los nombres, botones «Detalles», el resto de las carátulas ni la navegación.
+- En **Descubrir**, pulsar cualquier zona de la tarjeta (imagen, título o fondo), o su botón «Detalles», abre la misma ficha con la opción de añadir a la lista. Teclado: Tab hasta la tarjeta, Intro o Espacio para abrirla.
+- La búsqueda y las categorías paginan los resultados que publica TMDB: 20 títulos por página es el tamaño de una página, **no el total de películas**. Se muestra el total de resultados devuelto por TMDB y controles Anterior/Siguiente tanto **arriba** como **debajo** de las tarjetas, hasta 500 páginas (límite del API de TMDB).
+- En **Biblioteca**, los controles a la derecha de cada fila se ordenan: **Pendiente/Vista → Detalles → Lápiz**. La flecha externa sigue eliminada; al pulsar el resto de la fila no se abre la ficha.
+- Si TMDB aún no ha anunciado la fecha de estreno, la película se puede añadir como pendiente sin año, conservando su ID para futuras consultas.
+- Correcciones restringidas a Windows LAB. Ninguna publicación nueva ni cambio de `main`, Android o macOS.
+- **Por validar manualmente** en Windows: vista a distintos tamaños, scroll de 20 tarjetas, cambio a página 2 y posteriores, apertura desde foto/título/Detalles y guardado en una lista existente.
+
+Descarga el artefacto `Selector_Cine_365_LAB-02_2_Windows` de la ejecución correcta más reciente de [Actions LAB](https://github.com/cristianbarallobre/selector-cine-365/actions/workflows/ci-lab.yml?query=branch%3Aexperimental). No utilices el EXE LAB-02.1 para probar estas correcciones.
+
 ## Revisión LAB-02.1 — caché y botones (solo Windows)
 
 - La biblioteca mantiene el botón **Detalles** al lado del título, la pastilla Vista/Pendiente y el lápiz para corregir TMDB. Se retira el botón externo **↗** de las filas; sus enlaces siguen dentro de la ficha.
