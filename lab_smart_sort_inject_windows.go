@@ -18,15 +18,20 @@ func injectLabSmartSort(page string) string {
  if len(parts)!=2{return page}
  fragments:=strings.SplitN(parts[1],"<!-- LAB_SMART_SCRIPT -->",2)
  if len(fragments)!=2{return page}
- // No se modifica plantilla.html: todos los cambios de UI son exclusivos de Windows LAB.
- var required=[]string{
+ // Solo Windows LAB: la plantilla y los selectores de la versión estable no se modifican.
+ required:=[]string{
   "</head>",
   `<div id="sortCount" class="sort-count" aria-live="polite"></div>`,
   `<div class="platform-detail" id="resultPlatforms"></div>`,
+  `<div class="pick" aria-live="polite"><img id="resultPoster"`,
   "function updateSortAvailability(){",
+  "function updateChoicePlatforms(){",
   "function resetChoice(){chosen=null;",
  }
  for _,marker:=range required {if !strings.Contains(page,marker){return page}}
+ // Los tres textos son el valor inicial, el botón visible y el menú reconstruido con JS.
+ // El valor interno "all" sigue incluyendo todas las películas pendientes.
+ page=strings.ReplaceAll(page,"Todas las películas pendientes","Todas las plataformas")
  page=strings.Replace(page,"</head>",parts[0]+"\n</head>",1)
  page=strings.Replace(page,
   `<div id="sortCount" class="sort-count" aria-live="polite"></div>`,
@@ -34,12 +39,17 @@ func injectLabSmartSort(page string) string {
  page=strings.Replace(page,
   `<div class="platform-detail" id="resultPlatforms"></div>`,
   `<div class="platform-detail" id="resultPlatforms"></div><div class="lab-smart-reason" id="labSmartReason" hidden></div>`,1)
+ // Botón dentro de la tarjeta, esquina superior derecha, tanto en sorteo normal como inteligente.
+ page=strings.Replace(page,
+  `<div class="pick" aria-live="polite"><img id="resultPoster"`,
+  `<div class="pick" aria-live="polite"><button id="labSmartResultDetails" class="lab-smart-details-btn" type="button" hidden disabled aria-label="Ver detalles de la película sorteada">Detalles</button><img id="resultPoster"`,1)
  page=strings.Replace(page,"function updateSortAvailability(){",
   "function updateSortAvailability(){queueMicrotask(labSmartUpdateCount);",1)
+ page=strings.Replace(page,"function updateChoicePlatforms(){",
+  "function updateChoicePlatforms(){labSmartSyncDetailsButton();",1)
  page=strings.Replace(page,"function resetChoice(){chosen=null;",
-  "function resetChoice(){chosen=null;$('labSmartReason').hidden=true;",1)
- // Descubrir inserta código en la IIFE principal, así que el cierre puede no conservar
- // la misma secuencia literal de saltos de línea. Anclar al último cierre real.
+  "function resetChoice(){chosen=null;labSmartSyncDetailsButton();$('labSmartReason').hidden=true;",1)
+ // Descubrir ya insertó JS en la IIFE, así que se busca su último cierre real.
  closeAt:=strings.LastIndex(page,"})();")
  scriptEnd:=strings.LastIndex(page,"</script>")
  if closeAt<0||scriptEnd<0||closeAt>=scriptEnd{return page}
