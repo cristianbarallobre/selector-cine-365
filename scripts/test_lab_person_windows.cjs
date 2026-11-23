@@ -75,8 +75,8 @@ const detailCtx={
  labShowDetail:id=>{selectedMovie=id;}
 };
 vm.createContext(detailCtx);
-const open=js.slice(js.indexOf('async function labOpenPerson(id,record=true){'),js.indexOf('async function labShowDetail(id,record=true){'));
-assert.ok(open.startsWith('async function labOpenPerson(id,record=true){'));
+const open=js.slice(js.indexOf('// Clasificaciones locales:'),js.indexOf('async function labShowDetail(id,record=true){'));
+assert.ok(open.includes('async function labOpenPerson(id,record=true){'));
 vm.runInContext(open,detailCtx);
 
 (async()=>{
@@ -87,6 +87,8 @@ vm.runInContext(open,detailCtx);
  assert.equal(get('labPersonBio').textContent,'Una biografía de TMDB.');
  assert.ok(get('labPersonPortrait').src.includes('persona.jpg'));
  assert.equal(get('labPersonFilms').children.length,2);
+ assert.equal(get('labPersonFilmSort').value,'featured');
+ assert.match(get('labPersonFilmsCount').textContent,/2 de 2/);
  assert.ok(get('labPersonFilms').children[0].textContent==='');
  assert.equal(get('labPersonFilms').children[0].children[0].textContent,'Película A (2026)');
  assert.equal(get('labPersonLinks').children[0].href,'https://www.themoviedb.org/person/1234');
