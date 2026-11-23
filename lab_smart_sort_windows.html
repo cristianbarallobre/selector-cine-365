@@ -8,8 +8,6 @@
 #view-library .lab-smart-field{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:11px;color:#bed0e5;font-weight:750}
 #view-library .lab-smart-field:last-of-type{grid-column:1/-1}
 #view-library .lab-smart-field select{width:100%;min-width:0;border:1px solid #667993;border-radius:8px;background:#223348;color:#f3f5fa;padding:7px 8px;font-size:12px;cursor:pointer;min-height:34px}
-#view-library .lab-smart-explain{font-size:10px;color:#b1c5d8;line-height:1.45;margin:6px 0 0}
-#view-library .lab-smart-explain[hidden]{display:none!important}
 #view-library .lab-smart-reason{font-size:11px;color:#f3d79e;line-height:1.45;margin:7px 0 0}
 #view-library .lab-smart-reason[hidden]{display:none!important}
 #view-library .panel.lab-smart-panel-open{overflow-y:auto;scrollbar-color:#566a81 transparent;overscroll-behavior-y:contain}
@@ -27,12 +25,11 @@
 <div class="lab-smart-box" id="labSmartBox">
   <label class="lab-smart-heading" for="labSmartEnabled"><span>🎯 Sorteo inteligente</span><span class="lab-smart-caption">LAB</span><input id="labSmartEnabled" type="checkbox" aria-controls="labSmartControls"></label>
   <div class="lab-smart-controls" id="labSmartControls" hidden>
-    <label class="lab-smart-field" for="labSmartMood">¿Qué te apetece?
-      <select id="labSmartMood">
-        <option value="balanced">Equilibrado · descubre algo nuevo</option>
-        <option value="quick">Algo corto · hasta 90 min</option>
-        <option value="top">Una buena valoración</option>
-        <option value="surprise">Sorpréndeme</option>
+    <label class="lab-smart-field" for="labSmartSeen">Películas
+      <select id="labSmartSeen">
+        <option value="pending">No vistas (pendientes)</option>
+        <option value="seen">Vistas</option>
+        <option value="both">Vistas y no vistas</option>
       </select>
     </label>
     <label class="lab-smart-field" for="labSmartDuration">Duración
@@ -46,12 +43,15 @@
     <label class="lab-smart-field" for="labSmartGenre">Género
       <select id="labSmartGenre"><option value="any">Todos los géneros</option></select>
     </label>
-    <p class="lab-smart-explain" id="labSmartInfo">«Algo corto» limita el sorteo a películas de hasta 90 min. Se excluyen las vistas, se respeta la plataforma y se evitan las últimas 8 elecciones cuando hay alternativas.</p>
   </div>
   <div class="lab-smart-status" id="labSmartStatus" hidden aria-live="polite"></div>
 </div>
 <!-- LAB_SMART_SCRIPT -->
 // El botón de la esquina aparece tras cualquier sorteo (clásico o inteligente).
+function labSmartSyncSeenAction(){
+ const button=$('markWatched');
+ if(button)button.textContent=chosen&&chosen.checked?'↩ Marcar como pendiente':'✓ Marcar como vista';
+}
 function labSmartSyncDetailsButton(){
  const button=$('labSmartResultDetails');
  if(!button)return;
@@ -65,7 +65,7 @@ $('labSmartResultDetails').addEventListener('click',()=>{
  if(chosen)void labOpenFilmDetails(chosen);
 });
 const labSmartEnable=$('labSmartEnabled');
-const labSmartMood=$('labSmartMood'),labSmartDuration=$('labSmartDuration'),labSmartGenre=$('labSmartGenre');
+const labSmartSeen=$('labSmartSeen'),labSmartDuration=$('labSmartDuration'),labSmartGenre=$('labSmartGenre');
 const labSmartPanel=$('labSmartBox').closest('.panel');
 let labSmartCache={items:{},resolved:{}};
 let labSmartHistory=[],labSmartCacheBusy=false,labSmartCacheReady=false;
@@ -89,15 +89,25 @@ function labSmartMetadata(f){
   vote_average:Math.max(0,Math.min(10,Number(more.vote_average)||0))
  };
 }
+// El sorteo clásico sigue usando eligibleFilms(), que solo incluye pendientes.
+// El modo inteligente permite ampliar explícitamente a vistas o a toda la lista.
+function labSmartPool(){
+ if(!parsed)return [];
+ const status=labSmartSeen.value;
+ const films=parsed.entries.filter(f=>status==='both'||(status==='seen'?f.checked:!f.checked));
+ if(selectedSortPlatform==='all')return films;
+ return films.filter(f=>{
+  const r=platformData.get(providerKey(f));
+  if(!r||r.state!=='ok')return false;
+  const providers=subscriptions(r);
+  return selectedSortPlatform==='any'?providers.length>0:providers.includes(selectedSortPlatform);
+ });
+}
 function labSmartCandidates(){
  const genre=labSmartGenre.value,duration=labSmartDuration.value;
- const quick=labSmartMood.value==='quick';
- return eligibleFilms().filter(f=>{
+ return labSmartPool().filter(f=>{
   const d=labSmartMetadata(f);
   if(genre!=='any'&&!d.genres.some(x=>labSmartNormalize(x)===genre))return false;
-  // «Algo corto» es un límite real, no solo un peso estadístico.
-  // Los títulos sin duración confirmada no se pueden garantizar como cortos.
-  if(quick&&!(d.runtime>0&&d.runtime<=90))return false;
   if(duration==='short'&&!(d.runtime>0&&d.runtime<=90))return false;
   if(duration==='medium'&&!(d.runtime>90&&d.runtime<=120))return false;
   if(duration==='long'&&!(d.runtime>120))return false;
@@ -107,7 +117,7 @@ function labSmartCandidates(){
 function labSmartGenres(){
  const current=labSmartGenre.value;
  const all=new Map();
- for(const film of eligibleFilms()){
+ for(const film of labSmartPool()){
   for(const genre of labSmartMetadata(film).genres){
    const key=labSmartNormalize(genre);
    if(key&&!all.has(key))all.set(key,genre);
@@ -128,17 +138,17 @@ function labSmartUpdateCount(){
  if(!labSmartEnable.checked||!parsed)return;
  labSmartGenres();
  const candidates=labSmartCandidates();
- const total=eligibleFilms().length;
+ const total=labSmartPool().length;
+ const status=labSmartSeen.value;
+ const caption=status==='seen'?'vistas':status==='both'?'películas':'pendientes';
  $('choose').disabled=candidates.length===0;
  $('choose').textContent=candidates.length?'🎯 Elegir película inteligente':'Sin películas para este criterio';
- $('sortCount').textContent=candidates.length+' de '+total+' pendientes cumplen tus filtros';
+ $('sortCount').textContent=candidates.length+' de '+total+' '+caption+' cumplen tus filtros';
  $('labSmartStatus').hidden=candidates.length>0;
- $('labSmartStatus').textContent=candidates.length?'':
-  (labSmartMood.value==='quick'?
-   'No hay películas de hasta 90 min que cumplan estos filtros. Prueba otro género o el modo Equilibrado; se necesita la duración de TMDB.':
-   labSmartGenre.value!=='any'||labSmartDuration.value!=='any'?
-   'Prueba a ampliar el género o la duración; los filtros específicos necesitan datos TMDB.':
-   'No hay películas pendientes en la plataforma seleccionada.');
+ $('labSmartStatus').textContent=candidates.length?'':(
+  total===0?'No hay películas de este estado disponibles en la plataforma seleccionada.':
+  'No hay coincidencias con esa duración y género. Prueba a ampliar los filtros o actualizar las fichas TMDB.'
+ );
 }
 async function labSmartFetchCache(){
  if(labSmartCacheBusy||!labSmartEnable.checked)return;
@@ -166,17 +176,9 @@ labSmartEnable.addEventListener('change',()=>{
  if(active){labSmartUpdateCount();void labSmartFetchCache();}
  else{updateSortAvailability();}
 });
-// Sincronizar ambos selectores para no mostrar «Algo corto» + «Cualquier duración».
-labSmartMood.addEventListener('change',()=>{
- if(labSmartMood.value==='quick')labSmartDuration.value='short';
- resetChoice();labSmartUpdateCount();
-});
-labSmartDuration.addEventListener('change',()=>{
- // Si se cambia el intervalo, deja de aplicarse el modo corto para evitar contradicciones.
- if(labSmartMood.value==='quick'&&labSmartDuration.value!=='short')labSmartMood.value='balanced';
- resetChoice();labSmartUpdateCount();
-});
-labSmartGenre.addEventListener('change',()=>{resetChoice();labSmartUpdateCount();});
+for(const id of ['labSmartSeen','labSmartDuration','labSmartGenre']){
+ $(id).addEventListener('change',()=>{resetChoice();labSmartUpdateCount();});
+}
 setInterval(()=>{if(labSmartEnable.checked&&!document.hidden)void labSmartFetchCache();},30000);
 // Las últimas elecciones no se guardan en las listas ni se sincronizan.
 function labSmartPickWeighted(items,weights){
@@ -199,27 +201,16 @@ function labSmartGenreExposure(){
  }
  return exposure;
 }
+// Preferencia suave por buenas valoraciones y géneros menos vistos.
+// El criterio principal lo deciden los filtros, no este peso.
 function labSmartWeight(f,exposure){
- const m=labSmartMetadata(f),mood=labSmartMood.value;
- const votes=m.vote_count,score=m.vote_average,runtime=m.runtime;
- const trustworthy=votes>=50&&score>0;
+ const m=labSmartMetadata(f);
+ const votes=m.vote_count,score=m.vote_average;
  let weight=1;
- if(mood==='balanced'){
-  if(trustworthy)weight*=Math.max(.8,Math.min(1.65,.95+(score-5)*.15));
-  if(m.genres.length){
-   const avg=m.genres.reduce((sum,g)=>sum+(exposure.get(labSmartNormalize(g))||0),0)/m.genres.length;
-   weight*=1+0.75/(1+avg/4);
-  }
- }else if(mood==='quick'){
-  if(runtime>0)weight*=Math.max(.85,Math.min(2.4,1+(95-runtime)/35));
-  if(trustworthy)weight*=Math.max(.8,Math.min(1.4,.9+(score-5)*.12));
- }else if(mood==='top'){
-  if(trustworthy)weight*=Math.max(.25,Math.min(5,Math.pow(1.6,score-6)));
-  else weight*=.35;
- }else if(mood==='surprise'){
-  if(votes>0)weight*=votes<500?2.3:votes<3000?1.7:votes<15000?1:.65;
-  if(trustworthy&&score>=6)weight*=1.25;
-  if(runtime>0&&runtime<=100)weight*=1.1;
+ if(votes>=50&&score>0)weight*=Math.max(.8,Math.min(1.65,.95+(score-5)*.15));
+ if(m.genres.length){
+  const avg=m.genres.reduce((sum,g)=>sum+(exposure.get(labSmartNormalize(g))||0),0)/m.genres.length;
+  weight*=1+.75/(1+avg/4);
  }
  return Math.max(.05,Math.min(10,weight));
 }
@@ -241,13 +232,10 @@ function labSmartChoose(){
  $('markWatched').disabled=virtualMode;$('copyChoice').disabled=false;
  const data=labSmartMetadata(winner);
  const reasons=[];
- if(labSmartMood.value==='balanced')reasons.push('Selección equilibrada con variedad de géneros');
- else if(labSmartMood.value==='quick')reasons.push('Duración corta (máximo 90 min)');
- else if(labSmartMood.value==='top')reasons.push(data.vote_count>=50?'Valoración TMDB tenida en cuenta':'Faltan valoraciones fiables; selección aproximada');
- else reasons.push('Una elección menos habitual');
+ reasons.push(winner.checked?'Ya la habías visto':'Pendiente de ver');
  if(data.runtime>0)reasons.push(data.runtime+' min');
  if(labSmartGenre.value!=='any'&&data.genres.length)reasons.push('Género: '+data.genres.find(x=>labSmartNormalize(x)===labSmartGenre.value));
- if(!fresh)reasons.push('Se agotaron las opciones no repetidas');
+ if(!fresh)reasons.push('Se agotaron las alternativas recientes');
  $('labSmartReason').textContent=reasons.filter(Boolean).join(' · ');
  $('labSmartReason').hidden=false;
  $('message').textContent=virtualMode?'Vista de coincidencias · solo lectura':'';
