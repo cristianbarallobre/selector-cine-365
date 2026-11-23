@@ -12,8 +12,8 @@ import (
 )
 
 const (
- appPosterMaxFiles=900
- appPosterMaxBytes=int64(48<<20)
+ appPosterMaxFiles=2500
+ appPosterMaxBytes=int64(150<<20)
  appPosterMaxAge=120*24*time.Hour
 )
 
