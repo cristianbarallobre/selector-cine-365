@@ -96,6 +96,18 @@
 .lab-cast-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:7px}
 .lab-cast-entry{min-width:0;display:flex;flex-direction:column;gap:3px;padding:8px 10px;border:1px solid #384b60;border-radius:9px;background:#202e40}
 .lab-cast-actor{font-size:13px;font-weight:770;color:#f5f7fb;overflow-wrap:anywhere}
+button.lab-cast-actor{font-family:inherit;background:none;border:0;padding:0;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:#b99a6b;text-underline-offset:3px}
+button.lab-cast-actor:hover{color:#ffcf83;text-decoration-color:currentColor}
+button.lab-cast-actor:focus-visible{outline:2px solid #ffda91;outline-offset:3px;border-radius:2px}
+.lab-person-overlay{z-index:100}
+#labPersonPlaceholder[hidden]{display:none!important}
+.lab-person-bio{white-space:pre-line;font-size:14px;line-height:1.65;color:#dde4ec}
+.lab-person-films{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:8px}
+.lab-person-film{border:1px solid #455a70;border-radius:9px;background:#233347;color:#f5f6fb;text-align:left;padding:11px;display:flex;flex-direction:column;gap:5px;cursor:pointer;font:inherit;min-width:0}
+.lab-person-film:hover{border-color:#e9bf79;background:#304257}
+.lab-person-film:focus-visible{outline:2px solid #ffda91;outline-offset:2px}
+.lab-person-film-title{font-size:13px;font-weight:750;overflow-wrap:anywhere}
+.lab-person-film-role{font-size:12px;color:#b8cad8;overflow-wrap:anywhere}
 .lab-cast-role{font-size:12px;color:#d4bb94;overflow-wrap:anywhere}
 .lab-cast-role::before{content:"Personaje: ";font-weight:650;color:#a8bbc9}
 .lab-detail-platforms{display:flex;flex-wrap:wrap;gap:6px}
@@ -158,14 +170,6 @@
           <option value="37">Western</option>
         </select>
       </label>
-      <label for="labDiscoverDuration">Duración
-        <select id="labDiscoverDuration">
-          <option value="any">Cualquier duración</option>
-          <option value="short">Hasta 90 minutos</option>
-          <option value="medium">De 91 a 120 minutos</option>
-          <option value="long">Más de 120 minutos</option>
-        </select>
-      </label>
       <p id="labDiscoverFilterHint" hidden></p>
     </div>
   </div>
@@ -201,6 +205,24 @@
           <button class="lab-detail-add" type="button" id="labDetailAdd" disabled>＋ Añadir pendiente</button>
         </div>
         <p class="lab-detail-note" id="labDetailNote" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+</div>
+<div class="overlay lab-detail-overlay lab-person-overlay" id="labPersonOverlay" hidden>
+  <section class="lab-detail-modal" role="dialog" aria-modal="true" aria-labelledby="labPersonHeading">
+    <div class="lab-detail-top"><h2 id="labPersonHeading">Ficha de intérprete</h2><button class="page-btn" type="button" id="labPersonClose" aria-label="Volver a la película" title="Volver a la película">←</button></div>
+    <div class="lab-detail-content">
+      <div><img id="labPersonPortrait" class="lab-detail-poster" alt="Fotografía del intérprete" hidden><div class="lab-movie-empty lab-detail-poster" id="labPersonPlaceholder">👤</div></div>
+      <div>
+        <h3 id="labPersonName">Cargando intérprete…</h3>
+        <p class="lab-detail-subtitle" id="labPersonSubtitle"></p>
+        <div class="lab-detail-label">BIOGRAFÍA</div>
+        <p class="lab-person-bio" id="labPersonBio"></p>
+        <div class="lab-detail-label">PELÍCULAS DESTACADAS</div>
+        <div class="lab-person-films" id="labPersonFilms"></div>
+        <div class="lab-detail-links" id="labPersonLinks"></div>
+        <p class="lab-detail-note" id="labPersonNote" aria-live="polite"></p>
       </div>
     </div>
   </section>
@@ -320,20 +342,18 @@ async function labGet(path){
 }
 function labStatus(s){$('labDiscoverStatus').textContent=s;}
 function labDiscoverFiltered(){
- return !labQuery&&($('labDiscoverGenre').value!=='any'||$('labDiscoverDuration').value!=='any');
+ return !labQuery&&$('labDiscoverGenre').value!=='any';
 }
 function labSyncDiscoverFilters(){
- const search=!!labQuery,genre=$('labDiscoverGenre'),duration=$('labDiscoverDuration');
- genre.disabled=search;duration.disabled=search;
+ const search=!!labQuery,genre=$('labDiscoverGenre');
+ genre.disabled=search;
  const hint=$('labDiscoverFilterHint');
  hint.hidden=!search&&!(labKind==='trending'&&labDiscoverFiltered());
  hint.textContent=search
-  ?'Los filtros de género y duración se aplican al explorar categorías; la búsqueda por título no los aplica.'
+  ?'El filtro de género se aplica al explorar categorías; la búsqueda por título no lo aplica.'
   :'Con filtros, Tendencias se ordena por popularidad (TMDB no permite filtrar el ranking semanal).';
 }
-for(const id of ['labDiscoverGenre','labDiscoverDuration']){
- $(id).addEventListener('change',()=>{labResetBrowsePages();labSyncDiscoverFilters();void labBrowse();});
-}
+$('labDiscoverGenre').addEventListener('change',()=>{labResetBrowsePages();labSyncDiscoverFilters();void labBrowse();});
 function labKindSelect(kind){
  labKind=kind;labQuery='';labResetBrowsePages();$('labSearchInput').value='';
  document.querySelectorAll('[data-lab-kind]').forEach(b=>b.classList.toggle('active',b.dataset.labKind===kind));
@@ -373,11 +393,10 @@ async function labBrowse(){
  labStatus('Consultando TMDB…');$('labDiscoverPager').hidden=true;
  const headings={trending:'Tendencias de la semana',popular:'Películas populares',top:'Mejor valoradas',upcoming:'Próximos estrenos'};
  $('labResultsHeading').textContent=labQuery?'Resultados para «'+labQuery+'»':headings[labKind];
- const genre=$('labDiscoverGenre').value,duration=$('labDiscoverDuration').value;
+ const genre=$('labDiscoverGenre').value;
  const path=labQuery?'/api/discover/search?q='+encodeURIComponent(labQuery):
   '/api/discover/list?kind='+encodeURIComponent(labKind)+
-  (genre==='any'?'':'&genre='+encodeURIComponent(genre))+
-  (duration==='any'?'':'&duration='+encodeURIComponent(duration));
+  (genre==='any'?'':'&genre='+encodeURIComponent(genre));
  const startPage=labPageStarts[labPage-1]||1;
  const fixedNext=labPageStarts[labPage]||0;
  const target=labDiscoverFillTarget();
@@ -470,10 +489,23 @@ function labGoPage(direction){
 }
 $('labPrevPage').addEventListener('click',()=>labGoPage(-1));
 $('labNextPage').addEventListener('click',()=>labGoPage(1));
-function labCloseDetail(){++labDetailSerial;labDetailOverlay.hidden=true;labCurrentMovie=null;}
+const labPersonOverlay=$('labPersonOverlay');
+let labPersonSerial=0,labPersonReturnFocus=null;
+function labClosePerson(){
+ ++labPersonSerial;labPersonOverlay.hidden=true;
+ if(labPersonReturnFocus&&labPersonReturnFocus.isConnected)labPersonReturnFocus.focus();
+ labPersonReturnFocus=null;
+}
+function labCloseDetail(){labClosePerson();++labDetailSerial;labDetailOverlay.hidden=true;labCurrentMovie=null;}
 $('labDetailClose').addEventListener('click',labCloseDetail);
+$('labPersonClose').addEventListener('click',labClosePerson);
 labDetailOverlay.addEventListener('click',e=>{if(e.target===labDetailOverlay)labCloseDetail();});
-window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!labDetailOverlay.hidden)labCloseDetail();});
+labPersonOverlay.addEventListener('click',e=>{if(e.target===labPersonOverlay)labClosePerson();});
+window.addEventListener('keydown',e=>{
+ if(e.key!=='Escape')return;
+ if(!labPersonOverlay.hidden){labClosePerson();return;}
+ if(!labDetailOverlay.hidden)labCloseDetail();
+});
 function labDetailLink(label,url){
  if(typeof url!=='string'||!/^https:\/\//.test(url))return;
  const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=label;$('labDetailLinks').appendChild(a);
@@ -494,7 +526,14 @@ function labRenderCredits(movie){
  const entries=document.createElement('div');entries.className='lab-cast-grid';
  for(const person of people){
   const entry=document.createElement('div');entry.className='lab-cast-entry';
-  const actor=document.createElement('strong');actor.className='lab-cast-actor';actor.textContent=person.name;
+  const personID=Number(person.id);
+  const clickable=Number.isSafeInteger(personID)&&personID>0&&personID<=999999999;
+  const actor=document.createElement(clickable?'button':'strong');
+  actor.className='lab-cast-actor';actor.textContent=person.name;
+  if(clickable){
+   actor.type='button';actor.setAttribute('aria-label','Ver ficha de '+person.name);
+   actor.addEventListener('click',()=>{void labOpenPerson(personID);});
+  }
   entry.appendChild(actor);
   if(person.character){
    const role=document.createElement('span');role.className='lab-cast-role';role.textContent=person.character;
@@ -503,6 +542,48 @@ function labRenderCredits(movie){
   entries.appendChild(entry);
  }
  root.appendChild(entries);
+}
+async function labOpenPerson(id){
+ const serial=++labPersonSerial;
+ labPersonReturnFocus=document.activeElement;
+ labPersonOverlay.hidden=false;
+ $('labPersonClose').focus();
+ $('labPersonName').textContent='Cargando intérprete…';
+ $('labPersonSubtitle').textContent='';$('labPersonBio').textContent='';
+ $('labPersonFilms').replaceChildren();$('labPersonLinks').replaceChildren();
+ $('labPersonPortrait').hidden=true;$('labPersonPortrait').removeAttribute('src');
+ $('labPersonPlaceholder').hidden=false;
+ $('labPersonNote').textContent='Consultando TMDB…';
+ try{
+  const p=await labGet('/api/discover/person?id='+encodeURIComponent(id));
+  if(serial!==labPersonSerial)return;
+  $('labPersonName').textContent=p.name||'Intérprete';
+  const dates=p.birthday?(p.deathday?'Nacimiento: '+p.birthday+' · Fallecimiento: '+p.deathday:'Nacimiento: '+p.birthday):'';
+  $('labPersonSubtitle').textContent=[p.known_for_department||'',dates,p.place_of_birth||''].filter(Boolean).join(' · ');
+  $('labPersonBio').textContent=p.biography||'TMDB no tiene una biografía disponible para esta persona.';
+  if(p.profile_path){
+   const portrait=$('labPersonPortrait');
+   portrait.src=labPosterSrc(p.profile_path);portrait.hidden=false;$('labPersonPlaceholder').hidden=true;
+   portrait.onerror=()=>{if(serial===labPersonSerial){portrait.hidden=true;$('labPersonPlaceholder').hidden=false;}};
+  }
+  const movies=$('labPersonFilms');
+  for(const film of Array.isArray(p.movies)?p.movies:[]){
+   if(!Number.isSafeInteger(Number(film.id))||Number(film.id)<=0)continue;
+   const btn=document.createElement('button');btn.type='button';btn.className='lab-person-film';
+   const title=document.createElement('span');title.className='lab-person-film-title';
+   title.textContent=film.title+(film.release_date?' ('+String(film.release_date).slice(0,4)+')':'');
+   btn.appendChild(title);
+   if(film.character){const role=document.createElement('span');role.className='lab-person-film-role';role.textContent='Como '+film.character;btn.appendChild(role);}
+   btn.addEventListener('click',()=>{labClosePerson();void labShowDetail(Number(film.id));});
+   movies.appendChild(btn);
+  }
+  if(!movies.childElementCount){movies.textContent='No hay películas registradas en TMDB.';}
+  if(typeof p.tmdb_url==='string'&&/^https:\/\/www\.themoviedb\.org\/person\/\d+$/.test(p.tmdb_url)){
+   const link=document.createElement('a');link.href=p.tmdb_url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='↗ Ficha de TMDB';
+   $('labPersonLinks').appendChild(link);
+  }
+  $('labPersonNote').textContent='Ficha de intérprete consultada en TMDB.';
+ }catch(e){if(serial===labPersonSerial){$('labPersonName').textContent='Ficha no disponible';$('labPersonNote').textContent='⚠ '+e.message;}}
 }
 async function labShowDetail(id){
  const serial=++labDetailSerial;labCurrentMovie=null;labDetailOverlay.hidden=false;
