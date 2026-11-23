@@ -51,7 +51,7 @@ func labNetEventValid(e labNetworkEvent) bool {
  return (e.Kind=="network"&&e.Status==0)||(e.Kind=="http"&&e.Status>=400)
 }
 func (a *runningApp) labNetworkLogPath() string {
- return filepath.Join(filepath.Dir(a.savePath),"diagnostico_red_lab.txt")
+ return filepath.Join(appCacheRoot(filepath.Dir(a.savePath)),"diagnostico_red_lab.txt")
 }
 func (a *runningApp) serveLabNetworkLog(w http.ResponseWriter,r *http.Request) {
  if !appIsLab{http.NotFound(w,r);return}
