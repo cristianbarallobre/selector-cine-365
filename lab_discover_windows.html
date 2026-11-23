@@ -985,14 +985,19 @@ function labCrossPageMove(e){
  const row=element?.closest?.('#filmList .film-item');
  const destination=labReorderRowAt(element);
  const page=labReorderPageTarget(element);
+ const navButton=element?.closest?.('#filmPaging button');
+ if(state.lastNavigatedButton&&state.lastNavigatedButton!==navButton)state.lastNavigatedButton=null;
  labCrossPageClearTargets();
  state.to=destination;
  if(row&&destination!==null){
   row.classList.add('lab-crosspage-row-target');
   labCrossPageCancelHover(state);
  }else if(page!==null&&page!==filmPage){
-  const button=element.closest('#filmPaging button');
+  const button=navButton;
   button?.classList.add('lab-crosspage-nav-target');
+  // Tras cambiar de página, soltar sobre el mismo botón no debe avanzar
+  // accidentalmente OTRA página. Para seguir avanzando, salir y volver.
+  if(state.lastNavigatedButton===button)return;
   if(state.hoverPage!==page){
    labCrossPageCancelHover(state);
    state.hoverPage=page;
@@ -1001,7 +1006,7 @@ function labCrossPageMove(e){
     if(labCrossPageDrag!==state||!state.started||!filmOrderEditable()||
        libraryState.active_id!==state.listID)return;
     filmPage=page;
-    state.to=null;state.hoverPage=null;
+    state.to=null;state.hoverPage=null;state.lastNavigatedButton=button;
     renderList();
     labCrossPageClearTargets();
   },460);
@@ -1021,9 +1026,11 @@ function labCrossPageFinish(e,cancel=false){
   target=labReorderRowAt(element);
   const page=labReorderPageTarget(element);
   if(target===null&&page!==null){
-   const index=Math.min(page*labReorderPageSize(),parsed.entries.length-1);
+   const button=element?.closest?.('#filmPaging button');
+   // Un cambio ya realizado mantiene el destino en la página mostrada.
+   destinationPage=button===state.lastNavigatedButton?filmPage:page;
+   const index=Math.min(destinationPage*labReorderPageSize(),parsed.entries.length-1);
    target=parsed.entries[index]?.idx??null;
-   destinationPage=page;
   }
  }
  labCrossPageDrag=null;
@@ -1052,7 +1059,7 @@ document.addEventListener('pointerdown',e=>{
  labCrossPageDrag={
   pointerId:e.pointerId,from:idx,to:null,listID:libraryState.active_id,
   name:movie.title||movie.name||'Película',startX:e.clientX,startY:e.clientY,
-  started:false,hoverPage:null,hoverTimer:null,ghost:null
+  started:false,hoverPage:null,hoverTimer:null,lastNavigatedButton:null,ghost:null
  };
  try{document.body.setPointerCapture?.(e.pointerId);}catch(_){}
  e.preventDefault();
