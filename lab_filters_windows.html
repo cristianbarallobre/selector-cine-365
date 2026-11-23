@@ -120,6 +120,17 @@ labFilterPlatformSlot.appendChild($('view-library').querySelector('.library-plat
 // Los checkboxes originales se reutilizan sin dropdown ni duplicar sus eventos.
 $('labFilterVisiblePlatforms').appendChild($('listPlatformOptions'));
 document.body.appendChild(labFiltersOverlay);
+// Igualar la altura del botón «?» con Biblioteca usando la misma medida
+// real de Edge; fuentes distintas pueden cambiar el alto aun con igual padding.
+function labHelpMatchNav(){
+ const reference=document.querySelector('.top-nav [data-view="library"]');
+ const help=document.querySelector('.top-nav .lab-help-nav');
+ if(!reference||!help)return;
+ const height=reference.getBoundingClientRect().height;
+ if(height>0)help.style.height=height+'px';
+}
+labHelpMatchNav();
+window.addEventListener('resize',labHelpMatchNav);
 function labFiltersUpdatePlatformSelection(){
  const all=selectedListPlatforms.size===0;
  $('labFilterAllPlatforms').checked=all;
