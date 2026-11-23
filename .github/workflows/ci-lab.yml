@@ -41,6 +41,7 @@ jobs:
           node scripts/test_lab_person_sort_windows.cjs
           node scripts/test_lab_actor_hover_windows.cjs
           node scripts/test_lab_list_number_jump_windows.cjs
+          node scripts/test_lab_cross_page_reorder_windows.cjs
           node scripts/test_lab_detail_history_windows.cjs
           node scripts/test_lab_filmaffinity_windows.cjs
           node scripts/test_lab_delete_list_confirm_windows.cjs
