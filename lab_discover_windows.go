@@ -51,9 +51,13 @@ func injectLabDiscovery(page string) string {
  // Los números de «Listas» deben abrir la lista íntegra y señalar la película,
  // nunca introducir su título en el buscador de Biblioteca.
  page = strings.Replace(page,
-  "function openFilmInList(m){",
-  "function openFilmInList(m){labJumpToFilmList(m);return;\n",
-  1)
+  `function openFilmInList(m){
+ if(!m)return;
+ if(m.id!==libraryState.active_id||virtualMode)switchCollection(m.id);
+ selectSearchScope('current');search=m.title;$('search').value=search;
+ filmPage=0;showView('library');renderList();
+}`,
+  `function openFilmInList(m){labJumpToFilmList(m);}`,1)
  // El resaltado también se aplica al volver a dibujar las filas por cambios de
  // caché, plataformas o tamaño durante los segundos de localización.
  page = strings.Replace(page,
