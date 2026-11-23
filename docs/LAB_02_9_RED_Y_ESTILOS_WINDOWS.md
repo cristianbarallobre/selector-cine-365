@@ -25,7 +25,7 @@ Los errores finales se anotan en:
 %APPDATA%\Selector_Cine_365_LAB\diagnostico_red_lab.txt
 ```
 
-El archivo tiene permisos restringidos, rota al alcanzar 256 KiB y conserva como máximo una copia anterior. El diagnóstico está separado de las listas y de OneDrive.
+El archivo reside en la carpeta de usuario de LAB y hereda los permisos de acceso (ACL) de esa carpeta en Windows; la ruta del registro requiere autorización para recibir eventos. Rota al alcanzar 256 KiB y conserva como máximo una copia anterior. El diagnóstico está separado de las listas y de OneDrive.
 
 **Importante:** los reintentos reducen errores *transitorios*, pero no solucionan por sí solos caídas prolongadas de Internet, errores del servidor ni problemas permanentes de autorización.
 
