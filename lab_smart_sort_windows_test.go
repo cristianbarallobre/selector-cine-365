@@ -50,7 +50,7 @@ func TestLabSmartInjectedOnlyWindowsLab(t *testing.T){
  for _,snippet:=range []string{
   "labSmartEnabled","labSmartMood","labSmartDuration","labSmartGenre",
   "labSmartReason","labSmartChoose","labSmartFetchCache","labSmartResultDetails","labSmartSyncDetailsButton",
-  "LAB-02.6 WINDOWS","labDiscoverView",
+  "LAB-02.7 WINDOWS","labDiscoverView",
   "function updateSortAvailability(){queueMicrotask(labSmartUpdateCount);",
   "function resetChoice(){chosen=null;labSmartSyncDetailsButton();$('labSmartReason').hidden=true;",
  } {
