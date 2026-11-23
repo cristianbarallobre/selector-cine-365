@@ -31,12 +31,44 @@ for(const id of ['labLibraryToolbar','labFilterOpen','labFiltersOverlay','labFil
  assert.ok(ui.includes('id="'+id+'"'),'Falta '+id);
 }
 assert.ok(!base.includes('labFiltersOverlay'),'No editar la plantilla estable');
+assert.match(ui,/id="labFilterAllPlatforms" type="checkbox" checked/,'Todas las plataformas seleccionada por defecto');
+assert.match(ui,/id="labFilterVisiblePlatforms"/,'Lista de plataformas visible en el panel');
+assert.match(ui,/id="labFilterResetAll"/,'Limpiar filtros disponible sin desplegar el panel');
+assert.ok(ui.indexOf('id="labFilterResetAll"')<ui.indexOf('id="labFiltersOverlay"'),
+ 'El botón Limpiar filtros debe quedar en la barra superior, no dentro del diálogo');
+assert.match(ui,/#labFiltersDialog \.library-platform-row\{display:none!important\}/,
+ 'No debe visualizarse el dropdown anterior de plataformas');
+assert.match(js,/\$\('labFilterVisiblePlatforms'\)\.appendChild\(\$\('listPlatformOptions'\)\)/,
+ 'Se reutilizan los checkboxes originales sin nuevos desplegables');
+assert.match(js,/function labFiltersUpdatePlatformSelection\(\)/);
+assert.match(js,/labFiltersUpdatePlatformSelection\(\);renderList\(\);/,'Actualizar resultados al elegir Todas');
+assert.match(ui,/#view-library \.lab-library-reset-button/);
 assert.match(ui,/\.lab-help-nav/);
 assert.match(ui,/#view-statistics \.stats-hero\{grid-template-columns:repeat\(5/,'Cinco datos útiles');
 assert.match(js,/document\.body\.appendChild\(labFiltersOverlay\)/,'El panel flotante no se recorta por el panel de biblioteca');
 assert.match(js,/appendChild\(\$\('view-library'\)\.querySelector\('\.filters'\)\)/,'Reutiliza los filtros antiguos y sus eventos');
 assert.match(js,/appendChild\(\$\('view-library'\)\.querySelector\('\.search-scope'\)\)/,'Reutiliza selector Lista actual/Todas las listas');
 assert.match(js,/appendChild\(\$\('view-library'\)\.querySelector\('\.library-platform-row'\)\)/,'Reutiliza plataformas existentes');
+
+// La opción Todas representa un filtro vacío y cambia con los checkboxes existentes.
+const allCheckbox={checked:false},chosenCaption={textContent:''};
+const platformSelection=new Set();
+const platformCtx={
+ selectedListPlatforms:platformSelection,
+ $:id=>id==='labFilterAllPlatforms'?allCheckbox:id==='labFilterPlatformSelected'?chosenCaption:null
+};
+vm.createContext(platformCtx);
+const selectionBlock=ui.split('<!-- LAB_FILTERS_SCRIPT -->')[1];
+const fnCode=selectionBlock.match(/function labFiltersUpdatePlatformSelection\(\)\{[\s\S]*?\n\}/)?.[0];
+assert.ok(fnCode,'Falta función de sincronización de Todas');
+vm.runInContext(fnCode,platformCtx);
+platformCtx.labFiltersUpdatePlatformSelection();
+assert.equal(allCheckbox.checked,true,'Todas marcada cuando no se filtra');
+platformSelection.add('Netflix');platformCtx.labFiltersUpdatePlatformSelection();
+assert.equal(allCheckbox.checked,false,'Todas se desmarca al elegir Netflix');
+assert.equal(chosenCaption.textContent,'1 seleccionada');
+platformSelection.clear();platformCtx.labFiltersUpdatePlatformSelection();
+assert.equal(allCheckbox.checked,true,'Limpiar vuelve a seleccionar Todas');
 
 function between(a,b){const i=js.indexOf(a),j=js.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return js.slice(i,j);}
 const data=between('function labFilterNormalize(value){','function labFiltersAreDefault(){');
