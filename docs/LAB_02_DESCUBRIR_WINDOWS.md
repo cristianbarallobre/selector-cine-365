@@ -35,6 +35,16 @@ Abrir [Actions → LAB - pruebas y compilaciones independientes](https://github.
 Se genera un EXE portable de Windows x64 sin firma Authenticode, con datos separados. El botón Descubrir no aparece en la aplicación oficial ni en el canal de laboratorio de Mac. No se publica como release oficial.
 
 
+## Revisión LAB-02.3 — Correcciones de interacción y paginación (solo Windows)
+
+- En **Descubrir**, se elimina por completo la **paginación superior**. Se mantiene únicamente la inferior, debajo de las tarjetas.
+- Solo el botón **Detalles** abre cada ficha; las fotos, los títulos y el fondo de la tarjeta ya no son clicables ni activables con el teclado. El botón permite abrir la ficha, ver sus enlaces y añadir la película a una lista.
+- En **Biblioteca**, el orden sigue **Pendiente/Vista → Detalles → Lápiz**, pero ahora hay **13 px de separación** entre Detalles y el lápiz, además del margen anterior.
+- **Corrección del fallo de una sola película:** el navegador ejecutaba el manejador normal de Biblioteca antes de ocultar Descubrir. Como ambas vistas tienen distribución flex, la lista calculaba cuántas filas cabían mientras compartían temporalmente el espacio, obteniendo a veces 1 sola fila. Ahora se oculta Descubrir durante la fase de captura del clic, **antes** de mostrar/renderizar Biblioteca. Se añade observador de tamaño para rehacer la paginación si una pestaña o ventana altera su altura. No se modifica el contenido de las listas.
+- Se conservan la caché, la precarga de fichas y la paginación inferior completa de TMDB.
+
+Descarga **`Selector_Cine_365_LAB-02_3_Windows`** de la última ejecución satisfactoria en [Actions LAB](https://github.com/cristianbarallobre/selector-cine-365/actions/workflows/ci-lab.yml?query=branch%3Aexperimental). Para probar: abre Descubrir, vuelve a Biblioteca, comprueba que se muestren varias películas; abre y cierra alguna ficha y repite el cambio de pestaña. Las compilaciones anteriores LAB-02.2 no incluyen estos cambios.
+
 ## Revisión LAB-02.2 — Descubrir y orden de botones (solo Windows)
 
 - La sección **Descubrir** utiliza un scroll vertical propio. Sus paneles ajustan la altura al contenido y ya no recortan los nombres, botones «Detalles», el resto de las carátulas ni la navegación.
