@@ -42,14 +42,16 @@ func TestLabNetworkEventValidation(t *testing.T){
 }
 func TestLabNetworkLogIsPrivateAndBounded(t *testing.T){
  root:=t.TempDir()
- a:=&runningApp{savePath:filepath.Join(root,"Selector_Cine_365_LAB","lista.txt"),token:"session-secret"}
+ local:=t.TempDir()
+ t.Setenv("LOCALAPPDATA",local)
+ a:=&runningApp{savePath:filepath.Join(root,appDataDirectoryName,"lista.txt"),token:"session-secret"}
  e:=labNetworkEvent{Route:"/api/cloud/sync",Method:"POST",Kind:"network",Status:0,Attempts:1}
  b,err:=json.Marshal(e);if err!=nil{t.Fatal(err)}
  if got:=labNetworkTestRequest(a,"POST","",b).Code;got!=403{t.Fatalf("token obligatorio: %d",got)}
  if got:=labNetworkTestRequest(a,"GET","session-secret",b).Code;got!=405{t.Fatalf("solo POST: %d",got)}
  if got:=labNetworkTestRequest(a,"POST","session-secret",b).Code;got!=204{t.Fatalf("el evento válido falló: %d",got)}
  logPath:=a.labNetworkLogPath()
- if filepath.Dir(logPath)!=filepath.Join(root,"Selector_Cine_365_LAB"){t.Fatalf("archivo fuera de LAB: %s",logPath)}
+ if filepath.Dir(logPath)!=filepath.Join(local,appDataDirectoryName,"cache_lab"){t.Fatalf("archivo fuera de caché local LAB: %s",logPath)}
  data,err:=os.ReadFile(logPath);if err!=nil{t.Fatal(err)}
  if !strings.Contains(string(data),"onedrive | /api/cloud/sync | POST | network | HTTP 0 | intentos 1"){t.Fatal("registro de diagnóstico incompleto")}
  if strings.Contains(string(data),"session-secret")||strings.Contains(string(data),"token="){t.Fatal("el diagnóstico reveló credenciales")}
