@@ -55,13 +55,14 @@
 .lab-card-rating{color:#ffd17e;font-weight:700}
 .lab-pager{display:flex;align-items:center;justify-content:center;gap:12px;padding-top:20px;flex-wrap:wrap}
 .lab-result-top h3{min-width:0;overflow-wrap:anywhere}
-.lab-pager button{border:1px solid #52657e;border-radius:9px;padding:9px 14px;color:#fff;background:#24354a;cursor:pointer}
-.lab-pager button:disabled{opacity:.35;cursor:default}
+.lab-pager .page-btn{cursor:pointer;min-width:98px}
+.lab-pager .page-btn:disabled{opacity:.32;cursor:not-allowed}
 .lab-detail-overlay{z-index:90;overflow-y:auto;align-items:start;padding:28px 12px}
 .lab-detail-modal{width:min(900px,100%);max-width:none;padding:0;overflow:hidden;margin:auto;border:1px solid #536480;border-radius:17px;background:#162230;color:#f1f5fa;box-shadow:0 18px 70px #000b}
 .lab-detail-top{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#202e42;padding:15px 20px}
 .lab-detail-top h2{margin:0;font-size:17px}
-.lab-detail-top button{border:1px solid #60718a;background:#26364a;color:#fff;border-radius:8px;padding:8px 13px;cursor:pointer}
+.lab-detail-top .page-btn{width:34px;min-width:34px;height:34px;display:grid;place-items:center;padding:0;font-size:18px;font-weight:750;cursor:pointer}
+.lab-detail-top .page-btn:hover{background:#384b64}
 .lab-detail-content{padding:22px;display:grid;grid-template-columns:185px minmax(0,1fr);gap:24px}
 .lab-detail-poster{width:100%;aspect-ratio:2/3;object-fit:cover;border:1px solid #3b4f65;border-radius:12px;background:#233249}
 .lab-detail-content h3{font-size:27px;line-height:1.2;margin:0 0 8px}
@@ -77,12 +78,17 @@
 .lab-detail-links a{color:#ffd088;text-decoration:none;font-weight:650;font-size:13px}
 .lab-detail-actions{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin-top:23px;padding-top:18px;border-top:1px solid #374859}
 .lab-detail-actions label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:#bbc9d7;flex:1;min-width:150px}
-.lab-detail-actions select{border:1px solid #50647e;background:#112031;color:#fff;border-radius:8px;padding:11px;width:100%}
+.lab-detail-actions select{border:1px solid #50647e;background:#112031;color:#fff;border-radius:8px;padding:11px;width:100%;cursor:pointer}
 .lab-detail-note{color:#afd1bb;font-size:12px;min-height:20px;margin-top:9px}
 .lab-prefetch-banner{display:flex;align-items:center;gap:9px;justify-content:space-between;min-height:27px;font-size:11px;color:#c3d1e2;line-height:1.3;overflow:hidden}
 .lab-prefetch-banner span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .lab-prefetch-banner button{font-size:11px;white-space:nowrap;background:#293c4e;color:#f2d499;border:1px solid #8d724e;border-radius:7px;padding:4px 8px;cursor:pointer}
 .lab-prefetch-banner button[hidden]{display:none!important}
+/* Coherencia del cursor: solo las acciones interactivas muestran la mano. */
+#labDiscoverView button:not(:disabled),#labDetailOverlay button:not(:disabled),
+#labDiscoverView select:not(:disabled),#labDetailOverlay select:not(:disabled),
+#labDiscoverView a[href],#labDetailOverlay a[href]{cursor:pointer}
+#labDiscoverView button:disabled,#labDetailOverlay button:disabled{cursor:not-allowed}
 @media(max-width:650px){.lab-discover .panel{padding:14px}.lab-discover-search{flex-wrap:wrap}.lab-discover-search button{width:100%}.lab-movies-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.lab-detail-content{grid-template-columns:1fr;padding:16px}.lab-detail-poster{max-width:170px}.lab-detail-modal{max-height:none}.lab-detail-content h3{font-size:21px}}
 </style>
 <section class="lab-discover view" id="labDiscoverView" hidden aria-label="Descubrir películas">
@@ -107,14 +113,14 @@
     <p class="lab-status" id="labDiscoverStatus" aria-live="polite">Abre Descubrir para consultar las películas.</p>
     <div class="lab-movies-grid" id="labMoviesGrid" aria-live="polite"></div>
     <div class="lab-pager" id="labDiscoverPager" hidden>
-      <button id="labPrevPage" type="button">← Anterior</button><span id="labPageLabel">1 / 1</span><button id="labNextPage" type="button">Siguiente →</button>
+      <button class="page-btn" id="labPrevPage" type="button">‹ Anterior</button><span class="page-label" id="labPageLabel">1 / 1</span><button class="page-btn" id="labNextPage" type="button">Siguiente ›</button>
     </div>
   </div>
   <p class="platform-credit">Datos y carátulas: TMDB. Las plataformas se consultan para España; pueden cambiar sin aviso.</p>
 </section>
 <div class="overlay lab-detail-overlay" id="labDetailOverlay" hidden>
   <section class="lab-detail-modal" role="dialog" aria-modal="true" aria-labelledby="labDetailHeading">
-    <div class="lab-detail-top"><h2 id="labDetailHeading">Ficha de película</h2><button id="labDetailClose" type="button" aria-label="Cerrar ficha">✕ Cerrar</button></div>
+    <div class="lab-detail-top"><h2 id="labDetailHeading">Ficha de película</h2><button class="page-btn" id="labDetailClose" type="button" aria-label="Cerrar ficha" title="Cerrar ficha">✕</button></div>
     <div class="lab-detail-content">
       <div><img id="labDetailPoster" class="lab-detail-poster" alt="Carátula de la película" hidden><div class="lab-movie-empty lab-detail-poster" id="labDetailPlaceholder">🎞</div></div>
       <div>
