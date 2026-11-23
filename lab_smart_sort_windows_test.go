@@ -50,11 +50,11 @@ func TestLabSmartInjectedOnlyWindowsLab(t *testing.T){
  for _,snippet:=range []string{
   "labSmartEnabled","labSmartSeen","labSmartDuration","labSmartGenre",
   "labSmartReason","labSmartChoose","labSmartFetchCache","labSmartResultDetails","labSmartSyncDetailsButton",
-  "LAB-02.12 WINDOWS","labDiscoverView",
+  "LAB-02.13 WINDOWS","labDiscoverView",
   "function updateSortAvailability(){queueMicrotask(labSmartUpdateCount);",
   "function resetChoice(){chosen=null;labSmartSyncDetailsButton();labSmartSyncSeenAction();$('labSmartReason').hidden=true;",
  } {
-  if !strings.Contains(page,snippet){t.Errorf("elemento LAB-02.12 ausente: %s",snippet)}
+  if !strings.Contains(page,snippet){t.Errorf("elemento LAB-02.13 ausente: %s",snippet)}
  }
  if strings.Count(page,`id="labSmartEnabled"`)!=1 {t.Fatal("el interruptor debe existir solo una vez")}
  if !strings.Contains(page,"Elegir una película al azar"){t.Fatal("el sorteo clásico debe conservarse")}
