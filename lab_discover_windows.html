@@ -545,6 +545,13 @@ window.addEventListener('keydown',e=>{
  if(labDetailTrail.length>1)labDetailBack();
  else labCloseDetail();
 });
+// FilmAffinity no utiliza los identificadores TMDB; el acceso seguro es una
+// búsqueda por título en FilmAffinity España, nunca una ficha inventada.
+function labFilmAffinitySearchURL(movie){
+ const title=String(movie?.title||movie?.original_title||'').trim();
+ if(!title)return '';
+ return 'https://www.filmaffinity.com/es/search.php?stype=title&stext='+encodeURIComponent(title);
+}
 function labDetailLink(label,url){
  if(typeof url!=='string'||!/^https:\/\//.test(url))return;
  const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=label;$('labDetailLinks').appendChild(a);
@@ -652,6 +659,7 @@ async function labShowDetail(id,record=true){
   if(m.trailer)labDetailLink('▶ Ver tráiler',m.trailer);
   if(m.watch_link)labDetailLink('↗ Ver plataformas',m.watch_link);
   labDetailLink('↗ Ficha de TMDB',m.tmdb_url);
+  labDetailLink('↗ Buscar en FilmAffinity España',labFilmAffinitySearchURL(m));
   if(m.poster_path){
    const img=$('labDetailPoster');img.src=labPosterSrc(m.poster_path);img.hidden=false;$('labDetailPlaceholder').hidden=true;
    img.onerror=()=>{img.hidden=true;$('labDetailPlaceholder').hidden=false;};
