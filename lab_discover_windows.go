@@ -28,9 +28,8 @@ func injectLabDiscovery(page string) string {
  if len(fragments)!=2 { return page }
  nav := `<button class="nav-btn" type="button" id="labDiscoverNav">✦ Descubrir <span class="lab-nav-tag">LAB</span></button>`
  page = strings.Replace(page, `<button class="nav-btn" type="button" data-view="statistics">`, nav+`<button class="nav-btn" type="button" data-view="statistics">`, 1)
- page = strings.Replace(page, "🧪 SELECTOR CINE 365 LAB ·", "🧪 SELECTOR CINE 365 · LAB-02.2 ·", 1)
- // El botón Detalles se añade solo al renderizado Windows LAB, sin cambiar plantilla.html.
- page = strings.Replace(page, "titleLine.appendChild(title);", "titleLine.appendChild(title);", 1)
+ page = strings.Replace(page, "🧪 SELECTOR CINE 365 LAB · v9 Beta 14 Preview", "🧪 SELECTOR CINE 365 · LAB-02.2 WINDOWS", 1)
+ // Los botones específicos se inyectan solo en Windows LAB; plantilla.html permanece intacta.
  // En Windows LAB, el enlace externo de cada fila sobra: ya está dentro de Detalles.
  page = strings.Replace(page, "b.append(togg,pill,fix,link);frag.appendChild(b);", "b.append(togg,pill,labCreateDetailButton(f),fix);frag.appendChild(b);", 1)
  page = strings.Replace(page, `<input type="search" id="search"`, `<div class="lab-prefetch-banner" id="labPrefetchBanner" role="status" aria-live="polite"><span id="labPrefetchText">Fichas TMDB: comprobando caché…</span><button type="button" id="labPrefetchPause" hidden>Pausar</button></div><input type="search" id="search"`, 1)
