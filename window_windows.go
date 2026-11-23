@@ -35,6 +35,7 @@ const (
 	wsClipChildren          = 0x02000000
 	wsClipSiblings          = 0x04000000
 	swShow                  = 5
+	swShowMaximized         = 3 // Win32 SW_SHOWMAXIMIZED, conserva la barra de título y restaurar
 	coinitApartmentThreaded = 2
 	sOK                     = 0
 	eNoInterface            = uintptr(0x80004002)
@@ -487,7 +488,10 @@ func nativeWindowLoop(url, profile string) error {
 	}
 	logDiagnostic("Ventana Win32 creada")
 	w.hwnd = hwnd
-	procShowWindow.Call(hwnd, swShow)
+	// Windows LAB abre maximizado, no en modo quiosco: permite restaurar y cerrar.
+	showMode := uintptr(swShow)
+	if appIsLab { showMode = uintptr(swShowMaximized) }
+	procShowWindow.Call(hwnd, showMode)
 	procUpdateWindow.Call(hwnd)
 	logDiagnostic("Solicitando crear entorno WebView2")
 	hr, _, _ = createEnv.Call(0, ptr(unsafe.Pointer(utf16Ptr(profile))), 0, ptr(unsafe.Pointer(&w.envCallback)))
@@ -587,7 +591,12 @@ func launchCompatibleBrowser(url, profile string) error {
 		if fi, err := os.Stat(path); err != nil || fi.IsDir() {
 			continue
 		}
-		args := []string{"--app=" + url, "--new-window", "--window-size=1200,820", "--user-data-dir=" + profile, "--no-first-run", "--no-default-browser-check", "--disable-background-mode"}
+		args := []string{"--app=" + url, "--new-window", "--user-data-dir=" + profile, "--no-first-run", "--no-default-browser-check", "--disable-background-mode"}
+		if appIsLab {
+			args = append(args, "--start-maximized")
+		} else {
+			args = append(args, "--window-size=1200,820")
+		}
 		cmd := exec.Command(path, args...)
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 		if err := cmd.Start(); err == nil {
