@@ -31,6 +31,7 @@ const $=id=>id==='labPersonOverlay'?person:buttons[id];
 const ctx={
  $,
  labDetailOverlay:overlay,labDetailSerial:0,labCurrentMovie:null,
+ labHideActorPhoto:()=>{},
  window:{addEventListener:(type,fn)=>{handlers[type]=fn;}}
 };
 ctx.labShowDetail=(id,record=true)=>{
