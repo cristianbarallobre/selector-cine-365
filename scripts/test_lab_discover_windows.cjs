@@ -64,6 +64,7 @@ assert.match(windows,/n>500/,'El servidor acepta páginas más allá de 5');
 assert.match(windows,/TotalResults int/,'El servidor incluye el total de resultados de TMDB');
 assert.match(ui,/margin:7px 13px 7px 5px/,'Detalles y lápiz deben tener espacio visible');
 assert.match(ui,/addEventListener\('click',labLeave,true\)/,'Descubrir debe ocultarse en fase capture antes del renderizado de Biblioteca');
+assert.match(windows,/function showView\(name\)\{labLeave\(\);if\(name==='library'\)/,'También debe ocultarse Descubrir en navegación programática entre listas y pestañas');
 assert.match(ui,/ResizeObserver/,'La lista debe recuperar la paginación tras cambios de tamaño');
 assert.match(ui,/if\(height<160\|\|Math\.abs\(height-labLastListHeight\)<4\)return/,'No debe recalcularse con altura colapsada');
 assert.match(ui,/details\.addEventListener\('click'/,'Solo Detalles abrirá la ficha desde Descubrir');
