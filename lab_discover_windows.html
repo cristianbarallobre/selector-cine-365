@@ -82,7 +82,15 @@
 .lab-detail-tags span{background:#283b4e;border:1px solid #42586f;padding:5px 9px;border-radius:20px;font-size:12px}
 .lab-detail-overview{font-size:14px;line-height:1.65;color:#dde4ec}
 .lab-detail-label{font-size:12px;color:#e9bb71;font-weight:800;letter-spacing:.03em;margin:15px 0 6px}
-.lab-detail-cast{color:#c5d3e2;font-size:13px;line-height:1.7}
+.lab-detail-cast{display:flex;flex-direction:column;gap:11px;color:#c5d3e2;font-size:13px;line-height:1.45}
+.lab-cast-director{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.lab-cast-director-label,.lab-cast-heading{font-size:12px;font-weight:800;color:#e7ba75}
+.lab-cast-director strong{font-size:13px;font-weight:730;color:#f3f5f9}
+.lab-cast-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:7px}
+.lab-cast-entry{min-width:0;display:flex;flex-direction:column;gap:3px;padding:8px 10px;border:1px solid #384b60;border-radius:9px;background:#202e40}
+.lab-cast-actor{font-size:13px;font-weight:770;color:#f5f7fb;overflow-wrap:anywhere}
+.lab-cast-role{font-size:12px;color:#d4bb94;overflow-wrap:anywhere}
+.lab-cast-role::before{content:"Personaje: ";font-weight:650;color:#a8bbc9}
 .lab-detail-platforms{display:flex;flex-wrap:wrap;gap:6px}
 .lab-detail-platforms span{font-size:12px;padding:5px 8px;border-radius:7px;background:#2f4051;border:1px solid #5d7085}
 .lab-detail-links{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
@@ -175,7 +183,7 @@
         <div class="lab-detail-tags" id="labDetailGenres"></div>
         <p class="lab-detail-overview" id="labDetailOverview"></p>
         <div class="lab-detail-label">REPARTO Y DIRECCIÓN</div>
-        <p class="lab-detail-cast" id="labDetailCast"></p>
+        <div class="lab-detail-cast" id="labDetailCast"></div>
         <div class="lab-detail-label">DÓNDE VERLA EN ESPAÑA</div>
         <div class="lab-detail-platforms" id="labDetailPlatforms"></div>
         <div class="lab-detail-links" id="labDetailLinks"></div>
@@ -466,6 +474,29 @@ function labDetailLink(label,url){
 function labTextChips(target,values){
  target.replaceChildren();for(const item of values){const b=document.createElement('span');b.textContent=item;target.appendChild(b);}
 }
+function labRenderCredits(movie){
+ const root=$('labDetailCast');root.replaceChildren();
+ const director=document.createElement('div');director.className='lab-cast-director';
+ const directorLabel=document.createElement('span');directorLabel.className='lab-cast-director-label';directorLabel.textContent='Dirección:';
+ const directorName=document.createElement('strong');directorName.textContent=movie.director||'Sin datos';
+ director.append(directorLabel,directorName);root.appendChild(director);
+ const people=(Array.isArray(movie.cast)?movie.cast:[]).filter(person=>person&&person.name);
+ if(!people.length)return;
+ const heading=document.createElement('div');heading.className='lab-cast-heading';heading.textContent='Reparto y personajes';
+ root.appendChild(heading);
+ const entries=document.createElement('div');entries.className='lab-cast-grid';
+ for(const person of people){
+  const entry=document.createElement('div');entry.className='lab-cast-entry';
+  const actor=document.createElement('strong');actor.className='lab-cast-actor';actor.textContent=person.name;
+  entry.appendChild(actor);
+  if(person.character){
+   const role=document.createElement('span');role.className='lab-cast-role';role.textContent=person.character;
+   entry.appendChild(role);
+  }
+  entries.appendChild(entry);
+ }
+ root.appendChild(entries);
+}
 async function labShowDetail(id){
  const serial=++labDetailSerial;labCurrentMovie=null;labDetailOverlay.hidden=false;
  $('labDetailTitle').textContent='Cargando ficha…';$('labDetailSubtitle').textContent='';
@@ -480,9 +511,7 @@ async function labShowDetail(id){
   const parts=[String(m.release_date||'').slice(0,4),m.runtime?m.runtime+' min':'',m.vote_count?'★ '+Number(m.vote_average).toFixed(1)+'/10 en TMDB':''];$('labDetailSubtitle').textContent=parts.filter(Boolean).join(' · ');
   $('labDetailOverview').textContent=m.overview||'TMDB no tiene una sinopsis en español para esta película.';
   labTextChips($('labDetailGenres'),m.genres||[]);
-  const names=(m.cast||[]).map(p=>p.name+(p.character?' · '+p.character:''));
-  $('labDetailCast').textContent='Dirección: '+(m.director||'Sin datos')+(names.length?'\nReparto: '+names.join(' · '):'');
-  $('labDetailCast').style.whiteSpace='pre-line';
+  labRenderCredits(m);
   const service=[];
   for(const [kind,label] of [['subscriptions','Suscripción'],['free','Gratis'],['ads','Con anuncios'],['rent','Alquiler'],['buy','Compra']]){
    for(const provider of m[kind]||[])service.push(label+': '+provider);
