@@ -15,9 +15,9 @@ import (
 func TestLabCacheDirectorySeparateFromRoaming(t *testing.T){
  local:=t.TempDir()
  t.Setenv("LOCALAPPDATA",local)
- old:=filepath.Join(t.TempDir(),"Roaming","Selector_Cine_365")
+ old:=filepath.Join(t.TempDir(),"Roaming",appDataDirectoryName)
  got:=appCacheRoot(old)
- if got!=filepath.Join(local,"Selector_Cine_365","cache_lab"){t.Fatalf("La caché debe estar bajo LocalAppData: %s",got)}
+ if got!=filepath.Join(local,appDataDirectoryName,"cache_lab"){t.Fatalf("La caché debe estar bajo LocalAppData: %s",got)}
  if got==old{t.Fatal("Caché comparte Roaming")}
 }
 func TestLabCatalogEvictsOldestInsteadOfStoppingSaving(t *testing.T){
