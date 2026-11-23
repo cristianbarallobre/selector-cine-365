@@ -19,7 +19,7 @@ assert.match(js,/labRenderCredits\(m\)/);
 assert.ok(!js.includes("names.join(' · ')"),'El reparto no debe convertirse en una única línea ambigua');
 
 const start=js.indexOf('function labRenderCredits(movie){');
-const end=js.indexOf('async function labShowDetail(id){',start);
+const end=js.indexOf('async function labOpenPerson(id,record=true){',start);
 assert.ok(start>=0&&end>start,'Falta la creación de fichas estructuradas');
 const fn=js.slice(start,end);
 class FakeElement{
