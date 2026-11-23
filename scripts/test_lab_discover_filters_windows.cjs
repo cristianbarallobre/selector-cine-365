@@ -27,7 +27,7 @@ assert.match(js,/function labSyncDiscoverFilters\(\)/);
 assert.match(js,/genre\.disabled=search/,'No presentar filtros engañosos en búsqueda por título');
 assert.match(js,/Con filtros, Tendencias se ordena por popularidad/,'Explicar la diferencia frente al ranking semanal');
 assert.match(js,/labResetBrowsePages\(\);labSyncDiscoverFilters\(\);void labBrowse\(\)/,'Cambiar filtros reinicia la paginación');
-assert.match(js,/const cacheKey=path\+'\|'\+current/,'No mezclar páginas TMDB de filtros distintos');
+assert.match(js,/cacheKey=path\+'\|'\+page/,'No mezclar páginas TMDB de filtros distintos');
 assert.match(js,/Math\.max\(3,Math\.ceil/,'Reservar al menos tres filas visibles');
 assert.match(js,/grid\.parentElement\?\.clientWidth/,'No fiarse del ancho del grid vacío');
 
