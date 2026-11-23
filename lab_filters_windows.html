@@ -191,6 +191,10 @@ function labFiltersAreDefault(){
         labFilterDuration.value==='any'&&labFilterOrder.value==='original';
 }
 function labFiltersCanReorder(){return labFiltersAreDefault();}
+function labFiltersResetForList(){
+ labFilterDecade.value='any';labFilterGenre.value='any';labFilterDuration.value='any';labFilterOrder.value='original';
+ if(!labFiltersOverlay.hidden)labFiltersClose();
+}
 function labFiltersUpdateSummary(count){
  const active=[
   searchScope==='all',filter!=='all',selectedListPlatforms.size>0,
