@@ -130,8 +130,8 @@ func labFreshDetail(ctx context.Context,id int,key string,prior labDetailRecord)
   d.labMovie=safeLabMovie(d.labMovie)
   director:=""
   for _,p:=range d.Credits.Crew {if p.Job=="Director"&&p.Name!="" {if director!=""{director+=" / "};director+=p.Name;if len(director)>220{break}}}
-  cast:=make([]map[string]string,0,10)
-  for _,p:=range d.Credits.Cast {if len(cast)>=10{break};if p.Name!=""{cast=append(cast,map[string]string{"name":p.Name,"character":p.Character})}}
+  cast:=make([]map[string]any,0,10)
+  for _,p:=range d.Credits.Cast {if len(cast)>=10{break};if p.Name!=""{cast=append(cast,map[string]any{"name":p.Name,"character":p.Character,"id":p.ID})}}
   genres:=make([]string,0,len(d.Genres))
   for _,g:=range d.Genres{if g.Name!=""{genres=append(genres,g.Name)}}
   trailer:=labTrailer(d.Videos.Results)
