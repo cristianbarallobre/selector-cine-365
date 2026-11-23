@@ -41,6 +41,12 @@ func injectLabDiscovery(page string) string {
  page = strings.Replace(page, "void cloudAutoReceive(true);});", "void cloudAutoReceive(true);labQueuePrefetchSoon();});", 1)
  page = strings.Replace(page, "function scheduleSave(){membershipCache=null;", "function scheduleSave(){labQueuePrefetchSoon();membershipCache=null;", 1)
  page = strings.Replace(page, "function showView(name){if(", "function showView(name){labLeave();if(name==='library')labQueuePrefetchSoon();if(", 1)
+ // La confirmación nativa confirm() revela 127.0.0.1 y el puerto local.
+ // Solo Windows LAB usa el diálogo visual; el código de borrado y sincronización permanece intacto.
+ page = strings.Replace(page, "function deleteList(id){", "async function deleteList(id){", 1)
+ page = strings.Replace(page,
+  "if(!confirm('¿Eliminar «'+l.name+'»? Esta lista dejará de aparecer en la aplicación.'))return;",
+  "if(!await labConfirmDeleteList(l))return; if(libraryState.lists.length<2||!libraryState.lists.some(item=>item.id===id))return;", 1)
 
  // Aprovecha el hueco sin reducir el número de filas: conserva la capacidad de 96px+7px.
  // Cuando sobra espacio, estira proporcionalmente hasta 110px; en ventanas ajustadas mantiene 96px.
