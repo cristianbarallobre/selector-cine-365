@@ -34,12 +34,12 @@ jobs:
           node scripts/test_lab_visual_polish_windows.cjs
       - name: Compilar Windows LAB (sin firma)
         run: |
-          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -tags lab -trimpath -ldflags='-H windowsgui -s -w' -o Selector_Cine_365_LAB-02_9_Windows.exe .
-          test -s Selector_Cine_365_LAB-02_9_Windows.exe
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -tags lab -trimpath -ldflags='-H windowsgui -s -w' -o Selector_Cine_365_LAB-02_10_Windows.exe .
+          test -s Selector_Cine_365_LAB-02_10_Windows.exe
       - uses: actions/upload-artifact@v4
         with:
-          name: Selector_Cine_365_LAB-02_9_Windows
-          path: Selector_Cine_365_LAB-02_9_Windows.exe
+          name: Selector_Cine_365_LAB-02_10_Windows
+          path: Selector_Cine_365_LAB-02_10_Windows.exe
           retention-days: 14
           if-no-files-found: error
 
