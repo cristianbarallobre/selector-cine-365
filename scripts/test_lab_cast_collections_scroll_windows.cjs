@@ -31,7 +31,8 @@ class FakeElement{
 const target=new FakeElement('div');
 const ctx={
  $:id=>{assert.equal(id,'labDetailCast');return target},
- document:{createElement:tag=>new FakeElement(tag)}
+ document:{createElement:tag=>new FakeElement(tag)},
+ labHideActorPhoto:()=>{}
 };
 vm.createContext(ctx);vm.runInContext(fn,ctx);
 ctx.labRenderCredits({director:'Kitao Sakurai',
