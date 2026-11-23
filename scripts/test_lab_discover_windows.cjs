@@ -71,4 +71,22 @@ assert.match(ui,/details\.addEventListener\('click'/,'Solo Detalles abrirá la f
 assert.doesNotMatch(ui,/card\.tabIndex|card\.addEventListener\('keydown'/,'Las tarjetas completas no son objetivos de teclado');
 
 
+
+// La altura nueva solo existe en LAB Windows: plantilla y builds estables quedan intactos.
+assert.match(ui,/#view-library \.film-item\{\s*height:var\(--lab-film-row-height,96px\)/,'Las filas LAB deben usar altura adaptable');
+assert.match(ui,/#view-library \.film-toggle\{[^}]*align-items:center/,'Los controles de fila deben quedar centrados verticalmente');
+assert.match(ui,/#view-library \.film-poster,#view-library \.poster-placeholder\{width:42px;height:60px;align-self:center\}/,'Carátulas LAB centradas');
+assert.match(windows,/Math\.floor\(\(labUsableHeight\+7\)\/103\)/,'La paginación debe conservar la capacidad anterior');
+assert.match(windows,/Math\.min\(110,Math\.max\(96,Math\.floor/,'Las filas deben crecer solo donde sobre espacio');
+assert.match(windows,/parent\.style\.setProperty\('--lab-film-row-height',labRowHeight\+'px'\)/,'La altura adaptativa debe aplicarse en cada renderizado');
+for(const areaHeight of [275,320,370,405,460,488,520,590,640,720]){
+ const labUsableHeight=Math.max(0,areaHeight-2);
+ const pageSize=Math.max(1,Math.floor((labUsableHeight+7)/103));
+ const rowHeight=Math.min(110,Math.max(96,Math.floor((labUsableHeight-7*(pageSize-1))/pageSize)));
+ assert.ok(rowHeight>=96 && rowHeight<=110,'La altura de fila debe quedar entre 96 y 110px');
+ assert.ok(pageSize*rowHeight+7*(pageSize-1)<=labUsableHeight,'Las filas no pueden invadir el paginador');
+ assert.equal(pageSize,Math.max(1,Math.floor((labUsableHeight+7)/103)),'No perder capacidad por crecer las filas');
+}
+assert.ok(!fs.readFileSync('plantilla.html','utf8').includes('--lab-film-row-height'),'No alterar la plantilla común');
+
 console.log('OK: sintaxis, aislamiento Windows y seguridad básica de Descubrir LAB');
