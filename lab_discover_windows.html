@@ -1,14 +1,14 @@
 <style>
-/* LAB Windows: filas algo más altas que producción, distribuidas según el espacio real. */
+/* LAB Windows: las filas aprovechan el espacio libre, hasta 110px, sin perder capacidad de página. */
 #view-library .film-item{
- height:var(--lab-film-row-height,104px);
- min-height:var(--lab-film-row-height,104px);
- max-height:var(--lab-film-row-height,104px);
- flex:0 0 var(--lab-film-row-height,104px);
+ height:var(--lab-film-row-height,96px);
+ min-height:var(--lab-film-row-height,96px);
+ max-height:var(--lab-film-row-height,96px);
+ flex:0 0 var(--lab-film-row-height,96px);
  align-items:center;
 }
 #view-library .film-toggle{
- min-height:calc(var(--lab-film-row-height,104px) - 6px);
+ min-height:calc(var(--lab-film-row-height,96px) - 6px);
  align-items:center;
  padding-top:11px;
  padding-bottom:11px;
