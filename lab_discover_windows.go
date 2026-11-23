@@ -38,11 +38,11 @@ func injectLabDiscovery(page string) string {
  page = strings.Replace(page, "function scheduleSave(){membershipCache=null;", "function scheduleSave(){labQueuePrefetchSoon();membershipCache=null;", 1)
  page = strings.Replace(page, "function showView(name){if(", "function showView(name){labLeave();if(name==='library')labQueuePrefetchSoon();if(", 1)
 
- // Ajustar altura y número de filas a la altura real del panel, sólo en Windows LAB.
- // 104 px de base, hasta 110 px para aprovechar huecos sin cambiar filas por página.
+ // Aprovecha el hueco sin reducir el número de filas: conserva la capacidad de 96px+7px.
+ // Cuando sobra espacio, estira proporcionalmente hasta 110px; en ventanas ajustadas mantiene 96px.
  page = strings.Replace(page,
   "const pageSize=Math.max(1,Math.floor((areaHeight+7)/103));",
-  "const labUsableHeight=Math.max(0,areaHeight-2);const pageSize=Math.max(1,Math.floor((labUsableHeight+7)/111));const labRowHeight=Math.min(110,Math.max(104,Math.floor((labUsableHeight-7*(pageSize-1))/pageSize)));parent.style.setProperty('--lab-film-row-height',labRowHeight+'px');",
+  "const labUsableHeight=Math.max(0,areaHeight-2);const pageSize=Math.max(1,Math.floor((labUsableHeight+7)/103));const labRowHeight=Math.min(110,Math.max(96,Math.floor((labUsableHeight-7*(pageSize-1))/pageSize)));parent.style.setProperty('--lab-film-row-height',labRowHeight+'px');",
   1)
  page = strings.Replace(page, "platformConfigured=true;identityConfigured=true;closePlatformModal();", "platformConfigured=true;identityConfigured=true;closePlatformModal();labQueuePrefetchSoon();", 1)
  page = strings.Replace(page, "</main>", fragments[0]+"\n</main>", 1)
