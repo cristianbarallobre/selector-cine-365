@@ -147,6 +147,12 @@ button.lab-cast-actor:focus-visible{outline:2px solid #ffda91;outline-offset:3px
 #labDeleteListOverlay #labDeleteListConfirm:hover{background:#b24d46}
 #labDeleteListOverlay button:focus-visible{outline:2px solid #f3c66d;outline-offset:3px}
 @media(max-width:420px){#labDeleteListOverlay .lab-list-confirm-actions button{flex:1;min-width:0}}
+/* Retrato bajo demanda: un solo tooltip fuera de la tarjeta para evitar recortes. */
+#labActorPhotoTooltip{position:fixed;z-index:150;width:174px;max-width:calc(100vw - 16px);pointer-events:none;background:#203046;color:#f5f7fc;border:1px solid #d2b478;border-radius:12px;padding:6px;box-shadow:0 14px 42px #000c}
+#labActorPhotoTooltip[hidden]{display:none!important}
+#labActorPhotoTooltip img{display:block;width:100%;height:212px;object-fit:cover;object-position:top center;background:#1b2739;border-radius:7px}
+#labActorPhotoTooltip .lab-actor-photo-label{display:block;text-align:center;font-size:12px;font-weight:760;line-height:1.3;padding:7px 3px 2px;overflow-wrap:anywhere}
+@media(hover:none){#labActorPhotoTooltip{display:none!important}}
 </style>
 <section class="lab-discover view" id="labDiscoverView" hidden aria-label="Descubrir películas">
   <div class="panel lab-discover-hero">
@@ -258,6 +264,7 @@ button.lab-cast-actor:focus-visible{outline:2px solid #ffda91;outline-offset:3px
     </div>
   </section>
 </div>
+<div id="labActorPhotoTooltip" role="tooltip" hidden></div>
 <!-- LAB_DISCOVERY_SCRIPT -->
 const labNav=$('labDiscoverNav'),labView=$('labDiscoverView'),labDetailOverlay=$('labDetailOverlay');
 
@@ -549,6 +556,7 @@ function labEnterDetail(kind,id,record=true){
 }
 function labHidePerson(){++labPersonSerial;labPersonOverlay.hidden=true;}
 function labCloseDetail(){
+ labHideActorPhoto();
  labHidePerson();++labDetailSerial;
  labDetailOverlay.hidden=true;labCurrentMovie=null;labDetailTrail=[];
  labSyncDetailNavigation();
@@ -587,7 +595,45 @@ function labDetailLink(label,url){
 function labTextChips(target,values){
  target.replaceChildren();for(const item of values){const b=document.createElement('span');b.textContent=item;target.appendChild(b);}
 }
+// Una foto solo se solicita al mantener el ratón sobre un nombre, nunca al
+// dibujar la cuadrícula. El tooltip usa position:fixed para no quedar recortado.
+let labActorPhotoTimer=null,labActorPhotoTarget=null;
+function labHideActorPhoto(){
+ if(labActorPhotoTimer!==null)clearTimeout(labActorPhotoTimer);
+ labActorPhotoTimer=null;labActorPhotoTarget=null;
+ const tip=$('labActorPhotoTooltip');tip.hidden=true;tip.replaceChildren();
+}
+function labActorPhotoPath(person){
+ const path=person&&typeof person.profile_path==='string'?person.profile_path:'';
+ return /^\/[a-z0-9_\/-]+\.(?:jpg|jpeg|png|webp)$/i.test(path)?path:'';
+}
+function labShowActorPhoto(actor,person,immediate=false){
+ labHideActorPhoto();
+ const path=labActorPhotoPath(person);
+ if(!path||labDetailOverlay.hidden)return;
+ labActorPhotoTarget=actor;
+ labActorPhotoTimer=setTimeout(()=>{
+  labActorPhotoTimer=null;
+  if(labActorPhotoTarget!==actor||labDetailOverlay.hidden||!actor.isConnected)return;
+  const tip=$('labActorPhotoTooltip');
+  const img=document.createElement('img');img.alt='';img.decoding='async';img.src=labPosterSrc(path);
+  img.addEventListener('error',()=>{if(labActorPhotoTarget===actor)labHideActorPhoto();},{once:true});
+  const label=document.createElement('span');label.className='lab-actor-photo-label';label.textContent=person.name;
+  tip.replaceChildren(img,label);tip.hidden=false;
+  const rect=actor.getBoundingClientRect(),bounds=tip.getBoundingClientRect();
+  const width=window.innerWidth||document.documentElement.clientWidth;
+  const height=window.innerHeight||document.documentElement.clientHeight;
+  const left=Math.max(8,Math.min(rect.left,width-bounds.width-8));
+  let top=rect.top-bounds.height-9;
+  if(top<8)top=rect.bottom+9;
+  if(top+bounds.height>height-8)top=Math.max(8,height-bounds.height-8);
+  tip.style.left=left+'px';tip.style.top=top+'px';
+ },immediate?0:200);
+}
+labDetailOverlay.addEventListener('scroll',labHideActorPhoto,true);
+window.addEventListener('resize',labHideActorPhoto);
 function labRenderCredits(movie){
+ labHideActorPhoto();
  const root=$('labDetailCast');root.replaceChildren();
  const director=document.createElement('div');director.className='lab-cast-director';
  const directorLabel=document.createElement('span');directorLabel.className='lab-cast-director-label';directorLabel.textContent='Dirección:';
@@ -606,7 +652,11 @@ function labRenderCredits(movie){
   actor.className='lab-cast-actor';actor.textContent=person.name;
   if(clickable){
    actor.type='button';actor.setAttribute('aria-label','Ver ficha de '+person.name);
-   actor.addEventListener('click',()=>{void labOpenPerson(personID);});
+   actor.addEventListener('mouseenter',()=>labShowActorPhoto(actor,person));
+   actor.addEventListener('mouseleave',labHideActorPhoto);
+   actor.addEventListener('focus',()=>labShowActorPhoto(actor,person,true));
+   actor.addEventListener('blur',labHideActorPhoto);
+   actor.addEventListener('click',()=>{labHideActorPhoto();void labOpenPerson(personID);});
   }
   entry.appendChild(actor);
   if(person.character){
@@ -618,6 +668,7 @@ function labRenderCredits(movie){
  root.appendChild(entries);
 }
 async function labOpenPerson(id,record=true){
+ labHideActorPhoto();
  labEnterDetail('person',id,record);
  const serial=++labPersonSerial;
  labPersonOverlay.hidden=false;labPersonOverlay.scrollTop=0;
@@ -661,6 +712,7 @@ async function labOpenPerson(id,record=true){
  }catch(e){if(serial===labPersonSerial){$('labPersonName').textContent='Ficha no disponible';$('labPersonNote').textContent='⚠ '+e.message;}}
 }
 async function labShowDetail(id,record=true){
+ labHideActorPhoto();
  labEnterDetail('movie',id,record);
  labHidePerson();
  const serial=++labDetailSerial;labCurrentMovie=null;labDetailOverlay.hidden=false;
