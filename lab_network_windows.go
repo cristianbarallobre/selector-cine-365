@@ -19,7 +19,28 @@ import (
 
 const labNetMaxEventBytes=1024
 const labNetMaxLogBytes=256*1024
-var labNetPathRE=regexp.MustCompile(^`/api/[a-z0-9/_-]{1,72}$`)
+var labNetPathRE=regexp.MustCompile(`^/api/[a-z0-9/_-]{1,72}//go:build windows
+
+package main
+
+// Diagnóstico local y acotado de las peticiones de la interfaz Windows LAB.
+// No registra URL completas, consultas, claves, tokens, títulos ni cuerpos.
+
+import (
+ "encoding/json"
+ "fmt"
+ "net/http"
+ "os"
+ "path/filepath"
+ "regexp"
+ "strings"
+ "sync"
+ "time"
+)
+
+const labNetMaxEventBytes=1024
+const labNetMaxLogBytes=256*1024
+var labNetPathRE=)
 var labNetLogMu sync.Mutex
 
 type labNetworkEvent struct {
