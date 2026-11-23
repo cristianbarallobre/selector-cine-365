@@ -8,7 +8,7 @@ const workflow=fs.readFileSync('.github/workflows/ci-lab.yml','utf8');
 
 assert.match(source,/\/\/go:build windows/,'Cambios únicamente en Windows');
 assert.match(source,/LAB-02\.10 WINDOWS/,'Cabecera de la última versión');
-assert.match(workflow,/Selector_Cine_365_LAB-02_9_Windows/,'Artefacto nuevo');
+assert.match(workflow,/Selector_Cine_365_LAB-02_10_Windows/,'Artefacto nuevo');
 assert.match(common,/class="page-btn" id="filmPrev">‹ Anterior/,'Botón de la biblioteca de referencia');
 assert.match(common,/class="page-btn" id="filmNext">Siguiente ›/,'Botón siguiente de referencia');
 assert.match(lab,/class="page-btn" id="labPrevPage" type="button">‹ Anterior<\/button>/,
