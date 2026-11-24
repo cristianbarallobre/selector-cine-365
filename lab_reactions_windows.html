@@ -123,6 +123,7 @@ const labFavoriteID='__favoritos_automaticos_lab__';
 const labRatingEmojis=['😫','☹️','😐','🙂','😄'];
 const labRatingDescriptions=['Muy mala','Mala','Normal','Buena','Excelente'];
 let labFavoritesMode=false,labRatingFilm=null,labRatingReturnFocus=null;
+let labFavoritesRevision=0;
 function labReactionKey(f){return filmKey(f);}
 function labReactionFor(f){return (libraryState.reactions||{})[labReactionKey(f)]||null;}
 function labFavoritesRecords(){
@@ -131,11 +132,37 @@ function labFavoritesRecords(){
   .sort((a,b)=>b[1].changed_at-a[1].changed_at||a[0].localeCompare(b[0],'es'));
 }
 function labFavoriteCount(){return labFavoritesRecords().length;}
+// Las estadísticas y el sorteo consumen las mismas películas que muestra
+// Biblioteca. La lista física activa permanece intacta mientras se ven Favoritos.
+function labStatsDataset(){
+ if(!labFavoritesMode)return parsed;
+ const entries=labFavoritesFilms();
+ const pending=entries.filter(f=>!f.checked);
+ return {entries,pending,seen:entries.length-pending.length};
+}
+function labRefreshStatsPanels(){
+ const current=labStatsDataset();
+ if(!current)return;
+ const n=current.entries.length;
+ $('total').textContent=n;
+ $('watched').textContent=current.seen;
+ $('remaining').textContent=current.pending.length;
+ const pct=n?Math.round(100*current.seen/n):0;
+ $('progressFill').style.width=pct+'%';
+ $('progress').setAttribute('aria-valuenow',pct);
+ // Un sorteo empezado en otra lista no puede quedar asociado a Favoritos.
+ if(labFavoritesMode&&chosen&&!current.entries.some(f=>labReactionKey(f)===labReactionKey(chosen))){
+  resetChoice();
+ }
+ updateSortAvailability();
+ renderStats();
+}
+
 function labFavoritesFilms(){
  const records=labFavoritesRecords();
  const seen=new Set();
  for(const list of libraryState.lists){
-  for(const f of parse(list.text||'').entries){
+  for(const f of (typeof labIndexedEntries==='function'?labIndexedEntries(list):parse(list.text||'').entries)){
    if(f.checked)seen.add(labReactionKey(f));
   }
  }
@@ -154,6 +181,7 @@ function labWriteReaction(f,changes){
  const key=labReactionKey(f);
  if(!key||key.length>275)return;
  const data=libraryState.reactions||(libraryState.reactions={});
+ labFavoritesRevision++;
  if(!data[key]&&Object.keys(data).length>=15000){notify('Límite de valoraciones alcanzado.');return;}
  const existing=data[key]||{};
  const now=Math.min(4102444800000,Math.max(Date.now(),(existing.changed_at||0)+1));
@@ -171,6 +199,7 @@ function labWriteReaction(f,changes){
  renderCollectionControls();
  labRefreshDiscoverFavorites();
  labRefreshDetailFavorite();
+ labRefreshStatsPanels();
  if(labCurrentMovie?.title&&!$('labDetailOverlay').hidden){
   labRenderDetailMemberships(labCurrentMovie);
   labUpdateDetailAddState();
