@@ -89,4 +89,90 @@ for(const areaHeight of [275,320,370,405,460,488,520,590,640,720]){
 }
 assert.ok(!fs.readFileSync('plantilla.html','utf8').includes('--lab-film-row-height'),'No alterar la plantilla común');
 
+
+// Ficha de película: mostrar pertenencias reales antes de intentar añadir.
+// Comprobar coincidencias por ID TMDB, título/año, listas múltiples y Favoritos.
+for(const id of ['labDetailMemberships','labAddList','labDetailAdd'])assert.match(ui,new RegExp('id="'+id+'"'));
+assert.match(ui,/EN TUS LISTAS/);
+assert.match(ui,/function labMovieMemberships\(movie\)/);
+assert.match(ui,/function labRenderDetailMemberships\(movie\)/);
+assert.match(ui,/function labUpdateDetailAddState\(\)/);
+assert.match(ui,/labRenderDetailMemberships\(movie\);labUpdateDetailAddState\(\);/,'Actualizar inmediatamente tras añadir');
+assert.match(ui,/\$\('labAddList'\)\.addEventListener\('change',labUpdateDetailAddState\)/,'Reaccionar al cambio de la lista de destino');
+assert.match(ui,/labRenderDetailMemberships\(null\);/,'Vaciar pertenencias durante la carga');
+assert.match(ui,/labRenderDetailMemberships\(m\);/,'Mostrar pertenencias en una ficha nueva');
+assert.match(ui,/\.lab-detail-membership-chips\{[^}]*flex-wrap:wrap/,'Listas con nombres largos deben poder saltar de línea');
+
+class MembershipElement{
+ constructor(tag='div'){
+  this.tagName=tag;this.children=[];this.textContent='';this.title='';
+  this.disabled=false;this.value='';this.className='';this.events={};
+ }
+ replaceChildren(...els){this.children=[...els];}
+ append(...els){this.children.push(...els);}
+ appendChild(el){this.children.push(el);}
+ get childElementCount(){return this.children.length;}
+ addEventListener(type,fn){this.events[type]=fn;}
+}
+const holders={
+ labDetailMemberships:new MembershipElement('div'),
+ labAddList:new MembershipElement('select'),
+ labDetailAdd:new MembershipElement('button')
+};
+const movie={id:77,title:'Vengadores: Doomsday',original_title:'Avengers: Doomsday',release_date:'2026-12-18'};
+const memberships=[
+ {id:'listB',n:2,name:'Cine de acción',title:'Avengers: Doomsday',year:'2026'},
+ {id:'listA',n:1,name:'Quiero ver',title:'Vengadores: Doomsday',year:'2026'},
+ {id:'listX',n:4,name:'Estrenos de 2025',title:'Vengadores: Doomsday',year:'2025'},
+ {id:'listC',n:3,name:'Especial de superhéroes',title:'Título alternativo',year:'2026'}
+];
+const knownIDs=new Map([['titulo alternativo|2026',77],['otra película|2026',88]]);
+const membershipCtx={
+ $:id=>{assert.ok(holders[id],id);return holders[id];},
+ document:{createElement:tag=>new MembershipElement(tag)},
+ labFold:s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(),
+ knownTMDB:f=>knownIDs.get(String(f.title).toLowerCase()+'|'+f.year)||0,
+ filmKey:f=>String(f.title).toLowerCase()+'|'+f.year,
+ filmMembershipIndex:()=>({rows:memberships.map(m=>({_lists:[m]}))}),
+ libraryState:{tmdb_overrides:{}},
+ labReactionFor:()=>null,
+ labCurrentMovie:movie,
+ Number,String,Set,Map
+};
+vm.createContext(membershipCtx);
+const js=parts[1],start=js.indexOf('function labMovieMemberships(movie){'),end=js.indexOf('async function labShowDetail(',start);
+assert.ok(start>0&&end>start,'Funciones de pertenencias deben estar disponibles antes de la ficha');
+vm.runInContext(js.slice(start,end),membershipCtx);
+const matches=membershipCtx.labMovieMemberships(movie);
+assert.equal(matches.length,3,'Dos nombres de lista y alias con ID TMDB, sin falsos positivos por año');
+assert.deepEqual(Array.from(matches,x=>x.id),['listA','listB','listC'],'Orden de listas conservado');
+membershipCtx.labRenderDetailMemberships(movie);
+const chips=holders.labDetailMemberships.children;
+assert.equal(chips.length,3);
+assert.equal(chips[0].children[0].textContent,'1 ·');
+assert.equal(chips[0].children[1].textContent,'Quiero ver');
+assert.equal(chips[1].children[1].textContent,'Cine de acción');
+assert.equal(chips[2].children[1].textContent,'Especial de superhéroes');
+holders.labAddList.value='listA';
+membershipCtx.labUpdateDetailAddState();
+assert.equal(holders.labDetailAdd.disabled,true,'No permitir añadir de nuevo a la lista donde está');
+assert.match(holders.labDetailAdd.textContent,/Ya está/);
+holders.labAddList.value='listNew';
+holders.labAddList.events.change();
+assert.equal(holders.labDetailAdd.disabled,false,'Se permite seleccionar una lista diferente');
+assert.match(holders.labDetailAdd.textContent,/Añadir pendiente/);
+membershipCtx.labReactionFor=()=>({favorite:true});
+membershipCtx.labRenderDetailMemberships(movie);
+assert.equal(holders.labDetailMemberships.children.length,4,'Favoritos se añade como vista virtual sin número');
+assert.equal(holders.labDetailMemberships.children.at(-1).textContent,'♥ Favoritos');
+membershipCtx.labReactionFor=()=>null;
+membershipCtx.filmMembershipIndex=()=>({rows:[]});
+membershipCtx.labRenderDetailMemberships(movie);
+assert.equal(holders.labDetailMemberships.children.length,1);
+assert.match(holders.labDetailMemberships.children[0].textContent,/Todavía no/);
+membershipCtx.labRenderDetailMemberships(null);
+assert.equal(holders.labDetailMemberships.children.length,1);
+assert.match(holders.labDetailMemberships.children[0].textContent,/Comprobando/);
+console.log('OK: ficha muestra pertenencias y Favoritos, detecta alias TMDB, bloquea duplicados y actualiza lista elegida');
+
 console.log('OK: sintaxis, aislamiento Windows y seguridad básica de Descubrir LAB');
