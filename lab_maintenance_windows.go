@@ -25,7 +25,7 @@ func injectLabMaintenance(page string) string {
  if len(tail)!=2{return page}
  anchors:=[]string{
   `<p class="cloud-status" id="cloudRecoveryStatus" aria-live="polite"></p>`,
-  `const token='__ATLAS_TOKEN__';`,
+  `async function cloudRequest(path,method='GET',payload){`,
   `updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void initLibrary().then(`,
   `$('cloudRecoveryList').addEventListener('change',()=>{$('cloudRecoveryRestore').disabled=!$('cloudRecoveryList').value;});`,
  }
