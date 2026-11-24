@@ -122,7 +122,7 @@ assert.equal(scans,42,'Cambiar de orden las listas no debe reanalizar sus pelíc
 assert.equal(updated.byKey.get('titulo alternativo|2026')._lists[0].n,1,'Números de lista coherentes tras reordenar');
 lists.splice(0,1);
 updated=run('filmMembershipIndex()');
-assert.equal(updated.rows.length,10001,'Borrar una lista retira sus películas sin mantener resultados obsoletos');
+assert.equal(updated.rows.length,9751,'Borrar una lista retira sus 251 películas sin mantener resultados obsoletos');
 assert.equal(run('labListParseCache.size'),39,'La caché tampoco mantiene TXT de listas eliminadas');
 assert.equal(scans,42);
 
