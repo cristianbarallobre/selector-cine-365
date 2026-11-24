@@ -85,6 +85,7 @@ func makeHTML(initial, token string) (string, error) {
 	out = injectLabLibraryFilters(out)
 	out = injectLabReactions(out)
 	out = injectLabSearchPerformance(out)
+ out = injectLabMaintenance(out)
 	return out, nil
 }
 
@@ -160,6 +161,8 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		a.serveCloudHTTP(w, r)
 	case "/api/onedrive-desktop/status", "/api/onedrive-desktop/start", "/api/onedrive-desktop/disconnect":
         a.serveGraphAuthHTTP(w,r)
+	case "/api/lab/maintenance":
+  a.serveLabMaintenance(w,r)
 	case "/api/lab/network-log":
 		a.serveLabNetworkLog(w,r)
 	case "/api/discover/smart-cache":
