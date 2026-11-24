@@ -43,6 +43,7 @@ jobs:
           node scripts/test_lab_list_number_jump_windows.cjs
           node scripts/test_lab_cross_page_reorder_windows.cjs
           node scripts/test_lab_reactions_windows.cjs
+          node scripts/test_lab_favorites_statistics_windows.cjs
           node scripts/test_lab_search_performance_windows.cjs
           node scripts/test_lab_detail_history_windows.cjs
           node scripts/test_lab_filmaffinity_windows.cjs
