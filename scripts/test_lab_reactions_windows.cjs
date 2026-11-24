@@ -13,7 +13,11 @@ assert.ok(template.includes('😫'),'First emotion');
 for(const emoji of ['😫','☹️','😐','🙂','😄'])assert.ok(template.includes(emoji),'Missing '+emoji);
 assert.match(template,/id="labRatingOverlay"/);
 assert.match(injections,/labFavoritesMode\|\|virtualMode&&!global/);
-assert.match(injections,/labReactionControls\(f\)/);
+assert.match(injections,/labFilmRowActions\(f,pill,labCreateDetailButton\(f\),fix\)/);
+assert.match(template,/#view-library \.lab-film-action-layout\{[\s\S]*?grid-template-columns:72px 122px/);
+assert.match(template,/#view-library \.lab-film-action-grid\{[\s\S]*?grid-template-rows:31px 31px/);
+assert.match(template,/#view-library \.lab-film-action-grid \.pill\{[\s\S]*?display:flex!important/);
+assert.match(template,/@media\(max-width:650px\)/);
 assert.match(injections,/labFavoritesFilms\(\)/);
 assert.match(injections,/labFavoritesOpen/);
 assert.match(page,/labDiscoverFavoriteButton\(film\)/);
@@ -35,7 +39,12 @@ class FakeNode{
  replaceChildren(...args){this.children=[...args];}
  addEventListener(name,cb){this.events[name]=cb;}
  setAttribute(key,value){this.attrs[key]=value;}
- querySelector(s){if(s==='button')return this.children.find(x=>x.tagName==='button')||null;if(s==='button.lab-rating-selected')return this.children.find(x=>x.className==='lab-rating-selected')||null;return null;}
+ querySelector(s){
+  if(s==='button')return this.children.find(x=>x.tagName==='button')||null;
+  if(s==='button.lab-rating-selected')return this.children.find(x=>x.className==='lab-rating-selected')||null;
+  if(s==='.lab-heart-button'||s==='.lab-rate-button')return this.children.find(x=>x.className.split(' ').includes(s.slice(1)))||null;
+  return null;
+ }
  focus(){doc.activeElement=this;}
  click(){this.events.click?.({stopPropagation(){}});}
 }
@@ -85,6 +94,38 @@ assert.equal(watchedControls.children[0].textContent,'♡');
 assert.equal(watchedControls.children[1].children[1].textContent,'Valorar');
 const pendingControls=ctx.labReactionControls(pending);
 assert.equal(pendingControls.children.length,1,'Pendientes: solo corazón');
+
+// La valoración ocupa una columna a la izquierda. La derecha presenta
+// estado/corazón arriba y Detalles/edición debajo, con el mismo ancho en todas.
+const seenStatus=new FakeNode('span');seenStatus.textContent='Vista';
+const seenDetails=new FakeNode('button');seenDetails.textContent='Detalles';
+const seenEdit=new FakeNode('button');seenEdit.textContent='✎';
+const seenRow=ctx.labFilmRowActions(watched,seenStatus,seenDetails,seenEdit);
+assert.equal(seenRow.className,'lab-film-action-layout');
+assert.equal(seenRow.children.length,2);
+const [seenScore,seenRight]=seenRow.children;
+assert.equal(seenScore.className,'lab-film-score-slot');
+assert.equal(seenScore.children.length,1,'Las vistas tienen valoración a la izquierda');
+assert.equal(seenScore.children[0].className,'lab-rate-button');
+assert.equal(seenRight.className,'lab-film-action-grid');
+assert.equal(seenRight.children.length,4,'Dos filas y dos columnas de acciones');
+assert.equal(seenRight.children[0],seenStatus,'Primera fila, columna izquierda: estado');
+assert.equal(seenRight.children[1].className,'lab-heart-button','Primera fila, columna derecha: corazón');
+assert.equal(seenRight.children[2],seenDetails,'Segunda fila, columna izquierda: Detalles');
+assert.equal(seenRight.children[3],seenEdit,'Segunda fila, columna derecha: edición');
+
+const pendingStatus=new FakeNode('span');pendingStatus.textContent='Pendiente';
+const pendingDetails=new FakeNode('button');pendingDetails.textContent='Detalles';
+const pendingEdit=new FakeNode('button');pendingEdit.textContent='✎';
+const pendingRow=ctx.labFilmRowActions(pending,pendingStatus,pendingDetails,pendingEdit);
+assert.equal(pendingRow.className,'lab-film-action-layout');
+assert.equal(pendingRow.children[0].className,seenScore.className);
+assert.equal(pendingRow.children[0].children.length,0,'Pendientes reservan espacio, sin permitir valorar');
+assert.equal(pendingRow.children[1].className,seenRight.className);
+assert.equal(pendingRow.children[1].children[0],pendingStatus);
+assert.equal(pendingRow.children[1].children[1].className,'lab-heart-button');
+assert.equal(pendingRow.children[1].children[2],pendingDetails);
+assert.equal(pendingRow.children[1].children[3],pendingEdit);
 watchedControls.children[0].click();
 assert.equal(libraryState.reactions['una película|2024'].favorite,true);
 assert.equal(evaluate('labFavoriteCount()'),1);
@@ -130,4 +171,4 @@ const rec=libraryState.reactions['película descubierta|2026'];
 assert.equal(rec.tmdb_id,123,'Conserva ID real de TMDB al añadir desde Descubrir');
 assert.equal(rec.favorite,true);
 assert.equal(ctx.labFavoritesFilms().length,1,'También incluye favoritos descubiertos fuera de la Biblioteca');
-console.log('OK: cinco emociones, solo vistas, favorito automático, retirada del último y ficha TMDB sin duplicar listas');
+console.log('OK: valoración separada a la izquierda, acciones en rejilla uniforme 2×2, notas y Favoritos conservados');
