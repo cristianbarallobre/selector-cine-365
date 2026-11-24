@@ -256,9 +256,23 @@ func (a *runningApp) labPersonDetail(w http.ResponseWriter,r *http.Request) {
  params:=url.Values{"language":{"es-ES"},"append_to_response":{"movie_credits"}}
  if err:=requestTMDB(ctx,"/person/"+strconv.Itoa(id),params,key,&p);err!=nil{fail(502,err.Error());return}
  if p.ID!=id||strings.TrimSpace(p.Name)==""{fail(502,"TMDB no devolvió una persona válida");return}
- if strings.TrimSpace(p.Biography)=="" {
-  var english struct{Biography string `json:"biography"`}
-  if requestTMDB(ctx,"/person/"+strconv.Itoa(id),url.Values{"language":{"en-US"}},key,&english)==nil{p.Biography=english.Biography}
+ // TMDB devuelve biografías localizadas por separado. Si falta es-ES,
+ // intentar otra variante en español antes de ofrecer el original inglés
+ // claramente identificado. No mostrar automáticamente inglés como español.
+ biographyLanguage:="es-ES"
+ originalBiography:=""
+ if strings.TrimSpace(p.Biography)==""{
+  var spanish struct{Biography string `json:"biography"`}
+  if requestTMDB(ctx,"/person/"+strconv.Itoa(id),url.Values{"language":{"es-MX"}},key,&spanish)==nil&&strings.TrimSpace(spanish.Biography)!=""{
+   p.Biography=spanish.Biography
+   biographyLanguage="es-MX"
+  }else{
+   biographyLanguage="unavailable"
+   var english struct{Biography string `json:"biography"`}
+   if requestTMDB(ctx,"/person/"+strconv.Itoa(id),url.Values{"language":{"en-US"}},key,&english)==nil{
+    originalBiography=english.Biography
+   }
+  }
  }
  limit:=func(s string,n int)string{v:=[]rune(strings.TrimSpace(s));if len(v)>n{v=v[:n]};return string(v)}
  films:=make([]labPersonFilm,0,len(p.Credits.Cast))
@@ -280,6 +294,7 @@ func (a *runningApp) labPersonDetail(w http.ResponseWriter,r *http.Request) {
  if !validPosterPath(p.ProfilePath){p.ProfilePath=""}
  _=json.NewEncoder(w).Encode(map[string]any{
   "id":p.ID,"name":limit(p.Name,180),"biography":limit(p.Biography,6500),
+  "biography_language":biographyLanguage,"biography_original":limit(originalBiography,6500),
   "birthday":limit(p.Birthday,10),"deathday":limit(p.Deathday,10),
   "place_of_birth":limit(p.PlaceOfBirth,200),"known_for_department":limit(p.KnownFor,80),
   "profile_path":p.ProfilePath,"movies":films,
