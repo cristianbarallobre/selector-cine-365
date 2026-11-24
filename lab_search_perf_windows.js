@@ -40,7 +40,7 @@ function labTrackMapChanges(map,kind){
  map.set=function(key,value){
   const before=this.get(key);
   if(before!==value){
-   if(kind==='identity')labIdentityVersion++;
+   if(kind==='identity'){labIdentityVersion++;labMetadataVersion++;}
    else{
     labMetadataVersion++;
     if(Number(before?.tmdb_id||0)!==Number(value?.tmdb_id||0))labIdentityVersion++;
@@ -50,7 +50,7 @@ function labTrackMapChanges(map,kind){
  };
  map.delete=function(key){
   if(this.has(key)){
-   if(kind==='identity')labIdentityVersion++;
+   if(kind==='identity'){labIdentityVersion++;labMetadataVersion++;}
    else{
     labMetadataVersion++;
     if(Number(this.get(key)?.tmdb_id||0)>0)labIdentityVersion++;
@@ -60,7 +60,7 @@ function labTrackMapChanges(map,kind){
  };
  map.clear=function(){
   if(this.size){
-   if(kind==='identity')labIdentityVersion++;
+   if(kind==='identity'){labIdentityVersion++;labMetadataVersion++;}
    else{labIdentityVersion++;labMetadataVersion++;}
   }
   return originalClear.call(this);
