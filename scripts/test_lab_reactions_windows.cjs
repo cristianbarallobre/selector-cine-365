@@ -36,7 +36,7 @@ class FakeNode{
  addEventListener(name,cb){this.events[name]=cb;}
  setAttribute(key,value){this.attrs[key]=value;}
  querySelector(s){if(s==='button')return this.children.find(x=>x.tagName==='button')||null;if(s==='button.lab-rating-selected')return this.children.find(x=>x.className==='lab-rating-selected')||null;return null;}
- focus(){document.activeElement=this;}
+ focus(){doc.activeElement=this;}
  click(){this.events.click?.({stopPropagation(){}});}
 }
 const ids=['labRatingOverlay','labRatingTitle','labRatingOptions','labRatingClear','labRatingClose','labFavoritesCollection','labFavoritesCount','labFavoritesOpen','labDetailFavorite','filmList'];
