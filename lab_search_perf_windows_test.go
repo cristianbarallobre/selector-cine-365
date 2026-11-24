@@ -38,9 +38,12 @@ func TestLabSearchPerformanceWiredIntoWindowsHTML(t *testing.T){
 }
 
 func TestLabSearchPerformanceDoesNotTouchStable(t *testing.T){
- if appIsLab!=true{t.Skip("Esta prueba solo se ejecuta en LAB")}
- // La plantilla base no contiene las funciones del módulo de optimización.
- // El proyecto estable no llama a injectLabSearchPerformance.
- const base="function filmMembershipIndex(){"
- if strings.Contains(base,"labGlobalMembershipIndex"){t.Fatal("La plantilla estable quedó alterada")}
+ original,err:=resources.ReadFile("plantilla.html")
+ if err!=nil{t.Fatal(err)}
+ if strings.Contains(string(original),"labGlobalMembershipIndex"){
+  t.Error("El índice LAB ha modificado la plantilla estable")
+ }
+ if strings.Contains(string(original),"labScheduleLibrarySearch"){
+  t.Error("El debounce de LAB ha modificado la plantilla estable")
+ }
 }
