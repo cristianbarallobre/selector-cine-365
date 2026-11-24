@@ -131,7 +131,7 @@ const membershipCtx={
  $:id=>{assert.ok(holders[id],id);return holders[id];},
  document:{createElement:tag=>new MembershipElement(tag)},
  labFold:s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(),
- knownTMDB:f=>knownIDs.get(String(f.title).toLowerCase()+'|'+f.year)||0,
+ knownTMDB:f=>knownIDs.get(String(f.title).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()+'|'+f.year)||0,
  filmKey:f=>String(f.title).toLowerCase()+'|'+f.year,
  filmMembershipIndex:()=>({rows:memberships.map(m=>({_lists:[m]}))}),
  libraryState:{tmdb_overrides:{}},
