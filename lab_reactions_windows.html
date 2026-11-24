@@ -141,6 +141,7 @@ function labStatsDataset(){
  return {entries,pending,seen:entries.length-pending.length};
 }
 function labRefreshStatsPanels(){
+ if(typeof parsed==='undefined'||!parsed)return; // La biblioteca aún puede estar inicializándose
  const current=labStatsDataset();
  if(!current)return;
  const n=current.entries.length;
