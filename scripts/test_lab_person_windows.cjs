@@ -85,6 +85,24 @@ vm.runInContext(open,detailCtx);
  assert.equal(overlay.hidden,false);
  assert.equal(get('labPersonName').textContent,'Actriz de prueba');
  assert.equal(get('labPersonBio').textContent,'Una biografía de TMDB.');
+ assert.match(get('labPersonSubtitle').textContent,/Interpretación/,'No mostrar "Acting" en la ficha española');
+ assert.match(get('labPersonSubtitle').textContent,/1 de enero de 1988/,'Fecha en orden español');
+ assert.ok(!get('labPersonSubtitle').textContent.includes('1988-01-01'));
+ assert.equal(get('labPersonOriginal').hidden,true,'No sugerir inglés cuando la biografía ya está en español');
+ const noSpanish={
+  ...person,biography:'',biography_language:'unavailable',
+  biography_original:'Original biography from TMDB.',birthday:'1962-10-11',deathday:'2020-04-09'
+ };
+ Object.assign(person,noSpanish);
+ await detailCtx.labOpenPerson(1234);
+ assert.match(get('labPersonBio').textContent,/no dispone de una biografía.*en español/);
+ assert.equal(get('labPersonOriginal').hidden,false,'Permitir consultar el original de forma explícita');
+ assert.match(get('labPersonSubtitle').textContent,/11 de octubre de 1962/);
+ assert.match(get('labPersonSubtitle').textContent,/9 de abril de 2020/);
+ get('labPersonOriginal').click();
+ assert.equal(get('labPersonBio').textContent,'Original biography from TMDB.');
+ get('labPersonOriginal').click();
+ assert.match(get('labPersonBio').textContent,/no dispone de una biografía/);
  assert.ok(get('labPersonPortrait').src.includes('persona.jpg'));
  assert.equal(get('labPersonFilms').children.length,2);
  assert.equal(get('labPersonFilmSort').value,'featured');
