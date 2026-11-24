@@ -83,12 +83,20 @@ func injectLabReactions(page string) string {
  // de la última lista física que quedó activa.
  page=strings.Replace(page,"function toggle(idx){\n if(virtualMode)return;",
   "function toggle(idx){\n if(virtualMode||labFavoritesMode)return;",1)
- page=strings.Replace(page,
+ page=strings.ReplaceAll(page,
   "$('markWatched').disabled=virtualMode;",
-  "$('markWatched').disabled=virtualMode||labFavoritesMode;",1)
+  "$('markWatched').disabled=virtualMode||labFavoritesMode;")
  page=strings.Replace(page,
   "$('markWatched').addEventListener('click',()=>{if(chosen)toggle(chosen.idx);});",
   "$('markWatched').addEventListener('click',()=>{if(chosen&&!labFavoritesMode)toggle(chosen.idx);});",1)
+ // El sorteo inteligente también debe usar Favoritos, tanto para
+ // seleccionar candidatas como para ponderar géneros ya vistos.
+ page=strings.Replace(page,
+  "const films=parsed.entries.filter(f=>status==='both'||(status==='seen'?f.checked:!f.checked));",
+  "const films=labStatsDataset().entries.filter(f=>status==='both'||(status==='seen'?f.checked:!f.checked));",1)
+ page=strings.Replace(page,
+  "function labSmartGenreExposure(){\n const exposure=new Map();\n for(const film of parsed.entries){",
+  "function labSmartGenreExposure(){\n const exposure=new Map();\n for(const film of labStatsDataset().entries){",1)
  // La ventana de filtros utiliza las mismas películas de Favoritos.
  page=strings.Replace(page,
   "const all=searchScope==='all'?filmMembershipIndex().rows:parsed.entries;",
