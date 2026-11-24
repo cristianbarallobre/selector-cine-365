@@ -136,11 +136,14 @@ function labShouldRefreshFilterChoices(){
  if(global){
   dataset=filmMembershipIndex();
  }
+ const revision=scope==='favorites'&&typeof labFavoritesRevision==='number'?labFavoritesRevision:0;
+ const reactions=scope==='favorites'?libraryState.reactions:null;
  const prior=labFilterChoicesCache;
  if(prior&&prior.scope===scope&&prior.dataset===dataset&&
-   prior.activeID===libraryState.active_id&&prior.metadataVersion===labMetadataVersion){
+   prior.activeID===libraryState.active_id&&prior.metadataVersion===labMetadataVersion&&
+   prior.revision===revision&&prior.reactions===reactions){
   return false;
  }
- labFilterChoicesCache={scope,dataset,activeID:libraryState.active_id,metadataVersion:labMetadataVersion};
+ labFilterChoicesCache={scope,dataset,activeID:libraryState.active_id,metadataVersion:labMetadataVersion,revision,reactions};
  return true;
 }
