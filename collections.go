@@ -123,7 +123,15 @@ func saveLibrary(path, legacyPath string, l libraryState) error {
 	if err != nil {
 		return err
 	}
-	// Once a day, retain a copy of the previous good collection state.
+	// Si otro proceso dañó la biblioteca mientras la app estaba abierta,
+// no sobrescribir el original en LAB. El siguiente inicio intentará
+// recuperar una copia válida y conservará el archivo defectuoso.
+if appIsLab {
+ if prior,e:=os.ReadFile(path);e==nil&&!labValidBackup(prior){
+  return errors.New("El archivo de biblioteca ha cambiado o está dañado. No se sobrescribió; reinicia Windows LAB para recuperarlo de una copia válida")
+ }else if e!=nil&&!os.IsNotExist(e){return e}
+}
+// Once a day, retain a copy of the previous good collection state.
 	backupDir := filepath.Join(filepath.Dir(path), "copias_automaticas")
 	if before, e := os.ReadFile(path); e == nil && len(before) > 0 {
         // Versiones rápidas solo de un estado anterior válido, con un número
