@@ -397,13 +397,13 @@ function labUpdateFavoritesCard(){
  $('labFavoritesCollection').hidden=count===0;
  $('labFavoritesCount').textContent=count+' '+(count===1?'película':'películas')+' · lista automática';
 }
-function labOpenFavorites(){
+function labOpenFavorites(openLibrary=true){
  if(!labFavoriteCount())return;
  syncActiveText();
  virtualMode=false;
  rawText=activeCollection().text||'';
  labFavoritesMode=true;
  restartList();
- showView('library');
+ if(openLibrary)showView('library');
 }
 $('labFavoritesOpen').addEventListener('click',labOpenFavorites);

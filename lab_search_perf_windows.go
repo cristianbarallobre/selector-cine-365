@@ -12,7 +12,6 @@ var labPerformanceScript embed.FS
 
 // Añade optimizaciones solo a Windows LAB. La plantilla estable no se toca.
 func injectLabSearchPerformance(page string) string {
- if !appIsLab{return page}
  raw,err:=labPerformanceScript.ReadFile("lab_search_perf_windows.js")
  if err!=nil{return page}
  const oldInput="$('search').addEventListener('input',e=>{search=e.target.value;filmPage=0;renderList();});"

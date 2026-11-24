@@ -113,6 +113,29 @@ func loadLibrary(path, legacy string) libraryState {
 	return initialLibrary(legacy)
 }
 func saveLibrary(path, legacyPath string, l libraryState) error {
+	_, err := commitLibrary(path, legacyPath, l)
+	return err
+}
+
+// A successful JSON replacement commits the library for every caller.
+// The next save retries a failed compatibility TXT using the latest state.
+func commitLibrary(path, legacyPath string, l libraryState) (mirrorPending bool, err error) {
+	if err := saveLibraryJSON(path, l); err != nil {
+		return false, err
+	}
+	for _, list := range l.Lists {
+		if list.ID == "atlas" {
+			if err := replaceLibraryFile(legacyPath, []byte(list.Text)); err != nil {
+				logDiagnostic("Biblioteca guardada; copia TXT pendiente: " + err.Error())
+				return true, nil
+			}
+			break
+		}
+	}
+	return false, nil
+}
+
+func saveLibraryJSON(path string, l libraryState) error {
 	if err := validateLibrary(l); err != nil {
 		return err
 	}
@@ -123,12 +146,15 @@ func saveLibrary(path, legacyPath string, l libraryState) error {
 	if err != nil {
 		return err
 	}
+	if len(bytes) > libraryFileLimit {
+		return fmt.Errorf("la biblioteca serializada supera el límite de %d bytes", libraryFileLimit)
+	}
 	// Si otro proceso dañó la biblioteca mientras la app estaba abierta,
 // no sobrescribir el original en LAB. El siguiente inicio intentará
 // recuperar una copia válida y conservará el archivo defectuoso.
-if appIsLab {
+if protectedLibraryEnabled {
  if prior,e:=os.ReadFile(path);e==nil&&!labValidBackup(prior){
-  return errors.New("El archivo de biblioteca ha cambiado o está dañado. No se sobrescribió; reinicia Windows LAB para recuperarlo de una copia válida")
+  return errors.New("El archivo de biblioteca ha cambiado o está dañado. No se sobrescribió; reinicia la aplicación para recuperarlo de una copia válida")
  }else if e!=nil&&!os.IsNotExist(e){return e}
 }
 // Once a day, retain a copy of the previous good collection state.
@@ -143,27 +169,31 @@ if appIsLab {
 			_ = os.WriteFile(backup, before, 0600)
 		}
 	}
-	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, bytes, 0600); err != nil {
+	if err := replaceLibraryFile(path, bytes); err != nil {
 		return err
 	}
-	if err := os.Rename(tmp, path); err != nil {
-		// Handles older Windows installations where replacing an open file fails.
-		if err2 := os.WriteFile(path, bytes, 0600); err2 != nil {
-			return fmt.Errorf("no se pudo guardar: %w", err2)
-		}
-		_ = os.Remove(tmp)
-	}
 	labPruneLibraryBackups(path)
-	for _, it := range l.Lists {
-		if it.ID == "atlas" {
-			if err := os.WriteFile(legacyPath, []byte(it.Text), 0600); err != nil {
-				return err
-			}
-			break
-		}
-	}
 	return nil
+}
+
+func replaceLibraryFile(path string, data []byte) error {
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".cine-guardar-*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmp.Name())
+	_, err = tmp.Write(data)
+	if err == nil {
+		err = tmp.Sync()
+	}
+	closeErr := tmp.Close()
+	if err != nil {
+		return err
+	}
+	if closeErr != nil {
+		return closeErr
+	}
+	return os.Rename(tmp.Name(), path)
 }
 func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -189,7 +219,10 @@ func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		a.mu.Lock()
         before:=a.library
-		err := saveLibrary(a.libraryPath, a.savePath, state)
+		mirrorPending, err := commitLibrary(a.libraryPath, a.savePath, state)
+		if mirrorPending {
+			w.Header().Set("X-Cine-Legacy", "pending")
+		}
 		if err == nil {
 			a.library = state
             // Registrar cambios del usuario, no solo el snapshot final.

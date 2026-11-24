@@ -27,7 +27,12 @@ func TestDesktopGraphFolderDetectionAndReadOnlyPlan(t *testing.T){
   var payload any=map[string]any{"value":[]any{}}
   switch r.URL.Path{
   case "/me/drive/root/children":
-   payload=map[string]any{"value":[]any{map[string]any{"id":"root","name":"Selector_Cine_365","folder":map[string]any{}}}}
+   other := "Selector_Cine_365_LAB"
+   if appIsLab { other = "Selector_Cine_365" }
+   payload=map[string]any{"value":[]any{
+    map[string]any{"id":"other-channel","name":other,"folder":map[string]any{}},
+    map[string]any{"id":"root","name":oneDriveFolderName,"folder":map[string]any{}},
+   }}
   case "/me/drive/items/root/children":
    payload=map[string]any{"value":[]any{map[string]any{"id":"sync","name":"sincronizacion","folder":map[string]any{}}}}
   case "/me/drive/items/sync/children":
@@ -129,7 +134,7 @@ func TestPKCEBrowserAuthorizationValidatesStateAndUsesVerifier(t *testing.T){
  defer oauth.Close()
  graph:=httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
   if r.URL.Path!="/me/drive/root/children"{t.Errorf("unexpected graph endpoint %s",r.URL.Path);w.WriteHeader(404);return}
-  _=json.NewEncoder(w).Encode(map[string]any{"value":[]map[string]any{{"id":"root","name":"Selector_Cine_365","folder":map[string]any{}}}})
+  _=json.NewEncoder(w).Encode(map[string]any{"value":[]map[string]any{{"id":"root","name":oneDriveFolderName,"folder":map[string]any{}}}})
  }))
  defer graph.Close()
  g:=newDesktopGraph();g.authBase=oauth.URL+"/";g.graphBase=graph.URL+"/"

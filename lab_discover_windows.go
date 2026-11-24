@@ -22,7 +22,6 @@ var labDiscoveryFiles embed.FS
 const labDiscoverySeparator = "<!-- LAB_DISCOVERY_SCRIPT -->"
 
 func injectLabDiscovery(page string) string {
- if !appIsLab { return page }
  // Git convierte los HTML a CRLF en runners Windows; unificar LF ANTES
  // de insertar JS, evitando dejar botones sin sus manejadores.
  page=strings.ReplaceAll(page,"\r\n","\n")
@@ -144,7 +143,6 @@ func labTrailer(vs []labVideo) string {
 }
 
 func (a *runningApp) serveLabDiscovery(w http.ResponseWriter,r *http.Request) {
- if !appIsLab {http.NotFound(w,r);return}
  if !a.auth(r) {http.Error(w,"No autorizado",403);return}
  if r.URL.Path=="/api/discover/prefetch"||r.URL.Path=="/api/discover/prefetch/pause" {a.serveLabPrefetch(w,r);return}
  if r.Method!=http.MethodGet {http.Error(w,"Método no permitido",405);return}

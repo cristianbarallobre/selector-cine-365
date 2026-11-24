@@ -12,7 +12,6 @@ var labReactionFiles embed.FS
 
 // Solo en Windows LAB: nunca modificar plantilla.html ni la versión estable.
 func injectLabReactions(page string) string {
- if !appIsLab{return page}
  raw,err:=labReactionFiles.ReadFile("lab_reactions_windows.html")
  if err!=nil{return page}
  fragments:=strings.SplitN(strings.ReplaceAll(string(raw),"\r\n","\n"),"<!-- LAB_REACTIONS_HTML -->",2)
@@ -20,7 +19,7 @@ func injectLabReactions(page string) string {
  sections:=strings.SplitN(fragments[1],"<!-- LAB_REACTIONS_SCRIPT -->",2)
  if len(sections)!=2{return page}
  expected:=[]string{
-  "function switchCollection(id){",
+  "function switchCollection(id,openLibrary=true){",
   "function renderCollectionControls(){",
   "function renderList(){",
   "function filmOrderEditable(){",
@@ -41,8 +40,8 @@ func injectLabReactions(page string) string {
     <button type="button" id="labFavoritesOpen">Ver favoritos</button>
    </div><div id="collectionRows" class="collection-rows"></div>`,1)
  page=strings.Replace(page,"</main>",sections[0]+"\n</main>",1)
- page=strings.Replace(page,"function switchCollection(id){",
-  "function switchCollection(id){if(id===labFavoriteID){labOpenFavorites();return;}const labWasFavorite=labFavoritesMode;labFavoritesMode=false;",1)
+ page=strings.Replace(page,"function switchCollection(id,openLibrary=true){",
+  "function switchCollection(id,openLibrary=true){if(id===labFavoriteID){labOpenFavorites(openLibrary);return;}const labWasFavorite=labFavoritesMode;labFavoritesMode=false;",1)
  page=strings.Replace(page,"(!virtualMode&&id===libraryState.active_id))return;",
   "(!virtualMode&&id===libraryState.active_id&&!labWasFavorite))return;",1)
  page=strings.Replace(page,"function renderCollectionControls(){",

@@ -814,7 +814,7 @@ func (a *runningApp) servePosterHTTP(w http.ResponseWriter, r *http.Request) {
   if b,err:=os.ReadFile(old);err==nil&&len(b)>100&&len(b)<=1<<20{
    _=os.MkdirAll(a.platforms.posterDir,0700)
    _=os.WriteFile(file,b,0600)
-   if appIsLab{_,_=prunePosterCache(a.platforms.posterDir,appPosterMaxFiles,appPosterMaxBytes,appPosterMaxAge)}
+   if protectedLibraryEnabled{_,_=prunePosterCache(a.platforms.posterDir,appPosterMaxFiles,appPosterMaxBytes,appPosterMaxAge)}
    w.Header().Set("Content-Type",mime.TypeByExtension(filepath.Ext(file)))
    w.Header().Set("Cache-Control","private, max-age=604800")
    _,_=w.Write(b)
@@ -845,7 +845,7 @@ func (a *runningApp) servePosterHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = os.MkdirAll(a.platforms.posterDir, 0700)
  _ = os.WriteFile(file,body,0600)
- if appIsLab{_,_=prunePosterCache(a.platforms.posterDir,appPosterMaxFiles,appPosterMaxBytes,appPosterMaxAge)}
+ if protectedLibraryEnabled{_,_=prunePosterCache(a.platforms.posterDir,appPosterMaxFiles,appPosterMaxBytes,appPosterMaxAge)}
 	w.Header().Set("Content-Type", mime.TypeByExtension(filepath.Ext(file)))
 	_, _ = w.Write(body)
 }

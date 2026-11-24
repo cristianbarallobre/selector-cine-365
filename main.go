@@ -54,6 +54,8 @@ func appCacheRoot(dataDir string) string {
  return filepath.Join(root,appDataDirectoryName,"cache_lab")
 }
 
+const protectedLibraryEnabled = appIsLab || runtime.GOOS == "windows"
+
 func getInitialState(savePath string) (string, error) {
 	defaultList, err := resources.ReadFile("lista_inicial.txt")
 	if err != nil {
@@ -70,7 +72,7 @@ func makeHTML(initial, token string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	out := strings.ReplaceAll(string(template), "__ATLAS_LISTA_INICIAL__", html.EscapeString(initial))
+	out := string(template)
 	out = strings.ReplaceAll(out, "__ATLAS_TOKEN__", token)
 	out = strings.ReplaceAll(out, "__APP_AUTHOR__", html.EscapeString(appAuthor))
 	out = strings.ReplaceAll(out, "__APP_COPYRIGHT__", html.EscapeString(appCopyright))
@@ -86,7 +88,18 @@ func makeHTML(initial, token string) (string, error) {
 	out = injectLabReactions(out)
 	out = injectLabSearchPerformance(out)
  out = injectLabMaintenance(out)
-	return out, nil
+	if runtime.GOOS == "windows" && !appIsLab {
+        out = strings.NewReplacer(
+            "<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.1.0</title>",
+            "🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.1.0",
+            ` <span class="lab-nav-tag">LAB</span>`, "",
+            `<span class="lab-smart-caption">LAB</span>`, "",
+            "SELECTOR CINE 365 · LAB WINDOWS", "SELECTOR CINE 365",
+            "SELECTOR CINE 365 · LAB</p>", "SELECTOR CINE 365</p>",
+            "Mantenimiento de Windows LAB", "Mantenimiento de Windows",
+        ).Replace(out)
+    }
+    return strings.ReplaceAll(out, "__ATLAS_LISTA_INICIAL__", html.EscapeString(initial)), nil
 }
 
 type runningApp struct {
@@ -255,7 +268,7 @@ func serve() error {
 	libPath := filepath.Join(filepath.Dir(savePath), "colecciones.json")
 	lib := loadLibrary(libPath, state)
  recovered:=false
- if appIsLab {
+ if protectedLibraryEnabled {
   var recoveryErr error
   lib,recovered,recoveryErr=labLoadLibraryProtected(libPath,state)
   if recoveryErr!=nil{return recoveryErr}

@@ -23,7 +23,7 @@
 </style>
 <!-- LAB_SMART_HTML -->
 <div class="lab-smart-box" id="labSmartBox">
-  <label class="lab-smart-heading" for="labSmartEnabled"><span>🎯 Sorteo inteligente</span><span class="lab-smart-caption">LAB</span><input id="labSmartEnabled" type="checkbox" aria-controls="labSmartControls"></label>
+  <label class="lab-smart-heading" for="labSmartEnabled"><span>🧠 Sorteo inteligente</span><span class="lab-smart-caption">LAB</span><input id="labSmartEnabled" type="checkbox" aria-controls="labSmartControls"></label>
   <div class="lab-smart-controls" id="labSmartControls" hidden>
     <label class="lab-smart-field" for="labSmartSeen">Películas
       <select id="labSmartSeen">
@@ -142,7 +142,7 @@ function labSmartUpdateCount(){
  const status=labSmartSeen.value;
  const caption=status==='seen'?'vistas':status==='both'?'películas':'pendientes';
  $('choose').disabled=candidates.length===0;
- $('choose').textContent=candidates.length?'🎯 Elegir película inteligente':'Sin películas para este criterio';
+ $('choose').textContent=candidates.length?'🧠 Elegir película inteligente':'Sin películas para este criterio';
  $('sortCount').textContent=candidates.length+' de '+total+' '+caption+' cumplen tus filtros';
  $('labSmartStatus').hidden=candidates.length>0;
  $('labSmartStatus').textContent=candidates.length?'':(
@@ -226,7 +226,7 @@ function labSmartChoose(){
  chosen=winner;lastChoice=winner.idx;
  const key=providerKey(winner);
  labSmartHistory=[key,...labSmartHistory.filter(x=>x!==key)].slice(0,8);
- $('resultTag').textContent='🎯 SORTEO INTELIGENTE';
+ $('resultTag').textContent='🧠 SORTEO INTELIGENTE';
  $('resultTitle').textContent=winner.title;
  updateChoicePlatforms();
  $('markWatched').disabled=virtualMode;$('copyChoice').disabled=false;

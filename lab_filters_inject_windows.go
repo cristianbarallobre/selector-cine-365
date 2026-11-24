@@ -11,7 +11,6 @@ import (
 var labFiltersAssets embed.FS
 
 func injectLabLibraryFilters(page string) string {
- if !appIsLab{return page}
  raw,err:=labFiltersAssets.ReadFile("lab_filters_windows.html")
  if err!=nil{return page}
  parts:=strings.SplitN(string(raw),"<!-- LAB_FILTERS_HTML -->",2)

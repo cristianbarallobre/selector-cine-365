@@ -16,7 +16,6 @@ var labMaintenanceAssets embed.FS
 
 // Añadir el panel dentro de Conectar TMDB / Sincronización, solo Windows LAB.
 func injectLabMaintenance(page string) string {
- if !appIsLab{return page}
  raw,err:=labMaintenanceAssets.ReadFile("lab_maintenance_windows.html")
  if err!=nil{return page}
  pieces:=strings.SplitN(string(raw),"<!-- LAB_MAINTENANCE_HTML -->",2)
@@ -65,7 +64,6 @@ func labLocalPosterUsage(path string) labFileUsage {
 }
 func (a *runningApp) serveLabMaintenance(w http.ResponseWriter,r *http.Request) {
  w.Header().Set("Content-Type","application/json; charset=utf-8")
- if !appIsLab{http.NotFound(w,r);return}
  if !a.auth(r){http.Error(w,"No autorizado",403);return}
  root:=filepath.Dir(a.libraryPath)
  cacheRoot:=appCacheRoot(root)

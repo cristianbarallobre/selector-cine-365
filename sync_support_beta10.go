@@ -29,7 +29,7 @@ func (a *runningApp) localRecoveryList() ([]recoveryInfo,error){
   {"rec",filepath.Join(root,"sync_recuperacion")},
   {"day",filepath.Join(root,"copias_automaticas")},
  }
- if appIsLab{directories=append(directories,struct{prefix,path string}{"quick",filepath.Join(root,"copias_rapidas_lab")})}
+ if protectedLibraryEnabled{directories=append(directories,struct{prefix,path string}{"quick",filepath.Join(root,"copias_rapidas_lab")})}
  for _,d:=range directories{
   entries,err:=os.ReadDir(d.path)
   if os.IsNotExist(err){continue}
@@ -56,7 +56,7 @@ func (a *runningApp) previewLocalRecovery(id string) (map[string]any,error){
  switch prefix{
  case "rec":dir=filepath.Join(root,"sync_recuperacion")
  case "day":dir=filepath.Join(root,"copias_automaticas")
- case "quick":if appIsLab{dir=filepath.Join(root,"copias_rapidas_lab")}
+ case "quick":if protectedLibraryEnabled{dir=filepath.Join(root,"copias_rapidas_lab")}
  }
  if dir==""{return nil,errors.New("origen no permitido")}
  data,err:=os.ReadFile(filepath.Join(dir,name))
@@ -81,7 +81,7 @@ func (a *runningApp) restoreLocalRecovery(id string) (map[string]any,error) {
  switch prefix {
  case "rec":dir=filepath.Join(root,"sync_recuperacion")
  case "day":dir=filepath.Join(root,"copias_automaticas")
- case "quick":if appIsLab{dir=filepath.Join(root,"copias_rapidas_lab")}
+ case "quick":if protectedLibraryEnabled{dir=filepath.Join(root,"copias_rapidas_lab")}
  default:return nil,errors.New("origen de recuperación no permitido")
  }
  filename:=filepath.Join(dir,name)
@@ -135,7 +135,7 @@ func (a *runningApp) serveSyncSupport(w http.ResponseWriter,r *http.Request){
   if err!=nil{respond(500,map[string]string{"error":err.Error()});return}
   respond(200,map[string]any{"copies":copies})
  case "/api/sync/recovery/preview":
-  if !appIsLab{respond(404,map[string]string{"error":"No disponible"});return}
+  if !protectedLibraryEnabled{respond(404,map[string]string{"error":"No disponible"});return}
   if r.Method!=http.MethodGet{respond(405,map[string]string{"error":"Método incorrecto"});return}
   info,err:=a.previewLocalRecovery(r.URL.Query().Get("id"))
   if err!=nil{respond(409,map[string]string{"error":err.Error()});return}

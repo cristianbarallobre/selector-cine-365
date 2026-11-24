@@ -11,7 +11,6 @@ import (
 var labSmartSortAssets embed.FS
 
 func injectLabSmartSort(page string) string {
- if !appIsLab{return page}
  raw,err:=labSmartSortAssets.ReadFile("lab_smart_sort_windows.html")
  if err!=nil{return page}
  parts:=strings.SplitN(string(raw),"<!-- LAB_SMART_HTML -->",2)

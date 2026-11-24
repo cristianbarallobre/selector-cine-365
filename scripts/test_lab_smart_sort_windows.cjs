@@ -20,8 +20,8 @@ new vm.Script('(()=>{\n'+script+'\n})();',{filename:'lab_smart_sort_windows.js'}
 assert.match(injector,/\/\/go:build windows/);
 assert.match(other,/\/\/go:build !windows/);
 assert.match(windows,/\/\/go:build windows/);
-assert.match(injector,/if !appIsLab/);
-assert.match(windows,/if !appIsLab/);
+assert.doesNotMatch(injector,/if !appIsLab/,'También disponible en Windows estable');
+assert.doesNotMatch(windows,/if !appIsLab/,'También disponible en Windows estable');
 assert.match(main,/out = injectLabSmartSort\(out\)/);
 assert.match(main,/a\.serveLabSmartCache\(w,r\)/);
 assert.match(discover,/LAB-02\.15 WINDOWS/);
@@ -53,10 +53,9 @@ assert.match(injector,/labSmartSyncSeenAction\(\)/,'Actualiza el botón vista/pe
 assert.match(injector,/function resetChoice\(\)\{chosen=null;labSmartSyncDetailsButton\(\);labSmartSyncSeenAction\(\)/,'Reinicia botón al limpiar selección');
 assert.match(injector,/Todas las películas pendientes.*Todas las plataformas/,'Etiqueta de plataforma');
 assert.match(winShell,/swShowMaximized\s*=\s*3/,'La ventana puede mostrarse maximizada');
-assert.match(winShell,/if appIsLab \{ showMode = uintptr\(swShowMaximized\) \}/,'Solo maximiza Windows LAB');
+assert.match(winShell,/showMode = uintptr\(swShowMaximized\)/,'Windows abre maximizado');
 assert.match(winShell,/procShowWindow\.Call\(hwnd, showMode\)/,'Aplica el modo al mostrar WebView2');
-assert.match(winShell,/if appIsLab \{\s*args = append\(args, "--start-maximized"\)/,'El navegador de respaldo también maximiza');
-assert.match(winShell,/else \{\s*args = append\(args, "--window-size=1200,820"\)/,'El Windows estable mantiene sus medidas');
+assert.match(winShell,/args = append\(args, "--start-maximized"\)/,'El navegador de respaldo también maximiza');
 
 function extract(start,end){
  const i=script.indexOf(start),j=script.indexOf(end,i+start.length);

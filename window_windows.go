@@ -490,7 +490,7 @@ func nativeWindowLoop(url, profile string) error {
 	w.hwnd = hwnd
 	// Windows LAB abre maximizado, no en modo quiosco: permite restaurar y cerrar.
 	showMode := uintptr(swShow)
-	if appIsLab { showMode = uintptr(swShowMaximized) }
+	showMode = uintptr(swShowMaximized)
 	procShowWindow.Call(hwnd, showMode)
 	procUpdateWindow.Call(hwnd)
 	logDiagnostic("Solicitando crear entorno WebView2")
@@ -592,11 +592,7 @@ func launchCompatibleBrowser(url, profile string) error {
 			continue
 		}
 		args := []string{"--app=" + url, "--new-window", "--user-data-dir=" + profile, "--no-first-run", "--no-default-browser-check", "--disable-background-mode"}
-		if appIsLab {
-			args = append(args, "--start-maximized")
-		} else {
-			args = append(args, "--window-size=1200,820")
-		}
+		args = append(args, "--start-maximized")
 		cmd := exec.Command(path, args...)
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 		if err := cmd.Start(); err == nil {

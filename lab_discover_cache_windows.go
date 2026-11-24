@@ -330,7 +330,7 @@ func (c *labCatalogCache) runWorker() {
  }
 }
 func (a *runningApp) serveLabPrefetch(w http.ResponseWriter,r *http.Request) {
- if !appIsLab||!a.auth(r){http.Error(w,"No autorizado",403);return}
+ if !a.auth(r){http.Error(w,"No autorizado",403);return}
  w.Header().Set("Content-Type","application/json; charset=utf-8")
  c:=a.labCatalog()
  switch r.URL.Path {

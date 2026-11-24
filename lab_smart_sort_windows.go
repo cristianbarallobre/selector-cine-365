@@ -36,7 +36,6 @@ func labSmartMeta(rec labDetailRecord) labSmartFilmMeta {
  return m
 }
 func (a *runningApp) serveLabSmartCache(w http.ResponseWriter,r *http.Request) {
- if !appIsLab {http.NotFound(w,r);return}
  if r.Method!=http.MethodGet {http.Error(w,"Método no permitido",405);return}
  if !a.auth(r){http.Error(w,"No autorizado",403);return}
  c:=a.labCatalog()

@@ -11,7 +11,6 @@ import (
 var labNetworkFrontend embed.FS
 
 func injectLabNetwork(page string) string {
- if !appIsLab{return page}
  raw,err:=labNetworkFrontend.ReadFile("lab_network_windows.js")
  if err!=nil{return page}
  // El interceptor se instala al principio de la IIFE: así protege también

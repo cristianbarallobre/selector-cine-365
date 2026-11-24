@@ -23,13 +23,13 @@ func TestLabReactionsAreIntegratedOnlyAsVirtualList(t *testing.T){
   "labJumpToFavoriteFilm(f);",
   "labListJumpHighlight={listID:labFavoriteID,rawIndex:target.idx};",
   "function labFavoritesFilms(){",
-  "function labOpenFavorites(){",
+  "function labOpenFavorites(openLibrary=true){",
   "function labOpenRating(f){",
   "labDiscoverFavoriteButton(film)",
   "b.append(togg,labFilmRowActions(f,pill,labCreateDetailButton(f),fix));",
   "const source=labFavoritesMode&&!global?labFavoritesFilms():",
   "const readonly=labFavoritesMode||virtualMode&&!global;",
-  "function switchCollection(id){if(id===labFavoriteID)",
+  "function switchCollection(id,openLibrary=true){if(id===labFavoriteID)",
   "sel.value=labFavoritesMode?labFavoriteID:",
  }{
   if !strings.Contains(page,part){t.Errorf("Falta una parte de reacciones LAB: %s",part)}

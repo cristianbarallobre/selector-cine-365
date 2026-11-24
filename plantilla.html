@@ -1242,11 +1242,13 @@ async function saveLocal(){
  saveQueue=saveQueue.catch(()=>{}).then(async()=>{
    const response=await fetch('/api/library',{method:'POST',headers:{'Content-Type':'application/json','X-Atlas-Token':token},body:snapshot,cache:'no-store'});
    if(!response.ok)throw new Error('HTTP '+response.status);
-   return response.headers.get('X-Cine-Cloud');
+   return {cloudResult:response.headers.get('X-Cine-Cloud'),txtPending:response.headers.get('X-Cine-Legacy')==='pending'};
  });
- try{const cloudResult=await saveQueue;
+ try{const {cloudResult,txtPending}=await saveQueue;
  await cineLoadRevisions();
- if(epoch===saveEpoch){cineRecentIntents.clear();$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + carpeta de nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':cloudResult==='pending'?'✓ Local · Revisar sincronización':'✓ Guardado';void cloudRefresh();setTimeout(()=>{if(!document.hidden)void cloudAutoReceive();},3500);}}
+ if(epoch===saveEpoch){cineRecentIntents.clear();$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + carpeta de nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':cloudResult==='pending'?'✓ Local · Revisar sincronización':'✓ Guardado';
+ if(txtPending)$('saveState').textContent+=' · ⚠ Copia TXT pendiente';
+ void cloudRefresh();setTimeout(()=>{if(!document.hidden)void cloudAutoReceive();},3500);}}
  catch(err){if(epoch===saveEpoch)$('saveState').textContent='⚠ Error al guardar';}
 }
 // Abrir TXT crea una colección independiente; nunca reemplaza la lista actual.
@@ -1633,13 +1635,13 @@ function restartList(){
  document.querySelectorAll('.filter').forEach(b=>b.classList.toggle('selected',b.dataset.filter==='all'));
  updateListPlatformOptions();update();updatePlatformProgress();renderStats();renderCollectionControls();if(platformConfigured)void loadPlatforms(false);
 }
-function switchCollection(id){
+function switchCollection(id,openLibrary=true){
  if(id===virtualID){
    if(!hasComparison()||virtualMode)return;
-   syncActiveText();virtualMode=true;rawText=buildIntersection();restartList();showView('library');return;
+   syncActiveText();virtualMode=true;rawText=buildIntersection();restartList();if(openLibrary)showView('library');return;
  }
  if(!libraryState.lists.some(l=>l.id===id)||(!virtualMode&&id===libraryState.active_id))return;
- syncActiveText();virtualMode=false;libraryState.active_id=id;rawText=activeCollection().text||'';restartList();scheduleSave();showView('library');
+ syncActiveText();virtualMode=false;libraryState.active_id=id;rawText=activeCollection().text||'';restartList();scheduleSave();if(openLibrary)showView('library');
 }
 function renderCollectionControls(){
  const sel=$('listSwitcher');sel.replaceChildren();for(const list of libraryState.lists){const o=document.createElement('option');o.value=list.id;o.textContent=numberedListName(list);sel.appendChild(o)}
@@ -1748,7 +1750,7 @@ $('saveCompare').addEventListener('click',()=>{
  closeCompareModal();renderCollectionControls();scheduleSave();
  $('listActionsState').textContent='Coincidencias configuradas. Ya puedes elegirlas en la Biblioteca.';
 });
-$('listSwitcher').addEventListener('change',e=>switchCollection(e.target.value));
+$('listSwitcher').addEventListener('change',e=>switchCollection(e.target.value,false));
 $('collectionPrev').addEventListener('click',()=>{collectionPage=Math.max(0,collectionPage-1);renderCollectionControls();});
 $('collectionNext').addEventListener('click',()=>{collectionPage++;renderCollectionControls();});
 $('newList').addEventListener('click',()=>openListModal());
@@ -1900,14 +1902,28 @@ $('downloadBackup').addEventListener('click',()=>{
  saveDownload('Cine365_copia_'+now+'.json',JSON.stringify(backup,null,2),'application/json;charset=utf-8');
 });
 $('restoreBackup').addEventListener('click',()=>$('backupFile').click());
+let restoringBackup=false;
 $('backupFile').addEventListener('change',async e=>{
  const f=e.target.files?.[0];if(!f)return;
  try{
-   if(f.size>3*1024*1024)throw new Error('El archivo es demasiado grande');
+   if(f.size>256*1024*1024)throw new Error('El archivo es demasiado grande');
    const state=JSON.parse(await f.text());if(!validLibrary(state))throw new Error('No es una copia válida');
    if(!confirm('¿Restaurar '+state.lists.length+' listas? Se sustituirán todas las listas actuales.'))return;
-   libraryState={version:1,active_id:state.active_id,lists:state.lists.map(l=>({id:l.id,name:l.name,text:l.text})),comparison_ids:state.comparison_ids||[]};
-   virtualMode=false;sanitizeComparisonIDs();reconcileWatched();rawText=activeCollection().text||'';restartList();scheduleSave();showView('library');
+   delete state.backup_created_at;
+   const payload=JSON.stringify(state);
+   if(new Blob([payload]).size>3*1024*1024)throw new Error('La biblioteca supera el tamaño de guardado permitido');
+   restoringBackup=true;document.body.inert=true;
+   try{
+     if(saveTimer){clearTimeout(saveTimer);saveTimer=null;void saveLocal();}
+     await saveQueue.catch(()=>{});
+     ++saveEpoch;
+     const saved=await fetch('/api/library',{method:'POST',headers:{'Content-Type':'application/json','X-Atlas-Token':token},body:payload});
+     if(!saved.ok)throw new Error(await saved.text());
+     libraryState=state;
+     virtualMode=false;sanitizeComparisonIDs();rawText=activeCollection().text||'';restartList();showView('library');
+     $('saveState').textContent=saved.headers.get('X-Cine-Legacy')==='pending'?'✓ Restaurado · ⚠ Copia TXT pendiente':'✓ Copia restaurada';
+     await cineLoadRevisions();
+   }finally{restoringBackup=false;document.body.inert=false;}
  }catch(err){alert('No se pudo restaurar: '+err.message)}finally{e.target.value='';}
 });
 // Copia adicional de las listas en una carpeta local sincronizada con la nube.
@@ -2516,7 +2532,7 @@ window.addEventListener('resize',()=>{clearTimeout(layoutResizeTimer);layoutResi
 fetch('/api/ping',{cache:'no-store'}).catch(()=>{});
 setInterval(()=>{fetch('/api/ping',{cache:'no-store'}).catch(()=>{});},12000);
 window.addEventListener('pagehide',()=>{
- try{syncActiveText();navigator.sendBeacon('/api/library?token='+encodeURIComponent(token),new Blob([JSON.stringify(libraryState)],{type:'application/json'}));}catch(err){}
+ if(!restoringBackup)try{syncActiveText();navigator.sendBeacon('/api/library?token='+encodeURIComponent(token),new Blob([JSON.stringify(libraryState)],{type:'application/json'}));}catch(err){}
  try{navigator.sendBeacon('/api/quit?token='+encodeURIComponent(token),'cerrar');}catch(err){}
 });
 updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void initLibrary().then(async()=>{await initIdentities();await initPlatforms();void cloudAutoReceive(true);});

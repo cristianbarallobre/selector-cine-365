@@ -16,6 +16,17 @@ func TestCloudBackupsAndHistory(t *testing.T) {
 	if e := os.MkdirAll(sync, 0700); e != nil {
 		t.Fatal(e)
 	}
+	otherChannel := "Selector_Cine_365_LAB_Copias"
+	if appIsLab {
+		otherChannel = "Selector_Cine_365_Copias"
+	}
+	otherLibrary := filepath.Join(sync, otherChannel, "actual", "colecciones.json")
+	if err := os.MkdirAll(filepath.Dir(otherLibrary), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(otherLibrary, []byte("otro canal"), 0600); err != nil {
+		t.Fatal(err)
+	}
 	state := initialLibrary("☑ 001. Ciudadano Kane (1941)\n☐ 002. Casablanca (1942)")
 	legacy := filepath.Join(data, "mis_365_peliculas.txt")
 	if e := saveLibrary(filepath.Join(data, "colecciones.json"), legacy, state); e != nil {
@@ -49,6 +60,9 @@ func TestCloudBackupsAndHistory(t *testing.T) {
 	d, _ = os.ReadFile(last)
 	if !strings.Contains(string(d), "☑ 002.") {
 		t.Fatal("cloud copy not updated")
+	}
+	if data, err := os.ReadFile(otherLibrary); err != nil || string(data) != "otro canal" {
+		t.Fatalf("backup modified the other channel: %v", err)
 	}
 	entries, e := os.ReadDir(filepath.Join(sync, cloudDirectoryName, "historico"))
 	if e != nil || len(entries) != 1 {

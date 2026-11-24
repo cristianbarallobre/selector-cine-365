@@ -16,7 +16,7 @@ const js=more[1];
 new vm.Script('(()=>{\n'+js+'\n})();',{filename:'lab_filters_windows.js'});
 assert.match(injector,/\/\/go:build windows/);
 assert.match(stub,/\/\/go:build !windows/);
-assert.match(injector,/if !appIsLab/);
+assert.doesNotMatch(injector,/if !appIsLab/,'También disponible en Windows estable');
 assert.match(core,/out = injectLabLibraryFilters\(out\)/);
 assert.match(injector,/function renderList\(\)\{labFiltersRefreshChoices\(\)/);
 assert.match(injector,/global\?filmMembershipIndex\(\)\.rows:parsed\.entries/,'Todas las listas sin texto de búsqueda');

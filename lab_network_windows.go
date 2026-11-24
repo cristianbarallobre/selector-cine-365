@@ -54,7 +54,6 @@ func (a *runningApp) labNetworkLogPath() string {
  return filepath.Join(appCacheRoot(filepath.Dir(a.savePath)),"diagnostico_red_lab.txt")
 }
 func (a *runningApp) serveLabNetworkLog(w http.ResponseWriter,r *http.Request) {
- if !appIsLab{http.NotFound(w,r);return}
  if !a.auth(r){http.Error(w,"No autorizado",http.StatusForbidden);return}
  if r.Method!=http.MethodPost{http.Error(w,"Método no permitido",http.StatusMethodNotAllowed);return}
  w.Header().Set("Cache-Control","no-store")

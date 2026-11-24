@@ -1,4 +1,4 @@
-//go:build windows && lab
+//go:build windows
 
 package main
 

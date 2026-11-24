@@ -15,7 +15,7 @@ func labTestLibrary(name string) libraryState{
  }}
 }
 func TestLabRecoveryBadLibraryDoesNotGetOverwritten(t *testing.T){
- if !appIsLab{t.Skip("Solo LAB")}
+ if !protectedLibraryEnabled{t.Skip("Solo LAB")}
  dir:=t.TempDir()
  path:=filepath.Join(dir,"colecciones.json")
  bad:=[]byte("{datos de biblioteca dañados, no borrar}")
@@ -26,7 +26,7 @@ func TestLabRecoveryBadLibraryDoesNotGetOverwritten(t *testing.T){
  if e!=nil||string(raw)!=string(bad){t.Fatal("No se debe reemplazar el JSON dañado por datos iniciales")}
 }
 func TestLabRecoveryFromValidSnapshotQuarantinesDamagedOriginal(t *testing.T){
- if !appIsLab{t.Skip("Solo LAB")}
+ if !protectedLibraryEnabled{t.Skip("Solo LAB")}
  dir:=t.TempDir()
  path:=filepath.Join(dir,"colecciones.json")
  original:=[]byte("{contenido roto}")
@@ -52,7 +52,7 @@ func TestLabRecoveryFromValidSnapshotQuarantinesDamagedOriginal(t *testing.T){
  if !found{t.Fatal("El JSON dañado se ha perdido en lugar de guardarse aparte")}
 }
 func TestLabRecoverySkipsInvalidMostRecentCopy(t *testing.T){
- if !appIsLab{t.Skip("Solo LAB")}
+ if !protectedLibraryEnabled{t.Skip("Solo LAB")}
  dir:=t.TempDir()
  path:=filepath.Join(dir,"colecciones.json")
  os.WriteFile(path,[]byte("{roto}"),0600)
@@ -69,7 +69,7 @@ func TestLabRecoverySkipsInvalidMostRecentCopy(t *testing.T){
  if err!=nil||!recovered||state.Lists[0].Name!="Válida"{t.Fatalf("No omitió la copia reciente inválida: %v",err)}
 }
 func TestLabBackupsHaveBoundedRetention(t *testing.T){
- if !appIsLab{t.Skip("Solo LAB")}
+ if !protectedLibraryEnabled{t.Skip("Solo LAB")}
  dir:=t.TempDir()
  path:=filepath.Join(dir,"colecciones.json")
  good,_:=json.Marshal(labTestLibrary("Una lista"))

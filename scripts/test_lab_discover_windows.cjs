@@ -14,7 +14,7 @@ for(const id of ['labDiscoverView','labDiscoverNav','labSearchForm','labMoviesGr
 assert.match(windows,/\/\/go:build windows/);
 assert.match(other,/\/\/go:build !windows/);
 assert.match(core,/out = injectLabDiscovery\(out\)/);
-assert.match(windows,/if !appIsLab/);
+assert.doesNotMatch(windows,/if !appIsLab/,'También disponible en Windows estable');
 assert.match(ui,/syncActiveText\(\)/,'Debe guardar el texto activo antes de añadir');
 assert.match(ui,/if\(existing\)/,'Debe evitar duplicados');
 assert.match(ui,/scheduleSave\(\)/,'Debe guardar mediante el flujo normal');

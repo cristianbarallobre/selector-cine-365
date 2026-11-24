@@ -18,13 +18,15 @@ const (
  labQuickBackupCount=24
  labDailyBackupCount=60
  labBackupMinInterval=15*time.Minute
- labBackupLimit=3<<20
+ // On disk, the 40 permitted lists can each contain 900,000 bytes.
+ // JSON escaping can expand each byte sixfold; allow room for metadata too.
+ libraryFileLimit=256<<20
 )
 var labQuickBackupName=regexp.MustCompile(`^\d{8}T\d{6}\.\d{9}Z\.json$`)
 var labDailyBackupName=regexp.MustCompile(`^\d{4}-\d{2}-\d{2}\.json$`)
 
 func labValidBackup(data []byte) bool {
- if len(data)==0||len(data)>labBackupLimit {return false}
+ if len(data)==0||len(data)>libraryFileLimit {return false}
  var state libraryState
  return json.Unmarshal(data,&state)==nil&&validateLibrary(state)==nil
 }
@@ -48,7 +50,7 @@ func labPruneNamedBackups(dir string,pattern *regexp.Regexp,keep int) {
  }
 }
 func labQuickBackup(path string,previous []byte) {
- if !appIsLab||!labValidBackup(previous){return}
+ if !protectedLibraryEnabled||!labValidBackup(previous){return}
  dir:=filepath.Join(filepath.Dir(path),"copias_rapidas_lab")
  names,err:=labBackupCandidates(dir,labQuickBackupName)
  if err!=nil{return}
@@ -67,7 +69,7 @@ func labQuickBackup(path string,previous []byte) {
  }
 }
 func labPruneLibraryBackups(path string) {
- if !appIsLab{return}
+ if !protectedLibraryEnabled{return}
  labPruneNamedBackups(filepath.Join(filepath.Dir(path),"copias_automaticas"),labDailyBackupName,labDailyBackupCount)
 }
 
@@ -94,7 +96,7 @@ func labLoadLibraryProtected(path,legacy string) (libraryState,bool,error) {
   if e!=nil{continue}
   for _,name:=range names{
    file:=filepath.Join(c.dir,name)
-   info,e:=os.Stat(file);if e==nil&&info.Size()<=labBackupLimit{
+   info,e:=os.Stat(file);if e==nil&&info.Size()<=libraryFileLimit{
     found=append(found,backup{file,info.ModTime()})
    }
   }
