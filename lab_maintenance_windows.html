@@ -1,0 +1,97 @@
+<style>
+#labMaintenanceDetails{margin-top:13px;border:1px solid #41546a;border-radius:11px;padding:11px 14px;background:#1b2a3b}
+#labMaintenanceDetails summary{cursor:pointer;font-weight:750;color:#f0cb8b}
+#labMaintenanceDetails .lab-maintenance-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:9px;margin:14px 0}
+.lab-maintenance-tile{background:#253448;border:1px solid #40546c;border-radius:9px;padding:11px}
+.lab-maintenance-tile strong{display:block;font-size:17px;color:#f3f3f8;margin-bottom:3px}
+.lab-maintenance-tile span{display:block;font-size:12px;color:#bcc9d7}
+.lab-maintenance-paths{font-size:11px;color:#b7c8da;overflow-wrap:anywhere}
+.lab-maintenance-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}
+.lab-maintenance-actions button{cursor:pointer;border:1px solid #62748c;background:#2b3c51;color:#ecf1fa;border-radius:9px;padding:8px 11px;font-size:12px;font-weight:650}
+.lab-maintenance-actions button:hover{border-color:#edc586}
+#labMaintenanceStatus{color:#bfdbcd;font-size:12px;min-height:18px;white-space:pre-wrap}
+#labRecoveryPreview{margin:6px 0 10px;color:#bfd8d0;font-size:12px}
+</style>
+<!-- LAB_MAINTENANCE_HTML -->
+<p id="labRecoveryPreview" aria-live="polite">Selecciona una copia para ver su contenido antes de restaurarla.</p>
+<details id="labMaintenanceDetails">
+  <summary>Mantenimiento de Windows LAB</summary>
+  <p>Las listas, valoraciones y credenciales no forman parte de la caché que se limpia aquí.</p>
+  <div id="labMaintenanceMetrics" class="lab-maintenance-grid" aria-live="polite"></div>
+  <p id="labMaintenancePaths" class="lab-maintenance-paths"></p>
+  <div class="lab-maintenance-actions">
+    <button type="button" id="labMaintenanceRefresh">Comprobar estado</button>
+    <button type="button" id="labMaintenancePrune">Revisar carteles antiguos</button>
+    <button type="button" id="labMaintenanceClear">Limpiar carteles descargados</button>
+    <a target="_blank" rel="noopener noreferrer" href="https://github.com/cristianbarallobre/selector-cine-365/releases">Versiones estables en GitHub</a>
+  </div>
+  <p>WebView2 administra su propia caché y no se elimina mientras la aplicación está abierta. Las copias locales se conservan por separado.</p>
+  <p id="labMaintenanceStatus" role="status" aria-live="polite"></p>
+</details>
+<!-- LAB_MAINTENANCE_SCRIPT -->
+const labMiB=n=>((Number(n)||0)/(1024*1024)).toLocaleString('es-ES',{maximumFractionDigits:1})+' MB';
+async function labPreviewRecovery(){
+ const id=$('cloudRecoveryList').value;
+ $('cloudRecoveryRestore').disabled=true;
+ const status=$('labRecoveryPreview');
+ if(!id){status.textContent='Selecciona una copia para ver su contenido antes de restaurarla.';return;}
+ status.textContent='Comprobando integridad de la copia…';
+ try{
+  const data=await cloudRequest('/api/sync/recovery/preview?id='+encodeURIComponent(id));
+  if($('cloudRecoveryList').value!==id)return;
+  status.textContent='✓ Copia válida · '+data.lists+' listas · '+data.seen+' vistas · '+data.favorites+' favoritas. Al restaurarla se conservará una copia del estado actual.';
+  $('cloudRecoveryRestore').disabled=false;
+ }catch(e){
+  if($('cloudRecoveryList').value!==id)return;
+  status.textContent='⚠ No se recomienda restaurar esta copia: '+e.message;
+ }
+}
+async function labMaintenanceRefresh(){
+ const metrics=$('labMaintenanceMetrics'),info=$('labMaintenanceStatus');
+ info.textContent='Comprobando archivos locales…';
+ try{
+  const data=await cloudRequest('/api/lab/maintenance');
+  metrics.replaceChildren();
+  const items=[
+   ['Biblioteca',labMiB(data.library?.bytes),data.library?.files||0],
+   ['Fichas TMDB',labMiB(data.tmdb_details?.bytes),data.tmdb_details?.files||0],
+   ['Plataformas',labMiB(data.platform_cache?.bytes),data.platform_cache?.files||0],
+   ['Carteles',labMiB(data.posters?.bytes),data.posters?.files||0],
+   ['Copias rápidas',String(data.backup_quick||0),'máx. 24'],
+   ['Copias diarias',String(data.backup_daily||0),'máx. 60']
+  ];
+  for(const [label,value,extra] of items){
+   const tile=document.createElement('div');tile.className='lab-maintenance-tile';
+   const name=document.createElement('span');name.textContent=label;
+   const large=document.createElement('strong');large.textContent=value;
+   const small=document.createElement('span');small.textContent=String(extra)+(typeof extra==='number'?' archivos':'');
+   tile.append(name,large,small);metrics.appendChild(tile);
+  }
+  $('labMaintenancePaths').textContent='Datos y listas: '+data.library_path+' · Caché temporal: '+data.cache_path;
+  const sync=data.onedrive_connected?'OneDrive conectado':data.cloud_connected?'Carpeta de nube configurada':'Sin nube conectada';
+  info.textContent=(data.library_recovered?'⚠ Se recuperó una copia válida de la biblioteca. Comprueba tus listas y guarda otra copia. ':'')+
+   (data.sync_pending_review?'⚠ Sincronización pendiente de revisión. ':'')+
+   'TMDB: '+(data.tmdb_connected?'conectado':'sin conectar')+' · '+sync+'.';
+ }catch(e){info.textContent='⚠ '+e.message;}
+}
+$('labMaintenanceRefresh').addEventListener('click',()=>void labMaintenanceRefresh());
+$('labMaintenanceDetails').addEventListener('toggle',()=>{
+ if($('labMaintenanceDetails').open)void labMaintenanceRefresh();
+});
+$('labMaintenancePrune').addEventListener('click',async()=>{
+ try{
+  const data=await cloudRequest('/api/lab/maintenance','POST',{action:'prune_posters'});
+  await labMaintenanceRefresh();
+  $('labMaintenanceStatus').textContent='Revisión completada: '+data.removed+' carteles caducados o fuera de presupuesto.';
+ }catch(e){$('labMaintenanceStatus').textContent='⚠ '+e.message;}
+});
+$('labMaintenanceClear').addEventListener('click',async()=>{
+ if(!confirm('¿Limpiar únicamente los carteles descargados? Se volverán a descargar cuando se necesiten. No se tocarán las listas, fichas personales ni OneDrive.'))return;
+ const button=$('labMaintenanceClear');button.disabled=true;
+ try{
+  const data=await cloudRequest('/api/lab/maintenance','POST',{action:'clear_posters'});
+  await labMaintenanceRefresh();
+  $('labMaintenanceStatus').textContent='Se han eliminado '+data.removed+' miniaturas. Las listas y credenciales no se han modificado.';
+ }catch(e){$('labMaintenanceStatus').textContent='⚠ '+e.message;}
+ finally{button.disabled=false;}
+});
