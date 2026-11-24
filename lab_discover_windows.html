@@ -105,6 +105,9 @@ button.lab-cast-actor:focus-visible{outline:2px solid #ffda91;outline-offset:3px
 .lab-person-overlay{z-index:100}
 #labPersonPlaceholder[hidden]{display:none!important}
 .lab-person-bio{white-space:pre-line;font-size:14px;line-height:1.65;color:#dde4ec}
+.lab-person-original{margin:7px 0 17px;display:inline-flex;align-items:center;gap:5px;padding:7px 11px;border:1px solid #62758a;border-radius:8px;background:#27394d;color:#ecc48c;font-size:12px;cursor:pointer}
+.lab-person-original[hidden]{display:none!important}
+.lab-person-original:focus-visible{outline:2px solid #f0cd88;outline-offset:2px}
  .lab-person-film-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 12px}
 .lab-person-film-controls label{display:flex;align-items:center;gap:7px;color:#cbd8e7;font-size:12px;font-weight:680}
 .lab-person-film-controls select{background:#273a50;border:1px solid #5c7089;color:#f5f5fc;border-radius:8px;padding:7px 10px;font:inherit;min-width:160px;cursor:pointer}
@@ -284,6 +287,7 @@ body.lab-crosspage-dragging,body.lab-crosspage-dragging *{user-select:none!impor
         <p class="lab-detail-subtitle" id="labPersonSubtitle"></p>
         <div class="lab-detail-label">BIOGRAFÍA</div>
         <p class="lab-person-bio" id="labPersonBio"></p>
+        <button class="lab-person-original" id="labPersonOriginal" type="button" hidden>Ver biografía original en inglés</button>
         <div class="lab-detail-label">FILMOGRAFÍA</div>
         <div class="lab-person-film-controls">
           <label for="labPersonFilmSort">Ordenar por
@@ -766,6 +770,34 @@ $('labPersonFilmSort').addEventListener('change',()=>{
  if(current&&current.kind==='person')current.sort=$('labPersonFilmSort').value;
  labRenderPersonFilmography();
 });
+// TMDB conserva fechas ISO para ordenar, pero en pantalla deben verse como
+// se leen en España (sin depender del idioma del sistema operativo).
+function labFormatSpanishDate(iso,long=false){
+ const match=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso||''));
+ if(!match)return String(iso||'');
+ const year=Number(match[1]),month=Number(match[2]),day=Number(match[3]);
+ const d=new Date(Date.UTC(year,month-1,day));
+ if(d.getUTCFullYear()!==year||d.getUTCMonth()+1!==month||d.getUTCDate()!==day)return String(iso||'');
+ return long?new Intl.DateTimeFormat('es-ES',{timeZone:'UTC',year:'numeric',month:'long',day:'numeric'}).format(d):day.toString().padStart(2,'0')+'/'+month.toString().padStart(2,'0')+'/'+match[1];
+}
+const labPersonDepartmentES={Acting:'Interpretación',Directing:'Dirección',Writing:'Guion',Production:'Producción',Editing:'Montaje',Camera:'Fotografía',Sound:'Sonido',Art:'Arte',Crew:'Equipo técnico',VisualEffects:'Efectos visuales',Lighting:'Iluminación',CostumeMakeUp:'Vestuario y maquillaje'};
+function labShowPersonBiography(person){
+ const bio=$('labPersonBio'),button=$('labPersonOriginal');
+ const translated=String(person?.biography||'').trim();
+ const original=String(person?.biography_original||'').trim();
+ button.hidden=true;button.onclick=null;
+ if(translated){bio.textContent=translated;return;}
+ bio.textContent='TMDB todavía no dispone de una biografía de esta persona en español.';
+ if(original){
+  button.hidden=false;button.textContent='Ver biografía original en inglés';
+  let shown=false;
+  button.onclick=()=>{
+   shown=!shown;
+   bio.textContent=shown?original:'TMDB todavía no dispone de una biografía de esta persona en español.';
+   button.textContent=shown?'Ocultar original en inglés':'Ver biografía original en inglés';
+  };
+ }
+}
 async function labOpenPerson(id,record=true){
  labHideActorPhoto();
  labEnterDetail('person',id,record);
@@ -774,6 +806,7 @@ async function labOpenPerson(id,record=true){
  $('labPersonBack').focus();
  $('labPersonName').textContent='Cargando intérprete…';
  $('labPersonSubtitle').textContent='';$('labPersonBio').textContent='';
+ $('labPersonOriginal').hidden=true;$('labPersonOriginal').onclick=null;
  labPersonMovies=[];
  $('labPersonFilmSort').value=labDetailCurrent()?.sort||'featured';
  $('labPersonFilmsCount').textContent='';
@@ -785,9 +818,9 @@ async function labOpenPerson(id,record=true){
   const p=await labGet('/api/discover/person?id='+encodeURIComponent(id));
   if(serial!==labPersonSerial)return;
   $('labPersonName').textContent=p.name||'Intérprete';
-  const dates=p.birthday?(p.deathday?'Nacimiento: '+p.birthday+' · Fallecimiento: '+p.deathday:'Nacimiento: '+p.birthday):'';
-  $('labPersonSubtitle').textContent=[p.known_for_department||'',dates,p.place_of_birth||''].filter(Boolean).join(' · ');
-  $('labPersonBio').textContent=p.biography||'TMDB no tiene una biografía disponible para esta persona.';
+  const dates=p.birthday?(p.deathday?'Nacimiento: '+labFormatSpanishDate(p.birthday,true)+' · Fallecimiento: '+labFormatSpanishDate(p.deathday,true):'Nacimiento: '+labFormatSpanishDate(p.birthday,true)):'';
+  $('labPersonSubtitle').textContent=[labPersonDepartmentES[p.known_for_department]||p.known_for_department||'',dates,p.place_of_birth||''].filter(Boolean).join(' · ');
+  labShowPersonBiography(p);
   if(p.profile_path){
    const portrait=$('labPersonPortrait');
    portrait.src=labPosterSrc(p.profile_path);portrait.hidden=false;$('labPersonPlaceholder').hidden=true;
