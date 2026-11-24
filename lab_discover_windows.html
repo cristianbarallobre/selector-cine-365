@@ -236,7 +236,7 @@ body.lab-crosspage-dragging,body.lab-crosspage-dragging *{user-select:none!impor
 </section>
 <div class="overlay lab-detail-overlay" id="labDetailOverlay" hidden>
   <section class="lab-detail-modal" role="dialog" aria-modal="true" aria-labelledby="labDetailHeading">
-    <div class="lab-detail-top"><h2 id="labDetailHeading">Ficha de película</h2><div class="lab-detail-nav"><button class="page-btn lab-detail-back" id="labDetailBack" type="button" aria-label="Volver a la ficha anterior" title="Volver a la ficha anterior" hidden>← Atrás</button><button class="page-btn" id="labDetailClose" type="button" aria-label="Cerrar todas las fichas" title="Cerrar todas las fichas">✕</button></div></div>
+    <div class="lab-detail-top"><h2 id="labDetailHeading">Ficha de película</h2><div class="lab-detail-nav"><button class="page-btn lab-detail-back" id="labDetailBack" type="button" aria-label="Volver a la ficha anterior" title="Volver a la ficha anterior" hidden>← Atrás</button><button class="page-btn" id="labDetailFavorite" type="button" aria-label="Añadir a Favoritos" title="Añadir a Favoritos" hidden>♡</button><button class="page-btn" id="labDetailClose" type="button" aria-label="Cerrar todas las fichas" title="Cerrar todas las fichas">✕</button></div></div>
     <div class="lab-detail-content">
       <div><img id="labDetailPoster" class="lab-detail-poster" alt="Carátula de la película" hidden><div class="lab-movie-empty lab-detail-poster" id="labDetailPlaceholder">🎞</div></div>
       <div>
@@ -555,7 +555,7 @@ function labCard(film){
  const rating=document.createElement('span');rating.className='lab-card-rating';rating.textContent=film.vote_count?'★ '+Number(film.vote_average).toFixed(1):'—';
  const details=document.createElement('button');details.type='button';details.className='lab-card-details';details.textContent='Detalles';details.setAttribute('aria-label','Ver detalles de '+film.title);
  details.addEventListener('click',e=>{e.stopPropagation();void labShowDetail(film.id);});
- meta.append(year,rating);body.append(title,meta,details);card.append(img,body);
+ meta.append(year,rating,labDiscoverFavoriteButton(film));body.append(title,meta,details);card.append(img,body);
  return card;
 }
 function labNoPoster(){const x=document.createElement('div');x.className='lab-movie-poster lab-movie-empty';x.textContent='🎞';return x;}
@@ -800,10 +800,10 @@ async function labShowDetail(id,record=true){
  $('labDetailOverview').textContent='';$('labDetailCast').textContent='';
  $('labDetailGenres').replaceChildren();$('labDetailPlatforms').replaceChildren();$('labDetailLinks').replaceChildren();
  $('labDetailPoster').hidden=true;$('labDetailPlaceholder').hidden=false;
- $('labDetailNote').textContent='Consultando TMDB…';$('labDetailAdd').disabled=true;
+ $('labDetailNote').textContent='Consultando TMDB…';$('labDetailAdd').disabled=true;$('labDetailFavorite').hidden=true;
  try{
   const m=await labGet('/api/discover/detail?id='+encodeURIComponent(id));
-  if(serial!==labDetailSerial)return;labCurrentMovie=m;
+  if(serial!==labDetailSerial)return;labCurrentMovie=m;labRefreshDetailFavorite();
   $('labDetailTitle').textContent=m.title;
   const parts=[String(m.release_date||'').slice(0,4),m.runtime?m.runtime+' min':'',m.vote_count?'★ '+Number(m.vote_average).toFixed(1)+'/10 en TMDB':''];$('labDetailSubtitle').textContent=parts.filter(Boolean).join(' · ');
   $('labDetailOverview').textContent=m.overview||'TMDB no tiene una sinopsis en español para esta película.';
@@ -910,7 +910,7 @@ function labCreateDetailButton(f){
 }
 async function labOpenFilmDetails(f){
  if(!f||!f.title)return;
- const title=f.title,year=f.year||'',id=knownTMDB(f);
+ const title=f.title,year=f.year||'',id=f._favoriteTMDBID||knownTMDB(f);
  if(id){void labShowDetail(id);return;}
  try{
   const cached=await labGet('/api/discover/resolve?title='+encodeURIComponent(title)+'&year='+encodeURIComponent(Number(year)||0));
