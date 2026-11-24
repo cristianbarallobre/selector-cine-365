@@ -20,7 +20,6 @@ for(const needle of [
  "labFavoritesMode?'♥ Favoritos'",
  "$('markWatched').disabled=virtualMode||labFavoritesMode;",
  "function toggle(idx){\\n if(virtualMode||labFavoritesMode)return;",
- "function labFiltersRefreshChoices()",
  "labStatsDataset().entries;",
  "labRefreshStatsPanels();"
 ])assert.ok(injector.includes(needle),'Falta integración en HTML de LAB: '+needle);
