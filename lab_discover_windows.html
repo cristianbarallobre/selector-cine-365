@@ -1173,7 +1173,7 @@ function labJumpToFilmList(m){
  document.querySelectorAll('.filter').forEach(b=>b.classList.toggle('selected',b.dataset.filter==='all'));
  selectedListPlatforms.clear();closeListPlatformMenu();updateListPlatformOptions();
  labFiltersResetForList();
- if(m.id!==libraryState.active_id||virtualMode)switchCollection(m.id);
+ if(m.id!==libraryState.active_id||virtualMode||labFavoritesMode)switchCollection(m.id);
  else showView('library');
  selectSearchScope('current');
  // En filmMembershipIndex() el título y el año proceden precisamente del
