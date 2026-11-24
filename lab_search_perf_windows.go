@@ -36,7 +36,7 @@ func injectLabSearchPerformance(page string) string {
  page=strings.Replace(page,"function filmMembershipIndex(){",
   "function filmMembershipIndex(){return labGlobalMembershipIndex();",1)
  page=strings.Replace(page,"function labFiltersRefreshChoices(){",
-  "function labFiltersRefreshChoices(){if(!labShouldRefreshFilterChoices())return;",1)
+  "function labFiltersRefreshChoices(){if(labFiltersOverlay.hidden||!labShouldRefreshFilterChoices())return;",1)
  page=strings.Replace(page,oldInput,
   "$('search').addEventListener('input',e=>labScheduleLibrarySearch(e.target.value));",1)
  page=strings.Replace(page,"function restartList(){",
