@@ -29,6 +29,7 @@ type filmCollection struct {
 type filmReaction struct {
  Favorite bool `json:"favorite"`
  Rating int `json:"rating,omitempty"`
+ TMDBID int `json:"tmdb_id,omitempty"`
  Title string `json:"title"`
  Year string `json:"year,omitempty"`
  ChangedAt int64 `json:"changed_at"`
@@ -80,7 +81,7 @@ func validateLibrary(l libraryState) error {
  if len(l.Reactions)>15000{return errors.New("Demasiadas valoraciones o favoritos")}
  for key,rec:=range l.Reactions {
   if !utf8.ValidString(key)||len(key)>275||!strings.Contains(key,"|")||
-   rec.Rating<0||rec.Rating>5||!utf8.ValidString(rec.Title)||
+   rec.Rating<0||rec.Rating>5||rec.TMDBID<0||rec.TMDBID>999999999||!utf8.ValidString(rec.Title)||
    len([]rune(rec.Title))>200||strings.TrimSpace(rec.Title)==""||
    len(rec.Year)>4||rec.ChangedAt<0||rec.ChangedAt>4102444800000 {
    return errors.New("Valoración o favorito inválido")
