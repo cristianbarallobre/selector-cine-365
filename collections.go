@@ -126,6 +126,9 @@ func saveLibrary(path, legacyPath string, l libraryState) error {
 	// Once a day, retain a copy of the previous good collection state.
 	backupDir := filepath.Join(filepath.Dir(path), "copias_automaticas")
 	if before, e := os.ReadFile(path); e == nil && len(before) > 0 {
+        // Versiones rápidas solo de un estado anterior válido, con un número
+        // máximo de copias. No respaldar accidentalmente archivos corruptos.
+        labQuickBackup(path,before)
 		_ = os.MkdirAll(backupDir, 0700)
 		backup := filepath.Join(backupDir, time.Now().Format("2006-01-02")+".json")
 		if _, e = os.Stat(backup); os.IsNotExist(e) {
@@ -143,6 +146,7 @@ func saveLibrary(path, legacyPath string, l libraryState) error {
 		}
 		_ = os.Remove(tmp)
 	}
+	labPruneLibraryBackups(path)
 	for _, it := range l.Lists {
 		if it.ID == "atlas" {
 			if err := os.WriteFile(legacyPath, []byte(it.Text), 0600); err != nil {
