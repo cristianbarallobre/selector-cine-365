@@ -20,7 +20,7 @@ func TestLabReactionsAreIntegratedOnlyAsVirtualList(t *testing.T){
   "function labOpenFavorites(){",
   "function labOpenRating(f){",
   "labDiscoverFavoriteButton(film)",
-  "b.append(togg,pill,labReactionControls(f),labCreateDetailButton(f),fix);",
+  "b.append(togg,labFilmRowActions(f,pill,labCreateDetailButton(f),fix));",
   "const source=labFavoritesMode&&!global?labFavoritesFilms():",
   "const readonly=labFavoritesMode||virtualMode&&!global;",
   "function switchCollection(id){if(id===labFavoriteID)",
