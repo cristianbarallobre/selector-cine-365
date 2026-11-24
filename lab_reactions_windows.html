@@ -221,18 +221,50 @@ function labRefreshDetailFavorite(){
 $('labDetailFavorite').addEventListener('click',()=>{
  if(labCurrentMovie?.title)labToggleFavorite(labDiscoverReactionFilm(labCurrentMovie));
 });
+// El corazón junto a los números de «Listas» es un enlace a la lista
+// automática de Favoritos, igual que los números son enlaces a sus listas.
+// NO cambia el estado favorito: eso corresponde al botón grande de la derecha.
+function labJumpToFavoriteFilm(f){
+ const key=labReactionKey(f);
+ if(!labReactionFor(f)?.favorite)return;
+ const serial=++labListJumpSerial;
+ labClearListJumpHighlight();
+ if(typeof labCancelLibrarySearch==='function')labCancelLibrarySearch();
+ // Evitar que una búsqueda o filtros anteriores oculten la película.
+ labFiltersResetForList();
+ labOpenFavorites();
+ const films=labFavoritesFilms();
+ const targetIndex=films.findIndex(item=>labReactionKey(item)===key);
+ if(targetIndex<0)return;
+ const target=films[targetIndex];
+ const parent=$('filmList');
+ const usableHeight=Math.max(0,(parent.clientHeight||370)-2);
+ const pageSize=Math.max(1,Math.floor((usableHeight+7)/103));
+ filmPage=Math.floor(targetIndex/pageSize);
+ labListJumpHighlight={listID:labFavoriteID,rawIndex:target.idx};
+ renderList();
+ requestAnimationFrame(()=>{
+  if(serial!==labListJumpSerial||!labFavoritesMode||!labListJumpHighlight)return;
+  const row=Array.from(parent.querySelectorAll('.film-item'))
+    .find(el=>String(el.dataset.idx)===String(target.idx));
+  if(row)row.scrollIntoView({block:'center',behavior:'smooth'});
+ });
+ labListJumpTimer=setTimeout(()=>{
+  if(serial===labListJumpSerial)labClearListJumpHighlight();
+ },4200);
+}
 // Indicador pequeño junto a «Listas:»: solo se dibuja si la película
-// pertenece a Favoritos. El botón derecho de la fila usa la misma reacción.
+// pertenece a Favoritos. El botón grande mantiene la edición del corazón.
 function labFavoriteMembershipButton(f){
  if(!labReactionFor(f)?.favorite)return null;
  const button=document.createElement('button');
  button.type='button';button.className='lab-membership-heart';
- button.textContent='♥';button.title='En Favoritos';
- button.setAttribute('aria-label','Quitar «'+f.title+'» de Favoritos');
+ button.textContent='♥';button.title='Ver en Favoritos';
+ button.setAttribute('aria-label','Ver «'+f.title+'» en Favoritos');
  button.setAttribute('aria-pressed','true');
  button.addEventListener('click',e=>{
   e.stopPropagation();
-  labToggleFavorite(f);
+  labJumpToFavoriteFilm(f);
  });
  return button;
 }
