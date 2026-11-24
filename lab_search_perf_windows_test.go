@@ -18,7 +18,7 @@ func TestLabSearchPerformanceWiredIntoWindowsHTML(t *testing.T){
   "function labScheduleLibrarySearch(value){",
   "function filmMembershipIndex(){return labGlobalMembershipIndex();",
   "for(const f of labIndexedEntries(list)){const key=filmKey(f);",
-  "function labFiltersRefreshChoices(){if(!labShouldRefreshFilterChoices())return;",
+  "function labFiltersRefreshChoices(){if(labFiltersOverlay.hidden||!labShouldRefreshFilterChoices())return;",
   "$('search').addEventListener('input',e=>labScheduleLibrarySearch(e.target.value));",
   "function selectSearchScope(scope){labCancelLibrarySearch();",
   "function restartList(){labCancelLibrarySearch();",
