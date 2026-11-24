@@ -6,10 +6,14 @@ const vm=require('node:vm');
 const html=fs.readFileSync('lab_discover_windows.html','utf8');
 const source=html.split('<!-- LAB_DISCOVERY_SCRIPT -->')[1];
 const go=fs.readFileSync('lab_discover_windows.go','utf8');
+const reactions=fs.readFileSync('lab_reactions_windows.go','utf8');
 const stable=fs.readFileSync('plantilla.html','utf8');
 new vm.Script('(()=>{\n'+source+'\n})();');
 assert.match(html,/#view-library \.film-item\.lab-list-jump-target/);
 assert.match(source,/function labJumpToFilmList\(m\)/);
+assert.match(source,/if\(m\.id!==libraryState\.active_id\|\|virtualMode\|\|labFavoritesMode\)switchCollection\(m\.id\)/,'El número debe salir de Favoritos aunque apunte a la lista real ya activa');
+assert.match(reactions,/const labWasFavorite=labFavoritesMode;labFavoritesMode=false;/,'El cambio de lista desactiva Favoritos');
+assert.match(reactions,/!virtualMode&&id===libraryState.active_id&&!labWasFavorite/,'El cambio a la misma lista desde Favoritos no se omite');
 assert.match(source,/search='';\$\('search'\)\.value='';filter='all'/);
 assert.match(source,/labFiltersResetForList\(\)/);
 assert.match(source,/filmPage=Math\.floor\(index\/capacity\)/);
@@ -53,14 +57,14 @@ const pendingTimers=new Map(),frames=[];
 let timerCounter=0,loaded=null,view='',switches=0,filterResets=0,renders=0;
 const ctx={
  libraryState:{lists:[{id:'one',name:'Uno'},{id:'two',name:'Dos'}],active_id:'one'},
- parsed:{entries:listA.items},search:'Antes',filter:'seen',searchScope:'all',filmPage:1,virtualMode:false,
+ parsed:{entries:listA.items},search:'Antes',filter:'seen',searchScope:'all',filmPage:1,virtualMode:false,labFavoritesMode:false,
  selectedListPlatforms:new Set(['Netflix']),
  labListJumpHighlight:null,labListJumpTimer:null,labListJumpSerial:0,
  document:doc,$,
  closeListPlatformMenu:()=>{},updateListPlatformOptions:()=>{},
  labFiltersResetForList:()=>{filterResets++;ctx.labDecade='any';ctx.labGenre='any';ctx.labDuration='any';ctx.labOrder='original';},
  labDecade:'1980s',labGenre:'Drama',labDuration:'long',labOrder:'rating',
- switchCollection:id=>{switches++;ctx.libraryState.active_id=id;ctx.parsed={entries:lists.find(l=>l.id===id).items};ctx.filmPage=0;view='library';},
+ switchCollection:id=>{switches++;ctx.labFavoritesMode=false;ctx.libraryState.active_id=id;ctx.parsed={entries:lists.find(l=>l.id===id).items};ctx.filmPage=0;view='library';},
  showView:name=>{view=name;ctx.renderList();},
  selectSearchScope:scope=>{ctx.searchScope=scope;ctx.filmPage=0;ctx.renderList();},
  renderList:()=>{
@@ -122,4 +126,34 @@ assert.equal(ctx.libraryState.active_id,'two','Ignora listas inexistentes');
 assert.equal(ctx.search,'');
 assert.ok(renders>=5);
 assert.ok(filterResets>=2);
-console.log('OK: número de lista abre todas sus películas, resalta la correcta en otra página, quita filtros y conserva el TXT');
+
+// Regresión real del error: Favoritos conserva «two» como lista activa.
+// Pulsar su número 2 debe SALIR de Favoritos, aunque active_id ya sea 'two'.
+const baselineSwitches=switches;
+ctx.labFavoritesMode=true;
+ctx.search='Película';searchEl.value='Película';ctx.filter='seen';
+ctx.labJumpToFilmList({id:'two',title:'B 12',year:'2026'});
+assert.equal(switches,baselineSwitches+1,'Salir de Favoritos obliga a cambiar la vista aunque el ID ya coincida');
+assert.equal(ctx.labFavoritesMode,false,'Se desactiva la vista automática');
+assert.equal(ctx.libraryState.active_id,'two');
+assert.equal(ctx.filmPage,3,'Salta a la página correcta de la lista real');
+assert.equal(visible[0].classList.contains('lab-list-jump-target'),true,'Resalta la película de la lista real');
+assert.equal(searchEl.value,'','No debe dejar una búsqueda que oculte la película');
+assert.equal(ctx.filter,'all');
+
+// Cambiar a otra lista real desde Favoritos también debe funcionar.
+ctx.labFavoritesMode=true;
+ctx.labJumpToFilmList({id:'one',title:'A 7',year:'2024'});
+assert.equal(ctx.labFavoritesMode,false);
+assert.equal(ctx.libraryState.active_id,'one');
+assert.equal(ctx.filmPage,1);
+assert.equal(visible[3].dataset.idx,'7');
+assert.equal(visible[3].classList.contains('lab-list-jump-target'),true);
+
+// Entre listas normales la navegación mantiene su comportamiento previo.
+const beforeNormal=switches;
+ctx.labJumpToFilmList({id:'one',title:'A 0',year:'2024'});
+assert.equal(switches,beforeNormal,'No cambia la lista cuando ya está en ella');
+assert.equal(ctx.filmPage,0);
+assert.equal(visible[0].classList.contains('lab-list-jump-target'),true);
+console.log('OK: números de lista desde Favoritos (misma lista u otra), paginación y resaltado sin filtrar la película');
