@@ -28,7 +28,7 @@ class FakeElement {
  setAttribute(name,value){this[name]=value;}
  removeAttribute(name){delete this[name];}
  focus(){this.focused=true;}
- click(){this.events.click?.();}
+ click(){this.events.click?.();this.onclick?.();}
 }
 const credits=new FakeElement();
 let actorID=0;
