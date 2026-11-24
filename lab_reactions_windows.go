@@ -28,6 +28,7 @@ func injectLabReactions(page string) string {
   "const source=global?filmMembershipIndex().rows:parsed.entries;",
   "const readonly=virtualMode&&!global;",
   "b.append(togg,pill,labCreateDetailButton(f),fix);frag.appendChild(b);",
+  "membership.append(caption,nums,edit);meta.appendChild(membership);",
   "sel.value=virtualMode?virtualID:libraryState.active_id;",
   "if(!global&&!virtualMode){",
   "updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void initLibrary().then(",
@@ -64,6 +65,12 @@ func injectLabReactions(page string) string {
   "const readonly=labFavoritesMode||virtualMode&&!global;",1)
  page=strings.Replace(page,"if(!global&&!virtualMode){",
   "if(!global&&!virtualMode&&!labFavoritesMode){",1)
+ // La lista automática solo aparece representada por un corazón
+ // cuando la película está marcada. No cambia ni los números ni el lápiz.
+ page=strings.Replace(page,
+  "membership.append(caption,nums,edit);meta.appendChild(membership);",
+  "membership.append(caption,nums);const favoriteBadge=labFavoriteMembershipButton(f);if(favoriteBadge)membership.appendChild(favoriteBadge);membership.appendChild(edit);meta.appendChild(membership);",
+  1)
  page=strings.Replace(page,"b.append(togg,pill,labCreateDetailButton(f),fix);frag.appendChild(b);",
   "b.append(togg,labFilmRowActions(f,pill,labCreateDetailButton(f),fix));frag.appendChild(b);",1)
  page=strings.Replace(page,"$('libraryCount').textContent=global?matches.length+' resultados':parsed.entries.length+' películas';",
