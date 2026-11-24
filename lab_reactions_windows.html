@@ -167,7 +167,7 @@ function labReactionControls(f){
   const btn=document.createElement('button');btn.type='button';btn.className='lab-rate-button';
   if(rating)btn.classList.add('lab-is-rated');
   const emoji=document.createElement('span');emoji.className='lab-emotion';
-  emoji.textContent=rating?labRatingEmojis[rating-1]:'😐';
+  emoji.textContent=rating?labRatingEmojis[rating-1]:'☆';
   emoji.setAttribute('aria-hidden','true');
   const text=document.createElement('span');text.textContent=rating?rating+'/5':'Valorar';
   btn.append(emoji,text);
