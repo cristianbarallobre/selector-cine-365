@@ -50,6 +50,10 @@ func injectLabReactions(page string) string {
   `if(labFavoriteCount()){const o=document.createElement('option');o.value=labFavoriteID;o.textContent='♥ Favoritos ('+labFavoriteCount()+')';sel.appendChild(o);}if(hasComparison()){const o=document.createElement('option');o.value=virtualID;`,1)
  page=strings.Replace(page,"sel.value=virtualMode?virtualID:libraryState.active_id;",
   "sel.value=labFavoritesMode?labFavoriteID:virtualMode?virtualID:libraryState.active_id;",1)
+ // Si un dispositivo remoto retira el último corazón, no dejar la vista
+ // virtual abierta sin opción válida en el selector.
+ page=strings.Replace(page,"function renderList(){labFiltersRefreshChoices();",
+  "function renderList(){labFiltersRefreshChoices();if(labFavoritesMode&&!labFavoriteCount())labFavoritesMode=false;",1)
  page=strings.Replace(page,"function filmOrderEditable(){",
   "function filmOrderEditable(){if(labFavoritesMode)return false;",1)
  page=strings.Replace(page,"function selectSearchScope(scope){",
