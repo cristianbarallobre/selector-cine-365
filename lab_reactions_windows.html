@@ -1,5 +1,59 @@
 <style>
 /* Windows LAB: emociones sutiles y corazón independiente de TMDB. */
+/* Reparto estable de acciones en todas las filas de Biblioteca:
+   [valoración] [Vista/Pendiente | corazón]
+                [Detalles       | editar] */
+#view-library .lab-film-action-layout{
+ display:grid;grid-template-columns:72px 122px;gap:9px;align-items:center;
+ flex:0 0 203px;width:203px;min-width:0;max-width:203px;
+ margin:0 11px 0 4px;
+}
+#view-library .lab-film-score-slot{
+ width:72px;min-width:0;min-height:68px;
+ display:flex;justify-content:center;align-items:center;
+}
+#view-library .lab-film-action-grid{
+ display:grid;grid-template-columns:minmax(0,1fr) 34px;
+ grid-template-rows:31px 31px;gap:7px 6px;
+ align-items:center;justify-items:stretch;min-width:0;
+}
+#view-library .lab-film-action-grid .pill{
+ display:flex!important;align-items:center;justify-content:center;
+ margin:0!important;width:100%;min-width:0;height:29px;
+ padding:0 5px;font-size:10px;white-space:nowrap;
+}
+#view-library .lab-film-action-grid .lab-heart-button{
+ display:grid;place-items:center;width:34px;height:31px;min-height:31px;
+ min-width:34px;padding:0;margin:0;
+}
+#view-library .lab-film-action-grid .lab-film-detail-button{
+ display:flex;align-items:center;justify-content:center;
+ width:100%;min-width:0;height:31px;margin:0;padding:0 3px;font-size:11px;
+}
+#view-library .lab-film-action-grid .matchlink{
+ display:grid;place-items:center;width:34px;height:31px;
+ min-width:34px;min-height:31px;margin:0;padding:0;
+}
+#view-library .lab-film-score-slot .lab-rate-button{
+ width:70px;max-width:70px;min-height:58px;
+ display:flex;align-items:center;justify-content:center;flex-direction:column;
+ gap:2px;padding:5px 3px;margin:0;font-size:11px;line-height:1.15;
+}
+#view-library .lab-film-score-slot .lab-rate-button .lab-emotion{font-size:23px;line-height:1.25}
+@media(max-width:650px){
+ #view-library .lab-film-action-layout{
+  grid-template-columns:56px 104px;gap:6px;
+  flex-basis:166px;width:166px;max-width:166px;margin:0 7px 0 0;
+ }
+ #view-library .lab-film-score-slot{width:56px;min-height:68px}
+ #view-library .lab-film-action-grid{grid-template-columns:minmax(0,1fr) 30px;gap:6px 4px}
+ #view-library .lab-film-action-grid .lab-heart-button,
+ #view-library .lab-film-action-grid .matchlink{width:30px;min-width:30px}
+ #view-library .lab-film-score-slot .lab-rate-button{width:54px;max-width:54px;min-height:54px;font-size:10px}
+ #view-library .lab-film-score-slot .lab-rate-button .lab-emotion{font-size:20px}
+ #view-library .lab-film-action-grid .pill{font-size:9px;padding:0 2px}
+ #view-library .lab-film-action-grid .lab-film-detail-button{font-size:10px;padding:0 1px}
+}
 #view-library .lab-reaction-controls{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-shrink:0}
 #view-library .lab-heart-button,#view-library .lab-rate-button{font-family:inherit;background:#223347;border:1px solid #445b73;border-radius:9px;cursor:pointer;min-height:31px;min-width:32px;color:#aab9c9;padding:5px 7px;font-size:13px}
 #view-library .lab-heart-button{font-size:20px;line-height:1;font-weight:700;color:#889caf;transition:color .15s,background .15s}
@@ -151,6 +205,21 @@ function labRefreshDetailFavorite(){
 $('labDetailFavorite').addEventListener('click',()=>{
  if(labCurrentMovie?.title)labToggleFavorite(labDiscoverReactionFilm(labCurrentMovie));
 });
+// Mantener medidas iguales en vistas y pendientes. La nota solo existe en
+// vistas, pero su columna se reserva para alinear siempre el resto de botones.
+function labFilmRowActions(f,status,details,edit){
+ const shell=document.createElement('div');shell.className='lab-film-action-layout';
+ const scoreSlot=document.createElement('div');scoreSlot.className='lab-film-score-slot';
+ const right=document.createElement('div');right.className='lab-film-action-grid';
+ const reactions=labReactionControls(f);
+ const heart=reactions.querySelector('.lab-heart-button');
+ const score=reactions.querySelector('.lab-rate-button');
+ if(score)scoreSlot.appendChild(score);
+ if(!heart)throw new Error('Falta el botón de Favoritos');
+ right.append(status,heart,details,edit);
+ shell.append(scoreSlot,right);
+ return shell;
+}
 function labReactionControls(f){
  const wrap=document.createElement('div');wrap.className='lab-reaction-controls';
  const heart=document.createElement('button');heart.type='button';heart.className='lab-heart-button';
