@@ -17,6 +17,10 @@ func TestLabOpenListNumberWithoutSearch(t *testing.T){
   "filmPage=Math.floor(index/capacity)",
   "search='';$('search').value='';filter='all'",
   "labFiltersResetForList();",
+  "if(m.id!==libraryState.active_id||virtualMode||labFavoritesMode)switchCollection(m.id);",
+  "const labWasFavorite=labFavoritesMode;labFavoritesMode=false;",
+  "(!virtualMode&&id===libraryState.active_id&&!labWasFavorite))return;",
+
  }{
   if !strings.Contains(page,needle){t.Errorf("falta navegación por número LAB: %s",needle)}
  }
