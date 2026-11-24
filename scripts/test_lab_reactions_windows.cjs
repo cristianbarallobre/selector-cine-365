@@ -20,6 +20,9 @@ assert.match(template,/#view-library \.lab-film-action-grid \.pill\{[\s\S]*?disp
 assert.match(template,/@media\(max-width:650px\)/);
 assert.match(injections,/labFavoritesFilms\(\)/);
 assert.match(injections,/labFavoritesOpen/);
+assert.match(injections,/const favoriteBadge=labFavoriteMembershipButton\(f\)/,'El indicador se inserta junto a los números');
+assert.match(injections,/if\(favoriteBadge\)membership\.appendChild\(favoriteBadge\)/,'No mostrar corazón en películas que no son favoritas');
+assert.match(template,/#view-library \.film-memberships \.lab-membership-heart/,'Corazón discreto en el bloque de listas');
 assert.match(page,/labDiscoverFavoriteButton\(film\)/);
 assert.match(page,/id="labDetailFavorite"/);
 
@@ -94,6 +97,8 @@ assert.equal(watchedControls.children[0].textContent,'♡');
 assert.equal(watchedControls.children[1].children[1].textContent,'Valorar');
 const pendingControls=ctx.labReactionControls(pending);
 assert.equal(pendingControls.children.length,1,'Pendientes: solo corazón');
+assert.equal(ctx.labFavoriteMembershipButton(watched),null,'Sin favorito no se muestra corazón junto a Listas');
+assert.equal(ctx.labFavoriteMembershipButton(pending),null,'Sin favorito no aparece indicador de lista automática');
 
 // La valoración ocupa una columna a la izquierda. La derecha presenta
 // estado/corazón arriba y Detalles/edición debajo, con el mismo ancho en todas.
@@ -132,6 +137,14 @@ assert.equal(evaluate('labFavoriteCount()'),1);
 assert.equal(dom.labFavoritesCollection.hidden,false);
 assert.equal(dom.labFavoritesCount.textContent,'1 película · lista automática');
 assert.equal(saves,1,'Se guarda inmediatamente la elección');
+const smallFavoriteHeart=ctx.labFavoriteMembershipButton(watched);
+assert.ok(smallFavoriteHeart,'Al marcar una película como favorita aparece el corazón junto a Listas');
+assert.equal(smallFavoriteHeart.tagName,'button');
+assert.equal(smallFavoriteHeart.className,'lab-membership-heart');
+assert.equal(smallFavoriteHeart.textContent,'♥');
+assert.equal(smallFavoriteHeart.title,'En Favoritos');
+assert.equal(smallFavoriteHeart.attrs['aria-pressed'],'true');
+assert.equal(smallFavoriteHeart.attrs['aria-label'],'Quitar «Una película» de Favoritos');
 ctx.labOpenFavorites();
 assert.equal(evaluate('labFavoritesMode'),true);
 assert.equal(shown,'library');
@@ -171,4 +184,15 @@ const rec=libraryState.reactions['película descubierta|2026'];
 assert.equal(rec.tmdb_id,123,'Conserva ID real de TMDB al añadir desde Descubrir');
 assert.equal(rec.favorite,true);
 assert.equal(ctx.labFavoritesFilms().length,1,'También incluye favoritos descubiertos fuera de la Biblioteca');
-console.log('OK: valoración separada a la izquierda, acciones en rejilla uniforme 2×2, notas y Favoritos conservados');
+const discoveredBadge=ctx.labFavoriteMembershipButton({title:'Película descubierta',year:'2026'});
+assert.equal(discoveredBadge.textContent,'♥','Comparte favorito con botón grande y Descubrir');
+let stopped=false;
+const savedBefore=saves;
+discoveredBadge.events.click({stopPropagation(){stopped=true;}});
+assert.equal(stopped,true,'El clic en el corazón no debe activar otro control de la fila');
+assert.equal(libraryState.reactions['película descubierta|2026'].favorite,false,'El pequeño corazón permite quitar de Favoritos');
+assert.equal(saves,savedBefore+1,'Quitar desde Listas guarda una sola vez');
+assert.equal(ctx.labFavoriteMembershipButton({title:'Película descubierta',year:'2026'}),null,'El corazón desaparece al quitar Favoritos');
+assert.equal(evaluate('labFavoriteCount()'),0,'La lista virtual desaparece sin favoritos');
+assert.equal(libraryState.lists.length,2,'No crea ni borra listas normales');
+console.log('OK: corazón junto a Listas solo si es favorito, clic para quitar, botones alineados y sin duplicar datos');
