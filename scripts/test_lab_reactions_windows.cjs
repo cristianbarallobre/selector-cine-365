@@ -9,7 +9,7 @@ const page=fs.readFileSync('lab_discover_windows.html','utf8');
 const injections=fs.readFileSync('lab_reactions_windows.go','utf8');
 assert.ok(source);
 new vm.Script('(()=>{\n'+source+'\n})();',{filename:'lab_reactions_windows.html'});
-assert.match(template,/😫','First emotion');
+assert.ok(template.includes('😫'),'First emotion');
 for(const emoji of ['😫','☹️','😐','🙂','😄'])assert.ok(template.includes(emoji),'Missing '+emoji);
 assert.match(template,/id="labRatingOverlay"/);
 assert.match(injections,/labFavoritesMode\|\|virtualMode&&!global/);
