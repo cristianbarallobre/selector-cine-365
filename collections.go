@@ -23,6 +23,16 @@ type filmCollection struct {
     // Updated only on explicit drag-and-drop reordering. Older clients omit it.
     OrderChangedAt int64 `json:"order_changed_at,omitempty"`
 }
+// Valoración propia y favoritos: datos del usuario, nunca caché TMDB.
+// Los registros desactivados se conservan como tombstones para que una
+// sincronización antigua no reactive corazones o puntuaciones eliminadas.
+type filmReaction struct {
+ Favorite bool `json:"favorite"`
+ Rating int `json:"rating,omitempty"`
+ Title string `json:"title"`
+ Year string `json:"year,omitempty"`
+ ChangedAt int64 `json:"changed_at"`
+}
 type libraryState struct {
 	Version       int              `json:"version"`
 	ActiveID      string           `json:"active_id"`
@@ -32,6 +42,7 @@ type libraryState struct {
 	DeletedLists map[string]bool   `json:"deleted_lists,omitempty"`
 	// Identificaciones TMDB compartibles, nunca la clave API privada.
 	TMDBOverrides map[string]int   `json:"tmdb_overrides,omitempty"`
+ Reactions map[string]filmReaction `json:"reactions,omitempty"`
 }
 
 var listIDPattern = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,60}$`)
@@ -66,6 +77,18 @@ func validateLibrary(l libraryState) error {
 	for key,id:=range l.TMDBOverrides {
 		if len(key)>275||!utf8.ValidString(key)||!strings.Contains(key,"|")||id<0||id>999999999 {return errors.New("Identificación TMDB inválida")}
 	}
+ if len(l.Reactions)>15000{return errors.New("Demasiadas valoraciones o favoritos")}
+ for key,rec:=range l.Reactions {
+  if !utf8.ValidString(key)||len(key)>275||!strings.Contains(key,"|")||
+   rec.Rating<0||rec.Rating>5||!utf8.ValidString(rec.Title)||
+   len([]rune(rec.Title))>200||strings.TrimSpace(rec.Title)==""||
+   len(rec.Year)>4||rec.ChangedAt<0||rec.ChangedAt>4102444800000 {
+   return errors.New("Valoración o favorito inválido")
+  }
+  if rec.Year!=""{
+   for _,r:=range rec.Year{if r<'0'||r>'9'{return errors.New("Año de favorito no válido")}}
+  }
+ }
 	if len(l.ComparisonIDs) == 1 || len(l.ComparisonIDs) > len(l.Lists) {
 		return errors.New("La comparación requiere al menos dos listas")
 	}
