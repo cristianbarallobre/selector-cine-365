@@ -34,11 +34,11 @@ func injectLabReactions(page string) string {
  }
  for _,needle:=range expected{if !strings.Contains(page,needle){return page}}
  page=strings.Replace(page,"</head>",fragments[0]+"\n</head>",1)
- page=strings.Replace(page,\x60<div id="collectionRows" class="collection-rows"></div>\x60,
-  \x60<div id="labFavoritesCollection" hidden>
+ page=strings.Replace(page,`<div id="collectionRows" class="collection-rows"></div>`,
+  `<div id="labFavoritesCollection" hidden>
     <div><div class="lab-favorites-title">♥ Favoritos</div><div class="lab-favorites-info" id="labFavoritesCount">Lista automática</div></div>
     <button type="button" id="labFavoritesOpen">Ver favoritos</button>
-   </div><div id="collectionRows" class="collection-rows"></div>\x60,1)
+   </div><div id="collectionRows" class="collection-rows"></div>`,1)
  page=strings.Replace(page,"</main>",sections[0]+"\n</main>",1)
  page=strings.Replace(page,"function switchCollection(id){",
   "function switchCollection(id){if(id===labFavoriteID){labOpenFavorites();return;}const labWasFavorite=labFavoritesMode;labFavoritesMode=false;",1)
@@ -46,8 +46,8 @@ func injectLabReactions(page string) string {
   "(!virtualMode&&id===libraryState.active_id&&!labWasFavorite))return;",1)
  page=strings.Replace(page,"function renderCollectionControls(){",
   "function renderCollectionControls(){labUpdateFavoritesCard();",1)
- page=strings.Replace(page,\x60if(hasComparison()){const o=document.createElement('option');o.value=virtualID;\x60,
-  \x60if(labFavoriteCount()){const o=document.createElement('option');o.value=labFavoriteID;o.textContent='♥ Favoritos ('+labFavoriteCount()+')';sel.appendChild(o);}if(hasComparison()){const o=document.createElement('option');o.value=virtualID;\x60,1)
+ page=strings.Replace(page,`if(hasComparison()){const o=document.createElement('option');o.value=virtualID;`,
+  `if(labFavoriteCount()){const o=document.createElement('option');o.value=labFavoriteID;o.textContent='♥ Favoritos ('+labFavoriteCount()+')';sel.appendChild(o);}if(hasComparison()){const o=document.createElement('option');o.value=virtualID;`,1)
  page=strings.Replace(page,"sel.value=virtualMode?virtualID:libraryState.active_id;",
   "sel.value=labFavoritesMode?labFavoriteID:virtualMode?virtualID:libraryState.active_id;",1)
  page=strings.Replace(page,"function filmOrderEditable(){",
