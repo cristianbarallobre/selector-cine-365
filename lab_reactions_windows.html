@@ -61,6 +61,20 @@
 #view-library .lab-heart-button{font-size:20px;line-height:1;font-weight:700;color:#889caf;transition:color .15s,background .15s}
 #view-library .lab-heart-button:hover{color:#f4b7bb;border-color:#b47483}
 #view-library .lab-heart-button.lab-is-favorite{color:#db8b94;border-color:#b36f7b;background:#45333e}
+/* La pertenencia a Favoritos se indica junto a los números, sin contar como lista numerada. */
+#view-library .film-memberships .lab-membership-heart{
+ display:inline-grid;place-items:center;flex:0 0 auto;
+ width:20px;min-width:20px;height:21px;margin:0;padding:0;
+ border:1px solid #856776;border-radius:5px;
+ background:#403540;color:#e2a0ab;
+ font:700 15px/1 inherit;cursor:pointer;
+}
+#view-library .film-memberships .lab-membership-heart:hover{
+ background:#62424d;color:#f2bcc6;border-color:#c28b9b;
+}
+#view-library .film-memberships .lab-membership-heart:focus-visible{
+ outline:2px solid #f1cd8b;outline-offset:2px;
+}
 #view-library .lab-rate-button{color:#d6dfe9;font-size:12px;white-space:nowrap;display:flex;align-items:center;gap:4px}
 #view-library .lab-rate-button:hover{border-color:#d9b877}
 #view-library .lab-rate-button .lab-emotion{filter:saturate(.65);font-size:18px}
@@ -207,6 +221,21 @@ function labRefreshDetailFavorite(){
 $('labDetailFavorite').addEventListener('click',()=>{
  if(labCurrentMovie?.title)labToggleFavorite(labDiscoverReactionFilm(labCurrentMovie));
 });
+// Indicador pequeño junto a «Listas:»: solo se dibuja si la película
+// pertenece a Favoritos. El botón derecho de la fila usa la misma reacción.
+function labFavoriteMembershipButton(f){
+ if(!labReactionFor(f)?.favorite)return null;
+ const button=document.createElement('button');
+ button.type='button';button.className='lab-membership-heart';
+ button.textContent='♥';button.title='En Favoritos';
+ button.setAttribute('aria-label','Quitar «'+f.title+'» de Favoritos');
+ button.setAttribute('aria-pressed','true');
+ button.addEventListener('click',e=>{
+  e.stopPropagation();
+  labToggleFavorite(f);
+ });
+ return button;
+}
 // Mantener medidas iguales en vistas y pendientes. La nota solo existe en
 // vistas, pero su columna se reserva para alinear siempre el resto de botones.
 function labFilmRowActions(f,status,details,edit){
