@@ -171,6 +171,10 @@ function labWriteReaction(f,changes){
  renderCollectionControls();
  labRefreshDiscoverFavorites();
  labRefreshDetailFavorite();
+ if(labCurrentMovie?.title&&!$('labDetailOverlay').hidden){
+  labRenderDetailMemberships(labCurrentMovie);
+  labUpdateDetailAddState();
+ }
 }
 function labToggleFavorite(f){
  if(!f||!f.title)return;
