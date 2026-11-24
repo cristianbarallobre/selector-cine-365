@@ -83,6 +83,7 @@ const providers=new Map([
 ]);
 const context={
  parsed:{entries:films},
+ labStatsDataset:()=>context.parsed,
  platformData:providers,
  selectedSortPlatform:'all',
  providerKey:f=>f.title,
