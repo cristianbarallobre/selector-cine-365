@@ -65,7 +65,7 @@ func injectLabReactions(page string) string {
  page=strings.Replace(page,"if(!global&&!virtualMode){",
   "if(!global&&!virtualMode&&!labFavoritesMode){",1)
  page=strings.Replace(page,"b.append(togg,pill,labCreateDetailButton(f),fix);frag.appendChild(b);",
-  "b.append(togg,pill,labReactionControls(f),labCreateDetailButton(f),fix);frag.appendChild(b);",1)
+  "b.append(togg,labFilmRowActions(f,pill,labCreateDetailButton(f),fix));frag.appendChild(b);",1)
  page=strings.Replace(page,"$('libraryCount').textContent=global?matches.length+' resultados':parsed.entries.length+' películas';",
   "$('libraryCount').textContent=labFavoritesMode?matches.length+' favoritos':global?matches.length+' resultados':parsed.entries.length+' películas';",1)
  page=strings.Replace(page,
