@@ -29,7 +29,7 @@ assert.match(page,/id="labDetailFavorite"/);
 class FakeNode{
  constructor(tag='div'){
   this.tagName=tag;this.children=[];this.events={};this.attrs={};this.className='';this.style={};
-  this.hidden=true;this.textContent='';this.value='';this.isConnected=true;this.dataset={};this.classSet=new Set();
+  this.hidden=true;this.textContent='';this.value='';this.isConnected=true;this.dataset={};this.classSet=new Set();this.clientHeight=0;
   this.classList={
    add:k=>this.classSet.add(k),
    remove:k=>this.classSet.delete(k),
@@ -48,12 +48,16 @@ class FakeNode{
   if(s==='.lab-heart-button'||s==='.lab-rate-button')return this.children.find(x=>x.className.split(' ').includes(s.slice(1)))||null;
   return null;
  }
+ querySelectorAll(selector){return selector==='.film-item'?this.children.filter(x=>x.className==='film-item'):[];}
+ scrollIntoView(options){this.scrolledWith=options;}
  focus(){doc.activeElement=this;}
  click(){this.events.click?.({stopPropagation(){}});}
 }
 const ids=['labRatingOverlay','labRatingTitle','labRatingOptions','labRatingClear','labRatingClose','labFavoritesCollection','labFavoritesCount','labFavoritesOpen','labDetailFavorite','filmList'];
 const dom=Object.fromEntries(ids.map(x=>[x,new FakeNode()]));
-let renderCalls=0,collections=0,saves=0,shown='';
+dom.filmList.clientHeight=412;
+let renderCalls=0,collections=0,saves=0,shown='',filtersReset=0,frames=[];
+const delays=[],timers=new Map();let nextTimer=0;
 const doc={activeElement:new FakeNode('button'),createElement:tag=>new FakeNode(tag),
  querySelectorAll:()=>[],documentElement:{clientWidth:950,clientHeight:720}};
 const parse=text=>{
@@ -75,14 +79,37 @@ const ctx={
  knownTMDB:()=>0,parse,Date,Math,Number,String,Array,Object,
  labCurrentMovie:null,
  scheduleSave:()=>{saves++},
- renderList:()=>{renderCalls++},
+ renderList:()=>{
+  renderCalls++;
+  const root=dom.filmList;root.replaceChildren();
+  if(vm.runInContext('labFavoritesMode',ctx)){
+   const items=ctx.labFavoritesFilms().slice(ctx.filmPage*4,ctx.filmPage*4+4);
+   for(const film of items){
+    const row=new FakeNode('div');row.className='film-item';row.dataset.idx=String(film.idx);
+    const highlight=ctx.labListJumpHighlight;
+    if(highlight&&highlight.listID==='__favoritos_automaticos_lab__'&&highlight.rawIndex===film.idx)row.classList.add('lab-list-jump-target');
+    root.appendChild(row);
+   }
+  }
+ },
  renderCollectionControls:()=>{collections++},
  notify:()=>{},
  syncActiveText:()=>{},
  activeCollection:()=>libraryState.lists[0],
- restartList:()=>{},
- showView:x=>{shown=x},
- virtualMode:false,rawText:'',
+ restartList:()=>{ctx.filmPage=0;ctx.search='';ctx.filter='all';},
+ showView:x=>{shown=x;ctx.renderList();},
+ virtualMode:false,rawText:'',filmPage:0,search:'',filter:'all',
+ labListJumpSerial:0,labListJumpHighlight:null,labListJumpTimer:null,
+ labClearListJumpHighlight:()=>{
+  const id=ctx.labListJumpTimer;
+  if(id!==null)timers.delete(id);
+  ctx.labListJumpTimer=null;ctx.labListJumpHighlight=null;
+  dom.filmList.querySelectorAll('.film-item').forEach(row=>row.classList.remove('lab-list-jump-target'));
+ },
+ labFiltersResetForList:()=>{filtersReset++;},
+ requestAnimationFrame:cb=>{frames.push(cb);},
+ setTimeout:(cb,ms)=>{const id=++nextTimer;timers.set(id,{cb,ms});delays.push(ms);return id;},
+ clearTimeout:id=>timers.delete(id),
 };
 vm.createContext(ctx);
 vm.runInContext(source,ctx);
@@ -142,12 +169,31 @@ assert.ok(smallFavoriteHeart,'Al marcar una película como favorita aparece el c
 assert.equal(smallFavoriteHeart.tagName,'button');
 assert.equal(smallFavoriteHeart.className,'lab-membership-heart');
 assert.equal(smallFavoriteHeart.textContent,'♥');
-assert.equal(smallFavoriteHeart.title,'En Favoritos');
+assert.equal(smallFavoriteHeart.title,'Ver en Favoritos');
 assert.equal(smallFavoriteHeart.attrs['aria-pressed'],'true');
-assert.equal(smallFavoriteHeart.attrs['aria-label'],'Quitar «Una película» de Favoritos');
-ctx.labOpenFavorites();
-assert.equal(evaluate('labFavoritesMode'),true);
+assert.equal(smallFavoriteHeart.attrs['aria-label'],'Ver «Una película» en Favoritos');
+const beforeNavigationSaves=saves;
+let stoppedFirst=false;
+smallFavoriteHeart.events.click({stopPropagation(){stoppedFirst=true;}});
+assert.equal(stoppedFirst,true,'No activar otro control de la película');
+assert.equal(evaluate('labFavoritesMode'),true,'El corazón pequeño abre Favoritos');
 assert.equal(shown,'library');
+assert.equal(filtersReset,1,'Limpia los filtros que podrían ocultar el resultado');
+assert.equal(saves,beforeNavigationSaves,'Navegar no guarda ni desmarca Favoritos');
+assert.equal(libraryState.reactions['una película|2024'].favorite,true);
+assert.equal(ctx.filmPage,0);
+assert.equal(ctx.labListJumpHighlight.listID,'__favoritos_automaticos_lab__');
+assert.equal(ctx.labListJumpHighlight.rawIndex,0);
+assert.equal(dom.filmList.children.length,1);
+assert.equal(dom.filmList.children[0].classList.contains('lab-list-jump-target'),true);
+assert.equal(delays.at(-1),4200);
+frames.shift()();
+assert.equal(dom.filmList.children[0].scrolledWith.block,'center');
+ctx.renderList();
+assert.equal(dom.filmList.children[0].classList.contains('lab-list-jump-target'),true,'Conservar resaltado al refrescar');
+for(const {cb} of [...timers.values()])cb();timers.clear();
+assert.equal(ctx.labListJumpHighlight,null,'El resaltado se quita automáticamente');
+assert.equal(dom.filmList.children[0].classList.contains('lab-list-jump-target'),false);
 const favorites=ctx.labFavoritesFilms();
 assert.equal(favorites.length,1,'Sin duplicar película de dos listas');
 assert.equal(favorites[0].checked,true,'Mantiene estado de vista de la lista original');
@@ -190,9 +236,43 @@ let stopped=false;
 const savedBefore=saves;
 discoveredBadge.events.click({stopPropagation(){stopped=true;}});
 assert.equal(stopped,true,'El clic en el corazón no debe activar otro control de la fila');
-assert.equal(libraryState.reactions['película descubierta|2026'].favorite,false,'El pequeño corazón permite quitar de Favoritos');
-assert.equal(saves,savedBefore+1,'Quitar desde Listas guarda una sola vez');
-assert.equal(ctx.labFavoriteMembershipButton({title:'Película descubierta',year:'2026'}),null,'El corazón desaparece al quitar Favoritos');
-assert.equal(evaluate('labFavoriteCount()'),0,'La lista virtual desaparece sin favoritos');
+assert.equal(evaluate('labFavoritesMode'),true,'Abre Favoritos también desde una película de Descubrir');
+assert.equal(libraryState.reactions['película descubierta|2026'].favorite,true,'El pequeño corazón no elimina Favoritos');
+assert.equal(saves,savedBefore,'Navegar no provoca escrituras ni sincronizaciones');
+assert.equal(ctx.labListJumpHighlight.rawIndex,0);
+assert.equal(dom.filmList.children[0].classList.contains('lab-list-jump-target'),true);
+assert.ok(ctx.labFavoriteMembershipButton({title:'Película descubierta',year:'2026'}));
+ctx.labToggleFavorite({title:'Película descubierta',year:'2026'});
+assert.equal(libraryState.reactions['película descubierta|2026'].favorite,false,'Solo el corazón de edición quita de Favoritos');
+assert.equal(saves,savedBefore+1);
+assert.equal(ctx.labFavoriteMembershipButton({title:'Película descubierta',year:'2026'}),null);
+assert.equal(evaluate('labFavoriteCount()'),0);
 assert.equal(libraryState.lists.length,2,'No crea ni borra listas normales');
-console.log('OK: corazón junto a Listas solo si es favorito, clic para quitar, botones alineados y sin duplicar datos');
+
+// Más de una página de favoritos: localizar la película sin filtrar por nombre.
+libraryState.reactions={};
+for(let i=0;i<13;i++){
+ const film={title:'Película '+i,year:'2024'};
+ libraryState.reactions['película '+i+'|2024']={
+  title:film.title,year:film.year,changed_at:100+i,favorite:true,rating:0
+ };
+}
+const lateFilm={title:'Película 0',year:'2024'};
+const order=ctx.labFavoritesFilms();
+const position=order.findIndex(x=>x.title===lateFilm.title);
+assert.equal(position,12,'La película elegida está en la última página');
+const badge=ctx.labFavoriteMembershipButton(lateFilm);
+const savedBeforePageJump=saves;
+badge.click();
+assert.equal(evaluate('labFavoritesMode'),true);
+assert.equal(ctx.filmPage,3,'Salta a la cuarta página');
+assert.equal(ctx.labListJumpHighlight.rawIndex,12);
+assert.equal(dom.filmList.children.length,1);
+assert.equal(dom.filmList.children[0].dataset.idx,'12');
+assert.equal(dom.filmList.children[0].classList.contains('lab-list-jump-target'),true);
+assert.equal(saves,savedBeforePageJump,'Ni mover página ni destacar modifican reacciones');
+assert.equal(libraryState.reactions['película 0|2024'].favorite,true);
+frames.splice(0).forEach(cb=>cb());
+assert.equal(dom.filmList.children[0].scrolledWith.block,'center');
+assert.equal(libraryState.lists[0].text,'☑ Una película (2024)\n☐ Otra (2025)','El TXT permanece intacto');
+console.log('OK: corazón pequeño navega a Favoritos y resalta incluso en otra página, el grande sigue quitando favoritos');
