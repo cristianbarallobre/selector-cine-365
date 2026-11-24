@@ -69,7 +69,7 @@ func injectLabDiscovery(page string) string {
  // caché, plataformas o tamaño durante los segundos de localización.
  page = strings.Replace(page,
   "b.dataset.idx=f.idx;b.setAttribute('role','listitem');",
-  "b.dataset.idx=f.idx;b.setAttribute('role','listitem');if(labListJumpHighlight&&labListJumpHighlight.listID===libraryState.active_id&&labListJumpHighlight.rawIndex===f.idx)b.classList.add('lab-list-jump-target');",
+  "b.dataset.idx=f.idx;b.setAttribute('role','listitem');if(labListJumpHighlight&&(labListJumpHighlight.listID===libraryState.active_id||labListJumpHighlight.listID===labFavoriteID&&labFavoritesMode)&&labListJumpHighlight.rawIndex===f.idx)b.classList.add('lab-list-jump-target');",
   1)
  // Aprovecha el hueco sin reducir el número de filas: conserva la capacidad de 96px+7px.
  // Cuando sobra espacio, estira proporcionalmente hasta 110px; en ventanas ajustadas mantiene 96px.
