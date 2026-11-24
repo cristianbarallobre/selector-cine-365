@@ -23,6 +23,12 @@
 .lab-rating-options button:focus-visible,.lab-rating-actions button:focus-visible{outline:2px solid #f1cc87;outline-offset:2px}
 .lab-rating-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
 .lab-rating-actions button{cursor:pointer;border:1px solid #50677e;background:#29394e;color:#e8eef6;border-radius:9px;padding:8px 12px;font-weight:700;font-size:12px}
+ .lab-discover-favorite{border:1px solid #5f617a;background:#283347;border-radius:8px;color:#9aabba;min-width:32px;height:30px;cursor:pointer;font-size:20px;line-height:1}
+.lab-discover-favorite.lab-is-favorite{color:#df9fa8;background:#493740;border-color:#ac7885}
+.lab-discover-favorite:hover{border-color:#d4a9b3}
+.lab-discover-favorite:focus-visible{outline:2px solid #efcf93}
+#labDetailFavorite{color:#aab7c8;font-size:22px}
+#labDetailFavorite.lab-is-favorite{color:#df9fa8;background:#493740;border-color:#ac7885}
 #labFavoritesCollection{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#253243;border:1px solid #745b69;border-radius:11px;padding:12px 14px;margin-bottom:8px}
 #labFavoritesCollection .lab-favorites-title{color:#edc5ca;font-size:15px;font-weight:800}
 #labFavoritesCollection .lab-favorites-info{font-size:12px;color:#bbc9d7;margin-top:3px}
@@ -70,7 +76,9 @@ function labFavoritesFilms(){
   const title=String(rec.title).replace(/[\r\n]+/g,' ').trim();
   return checked+' '+title+(rec.year?' ('+rec.year+')':'');
  });
- return parse(lines.join('\n')).entries;
+ const films=parse(lines.join('\n')).entries;
+ films.forEach((film,i)=>{film._favoriteTMDBID=Number(records[i]?.[1]?.tmdb_id)||0;});
+ return films;
 }
 function labWriteReaction(f,changes){
  const key=labReactionKey(f);
@@ -82,6 +90,7 @@ function labWriteReaction(f,changes){
  data[key]={
   favorite:changes.favorite===undefined?existing.favorite===true:changes.favorite===true,
   rating:changes.rating===undefined?(existing.rating||0):changes.rating,
+  tmdb_id:Number(changes.tmdb_id||existing.tmdb_id||f._favoriteTMDBID||knownTMDB(f))||0,
   title:String(f.title||'').trim().slice(0,200),
   year:String(f.year||'').slice(0,4),
   changed_at:now
@@ -90,6 +99,8 @@ function labWriteReaction(f,changes){
  labUpdateFavoritesCard();
  renderList();
  renderCollectionControls();
+ labRefreshDiscoverFavorites();
+ labRefreshDetailFavorite();
 }
 function labToggleFavorite(f){
  if(!f||!f.title)return;
@@ -102,6 +113,44 @@ function labToggleFavorite(f){
   renderCollectionControls();
  }
 }
+function labDiscoverReactionFilm(m){
+ return {title:String(m.title||'').trim(),year:String(m.release_date||'').slice(0,4),_favoriteTMDBID:Number(m.id)||0};
+}
+function labDiscoverFavoriteButton(m){
+ const f=labDiscoverReactionFilm(m),button=document.createElement('button');
+ button.type='button';button.className='lab-discover-favorite';
+ button.dataset.favoriteKey=labReactionKey(f);
+ button.textContent=labReactionFor(f)?.favorite?'♥':'♡';
+ button.title=labReactionFor(f)?.favorite?'Quitar de Favoritos':'Añadir a Favoritos';
+ if(labReactionFor(f)?.favorite)button.classList.add('lab-is-favorite');
+ button.setAttribute('aria-label',button.title+': '+f.title);
+ button.setAttribute('aria-pressed',String(!!labReactionFor(f)?.favorite));
+ button.addEventListener('click',e=>{e.stopPropagation();labToggleFavorite(f);});
+ return button;
+}
+function labRefreshDiscoverFavorites(){
+ for(const button of document.querySelectorAll('.lab-discover-favorite')){
+  const fav=!!(libraryState.reactions||{})[button.dataset.favoriteKey]?.favorite;
+  button.textContent=fav?'♥':'♡';
+  button.title=fav?'Quitar de Favoritos':'Añadir a Favoritos';
+  button.setAttribute('aria-pressed',String(fav));
+  button.classList.toggle('lab-is-favorite',fav);
+ }
+}
+function labRefreshDetailFavorite(){
+ const button=$('labDetailFavorite'),m=labCurrentMovie;
+ button.hidden=!m?.title;
+ if(!m?.title)return;
+ const fav=!!labReactionFor(labDiscoverReactionFilm(m))?.favorite;
+ button.textContent=fav?'♥':'♡';
+ button.title=fav?'Quitar de Favoritos':'Añadir a Favoritos';
+ button.setAttribute('aria-pressed',String(fav));
+ button.setAttribute('aria-label',button.title+': '+m.title);
+ button.classList.toggle('lab-is-favorite',fav);
+}
+$('labDetailFavorite').addEventListener('click',()=>{
+ if(labCurrentMovie?.title)labToggleFavorite(labDiscoverReactionFilm(labCurrentMovie));
+});
 function labReactionControls(f){
  const wrap=document.createElement('div');wrap.className='lab-reaction-controls';
  const heart=document.createElement('button');heart.type='button';heart.className='lab-heart-button';
