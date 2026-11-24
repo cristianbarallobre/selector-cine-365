@@ -40,6 +40,8 @@
  gap:2px;padding:5px 3px;margin:0;font-size:11px;line-height:1.15;
 }
 #view-library .lab-film-score-slot .lab-rate-button .lab-emotion{font-size:23px;line-height:1.25}
+/* En vistas virtuales el lápiz se oculta aunque el contenedor use grid. */
+#view-library .lab-film-action-grid .matchlink[hidden]{display:none!important}
 @media(max-width:650px){
  #view-library .lab-film-action-layout{
   grid-template-columns:56px 104px;gap:6px;
