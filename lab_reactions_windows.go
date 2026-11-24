@@ -51,6 +51,48 @@ func injectLabReactions(page string) string {
   `if(labFavoriteCount()){const o=document.createElement('option');o.value=labFavoriteID;o.textContent='♥ Favoritos ('+labFavoriteCount()+')';sel.appendChild(o);}if(hasComparison()){const o=document.createElement('option');o.value=virtualID;`,1)
  page=strings.Replace(page,"sel.value=virtualMode?virtualID:libraryState.active_id;",
   "sel.value=labFavoritesMode?labFavoriteID:virtualMode?virtualID:libraryState.active_id;",1)
+ // El selector de Favoritos es una vista calculada, pero el panel de
+ // «Tu próximo visionado», el sorteo y la pestaña Estadísticas deben usar
+ // ese mismo conjunto; nunca modificar parsed ni el TXT real al visitarla.
+ page=strings.Replace(page,
+  "function update(){membershipCache=null;parsed=parse(rawText);const n=parsed.entries.length;",
+  "function update(){membershipCache=null;parsed=parse(rawText);const labStats=labStatsDataset();const n=labStats.entries.length;",1)
+ page=strings.Replace(page,
+  "$('total').textContent=n;$('watched').textContent=parsed.seen;$('remaining').textContent=parsed.pending.length;",
+  "$('total').textContent=n;$('watched').textContent=labStats.seen;$('remaining').textContent=labStats.pending.length;",1)
+ page=strings.Replace(page,
+  "const pct=n?Math.round(100*parsed.seen/n):0;",
+  "const pct=n?Math.round(100*labStats.seen/n):0;",1)
+ page=strings.Replace(page,
+  "if(selectedSortPlatform==='all')return parsed.pending;",
+  "if(selectedSortPlatform==='all')return labStatsDataset().pending;",1)
+ page=strings.Replace(page,
+  "return parsed.pending.filter(f=>{",
+  "return labStatsDataset().pending.filter(f=>{",1)
+ page=strings.Replace(page,
+  "const count=eligibleFilms().length;const total=parsed.pending.length;",
+  "const count=eligibleFilms().length;const total=labStatsDataset().pending.length;",1)
+ page=strings.Replace(page,
+  "if(!parsed)return;const seen=parsed.entries.filter(f=>f.checked),hero=$('statsHero')",
+  "if(!parsed)return;const seen=labStatsDataset().entries.filter(f=>f.checked),hero=$('statsHero')",1)
+ page=strings.Replace(page,
+  "$('statsTitle').textContent=virtualMode?'Películas coincidentes · solo lectura':activeCollection()?.name||'';",
+  "$('statsTitle').textContent=labFavoritesMode?'♥ Favoritos':virtualMode?'Películas coincidentes · solo lectura':activeCollection()?.name||'';",1)
+ // La fila de Favoritos es de solo lectura en cuanto al estado visto:
+ // un sorteo de esa lista NO debe marcar por error la posición equivalente
+ // de la última lista física que quedó activa.
+ page=strings.Replace(page,"function toggle(idx){\n if(virtualMode)return;",
+  "function toggle(idx){\n if(virtualMode||labFavoritesMode)return;",1)
+ page=strings.Replace(page,
+  "$('markWatched').disabled=virtualMode;",
+  "$('markWatched').disabled=virtualMode||labFavoritesMode;",1)
+ page=strings.Replace(page,
+  "$('markWatched').addEventListener('click',()=>{if(chosen)toggle(chosen.idx);});",
+  "$('markWatched').addEventListener('click',()=>{if(chosen&&!labFavoritesMode)toggle(chosen.idx);});",1)
+ // La ventana de filtros utiliza las mismas películas de Favoritos.
+ page=strings.Replace(page,
+  "const all=searchScope==='all'?filmMembershipIndex().rows:parsed.entries;",
+  "const all=searchScope==='all'?filmMembershipIndex().rows:labStatsDataset().entries;",1)
  // Si un dispositivo remoto retira el último corazón, no dejar la vista
  // virtual abierta sin opción válida en el selector.
  page=strings.Replace(page,"function renderList(){labFiltersRefreshChoices();",
