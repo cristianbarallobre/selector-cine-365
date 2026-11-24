@@ -29,6 +29,7 @@ func (a *runningApp) localRecoveryList() ([]recoveryInfo,error){
   {"rec",filepath.Join(root,"sync_recuperacion")},
   {"day",filepath.Join(root,"copias_automaticas")},
  }
+ if appIsLab{directories=append(directories,struct{prefix,path string}{"quick",filepath.Join(root,"copias_rapidas_lab")})}
  for _,d:=range directories{
   entries,err:=os.ReadDir(d.path)
   if os.IsNotExist(err){continue}
@@ -43,8 +44,34 @@ func (a *runningApp) localRecoveryList() ([]recoveryInfo,error){
   }
  }
  sort.Slice(all,func(i,j int)bool{return all[i].WhenMS>all[j].WhenMS})
- if len(all)>25{all=all[:25]}
+ if len(all)>50{all=all[:50]}
  return all,nil
+}
+// Solo información resumida de la copia elegida, sin exponer los TXT.
+func (a *runningApp) previewLocalRecovery(id string) (map[string]any,error){
+ prefix,name,ok:=strings.Cut(id,":")
+ if !ok||!safeRecoveryName.MatchString(name){return nil,errors.New("copia no válida")}
+ root:=filepath.Dir(a.libraryPath)
+ dir:=""
+ switch prefix{
+ case "rec":dir=filepath.Join(root,"sync_recuperacion")
+ case "day":dir=filepath.Join(root,"copias_automaticas")
+ case "quick":if appIsLab{dir=filepath.Join(root,"copias_rapidas_lab")}
+ }
+ if dir==""{return nil,errors.New("origen no permitido")}
+ data,err:=os.ReadFile(filepath.Join(dir,name))
+ if err!=nil{return nil,err}
+ if len(data)==0||len(data)>3<<20{return nil,errors.New("Copia demasiado grande o vacía")}
+ var state libraryState
+ if json.Unmarshal(data,&state)!=nil||validateLibrary(state)!=nil{
+  return nil,errors.New("La copia no es válida. No es seguro restaurarla")
+ }
+ favorites:=0
+ for _,rec:=range state.Reactions{if rec.Favorite{favorites++}}
+ return map[string]any{
+  "lists":len(state.Lists),"seen":syncWatched(state),"favorites":favorites,
+  "valid":true,"message":"La copia ha superado la validación de la biblioteca",
+ },nil
 }
 func (a *runningApp) restoreLocalRecovery(id string) (map[string]any,error) {
  prefix,name,ok:=strings.Cut(id,":")
@@ -54,6 +81,7 @@ func (a *runningApp) restoreLocalRecovery(id string) (map[string]any,error) {
  switch prefix {
  case "rec":dir=filepath.Join(root,"sync_recuperacion")
  case "day":dir=filepath.Join(root,"copias_automaticas")
+ case "quick":if appIsLab{dir=filepath.Join(root,"copias_rapidas_lab")}
  default:return nil,errors.New("origen de recuperación no permitido")
  }
  filename:=filepath.Join(dir,name)
@@ -106,6 +134,12 @@ func (a *runningApp) serveSyncSupport(w http.ResponseWriter,r *http.Request){
   copies,err:=a.localRecoveryList()
   if err!=nil{respond(500,map[string]string{"error":err.Error()});return}
   respond(200,map[string]any{"copies":copies})
+ case "/api/sync/recovery/preview":
+  if !appIsLab{respond(404,map[string]string{"error":"No disponible"});return}
+  if r.Method!=http.MethodGet{respond(405,map[string]string{"error":"Método incorrecto"});return}
+  info,err:=a.previewLocalRecovery(r.URL.Query().Get("id"))
+  if err!=nil{respond(409,map[string]string{"error":err.Error()});return}
+  respond(200,info)
  case "/api/sync/recovery/restore":
   if r.Method!=http.MethodPost{respond(405,map[string]string{"error":"Método incorrecto"});return}
   var request struct{ID string `json:"id"`}
