@@ -1,0 +1,194 @@
+<style>
+/* Windows LAB: emociones sutiles y corazón independiente de TMDB. */
+#view-library .lab-reaction-controls{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-shrink:0}
+#view-library .lab-heart-button,#view-library .lab-rate-button{font-family:inherit;background:#223347;border:1px solid #445b73;border-radius:9px;cursor:pointer;min-height:31px;min-width:32px;color:#aab9c9;padding:5px 7px;font-size:13px}
+#view-library .lab-heart-button{font-size:20px;line-height:1;font-weight:700;color:#889caf;transition:color .15s,background .15s}
+#view-library .lab-heart-button:hover{color:#f4b7bb;border-color:#b47483}
+#view-library .lab-heart-button.lab-is-favorite{color:#db8b94;border-color:#b36f7b;background:#45333e}
+#view-library .lab-rate-button{color:#d6dfe9;font-size:12px;white-space:nowrap;display:flex;align-items:center;gap:4px}
+#view-library .lab-rate-button:hover{border-color:#d9b877}
+#view-library .lab-rate-button .lab-emotion{filter:saturate(.65);font-size:18px}
+#view-library .lab-rate-button.lab-is-rated{border-color:#9f8c6c}
+#view-library .lab-rate-button:focus-visible,#view-library .lab-heart-button:focus-visible{outline:2px solid #f1cd8b;outline-offset:2px}
+#labRatingOverlay{z-index:135}
+#labRatingOverlay[hidden],#labFavoritesCollection[hidden]{display:none!important}
+.lab-rating-panel{width:min(430px,100%);background:#1b293a;border:1px solid #536980;border-radius:16px;padding:22px 24px;box-shadow:0 22px 58px #000b;color:#e9f0f6}
+.lab-rating-panel h2{font-size:19px;margin:0 35px 9px 0}
+.lab-rating-panel .lab-rating-caption{font-size:13px;line-height:1.4;color:#bdcbd9;margin:0 0 17px;overflow-wrap:anywhere}
+.lab-rating-options{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:16px 0}
+.lab-rating-options button{min-width:0;cursor:pointer;border:1px solid #53647b;border-radius:12px;background:#27374c;padding:10px 2px 8px;color:#dce5f0;font-size:10px;display:flex;align-items:center;flex-direction:column;gap:5px}
+.lab-rating-options button .lab-rating-emoji{font-size:31px;line-height:1.3;filter:saturate(.60);opacity:.80}
+.lab-rating-options button:hover,.lab-rating-options button.lab-rating-selected{background:#394552;border-color:#e3bd7d}
+.lab-rating-options button:hover .lab-rating-emoji,.lab-rating-options button.lab-rating-selected .lab-rating-emoji{filter:saturate(.85);opacity:1}
+.lab-rating-options button:focus-visible,.lab-rating-actions button:focus-visible{outline:2px solid #f1cc87;outline-offset:2px}
+.lab-rating-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.lab-rating-actions button{cursor:pointer;border:1px solid #50677e;background:#29394e;color:#e8eef6;border-radius:9px;padding:8px 12px;font-weight:700;font-size:12px}
+#labFavoritesCollection{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#253243;border:1px solid #745b69;border-radius:11px;padding:12px 14px;margin-bottom:8px}
+#labFavoritesCollection .lab-favorites-title{color:#edc5ca;font-size:15px;font-weight:800}
+#labFavoritesCollection .lab-favorites-info{font-size:12px;color:#bbc9d7;margin-top:3px}
+#labFavoritesOpen{border:1px solid #bd8992;background:#453840;border-radius:8px;color:#f4dce0;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer}
+#labFavoritesOpen:focus-visible{outline:2px solid #efd4a0}
+@media(max-width:750px){#view-library .lab-reaction-controls{gap:3px}#view-library .lab-heart-button{padding:4px 5px;min-width:27px}#view-library .lab-rate-button{padding:4px 5px;min-width:27px}#view-library .lab-rate-button .lab-emotion{font-size:16px}}
+</style>
+<!-- LAB_REACTIONS_HTML -->
+<div class="overlay" id="labRatingOverlay" hidden>
+  <section class="lab-rating-panel" role="dialog" aria-modal="true" aria-labelledby="labRatingHeading" aria-describedby="labRatingTitle">
+    <h2 id="labRatingHeading">Tu valoración</h2>
+    <p class="lab-rating-caption" id="labRatingTitle"></p>
+    <div id="labRatingOptions" class="lab-rating-options" role="group" aria-label="Elige una puntuación de 1 a 5"></div>
+    <div class="lab-rating-actions">
+      <button type="button" id="labRatingClear">Quitar nota</button>
+      <button type="button" id="labRatingClose">Cancelar</button>
+    </div>
+  </section>
+</div>
+<!-- LAB_REACTIONS_SCRIPT -->
+const labFavoriteID='__favoritos_automaticos_lab__';
+const labRatingEmojis=['😫','☹️','😐','🙂','😄'];
+const labRatingDescriptions=['Muy mala','Mala','Normal','Buena','Excelente'];
+let labFavoritesMode=false,labRatingFilm=null,labRatingReturnFocus=null;
+function labReactionKey(f){return filmKey(f);}
+function labReactionFor(f){return (libraryState.reactions||{})[labReactionKey(f)]||null;}
+function labFavoritesRecords(){
+ return Object.entries(libraryState.reactions||{})
+  .filter(([,rec])=>rec&&rec.favorite===true&&rec.title)
+  .sort((a,b)=>b[1].changed_at-a[1].changed_at||a[0].localeCompare(b[0],'es'));
+}
+function labFavoriteCount(){return labFavoritesRecords().length;}
+function labFavoritesFilms(){
+ const records=labFavoritesRecords();
+ const seen=new Set();
+ for(const list of libraryState.lists){
+  for(const f of parse(list.text||'').entries){
+   if(f.checked)seen.add(labReactionKey(f));
+  }
+ }
+ // Es una lista calculada; jamás se guarda como TXT ni se añade a lists.
+ // Conservar títulos incluso si se retiraron de la biblioteca después.
+ const lines=records.map(([key,rec])=>{
+  const checked=seen.has(key)?'☑':'☐';
+  const title=String(rec.title).replace(/[\r\n]+/g,' ').trim();
+  return checked+' '+title+(rec.year?' ('+rec.year+')':'');
+ });
+ return parse(lines.join('\n')).entries;
+}
+function labWriteReaction(f,changes){
+ const key=labReactionKey(f);
+ if(!key||key.length>275)return;
+ const data=libraryState.reactions||(libraryState.reactions={});
+ if(!data[key]&&Object.keys(data).length>=15000){notify('Límite de valoraciones alcanzado.');return;}
+ const existing=data[key]||{};
+ const now=Math.min(4102444800000,Math.max(Date.now(),(existing.changed_at||0)+1));
+ data[key]={
+  favorite:changes.favorite===undefined?existing.favorite===true:changes.favorite===true,
+  rating:changes.rating===undefined?(existing.rating||0):changes.rating,
+  title:String(f.title||'').trim().slice(0,200),
+  year:String(f.year||'').slice(0,4),
+  changed_at:now
+ };
+ scheduleSave();
+ labUpdateFavoritesCard();
+ renderList();
+ renderCollectionControls();
+}
+function labToggleFavorite(f){
+ if(!f||!f.title)return;
+ const current=labReactionFor(f);
+ labWriteReaction(f,{favorite:!(current&&current.favorite)});
+ // Si se retiró el último favorito, volver a la lista real sin borrar nada.
+ if(labFavoritesMode&&!labFavoriteCount()){
+  labFavoritesMode=false;
+  renderList();
+  renderCollectionControls();
+ }
+}
+function labReactionControls(f){
+ const wrap=document.createElement('div');wrap.className='lab-reaction-controls';
+ const heart=document.createElement('button');heart.type='button';heart.className='lab-heart-button';
+ const current=labReactionFor(f),fav=!!current?.favorite;
+ if(fav)heart.classList.add('lab-is-favorite');
+ heart.textContent=fav?'♥':'♡';
+ heart.title=fav?'Quitar de Favoritos':'Añadir a Favoritos';
+ heart.setAttribute('aria-label',heart.title+': '+f.title);
+ heart.setAttribute('aria-pressed',String(fav));
+ heart.addEventListener('click',()=>labToggleFavorite(f));
+ wrap.appendChild(heart);
+ if(f.checked){
+  const rating=Number(current?.rating)||0;
+  const btn=document.createElement('button');btn.type='button';btn.className='lab-rate-button';
+  if(rating)btn.classList.add('lab-is-rated');
+  const emoji=document.createElement('span');emoji.className='lab-emotion';
+  emoji.textContent=rating?labRatingEmojis[rating-1]:'😐';
+  emoji.setAttribute('aria-hidden','true');
+  const text=document.createElement('span');text.textContent=rating?rating+'/5':'Valorar';
+  btn.append(emoji,text);
+  btn.title=rating?'Tu nota: '+rating+' de 5 · Cambiar':'Valorar esta película del 1 al 5';
+  btn.setAttribute('aria-label',btn.title+': '+f.title);
+  btn.addEventListener('click',()=>labOpenRating(f));
+  wrap.appendChild(btn);
+ }
+ return wrap;
+}
+function labRatingIsWatched(f){
+ const key=labReactionKey(f);
+ return libraryState.lists.some(l=>parse(l.text||'').entries.some(x=>x.checked&&labReactionKey(x)===key));
+}
+function labOpenRating(f){
+ if(!f?.checked||!labRatingIsWatched(f))return;
+ labRatingFilm={title:f.title,year:f.year};
+ labRatingReturnFocus=document.activeElement;
+ $('labRatingTitle').textContent=f.title+(f.year?' ('+f.year+')':'')+' · Escoge uno de los cinco emoticonos.';
+ const options=$('labRatingOptions');options.replaceChildren();
+ const value=Number(labReactionFor(f)?.rating)||0;
+ for(let i=0;i<5;i++){
+  const score=i+1,btn=document.createElement('button');btn.type='button';
+  btn.className=value===score?'lab-rating-selected':'';
+  btn.setAttribute('aria-pressed',String(score===value));
+  btn.setAttribute('aria-label',score+' de 5: '+labRatingDescriptions[i]);
+  const face=document.createElement('span');face.className='lab-rating-emoji';face.textContent=labRatingEmojis[i];
+  const mark=document.createElement('span');mark.textContent=score+'/5';
+  btn.append(face,mark);
+  btn.addEventListener('click',()=>{
+   const movie=labRatingFilm;
+   labCloseRating();
+   if(movie&&labRatingIsWatched(movie))labWriteReaction(movie,{rating:score});
+  });
+  options.appendChild(btn);
+ }
+ $('labRatingClear').hidden=!value;
+ $('labRatingOverlay').hidden=false;
+ options.querySelector('button.lab-rating-selected')?.focus?.();
+ if(!value)options.querySelector('button')?.focus();
+}
+function labCloseRating(){
+ $('labRatingOverlay').hidden=true;
+ labRatingFilm=null;
+ if(labRatingReturnFocus?.isConnected)labRatingReturnFocus.focus();
+ labRatingReturnFocus=null;
+}
+$('labRatingClose').addEventListener('click',labCloseRating);
+$('labRatingClear').addEventListener('click',()=>{
+ const f=labRatingFilm;
+ labCloseRating();
+ if(f&&labRatingIsWatched(f))labWriteReaction(f,{rating:0});
+});
+$('labRatingOverlay').addEventListener('click',e=>{if(e.target===$('labRatingOverlay'))labCloseRating();});
+window.addEventListener('keydown',e=>{
+ if($('labRatingOverlay').hidden)return;
+ if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();labCloseRating();}
+},true);
+function labUpdateFavoritesCard(){
+ const count=labFavoriteCount();
+ $('labFavoritesCollection').hidden=count===0;
+ $('labFavoritesCount').textContent=count+' '+(count===1?'película':'películas')+' · lista automática';
+}
+function labOpenFavorites(){
+ if(!labFavoriteCount())return;
+ syncActiveText();
+ virtualMode=false;
+ rawText=activeCollection().text||'';
+ labFavoritesMode=true;
+ restartList();
+ showView('library');
+}
+$('labFavoritesOpen').addEventListener('click',labOpenFavorites);
