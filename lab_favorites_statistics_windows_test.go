@@ -26,6 +26,9 @@ func TestLabFavoritesStatisticsUseVirtualList(t *testing.T) {
   "if(chosen&&!labFavoritesMode)toggle(chosen.idx);",
   "function toggle(idx){\n if(virtualMode||labFavoritesMode)return;",
   "const all=searchScope==='all'?filmMembershipIndex().rows:labStatsDataset().entries;",
+  "const films=labStatsDataset().entries.filter(f=>status==='both'||(status==='seen'?f.checked:!f.checked));",
+  "for(const film of labStatsDataset().entries){",
+
   "if(labFavoritesMode&&!labFavoriteCount()){labFavoritesMode=false;labRefreshStatsPanels();}",
  }{
   if !strings.Contains(page,needle){t.Errorf("Estadística de Favoritos no integrada: %q",needle)}
