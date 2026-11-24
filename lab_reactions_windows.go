@@ -96,7 +96,7 @@ func injectLabReactions(page string) string {
  // Si un dispositivo remoto retira el último corazón, no dejar la vista
  // virtual abierta sin opción válida en el selector.
  page=strings.Replace(page,"function renderList(){labFiltersRefreshChoices();",
-  "function renderList(){labFiltersRefreshChoices();if(labFavoritesMode&&!labFavoriteCount())labFavoritesMode=false;",1)
+  "function renderList(){labFiltersRefreshChoices();if(labFavoritesMode&&!labFavoriteCount()){labFavoritesMode=false;labRefreshStatsPanels();}",1)
  page=strings.Replace(page,"function filmOrderEditable(){",
   "function filmOrderEditable(){if(labFavoritesMode)return false;",1)
  page=strings.Replace(page,"function selectSearchScope(scope){",
