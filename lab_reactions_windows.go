@@ -100,7 +100,7 @@ func injectLabReactions(page string) string {
  page=strings.Replace(page,"function filmOrderEditable(){",
   "function filmOrderEditable(){if(labFavoritesMode)return false;",1)
  page=strings.Replace(page,"function selectSearchScope(scope){",
-  "function selectSearchScope(scope){if(scope==='all')labFavoritesMode=false;",1)
+  "function selectSearchScope(scope){if(scope==='all'&&labFavoritesMode){labFavoritesMode=false;labRefreshStatsPanels();}",1)
  page=strings.Replace(page,"const source=global?filmMembershipIndex().rows:parsed.entries;",
   "const source=labFavoritesMode&&!global?labFavoritesFilms():global?filmMembershipIndex().rows:parsed.entries;",1)
  page=strings.Replace(page,"const readonly=virtualMode&&!global;",
