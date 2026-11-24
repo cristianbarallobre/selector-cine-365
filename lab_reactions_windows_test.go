@@ -17,8 +17,11 @@ func TestLabReactionsAreIntegratedOnlyAsVirtualList(t *testing.T){
   `id="labDetailFavorite"`,
   "function labReactionControls(f){",
   "function labFavoriteMembershipButton(f){",
+  "function labJumpToFavoriteFilm(f){",
   "const favoriteBadge=labFavoriteMembershipButton(f);if(favoriteBadge)membership.appendChild(favoriteBadge);",
-  "button.title='En Favoritos';",
+  "button.title='Ver en Favoritos';",
+  "labJumpToFavoriteFilm(f);",
+  "labListJumpHighlight={listID:labFavoriteID,rawIndex:target.idx};",
   "function labFavoritesFilms(){",
   "function labOpenFavorites(){",
   "function labOpenRating(f){",
@@ -33,4 +36,6 @@ func TestLabReactionsAreIntegratedOnlyAsVirtualList(t *testing.T){
  }
  if strings.Count(page,`id="labRatingOverlay"`)!=1{t.Error("El diálogo de valoración está duplicado")}
  if strings.Contains(page,"libraryState.lists.push({id:labFavoriteID"){t.Error("La lista calculada no debe persistirse como una lista duplicada")}
+ if strings.Contains(page,"button.title='En Favoritos'"){t.Error("El corazón pequeño debe navegar, no editar")}
+
 }
