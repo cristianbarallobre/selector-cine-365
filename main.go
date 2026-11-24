@@ -93,6 +93,7 @@ type runningApp struct {
 	savePath      string
 	libraryPath   string
 	library       libraryState
+ libraryRecovered bool
 	platforms     *availabilityServer
 	cloud         *cloudBackups
 	graph         *desktopGraph
@@ -250,12 +251,19 @@ func serve() error {
 	}
 	libPath := filepath.Join(filepath.Dir(savePath), "colecciones.json")
 	lib := loadLibrary(libPath, state)
+ recovered:=false
+ if appIsLab {
+  var recoveryErr error
+  lib,recovered,recoveryErr=labLoadLibraryProtected(libPath,state)
+  if recoveryErr!=nil{return recoveryErr}
+  if recovered {logDiagnostic("Biblioteca recuperada de copia local válida; original dañado conservado en cuarentena")}
+ }
 	syncStore, syncErr := newDesktopSyncStore(filepath.Dir(savePath))
  if syncErr!=nil {
   // Un fallo en el estado de sincronización no debe impedir usar datos locales.
   logDiagnostic("Sincronización no disponible: "+syncErr.Error())
  }
- app := &runningApp{html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath),appCacheRoot(filepath.Dir(savePath))), cloud: newCloudBackups(filepath.Dir(savePath)), graph:newDesktopGraph(filepath.Dir(savePath)), graphUploadCh:make(chan struct{},1), syncStore:syncStore, token: token, stopCh: make(chan struct{})}
+ app := &runningApp{libraryRecovered:recovered,html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath),appCacheRoot(filepath.Dir(savePath))), cloud: newCloudBackups(filepath.Dir(savePath)), graph:newDesktopGraph(filepath.Dir(savePath)), graphUploadCh:make(chan struct{},1), syncStore:syncStore, token: token, stopCh: make(chan struct{})}
 	app.touch()
 	go app.graphPublisher()
 	listener, err := net.Listen("tcp4", "127.0.0.1:0")
