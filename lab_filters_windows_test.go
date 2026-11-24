@@ -23,7 +23,7 @@ func TestLabLibraryAdvancedFiltersInjected(t *testing.T){
   "function labFiltersSort(matches)",
   "function labStatsHeroValues(seen,known,minutes)",
   "labFiltersUpdateSummary(matches.length)",
-  "const source=global?filmMembershipIndex().rows:parsed.entries;",
+  "const source=labFavoritesMode&&!global?labFavoritesFilms():global?filmMembershipIndex().rows:parsed.entries;",
   "if(selectedListPlatforms.size)",
   "return labFiltersMatches(f);",
   "matches=labFiltersSort(matches);",
