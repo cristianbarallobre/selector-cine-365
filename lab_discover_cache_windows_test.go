@@ -57,7 +57,7 @@ func TestLabWindowsHTMLInjection(t *testing.T) {
  if err!=nil{t.Fatal(err)}
  for _,required:=range []string{
   "labCreateDetailButton(f)",
-  "b.append(togg,pill,labReactionControls(f),labCreateDetailButton(f),fix);frag.appendChild(b);",
+  "b.append(togg,labFilmRowActions(f,pill,labCreateDetailButton(f),fix));frag.appendChild(b);",
   "labPrefetchBanner",
   "labQueuePrefetchSoon()",
   "labDetailOverlay",
