@@ -1,0 +1,82 @@
+name: Escritorio 9.2 · macOS y Windows
+on:
+  push:
+    branches: [release/desktop-9.2.0, publish/desktop-9.2.0]
+permissions:
+  contents: read
+jobs:
+  windows:
+    if: github.ref == 'refs/heads/release/desktop-9.2.0'
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.27.4' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: go test -count=1 ./...
+      - run: go test -tags lab -count=1 ./...
+      - shell: pwsh
+        run: |
+          foreach ($f in @(Get-ChildItem scripts/test_lab*.cjs) + @(Get-Item scripts/test_beta14_desktop_dropdowns.cjs,scripts/test_windows_restore.cjs)) {
+            node $f.FullName
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
+      - run: go build -trimpath -ldflags="-H windowsgui -s -w" -o Selector_Cine_365_Windows_9.2.0.exe .
+        env: { CGO_ENABLED: '0' }
+      - uses: actions/upload-artifact@v4
+        with: { name: Windows, path: Selector_Cine_365_Windows_9.2.0.exe, if-no-files-found: error }
+  mac:
+    if: github.ref == 'refs/heads/release/desktop-9.2.0'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {runner: macos-15, arch: arm64, label: Apple_Silicon}
+          - {runner: macos-15-intel, arch: amd64, label: Intel}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    env:
+      MAC_ARCH: ${{ matrix.arch }}
+      MAC_LABEL: ${{ matrix.label }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.26.11' } # Compatible con macOS 12.
+      - name: Llavero temporal para las pruebas de sesión
+        run: |
+          kc="$RUNNER_TEMP/cine-tests.keychain-db"
+          pw=$(uuidgen)
+          security create-keychain -p "$pw" "$kc"
+          security unlock-keychain -p "$pw" "$kc"
+          security default-keychain -d user -s "$kc"
+          security list-keychains -d user -s "$kc"
+      - run: bash scripts/build_macos_app.sh
+      - run: bash scripts/test_macos_package.sh "dist/Selector_Cine_365_Mac_${MAC_LABEL}_9.2.0.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Mac_${{ matrix.label }}
+          path: dist/Selector_Cine_365_Mac_*_9.2.0.zip
+          if-no-files-found: error
+  prerelease:
+    needs: [mac, windows]
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { merge-multiple: true }
+      - env: { GH_TOKEN: "${{ github.token }}", GH_REPO: "${{ github.repository }}" }
+        run: |
+          sha256sum Selector_Cine_365_* > SHA256SUMS.txt
+          gh release create v9.2.0-desktop --target "$GITHUB_SHA" --prerelease --title "Selector Cine 365 · Mac y Windows 9.2.0" --notes "Windows x64 y macOS Intel y Apple Silicon (macOS 12 o posterior). Selecciona varias plataformas para sortear películas disponibles en cualquiera de ellas. Mac incorpora Descubrir, filtros, sorteo inteligente, favoritos, estadísticas y mantenimiento. La biblioteca sigue en Application Support, los archivos temporales en Caches y la autorización de Microsoft en el llavero. Los paquetes Mac llevan firma ad hoc y carecen de notarización de Apple. Para Android continúa disponible la release v9.0.0." Selector_Cine_365_* SHA256SUMS.txt
+  publicar:
+    if: github.ref == 'refs/heads/publish/desktop-9.2.0'
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    steps:
+      - env: { GH_TOKEN: "${{ github.token }}", GH_REPO: "${{ github.repository }}" }
+        run: |
+          test "$(gh api "repos/$GH_REPO/commits/v9.2.0-desktop" --jq .sha)" = "$GITHUB_SHA"
+          test "$(gh release view v9.2.0-desktop --json isPrerelease --jq .isPrerelease)" = true
+          gh release edit v9.2.0-desktop --prerelease=false --latest

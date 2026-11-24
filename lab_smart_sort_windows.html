@@ -95,12 +95,12 @@ function labSmartPool(){
  if(!parsed)return [];
  const status=labSmartSeen.value;
  const films=labStatsDataset().entries.filter(f=>status==='both'||(status==='seen'?f.checked:!f.checked));
- if(selectedSortPlatform==='all')return films;
+ if(!selectedSortPlatforms.size)return films;
  return films.filter(f=>{
   const r=platformData.get(providerKey(f));
   if(!r||r.state!=='ok')return false;
   const providers=subscriptions(r);
-  return selectedSortPlatform==='any'?providers.length>0:providers.includes(selectedSortPlatform);
+  return selectedSortPlatforms.has('any')?providers.length>0:providers.some(name=>selectedSortPlatforms.has(name));
  });
 }
 function labSmartCandidates(){

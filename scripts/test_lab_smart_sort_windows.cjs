@@ -4,12 +4,12 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 
 const ui=fs.readFileSync('lab_smart_sort_windows.html','utf8');
-const injector=fs.readFileSync('lab_smart_sort_inject_windows.go','utf8');
-const windows=fs.readFileSync('lab_smart_sort_windows.go','utf8');
+const injector=fs.readFileSync('lab_smart_sort_inject_desktop.go','utf8');
+const windows=fs.readFileSync('lab_smart_sort_desktop.go','utf8');
 const other=fs.readFileSync('lab_smart_sort_other.go','utf8');
 const winShell=fs.readFileSync('window_windows.go','utf8');
 const main=fs.readFileSync('main.go','utf8');
-const discover=fs.readFileSync('lab_discover_windows.go','utf8');
+const discover=fs.readFileSync('lab_discover_desktop.go','utf8');
 const base=fs.readFileSync('plantilla.html','utf8');
 const parts=ui.split('<!-- LAB_SMART_HTML -->');
 assert.equal(parts.length,2,'HTML debe tener marcador de controles');
@@ -41,7 +41,7 @@ assert.ok(!ui.includes('lab-smart-explain'),'No debe quedar espacio de aclaracio
 assert.match(script,/function labSmartPool\(\)/,'Filtrar por estado antes de género y duración');
 assert.match(script,/status==='both'/,'Incluir películas vistas y pendientes si ambas');
 assert.match(script,/status==='seen'\?f\.checked:!f\.checked/,'Separar vistas/no vistas');
-assert.match(script,/selectedSortPlatform==='all'/,'Mantener plataforma seleccionada');
+assert.match(script,/!selectedSortPlatforms.size/,'Mantener plataforma seleccionada');
 assert.match(script,/subscriptions\(r\)/,'Solo streaming permitido cuando se elige plataforma');
 assert.match(script,/labSmartHistory=.*\.slice\(0,8\)/,'No repetir últimas 8 elecciones');
 assert.match(script,/e\.stopImmediatePropagation\(\)/,'No disparar sorteo clásico al usar el inteligente');
@@ -84,7 +84,7 @@ const context={
  parsed:{entries:films},
  labStatsDataset:()=>context.parsed,
  platformData:providers,
- selectedSortPlatform:'all',
+ selectedSortPlatforms:new Set(),
  providerKey:f=>f.title,
  subscriptions:r=>r.subscriptions,
  labSmartMetadata:f=>f.metadata,
@@ -112,13 +112,15 @@ assert.deepEqual(names(),['Corta vista','Límite pendiente','Muy larga vista'],'
 context.labSmartSeen.value='seen';context.labSmartDuration.value='short';
 assert.deepEqual(names(),['Corta vista'],'Vistas + ciencia ficción + hasta 90');
 context.labSmartGenre.value='any';context.labSmartDuration.value='any';
-context.selectedSortPlatform='Netflix';
+context.selectedSortPlatforms=new Set(['Netflix']);
 assert.deepEqual(names(),['Corta vista'],'Vistas + Netflix');
 context.labSmartSeen.value='both';
 assert.deepEqual(names(),['Corta pendiente','Corta vista'],'Ambas + Netflix');
-context.selectedSortPlatform='any';
+context.selectedSortPlatforms=new Set(['Netflix','Filmin']);
+assert.deepEqual(names(),['Corta pendiente','Corta vista','Límite pendiente','Casi corta vista']);
+context.selectedSortPlatforms=new Set(['any']);
 assert.equal(names().length,4,'Solo streaming: excluir películas sin ofertas registradas');
-context.selectedSortPlatform='all';
+context.selectedSortPlatforms=new Set([]);
 assert.equal(names().length,6,'Todas las plataformas incluye títulos sin streaming');
 assert.match(script,/status==='seen'\?'vistas':status==='both'\?'películas':'pendientes'/,'El contador se adapta al estado');
 

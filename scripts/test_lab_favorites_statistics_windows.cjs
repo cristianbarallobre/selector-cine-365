@@ -4,9 +4,9 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 
 const stable=fs.readFileSync('plantilla.html','utf8');
-const injector=fs.readFileSync('lab_reactions_windows.go','utf8');
+const injector=fs.readFileSync('lab_reactions_desktop.go','utf8');
 const reactions=fs.readFileSync('lab_reactions_windows.html','utf8');
-const filters=fs.readFileSync('lab_filters_inject_windows.go','utf8');
+const filters=fs.readFileSync('lab_filters_inject_desktop.go','utf8');
 const rx=reactions.split('<!-- LAB_REACTIONS_SCRIPT -->')[1];
 assert.ok(rx,'El JS de Favoritos debe existir');
 new vm.Script('(()=>{\n'+rx+'\n})();');
@@ -48,7 +48,7 @@ update=replaceOnce(update,
  "const pct=n?Math.round(100*parsed.seen/n):0;",
  "const pct=n?Math.round(100*labStats.seen/n):0;");
 let lottery=slice(stable,"function eligibleFilms(){","function updatePlatformChoices(){");
-lottery=replaceOnce(lottery,"if(selectedSortPlatform==='all')return parsed.pending;","if(selectedSortPlatform==='all')return labStatsDataset().pending;");
+lottery=replaceOnce(lottery,"if(!selectedSortPlatforms.size)return parsed.pending;","if(!selectedSortPlatforms.size)return labStatsDataset().pending;");
 lottery=replaceOnce(lottery,"return parsed.pending.filter(f=>{","return labStatsDataset().pending.filter(f=>{");
 lottery=replaceOnce(lottery,"const count=eligibleFilms().length;const total=parsed.pending.length;","const count=eligibleFilms().length;const total=labStatsDataset().pending.length;");
 let statistics=slice(stable,"function renderStats(){","\n\n$('filmPrev')");
@@ -100,7 +100,7 @@ const ctx={
  document:{createElement:()=>new Element()},
  Map,Set,Array,String,Number,Object,Math,Date,parse,
  libraryState:state,parsed:parse(lists[0].text),rawText:lists[0].text,
- membershipCache:null,virtualMode:false,selectedSortPlatform:'all',
+ membershipCache:null,virtualMode:false,selectedSortPlatforms:new Set(),
  platformData, chosen:null, statPages:new Map(),
  activeCollection:()=>lists.find(x=>x.id===state.active_id),
  providerKey:f=>String(f.title).toLocaleLowerCase('es')+'|'+f.year,
@@ -141,7 +141,7 @@ assert.equal(ui.statsTitle.textContent,'♥ Favoritos');
 assert.equal(ctx.eligibleFilms().length,2);
 assert.equal(ui.statsHero.children[0].children[0].textContent,1);
 assert.equal(ui.statsSections.children.length,4,'Actualizar gráficas de década, género, país y dirección');
-ctx.selectedSortPlatform='Filmin';
+ctx.selectedSortPlatforms=new Set(['Filmin']);
 ctx.updateSortAvailability();
 assert.equal(ctx.eligibleFilms().length,1,'El sorteo usa solo las pendientes favoritas disponibles');
 assert.equal(ui.sortCount.textContent,'1 de 2 pendientes disponibles');
@@ -157,7 +157,7 @@ assert.equal(ui.progressFill.style.width,'50%');
 assert.equal(ui.statsTitle.textContent,'♥ Favoritos');
 
 state.reactions['fuera de listas|2025'].favorite=false;
-ctx.selectedSortPlatform='all';
+ctx.selectedSortPlatforms=new Set([]);
 ctx.labRefreshStatsPanels();
 assert.equal(ui.total.textContent,1);
 assert.equal(ui.watched.textContent,1);

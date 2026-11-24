@@ -527,14 +527,14 @@ h2{font-size:19px}
       <div class="progress" role="progressbar" aria-label="Películas vistas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress"><div class="progress-bar" id="progressFill"></div></div>
       <span class="select-label" id="sortPlatformLabel">SORTEAR ENTRE</span>
       <div class="single-select-picker sort-platform-picker" id="sortPlatformPicker">
-        <select id="platformSelect" class="single-select-native" aria-hidden="true" tabindex="-1">
-          <option value="all">Todas las películas pendientes</option>
+        <select id="platformSelect" class="single-select-native" multiple aria-hidden="true" tabindex="-1">
+          <option value="all" selected>Todas las películas pendientes</option>
           <option value="any">Cualquier plataforma (streaming)</option>
         </select>
         <button type="button" id="sortPlatformButton" class="platform-select single-select-button" aria-labelledby="sortPlatformLabel sortPlatformButtonLabel" aria-haspopup="listbox" aria-expanded="false" aria-controls="sortPlatformOptions"><span id="sortPlatformButtonLabel">Todas las películas pendientes</span><span class="library-platform-chevron" aria-hidden="true">▾</span></button>
         <div class="library-platform-menu single-select-menu" id="sortPlatformMenu" hidden>
-          <div class="library-platform-menu-header"><strong>Seleccionar plataforma</strong><button type="button" class="library-platform-reset" id="sortPlatformReset">Todas</button></div>
-          <div class="library-platform-options" id="sortPlatformOptions" role="listbox" aria-label="Plataforma para el sorteo"></div>
+          <div class="library-platform-menu-header"><strong>Seleccionar plataformas</strong><button type="button" class="library-platform-reset" id="sortPlatformReset">Todas</button></div>
+          <div class="library-platform-options" id="sortPlatformOptions" role="listbox" aria-multiselectable="true" aria-label="Plataformas para el sorteo"></div>
         </div>
       </div>
       <div id="sortCount" class="sort-count" aria-live="polite"></div>
@@ -810,7 +810,7 @@ let parsed=null,filter='all',search='',chosen=null,lastChoice=null,saveTimer=nul
 let filmPage=0,collectionPage=0,statPages=new Map(),searchScope='current',membershipCache=null,membershipFilm=null;
 let platformConfigured=false, platformStatusUnavailable=false, platformData=new Map(),platformRun=0,platformActive=false,platformFinished=0,platformTotal=0;
 let libraryState={version:1,active_id:'atlas',lists:[{id:'atlas',name:'Selector Cine 365 · 365',text:rawText}]};
-let editingListID=null,activeView='library',selectedSortPlatform='all';
+let editingListID=null,activeView='library',selectedSortPlatforms=new Set();
 const identityMap=new Map(); // clave título-año -> ID TMDB guardado
 let identityScanRunning=false,identityScanAgain=false,identityScanProgress=0,identityScanTotal=0,identityRefreshTimer=null;
 let identityConfigured=false;
@@ -1631,7 +1631,7 @@ function validLibrary(s){return s&&s.version===1&&Array.isArray(s.lists)&&s.list
 function restartList(){
  searchScope='current';$('listPlatformButton').disabled=false;document.querySelectorAll('[data-search-scope]').forEach(b=>{const yes=b.dataset.searchScope==='current';b.classList.toggle('active',yes);b.setAttribute('aria-pressed',String(yes));});
  filmPage=0;collectionPage=0;statPages.clear();platformRun++;platformFinished=0;platformTotal=0;platformActive=false;lastChoice=null;resetChoice();filter='all';search='';$('search').value='';
- selectedSortPlatform='all';$('platformSelect').value='all';selectedListPlatforms.clear();closeListPlatformMenu();closeSingleChoiceMenu('sortPlatform');syncSingleChoiceMenu('sortPlatform','platformSelect');
+ selectedSortPlatforms.clear();$('platformSelect').value='all';selectedListPlatforms.clear();closeListPlatformMenu();closeSingleChoiceMenu('sortPlatform');syncSingleChoiceMenu('sortPlatform','platformSelect');
  document.querySelectorAll('.filter').forEach(b=>b.classList.toggle('selected',b.dataset.filter==='all'));
  updateListPlatformOptions();update();updatePlatformProgress();renderStats();renderCollectionControls();if(platformConfigured)void loadPlatforms(false);
 }
@@ -2324,7 +2324,8 @@ function closeSingleChoiceMenu(prefix,restoreFocus=false){
 function syncSingleChoiceMenu(prefix,nativeID){
  const select=$(nativeID),box=$(prefix+'Options');
  const choices=[...select.options],current=select.options[select.selectedIndex];
- $(prefix+'ButtonLabel').textContent=current?current.textContent:'Seleccionar…';
+ const labels=choices.filter(o=>o.selected).map(o=>o.textContent);
+ $(prefix+'ButtonLabel').textContent=select.multiple && labels.length>1 ? labels.join(', ') : current?current.textContent:'Seleccionar…';
  const signature=JSON.stringify(choices.map(o=>[o.value,o.textContent]));
  if(box.dataset.signature!==signature){
    box.dataset.signature=signature;box.replaceChildren();
@@ -2336,6 +2337,20 @@ function syncSingleChoiceMenu(prefix,nativeID){
      const label=document.createElement('span');label.textContent=item.textContent;
      option.append(mark,label);box.appendChild(option);
      option.addEventListener('click',()=>{
+       if(select.multiple){
+         const key=item.value;
+         const wasSelected=[...select.selectedOptions].some(o=>o.value===key);
+         for(const o of select.options){
+           if(key==='all')o.selected=o.value==='all';
+           else if(key==='any')o.selected=o.value==='any'&&!wasSelected;
+           else if(o.value==='all'||o.value==='any')o.selected=false;
+           else if(o.value===key)o.selected=!wasSelected;
+         }
+         if(select.selectedIndex<0)select.value='all';
+         select.dispatchEvent(new Event('change',{bubbles:true}));
+         syncSingleChoiceMenu(prefix,nativeID);
+         return;
+       }
        const old=select.value;select.value=option.dataset.value;
        closeSingleChoiceMenu(prefix);
        if(old!==select.value)select.dispatchEvent(new Event('change',{bubbles:true}));
@@ -2345,7 +2360,7 @@ function syncSingleChoiceMenu(prefix,nativeID){
    }
  }
  for(const option of box.querySelectorAll('.single-select-option')){
-   option.setAttribute('aria-selected',String(option.dataset.value===select.value));
+   option.setAttribute('aria-selected',String(choices.find(o=>o.value===option.dataset.value)?.selected));
  }
  if(prefix==='sortPlatform')$('sortPlatformReset').disabled=select.value==='all';
 }
@@ -2393,31 +2408,33 @@ $('sortPlatformReset').addEventListener('click',()=>{
 });
 
 function eligibleFilms(){
- if(selectedSortPlatform==='all')return parsed.pending;
+ if(!selectedSortPlatforms.size)return parsed.pending;
  return parsed.pending.filter(f=>{
    const r=platformData.get(providerKey(f));if(!r||r.state!=='ok')return false;
-   const providers=subscriptions(r);return selectedSortPlatform==='any'?providers.length>0:providers.includes(selectedSortPlatform);
+   const providers=subscriptions(r);return selectedSortPlatforms.has('any')?providers.length>0:providers.some(name=>selectedSortPlatforms.has(name));
  });
 }
 function updateSortAvailability(){
  const count=eligibleFilms().length;const total=parsed.pending.length;
  $('choose').disabled=count===0;
  $('choose').textContent=count?'🎲 Elegir una película al azar':'Sin películas para sortear';
- $('sortCount').textContent=selectedSortPlatform==='all'?`${total} pendientes`:`${count} de ${total} pendientes disponibles`;
+ $('sortCount').textContent=!selectedSortPlatforms.size?`${total} pendientes`:`${count} de ${total} pendientes disponibles`;
 }
 function updatePlatformChoices(){
- const select=$('platformSelect'),prev=selectedSortPlatform;
+ const select=$('platformSelect'),prev=new Set(selectedSortPlatforms);
  const common=['Movistar Plus+','Filmin','Netflix','Prime Video','Disney+','Max','Apple TV+'];const all=new Set(common);
  for(const r of platformData.values())for(const p of subscriptions(r))all.add(p);
  select.replaceChildren();for(const [id,label] of [['all','Todas las películas pendientes'],['any','Cualquier plataforma (streaming)']]){
    const o=document.createElement('option');o.value=id;o.textContent=label;select.appendChild(o);
  }
  for(const name of [...all].sort((a,b)=>a.localeCompare(b,'es'))){const o=document.createElement('option');o.value=name;o.textContent=name;select.appendChild(o)}
- select.value=prev;if(select.value!==prev){selectedSortPlatform='all';select.value='all'}
+ for(const o of select.options)o.selected=prev.has(o.value);
+ selectedSortPlatforms=new Set([...select.selectedOptions].map(o=>o.value));
+ if(!selectedSortPlatforms.size)select.value='all';
  syncSingleChoiceMenu('sortPlatform','platformSelect');
  updateSortAvailability();
 }
-$('platformSelect').addEventListener('change',e=>{selectedSortPlatform=e.target.value;resetChoice();updateSortAvailability();syncSingleChoiceMenu('sortPlatform','platformSelect')});
+$('platformSelect').addEventListener('change',e=>{selectedSortPlatforms=new Set([...e.target.selectedOptions].map(o=>o.value).filter(v=>v!=='all'));resetChoice();updateSortAvailability();syncSingleChoiceMenu('sortPlatform','platformSelect')});
 function posterElement(r){
  if(r?.poster_path){const img=document.createElement('img');img.className='film-poster';img.alt='';img.loading='lazy';img.src='/api/poster?token='+encodeURIComponent(token)+'&path='+encodeURIComponent(r.poster_path);img.addEventListener('error',()=>{img.replaceWith(posterPlaceholder())},{once:true});return img;}
  return posterPlaceholder();

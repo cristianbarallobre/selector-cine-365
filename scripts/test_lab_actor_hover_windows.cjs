@@ -5,8 +5,8 @@ const vm=require('node:vm');
 
 const html=fs.readFileSync('lab_discover_windows.html','utf8');
 const js=html.split('<!-- LAB_DISCOVERY_SCRIPT -->')[1];
-const backend=fs.readFileSync('lab_discover_windows.go','utf8');
-const cache=fs.readFileSync('lab_discover_cache_windows.go','utf8');
+const backend=fs.readFileSync('lab_discover_desktop.go','utf8');
+const cache=fs.readFileSync('lab_discover_cache_desktop.go','utf8');
 new vm.Script('(()=>{\n'+js+'\n})();',{filename:'lab_discover_windows.js'});
 assert.match(backend,/ProfilePath string/,'Leer foto de los créditos TMDB');
 assert.match(cache,/"profile_path":photo/,'Conservar foto del actor en la caché');

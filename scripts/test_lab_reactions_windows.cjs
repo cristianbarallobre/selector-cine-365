@@ -6,7 +6,7 @@ const vm=require('node:vm');
 const template=fs.readFileSync('lab_reactions_windows.html','utf8');
 const source=template.split('<!-- LAB_REACTIONS_SCRIPT -->')[1];
 const page=fs.readFileSync('lab_discover_windows.html','utf8');
-const injections=fs.readFileSync('lab_reactions_windows.go','utf8');
+const injections=fs.readFileSync('lab_reactions_desktop.go','utf8');
 assert.ok(source);
 new vm.Script('(()=>{\n'+source+'\n})();',{filename:'lab_reactions_windows.html'});
 assert.ok(template.includes('😫'),'First emotion');

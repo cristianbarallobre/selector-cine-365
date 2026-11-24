@@ -3,7 +3,7 @@ const fs=require('node:fs');
 const assert=require('node:assert/strict');
 const lab=fs.readFileSync('lab_discover_windows.html','utf8');
 const common=fs.readFileSync('plantilla.html','utf8');
-const source=fs.readFileSync('lab_discover_windows.go','utf8');
+const source=fs.readFileSync('lab_discover_desktop.go','utf8');
 const workflow=fs.readFileSync('.github/workflows/ci-lab.yml','utf8');
 
 assert.match(source,/\/\/go:build windows/,'Cambios únicamente en Windows');

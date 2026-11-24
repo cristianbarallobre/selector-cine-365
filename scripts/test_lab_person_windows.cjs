@@ -4,8 +4,8 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 
 const ui=fs.readFileSync('lab_discover_windows.html','utf8');
-const backend=fs.readFileSync('lab_discover_windows.go','utf8');
-const cache=fs.readFileSync('lab_discover_cache_windows.go','utf8');
+const backend=fs.readFileSync('lab_discover_desktop.go','utf8');
+const cache=fs.readFileSync('lab_discover_cache_desktop.go','utf8');
 const main=fs.readFileSync('main.go','utf8');
 const js=ui.split('<!-- LAB_DISCOVERY_SCRIPT -->')[1];
 assert.ok(js,'El módulo LAB debe mantener el separador');

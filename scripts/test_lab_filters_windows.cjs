@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 
 const ui=fs.readFileSync('lab_filters_windows.html','utf8');
-const injector=fs.readFileSync('lab_filters_inject_windows.go','utf8');
+const injector=fs.readFileSync('lab_filters_inject_desktop.go','utf8');
 const stub=fs.readFileSync('lab_filters_other.go','utf8');
 const base=fs.readFileSync('plantilla.html','utf8');
 const core=fs.readFileSync('main.go','utf8');

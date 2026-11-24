@@ -46,10 +46,11 @@ class FakeElement {
 }
 class FakeSelect extends FakeElement {
   constructor(choices){
-    super();this.options=choices.map(([value,textContent])=>({value,textContent}));this._value=this.options[0].value;
+    super();this.options=choices.map(([value,textContent])=>({value,textContent}));this.value=this.options[0].value;
   }
-  get value(){return this._value;}
-  set value(value){this._value=this.options.some(o=>o.value===value)?value:'';}
+  get value(){return this.selectedOptions[0]?.value||'';}
+  set value(value){for(const o of this.options)o.selected=o.value===value;}
+  get selectedOptions(){return this.options.filter(o=>o.selected);}
   get selectedIndex(){return this.options.findIndex(o=>o.value===this.value);}
 }
 const elements={};
@@ -58,7 +59,8 @@ for(const prefix of ['listSwitcher','sortPlatform']){
 }
 for(const id of ['sortPlatformReset','listPlatformMenu','listPlatformButton'])elements[id]=new FakeElement();
 elements.listSwitcher=new FakeSelect([['a','1. Mi primera lista'],['b','2. Mi segunda lista']]);
-elements.platformSelect=new FakeSelect([['all','Todas las películas pendientes'],['any','Cualquier plataforma (streaming)'],['Netflix','Netflix']]);
+elements.platformSelect=new FakeSelect([['all','Todas las películas pendientes'],['any','Cualquier plataforma (streaming)'],['Netflix','Netflix'],['Filmin','Filmin']]);
+elements.platformSelect.multiple=true;
 const document={activeElement:null,createElement:()=>new FakeElement()};
 const $=id=>{assert.ok(elements[id],'Unknown DOM id '+id);return elements[id];};
 const start=js.indexOf('function closeSingleChoiceMenu('),end=js.indexOf('function eligibleFilms()',start);
@@ -73,7 +75,7 @@ elements.listSwitcher.addEventListener('change',()=>listChanges++);
 controls.syncSingleChoiceMenu('sortPlatform','platformSelect');
 controls.syncSingleChoiceMenu('listSwitcher','listSwitcher');
 assert.equal(elements.sortPlatformButtonLabel.textContent,'Todas las películas pendientes');
-assert.equal(elements.sortPlatformOptions.children.length,3);
+assert.equal(elements.sortPlatformOptions.children.length,4);
 assert.equal(elements.sortPlatformOptions.children[0].getAttribute('aria-selected'),'true');
 assert.equal(elements.sortPlatformOptions.children[1].getAttribute('aria-selected'),'false');
 
@@ -83,13 +85,19 @@ assert.equal(elements.sortPlatformButton.getAttribute('aria-expanded'),'true');
 elements.sortPlatformOptions.children[2].click();
 assert.equal(elements.platformSelect.value,'Netflix','Choose one streaming platform');
 assert.equal(sortChanges,1,'One change event');
-assert.equal(elements.sortPlatformMenu.hidden,true,'Dropdown closes after choice');
+assert.equal(elements.sortPlatformMenu.hidden,false,'Permanece abierto para añadir otra plataforma');
 assert.equal(elements.sortPlatformButtonLabel.textContent,'Netflix','Trigger shows current choice');
 
-elements.sortPlatformButton.click();
+elements.sortPlatformOptions.children[3].click();
+assert.deepEqual(elements.platformSelect.selectedOptions.map(o=>o.value),['Netflix','Filmin']);
+assert.equal(elements.sortPlatformButtonLabel.textContent,'Netflix, Filmin');
+elements.sortPlatformOptions.children[2].click();
+assert.deepEqual(elements.platformSelect.selectedOptions.map(o=>o.value),['Filmin']);
+elements.sortPlatformOptions.children[1].click();
+assert.deepEqual(elements.platformSelect.selectedOptions.map(o=>o.value),['any']);
 elements.sortPlatformReset.click();
 assert.equal(elements.platformSelect.value,'all','Reset returns to all pending movies');
-assert.equal(sortChanges,2,'Reset triggers change event');
+assert.equal(sortChanges,5,'Reset triggers change event');
 assert.equal(elements.sortPlatformButtonLabel.textContent,'Todas las películas pendientes');
 
 elements.listSwitcherButton.click();

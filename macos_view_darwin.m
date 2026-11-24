@@ -5,7 +5,9 @@
 #import <Cocoa/Cocoa.h>
 #import <WebKit/WebKit.h>
 
-@interface CineMacDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate>
+@interface CineMacDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate>
+@property(retain) NSURL *appURL;
+@property(retain) NSMapTable *downloads;
 @end
 
 @implementation CineMacDelegate
@@ -18,9 +20,15 @@
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)action
  decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
     NSURL *url = action.request.URL;
-    NSString *host = url.host ?: @"";
-    if ([host isEqualToString:@"127.0.0.1"] || [host isEqualToString:@"localhost"] ||
-        [url.scheme isEqualToString:@"about"]) {
+    WKSecurityOrigin *source = action.sourceFrame.securityOrigin;
+    if (action.shouldPerformDownload && [url.scheme isEqualToString:@"blob"] &&
+        [source.protocol isEqualToString:self.appURL.scheme] && [source.host isEqualToString:self.appURL.host] &&
+        source.port == self.appURL.port.integerValue) {
+        decisionHandler(WKNavigationActionPolicyDownload);
+        return;
+    }
+    if (([url.host isEqualToString:self.appURL.host] && [url.scheme isEqualToString:self.appURL.scheme] &&
+         [url.port isEqual:self.appURL.port]) || [url.absoluteString isEqualToString:@"about:blank"]) {
         decisionHandler(WKNavigationActionPolicyAllow);
         return;
     }
@@ -29,6 +37,63 @@
         [[NSWorkspace sharedWorkspace] openURL:url];
     }
     decisionHandler(WKNavigationActionPolicyCancel);
+}
+- (void)webView:(WKWebView *)view runOpenPanelWithParameters:(WKOpenPanelParameters *)options
+ initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(NSArray<NSURL *> *))reply {
+    NSOpenPanel *panel = [NSOpenPanel openPanel];
+    panel.allowsMultipleSelection = options.allowsMultipleSelection;
+    panel.canChooseDirectories = NO;
+    [panel beginSheetModalForWindow:view.window completionHandler:^(NSModalResponse result){
+        reply(result == NSModalResponseOK ? panel.URLs : nil);
+    }];
+}
+- (void)webView:(WKWebView *)view runJavaScriptConfirmPanelWithMessage:(NSString *)message
+ initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(BOOL))reply {
+    NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+    alert.messageText = message;
+    [alert addButtonWithTitle:@"Aceptar"];
+    [alert addButtonWithTitle:@"Cancelar"];
+    [alert beginSheetModalForWindow:view.window completionHandler:^(NSModalResponse result){reply(result == NSAlertFirstButtonReturn);}];
+}
+- (void)webView:(WKWebView *)view runJavaScriptAlertPanelWithMessage:(NSString *)message
+ initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(void))reply {
+    NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+    alert.messageText = message;
+    [alert addButtonWithTitle:@"Aceptar"];
+    [alert beginSheetModalForWindow:view.window completionHandler:^(NSModalResponse result){reply();}];
+}
+- (void)webView:(WKWebView *)view navigationAction:(WKNavigationAction *)action didBecomeDownload:(WKDownload *)download {
+    download.delegate = self;
+}
+- (void)download:(WKDownload *)download decideDestinationUsingResponse:(NSURLResponse *)response
+ suggestedFilename:(NSString *)filename completionHandler:(void (^)(NSURL *))reply {
+    NSSavePanel *panel = [NSSavePanel savePanel];
+    panel.nameFieldStringValue = filename.lastPathComponent;
+    [panel beginSheetModalForWindow:download.webView.window completionHandler:^(NSModalResponse result){
+        if (result != NSModalResponseOK) { reply(nil); return; }
+        NSError *error = nil;
+        NSURL *dir = [[NSFileManager defaultManager] URLForDirectory:NSItemReplacementDirectory
+            inDomain:NSUserDomainMask appropriateForURL:panel.URL create:YES error:&error];
+        if (!dir) { reply(nil); [NSApp presentError:error]; return; }
+        NSURL *temp = [dir URLByAppendingPathComponent:@"descarga"];
+        [self.downloads setObject:@[temp, panel.URL] forKey:download];
+        reply(temp);
+    }];
+}
+- (void)downloadDidFinish:(WKDownload *)download {
+    NSArray *urls = [self.downloads objectForKey:download];
+    if (!urls) return;
+    NSURL *temp = urls[0], *target = urls[1];
+    if (rename(temp.fileSystemRepresentation, target.fileSystemRepresentation) != 0)
+        [NSApp presentError:[NSError errorWithDomain:NSPOSIXErrorDomain code:errno userInfo:nil]];
+    [[NSFileManager defaultManager] removeItemAtURL:temp.URLByDeletingLastPathComponent error:nil];
+    [self.downloads removeObjectForKey:download];
+}
+- (void)download:(WKDownload *)download didFailWithError:(NSError *)error resumeData:(NSData *)data {
+    NSArray *urls = [self.downloads objectForKey:download];
+    if (urls) [[NSFileManager defaultManager] removeItemAtURL:[urls[0] URLByDeletingLastPathComponent] error:nil];
+    [self.downloads removeObjectForKey:download];
+    if (error.code != NSURLErrorCancelled) [NSApp presentError:error];
 }
 - (WKWebView *)webView:(WKWebView *)webView createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
  forNavigationAction:(WKNavigationAction *)navigationAction windowFeatures:(WKWindowFeatures *)windowFeatures {
@@ -69,6 +134,8 @@ int cine_macos_run(const char *targetURL) {
         [window center];
 
         CineMacDelegate *delegate = [[CineMacDelegate alloc] init];
+        delegate.appURL = url;
+        delegate.downloads = [NSMapTable strongToStrongObjectsMapTable];
         [app setDelegate:delegate];
         [window setDelegate:delegate];
 

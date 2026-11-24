@@ -48,13 +48,18 @@ func getSavePath() string {
 // Las cachés desechables de Windows LAB se guardan en LocalAppData;
 // los TXT, las listas, la nube y las identificaciones permanecen en Roaming.
 func appCacheRoot(dataDir string) string {
+ if runtime.GOOS == "darwin" {
+  if root,err:=os.UserCacheDir();err==nil && root!="" {return filepath.Join(root,appDataDirectoryName)}
+  return dataDir
+ }
  if !appIsLab || runtime.GOOS!="windows"{return dataDir}
  root,err:=os.UserCacheDir()
  if err!=nil||root=="" {return dataDir} // no bloquear la aplicación por un error de entorno
  return filepath.Join(root,appDataDirectoryName,"cache_lab")
 }
 
-const protectedLibraryEnabled = appIsLab || runtime.GOOS == "windows"
+const desktopFeatures = runtime.GOOS == "windows" || runtime.GOOS == "darwin"
+const protectedLibraryEnabled = appIsLab || desktopFeatures
 
 func getInitialState(savePath string) (string, error) {
 	defaultList, err := resources.ReadFile("lista_inicial.txt")
@@ -88,15 +93,29 @@ func makeHTML(initial, token string) (string, error) {
 	out = injectLabReactions(out)
 	out = injectLabSearchPerformance(out)
  out = injectLabMaintenance(out)
-	if runtime.GOOS == "windows" && !appIsLab {
+	if desktopFeatures && !appIsLab {
         out = strings.NewReplacer(
-            "<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.1.0</title>",
-            "🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.1.0",
+            "<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.0</title>",
+            "🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.0",
             ` <span class="lab-nav-tag">LAB</span>`, "",
             `<span class="lab-smart-caption">LAB</span>`, "",
             "SELECTOR CINE 365 · LAB WINDOWS", "SELECTOR CINE 365",
             "SELECTOR CINE 365 · LAB</p>", "SELECTOR CINE 365</p>",
-            "Mantenimiento de Windows LAB", "Mantenimiento de Windows",
+            "Mantenimiento de Windows LAB", "Mantenimiento",
+        ).Replace(out)
+    }
+    if runtime.GOOS == "darwin" {
+        out = strings.NewReplacer(
+            "WebView2 administra su propia caché y no se elimina mientras la aplicación está abierta.", "WebKit gestiona los datos temporales de esta ventana.",
+            "entre Windows y Android", "entre Mac, Windows y Android",
+            "En Windows la autorización se guarda cifrada para este usuario", "En el Mac la autorización se guarda en tu llavero",
+            "actualizar el EXE", "actualizar la aplicación",
+            "desde Windows", "desde el llavero del Mac",
+            "guardada cifrada en Windows", "guardada en el llavero del Mac",
+            "En Windows se recordará", "En el Mac se recordará",
+            "instalada en Windows", "instalada en el Mac",
+            "dos versiones de Windows", "dos versiones de la aplicación",
+            "este PC", "este Mac",
         ).Replace(out)
     }
     return strings.ReplaceAll(out, "__ATLAS_LISTA_INICIAL__", html.EscapeString(initial)), nil

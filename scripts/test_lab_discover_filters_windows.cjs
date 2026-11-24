@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 
 const ui=fs.readFileSync('lab_discover_windows.html','utf8');
-const go=fs.readFileSync('lab_discover_windows.go','utf8');
+const go=fs.readFileSync('lab_discover_desktop.go','utf8');
 const part=ui.split('<!-- LAB_DISCOVERY_SCRIPT -->');
 assert.equal(part.length,2);
 const js=part[1];

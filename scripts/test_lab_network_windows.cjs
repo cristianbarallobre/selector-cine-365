@@ -4,8 +4,8 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 
 const source=fs.readFileSync('lab_network_windows.js','utf8');
-const injector=fs.readFileSync('lab_network_inject_windows.go','utf8');
-const backend=fs.readFileSync('lab_network_windows.go','utf8');
+const injector=fs.readFileSync('lab_network_inject_desktop.go','utf8');
+const backend=fs.readFileSync('lab_network_desktop.go','utf8');
 const other=fs.readFileSync('lab_network_other.go','utf8');
 const main=fs.readFileSync('main.go','utf8');
 const shared=fs.readFileSync('plantilla.html','utf8');

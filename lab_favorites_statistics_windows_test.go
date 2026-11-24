@@ -17,7 +17,7 @@ func TestLabFavoritesStatisticsUseVirtualList(t *testing.T) {
   "$('watched').textContent=labStats.seen;",
   "$('remaining').textContent=labStats.pending.length;",
   "const pct=n?Math.round(100*labStats.seen/n):0;",
-  "if(selectedSortPlatform==='all')return labStatsDataset().pending;",
+  "if(!selectedSortPlatforms.size)return labStatsDataset().pending;",
   "return labStatsDataset().pending.filter(f=>{",
   "const count=eligibleFilms().length;const total=labStatsDataset().pending.length;",
   "const seen=labStatsDataset().entries.filter(f=>f.checked)",

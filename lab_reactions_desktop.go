@@ -1,4 +1,4 @@
-//go:build windows
+//go:build windows || darwin
 
 package main
 
@@ -63,8 +63,8 @@ func injectLabReactions(page string) string {
   "const pct=n?Math.round(100*parsed.seen/n):0;",
   "const pct=n?Math.round(100*labStats.seen/n):0;",1)
  page=strings.Replace(page,
-  "if(selectedSortPlatform==='all')return parsed.pending;",
-  "if(selectedSortPlatform==='all')return labStatsDataset().pending;",1)
+  "if(!selectedSortPlatforms.size)return parsed.pending;",
+  "if(!selectedSortPlatforms.size)return labStatsDataset().pending;",1)
  page=strings.Replace(page,
   "return parsed.pending.filter(f=>{",
   "return labStatsDataset().pending.filter(f=>{",1)

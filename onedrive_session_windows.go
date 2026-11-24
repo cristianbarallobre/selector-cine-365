@@ -68,7 +68,7 @@ func dpapiError(prefix string,err error)error{
  return fmt.Errorf("%s: %w",prefix,err)
 }
 
-func windowsProtectedSessionStore(dir string) graphSessionStore {
+func protectedSessionStore(dir string) graphSessionStore {
  return &windowsGraphSessionStore{path:filepath.Join(dir,"onedrive_sesion_dpapi.bin")}
 }
 

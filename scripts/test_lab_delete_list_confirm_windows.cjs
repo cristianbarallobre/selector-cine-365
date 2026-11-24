@@ -5,7 +5,7 @@ const vm=require('node:vm');
 
 const lab=fs.readFileSync('lab_discover_windows.html','utf8');
 const base=fs.readFileSync('plantilla.html','utf8');
-const injector=fs.readFileSync('lab_discover_windows.go','utf8');
+const injector=fs.readFileSync('lab_discover_desktop.go','utf8');
 const stable=base.slice(base.indexOf('function deleteList(id){'),base.indexOf('function showView(name){'));
 assert.ok(stable.startsWith('function deleteList(id){'),'La función original debe seguir en la plantilla estable');
 assert.match(stable,/confirm\('¿Eliminar «'/,'La plantilla estable no se modifica');

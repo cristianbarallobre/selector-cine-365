@@ -5,7 +5,7 @@ const vm=require('node:vm');
 
 const lab=fs.readFileSync('lab_discover_windows.html','utf8');
 const base=fs.readFileSync('plantilla.html','utf8');
-const backend=fs.readFileSync('lab_discover_cache_windows.go','utf8');
+const backend=fs.readFileSync('lab_discover_cache_desktop.go','utf8');
 const separator='<!-- LAB_DISCOVERY_SCRIPT -->';
 const [style,js]=lab.split(separator);
 assert.ok(style&&js);

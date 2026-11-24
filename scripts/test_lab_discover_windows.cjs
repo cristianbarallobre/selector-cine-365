@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const ui=fs.readFileSync('lab_discover_windows.html','utf8');
-const windows=fs.readFileSync('lab_discover_windows.go','utf8');
+const windows=fs.readFileSync('lab_discover_desktop.go','utf8');
 const other=fs.readFileSync('lab_discover_other.go','utf8');
 const core=fs.readFileSync('main.go','utf8');
 const parts=ui.split('<!-- LAB_DISCOVERY_SCRIPT -->');
@@ -32,7 +32,7 @@ assert.match(ui,/#labDetailPlaceholder\[hidden\]\{display:none!important\}/,'El 
 assert.ok(fs.readFileSync('plantilla.html','utf8').includes('titleLine.appendChild(title);'),'El canal oficial mantiene el código original');
 assert.ok(!fs.readFileSync('android/app/src/main/assets/index.html','utf8').includes('labDiscoverView'),'Android no debe heredar Descubrir');
 
-const cache=fs.readFileSync('lab_discover_cache_windows.go','utf8');
+const cache=fs.readFileSync('lab_discover_cache_desktop.go','utf8');
 assert.match(cache,/\/\/go:build windows/,'La caché sólo debe compilarse en Windows');
 assert.match(cache,/tmdb_fichas_lab\.json/,'La caché debe estar en un archivo LAB independiente');
 assert.match(cache,/labMetaTTL\s*=\s*30\*24\*time\.Hour/,'Metadatos refrescados cada 30 días');

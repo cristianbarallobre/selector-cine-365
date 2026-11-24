@@ -27,8 +27,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>CFBundleIdentifier</key><string>es.cristianbarallobre.selectorcine365</string>
   <key>CFBundleName</key><string>Selector Cine 365</string>
   <key>CFBundleDisplayName</key><string>Selector Cine 365</string>
-  <key>CFBundleShortVersionString</key><string>9.0.0-beta.13.1</string>
-  <key>CFBundleVersion</key><string>9016</string>
+  <key>CFBundleShortVersionString</key><string>9.2.0</string>
+  <key>CFBundleVersion</key><string>9200</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>LSMinimumSystemVersion</key><string>12.0</string>
@@ -49,7 +49,7 @@ plutil -lint "$APP/Contents/Info.plist"
 codesign --force --deep --sign - "$APP"
 codesign --verify --deep --strict --verbose=2 "$APP"
 cat > dist/LEEME_MAC.txt <<'NOTE'
-Selector Cine 365 v9 Beta 13.1 (Mac Apple Silicon / Intel)
+Selector Cine 365 9.2.0 (Mac Apple Silicon / Intel)
 Autor: Cristian Barallobre Rúa
 https://github.com/cristianbarallobre/selector-cine-365
 
@@ -57,10 +57,11 @@ Mueve «Selector Cine 365.app» a Aplicaciones.
 La app no está notarizada por Apple ni firmada con Developer ID.
 Si macOS la bloquea, verifica la procedencia y usa Ajustes del Sistema
 → Privacidad y seguridad → Abrir igualmente.
-Datos: ~/Library/Application Support/AtlasDelCine/
+Datos: ~/Library/Application Support/Selector_Cine_365/
+Caché regenerable: ~/Library/Caches/Selector_Cine_365/
 NOTE
 (
   cd dist
-  zip -qry "Selector_Cine_365_Mac_${MAC_LABEL}_v9_BETA13_1.zip" 'Selector Cine 365.app' LEEME_MAC.txt
-  unzip -t "Selector_Cine_365_Mac_${MAC_LABEL}_v9_BETA13_1.zip" | tail -1
+  zip -qry "Selector_Cine_365_Mac_${MAC_LABEL}_9.2.0.zip" 'Selector Cine 365.app' LEEME_MAC.txt
+  unzip -t "Selector_Cine_365_Mac_${MAC_LABEL}_9.2.0.zip" | tail -1
 )

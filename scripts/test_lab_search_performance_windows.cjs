@@ -6,7 +6,7 @@ const {performance}=require('node:perf_hooks');
 
 const source=fs.readFileSync('plantilla.html','utf8');
 const perf=fs.readFileSync('lab_search_perf_windows.js','utf8');
-const injector=fs.readFileSync('lab_search_perf_windows.go','utf8');
+const injector=fs.readFileSync('lab_search_perf_desktop.go','utf8');
 const main=fs.readFileSync('main.go','utf8');
 new vm.Script('(()=>{\n'+perf+'\n})();',{filename:'lab_search_perf_windows.js'});
 assert.match(injector,/function filmMembershipIndex\(\)\{return labGlobalMembershipIndex\(\);/);

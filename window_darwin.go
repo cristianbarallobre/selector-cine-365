@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"time"
 	"unsafe"
 )
@@ -41,7 +42,10 @@ func launchVisualWindow(url, _ string, onClose func(), _ func() bool) error {
 }
 func maybeNativeChild() bool { return false }
 func notifyError(title, body string) { fmt.Fprintln(os.Stderr, title+":", body) }
-func traceHTTP(path, _ string) {}
+var firstWebKitHeartbeat sync.Once
+func traceHTTP(path, _ string) {
+	if path == "/api/ping" { firstWebKitHeartbeat.Do(func(){ logDiagnostic("WKWebView: interfaz iniciada") }) }
+}
 func logDiagnostic(message string) {
 	dir, err := os.UserConfigDir()
 	if err != nil {

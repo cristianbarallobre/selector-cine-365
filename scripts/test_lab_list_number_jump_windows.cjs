@@ -5,8 +5,8 @@ const vm=require('node:vm');
 
 const html=fs.readFileSync('lab_discover_windows.html','utf8');
 const source=html.split('<!-- LAB_DISCOVERY_SCRIPT -->')[1];
-const go=fs.readFileSync('lab_discover_windows.go','utf8');
-const reactions=fs.readFileSync('lab_reactions_windows.go','utf8');
+const go=fs.readFileSync('lab_discover_desktop.go','utf8');
+const reactions=fs.readFileSync('lab_reactions_desktop.go','utf8');
 const stable=fs.readFileSync('plantilla.html','utf8');
 new vm.Script('(()=>{\n'+source+'\n})();');
 assert.match(html,/#view-library \.film-item\.lab-list-jump-target/);

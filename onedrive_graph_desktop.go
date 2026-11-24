@@ -53,7 +53,7 @@ func newDesktopGraph(configDirectory ...string)*desktopGraph {
   authBase:microsoftOAuthEndpoint,graphBase:desktopGraphEndpoint,
  }
  if len(configDirectory)>0&&configDirectory[0]!=""{
-  g.sessionStore=windowsProtectedSessionStore(configDirectory[0])
+  g.sessionStore=protectedSessionStore(configDirectory[0])
   g.restoreSession()
  }
  return g
@@ -89,7 +89,7 @@ func (g *desktopGraph) rememberSessionLocked(){
  }
  if err:=g.sessionStore.save(saved);err!=nil{
   g.sessionSaved=false
-  g.persistError="No se pudo guardar la sesión Microsoft protegida en Windows. La conexión puede requerir iniciar sesión al volver a abrir."
+  g.persistError="No se pudo guardar la sesión Microsoft protegida en el equipo. La conexión puede requerir iniciar sesión al volver a abrir."
   return
  }
  g.sessionSaved=true
