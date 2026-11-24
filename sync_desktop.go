@@ -11,6 +11,7 @@ import (
  "path/filepath"
  "regexp"
  "sort"
+ "strconv"
  "strings"
  "sync"
  "time"
@@ -306,6 +307,19 @@ func syncMergeVersioned(local libraryState,revisions map[string]syncRevision,kno
  if result.TMDBOverrides==nil{result.TMDBOverrides=map[string]int{}}
  for key,id:=range peer.Library.TMDBOverrides{
   if _,exists:=result.TMDBOverrides[key];!exists{result.TMDBOverrides[key]=id}
+ }
+ // La puntuación y el corazón comparten un registro versionado por película.
+ // Un cambio posterior prevalece; los registros vacíos no se eliminan para que
+ // una copia antigua no resucite favoritos descartados.
+ if result.Reactions==nil{result.Reactions=map[string]filmReaction{}}
+ for key,remote:=range peer.Library.Reactions{
+  localRec,exists:=result.Reactions[key]
+  if !exists||remote.ChangedAt>localRec.ChangedAt||
+   (remote.ChangedAt==localRec.ChangedAt&&
+    (remote.Title+"|"+remote.Year+"|"+strconv.Itoa(remote.Rating)+"|"+strconv.FormatBool(remote.Favorite))>
+    (localRec.Title+"|"+localRec.Year+"|"+strconv.Itoa(localRec.Rating)+"|"+strconv.FormatBool(localRec.Favorite))) {
+   result.Reactions[key]=remote
+  }
  }
  remoteMarks:=syncStatuses(peer.Library)
  for _,other:=range peer.Library.Lists {
