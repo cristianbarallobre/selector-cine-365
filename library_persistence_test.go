@@ -15,7 +15,7 @@ import (
 func postTestLibrary(t *testing.T, a *runningApp, state libraryState) *httptest.ResponseRecorder {
 	t.Helper()
 	body, err := json.Marshal(state)
-	if err != nil || len(body) > 3<<20 {
+	if err != nil || len(body) > libraryFileLimit {
 		t.Fatalf("invalid test request: bytes=%d err=%v", len(body), err)
 	}
 	r := httptest.NewRequest("POST", "/api/library", bytes.NewReader(body))
@@ -23,6 +23,37 @@ func postTestLibrary(t *testing.T, a *runningApp, state libraryState) *httptest.
 	w := httptest.NewRecorder()
 	a.serveHTTP(w, r)
 	return w
+}
+
+func TestLargeLibraryCanBeSavedAndRestored(t *testing.T) {
+	dir := t.TempDir()
+	a := &runningApp{libraryPath: filepath.Join(dir, "colecciones.json"), savePath: filepath.Join(dir, "legacy.txt"), token: "test"}
+	state := initialLibrary(strings.Repeat("☐ Película (2000)\n", 40500))
+	for i := 1; i < 5; i++ {
+		state.Lists = append(state.Lists, filmCollection{ID: fmt.Sprint(i), Name: "Lista", Text: state.Lists[0].Text})
+	}
+	if payload, _ := json.Marshal(state); len(payload) <= 3<<20 {
+		t.Fatal("fixture must exceed the previous HTTP limit")
+	}
+	if w := postTestLibrary(t, a, state); w.Code != 204 {
+		t.Fatalf("save: %d %s", w.Code, w.Body.String())
+	}
+	if err := a.saveSyncRecovery(state, ""); err != nil {
+		t.Fatal(err)
+	}
+	copies, err := a.localRecoveryList()
+	if err != nil || len(copies) != 1 {
+		t.Fatalf("list recovery: %v %v", copies, err)
+	}
+	if w := postTestLibrary(t, a, initialLibrary("Cambiada")); w.Code != 204 {
+		t.Fatalf("replace: %d %s", w.Code, w.Body.String())
+	}
+	if _, err := a.restoreLocalRecovery(copies[0].ID); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(loadLibrary(a.libraryPath, ""), state) {
+		t.Fatal("large library changed on recovery")
+	}
 }
 
 func TestLibraryReloadsLargeIndentedFileAndBackup(t *testing.T) {

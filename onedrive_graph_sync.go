@@ -9,7 +9,6 @@ import (
  "net/http"
  "html"
  "net/url"
- "path/filepath"
  "reflect"
  "strings"
  "time"
@@ -141,8 +140,15 @@ func (a *runningApp) graphPlanFor(local libraryState)(syncPlan,error){
  return p,nil
 }
 func (a *runningApp) graphSyncPreview()(map[string]any,error){
+ if a.graph==nil{return nil,errors.New("Conecta primero tu cuenta de OneDrive")}
+ a.syncPlanMu.Lock();defer a.syncPlanMu.Unlock()
+ a.mu.Lock()
+ local,revision:=a.library,a.libraryRevision
+ a.mu.Unlock()
+ pairing:=a.graph.pairingID()
+ p,err:=a.graphPlanFor(local);if err!=nil{return nil,err}
  a.mu.Lock();defer a.mu.Unlock()
- p,err:=a.graphPlanFor(a.library);if err!=nil{return nil,err}
+ if revision!=a.libraryRevision||pairing!=a.graph.pairingID(){return nil,errors.New("La biblioteca o la cuenta ha cambiado. Vuelve a revisar la sincronización")}
  a.syncPreviewToken=p.Token
  return map[string]any{
   "token":p.Token,"sources":p.Sources,"legacy":p.Legacy,
@@ -152,24 +158,28 @@ func (a *runningApp) graphSyncPreview()(map[string]any,error){
  },nil
 }
 func (a *runningApp) graphSyncConfirm(token string,decisions map[string]bool)(map[string]any,error){
+ if a.graph==nil{return nil,errors.New("Conecta primero tu cuenta de OneDrive")}
+ a.syncPlanMu.Lock();defer a.syncPlanMu.Unlock()
  a.mu.Lock()
  if token==""||token!=a.syncPreviewToken{a.mu.Unlock();return nil,errors.New("Revisa primero los datos de OneDrive")}
- p,err:=a.graphPlanFor(a.library)
- if err!=nil{a.mu.Unlock();return nil,err}
- if token!=p.Token{a.mu.Unlock();return nil,errors.New("OneDrive ha cambiado desde la vista previa. Revisa otra vez")}
+ local,revision:=a.library,a.libraryRevision
+ a.mu.Unlock()
+ pairing:=a.graph.pairingID()
+ p,err:=a.graphPlanFor(local)
+ if err!=nil{return nil,err}
+ a.mu.Lock()
+ if token!=p.Token||token!=a.syncPreviewToken||revision!=a.libraryRevision||pairing!=a.graph.pairingID(){a.mu.Unlock();return nil,errors.New("OneDrive o la biblioteca ha cambiado desde la vista previa. Revisa otra vez")}
  for _,issue:=range p.Conflicts{
   if _,ok:=decisions[issue.Key];!ok{
    a.mu.Unlock();return nil,fmt.Errorf("Falta resolver el conflicto %s",issue.Key)
   }
  }
- before,err:=json.MarshalIndent(a.library,"","  ")
- if err!=nil{a.mu.Unlock();return nil,err}
- recovery:=filepath.Join(filepath.Dir(a.libraryPath),"sync_recuperacion",time.Now().UTC().Format("20060102T150405.000000000")+".json")
- if err=cloudWriteFile(recovery,before);err!=nil{a.mu.Unlock();return nil,err}
+ if err=a.saveSyncRecovery(a.library,"");err!=nil{a.mu.Unlock();return nil,err}
  p.Library=syncApplyDecisions(p.Library,decisions)
  if err=saveLibrary(a.libraryPath,a.savePath,p.Library);err!=nil{a.mu.Unlock();return nil,err}
  a.library=p.Library
- if err=a.syncStore.accept(p,decisions,a.graph.pairingID());err!=nil{a.mu.Unlock();return nil,err}
+ a.libraryRevision++
+ if err=a.syncStore.accept(p,decisions,pairing);err!=nil{a.mu.Unlock();return nil,err}
  a.syncPreviewToken=""
  a.syncPendingConflict.Store(false)
  a.syncLastCheck.Store(time.Now().UnixMilli())
@@ -210,6 +220,7 @@ func (a *runningApp) graphPublishSnapshot()error{
  return nil
 }
 func (a *runningApp) graphAutoSync(force bool)(map[string]any,error){
+ a.syncPlanMu.Lock();defer a.syncPlanMu.Unlock()
  if !a.graph.active()||a.syncStore==nil{
   return map[string]any{"changed":false,"skipped":"disconnected"},nil
  }
@@ -225,8 +236,15 @@ func (a *runningApp) graphAutoSync(force bool)(map[string]any,error){
  a.graph.lastCheck=time.Now()
  a.graph.mu.Unlock()
  a.mu.Lock()
- p,err:=a.graphPlanFor(a.library)
- if err!=nil{a.mu.Unlock();return nil,err}
+ local,revision:=a.library,a.libraryRevision
+ a.mu.Unlock()
+ p,err:=a.graphPlanFor(local)
+ if err!=nil{return nil,err}
+ a.mu.Lock()
+ if revision!=a.libraryRevision||pairing!=a.graph.pairingID(){
+  a.mu.Unlock()
+  return map[string]any{"changed":false,"skipped":"local_changed"},nil
+ }
  a.syncLastCheck.Store(time.Now().UnixMilli())
  if len(p.Conflicts)>0{
   a.syncPendingConflict.Store(true);a.mu.Unlock()
@@ -247,11 +265,10 @@ func (a *runningApp) graphAutoSync(force bool)(map[string]any,error){
   return map[string]any{"changed":false},nil
  }
  if libChanged{
-  before,_:=json.MarshalIndent(a.library,"","  ")
-  recovery:=filepath.Join(filepath.Dir(a.libraryPath),"sync_recuperacion",time.Now().UTC().Format("20060102T150405.000000000")+".json")
-  if err=cloudWriteFile(recovery,before);err!=nil{a.mu.Unlock();return nil,err}
+  if err=a.saveSyncRecovery(a.library,"");err!=nil{a.mu.Unlock();return nil,err}
   if err=saveLibrary(a.libraryPath,a.savePath,p.Library);err!=nil{a.mu.Unlock();return nil,err}
   a.library=p.Library
+  a.libraryRevision++
   a.syncLastReceived.Store(time.Now().UnixMilli())
  }
  if err=a.syncStore.accept(p,nil,pairing);err!=nil{a.mu.Unlock();return nil,err}

@@ -10,6 +10,7 @@ for(const path of [process.argv[2]||'plantilla.html']){
  assert.match(html,/const imported=importTxtAsNewCollection\(txt,file\.name\)/,'TXT file handler creates a collection');
  assert.doesNotMatch(html,/notify\(replaceList\(txt\)/,'TXT file handler must never replace active collection');
  const scope=new Function(`
+ const listSizeLimit=900000;
  let rawText='☐ Antiguo (1980)',virtualMode=false;
  const libraryState={lists:[{id:'atlas',name:'Selector Cine 365 · 365',text:rawText}],active_id:'atlas'};
  const calls={restart:0,save:0,view:''};

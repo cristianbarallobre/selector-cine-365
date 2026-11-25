@@ -305,13 +305,12 @@ h2{font-size:19px}
 /* Firma visual del autor: integrada en la cabecera, sin desplazar la interfaz. */
 .creator-credit{font-size:11px;line-height:1.2;color:#c8b68f;font-weight:590;white-space:nowrap;letter-spacing:.005em;opacity:.92}
 .creator-credit strong{color:#f3c66d;font-weight:680;user-select:none}
-.credit-photo{position:fixed;inset:0;margin:auto;padding:0;border:1px solid #526981;border-radius:16px;background:#121c2a;color:#fff;overflow:hidden;box-shadow:0 18px 60px #0009}
-.credit-photo::backdrop{background:#070d17c9}
-.credit-photo[open]{animation:credit-reveal 340ms cubic-bezier(.18,.85,.3,1.15) both}
+.credit-photo-shade{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;background:#070d17c9}
+.credit-photo{position:relative;padding:0;border:1px solid #526981;border-radius:16px;background:#121c2a;color:#fff;overflow:hidden;box-shadow:0 18px 60px #0009;animation:credit-reveal 340ms cubic-bezier(.18,.85,.3,1.15) both}
 .credit-photo img{display:block;width:auto;height:auto;max-width:min(86vw,620px);max-height:84vh}
 .credit-photo button{position:absolute;top:8px;right:8px;min-width:36px;min-height:36px;padding:0;border:1px solid #718398;border-radius:9px;background:#141f30f2;color:#fff;font-size:22px;cursor:pointer}
 @keyframes credit-reveal{from{opacity:0;transform:scale(.75)}to{opacity:1;transform:scale(1)}}
-@media(prefers-reduced-motion:reduce){.credit-photo[open]{animation:none}}
+@media(prefers-reduced-motion:reduce){.credit-photo{animation:none}}
 @media(max-width:650px){.creator-credit{font-size:9px;white-space:normal;max-width:150px;text-align:right}}
 @media(max-height:690px){.creator-credit{font-size:10px}}
 
@@ -832,7 +831,7 @@ const token='__ATLAS_TOKEN__';
   lastTap=now;
   if(taps!==7)return;
   taps=0;
-  if(loading||photoDialog?.open)return;
+  if(loading||photoDialog)return;
   loading=true;
   let imageURL;
   try{
@@ -843,25 +842,35 @@ const token='__ATLAS_TOKEN__';
    image.alt='Retrato del autor';
    image.src=imageURL;
    await image.decode();
-   const dialog=document.createElement('dialog');
+   const shade=document.createElement('div');
+   shade.className='credit-photo-shade';
+   const dialog=document.createElement('div');
    dialog.className='credit-photo';
+   dialog.setAttribute('role','dialog');
+   dialog.setAttribute('aria-modal','true');
    dialog.setAttribute('aria-label','Foto del autor');
    const close=document.createElement('button');
    close.type='button';
    close.setAttribute('aria-label','Cerrar foto');
    close.textContent='×';
-   close.addEventListener('click',()=>dialog.close());
-   dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
-   dialog.addEventListener('keydown',event=>{if(event.key==='Escape')event.stopPropagation();});
-   dialog.addEventListener('close',()=>{
+   const previousFocus=document.activeElement;
+   const dismiss=()=>{
     URL.revokeObjectURL(imageURL);
-    dialog.remove();
-    if(photoDialog===dialog)photoDialog=null;
-   },{once:true});
+    shade.remove();
+    photoDialog=null;
+    previousFocus?.focus();
+   };
+   close.addEventListener('click',dismiss);
+   shade.addEventListener('click',event=>{if(event.target===shade)dismiss();});
+   shade.addEventListener('keydown',event=>{
+    if(event.key==='Tab')event.preventDefault();
+    if(event.key==='Escape'){event.stopPropagation();dismiss();}
+   });
    dialog.append(image,close);
-   document.body.append(dialog);
-   photoDialog=dialog;
-   dialog.showModal();
+   shade.append(dialog);
+   document.body.append(shade);
+   photoDialog=shade;
+   close.focus();
   }catch{
    if(imageURL)URL.revokeObjectURL(imageURL);
    photoDialog?.remove();
@@ -870,7 +879,9 @@ const token='__ATLAS_TOKEN__';
  },true);
 }
 let rawText=$('initialState').value.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
+const librarySizeLimit=256*1024*1024,listSizeLimit=900000;
 let parsed=null,filter='all',search='',chosen=null,lastChoice=null,saveTimer=null,saveQueue=Promise.resolve(),saveEpoch=0;
+let saveNeeded=false,editRevision=0;
 let filmPage=0,collectionPage=0,statPages=new Map(),searchScope='current',membershipCache=null,membershipFilm=null;
 let platformConfigured=false, platformStatusUnavailable=false, platformData=new Map(),platformRun=0,platformActive=false,platformFinished=0,platformTotal=0;
 let libraryState={version:1,active_id:'atlas',lists:[{id:'atlas',name:'Selector Cine 365 · 365',text:rawText}]};
@@ -1321,24 +1332,36 @@ $('filmPageGotoForm').addEventListener('submit',e=>{
  filmPage=page-1;renderList();input.value='';
 });
 function resetChoice(){chosen=null;$('resultPoster').hidden=true;$('resultPoster').removeAttribute('src');$('resultPlatforms').replaceChildren();$('resultTag').textContent='EL SORTEO TE ESPERA';$('resultTitle').textContent='Tu próxima película aparecerá aquí';$('resultDetails').textContent='';$('markWatched').disabled=true;$('copyChoice').disabled=true;}
-function scheduleSave(){membershipCache=null; $('saveState').textContent='Guardando…';clearTimeout(saveTimer);saveTimer=setTimeout(()=>{saveTimer=null;void saveLocal();},240);}
+function scheduleSave(){membershipCache=null;saveNeeded=true;editRevision++;$('saveState').textContent='Guardando…';clearTimeout(saveTimer);saveTimer=setTimeout(()=>{saveTimer=null;void saveLocal();},240);}
 async function saveLocal(){
- syncActiveText();const snapshot=JSON.stringify(libraryState);const epoch=++saveEpoch;
+ syncActiveText();const snapshot=JSON.stringify(libraryState);const epoch=++saveEpoch,revision=editRevision;
+ saveNeeded=true;
  saveQueue=saveQueue.catch(()=>{}).then(async()=>{
    const response=await fetch('/api/library',{method:'POST',headers:{'Content-Type':'application/json','X-Atlas-Token':token},body:snapshot,cache:'no-store'});
    if(!response.ok)throw new Error('HTTP '+response.status);
    return {cloudResult:response.headers.get('X-Cine-Cloud'),txtPending:response.headers.get('X-Cine-Legacy')==='pending'};
  });
  try{const {cloudResult,txtPending}=await saveQueue;
+ if(epoch===saveEpoch&&revision===editRevision)saveNeeded=false;
  await cineLoadRevisions();
- if(epoch===saveEpoch){cineRecentIntents.clear();$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + carpeta de nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':cloudResult==='pending'?'✓ Local · Revisar sincronización':'✓ Guardado';
+ if(epoch===saveEpoch&&revision===editRevision){cineRecentIntents.clear();$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + carpeta de nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':cloudResult==='pending'?'✓ Local · Revisar sincronización':'✓ Guardado';
  if(txtPending)$('saveState').textContent+=' · ⚠ Copia TXT pendiente';
  void cloudRefresh();setTimeout(()=>{if(!document.hidden)void cloudAutoReceive();},3500);}}
  catch(err){if(epoch===saveEpoch)$('saveState').textContent='⚠ Error al guardar';}
 }
+async function flushLibrary(){
+ if(saveTimer!==null){clearTimeout(saveTimer);saveTimer=null;void saveLocal();}
+ try{await saveQueue;}catch{}
+ if(saveNeeded){
+  void saveLocal();
+  try{await saveQueue;}catch{return false;}
+ }
+ return !saveNeeded;
+}
 // Abrir TXT crea una colección independiente; nunca reemplaza la lista actual.
 function importTxtAsNewCollection(text,fileName){
  const clean=String(text||'').replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
+ if(new Blob([clean]).size>listSizeLimit)return {ok:false,message:'El texto supera el tamaño máximo de una lista.'};
  if(!parse(clean).entries.length)return {ok:false,message:'No se encontraron películas reconocibles en el TXT.'};
  if(libraryState.lists.length>=40)return {ok:false,message:'Límite de 40 listas alcanzado. No se ha modificado ninguna lista.'};
  const base=(String(fileName||'').replace(/\.txt$/i,'').trim()||'Lista importada').slice(0,100);
@@ -1359,6 +1382,7 @@ function importTxtAsNewCollection(text,fileName){
  return {ok:true,name,count:parse(rawText).entries.length};
 }
 function replaceList(text){let clean=text.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');const test=parse(clean);if(!test.entries.length){$('message').textContent='No se encontraron películas.';return false;}
+ if(new Blob([clean]).size>listSizeLimit){alert('El texto supera el tamaño máximo de una lista.');return false;}
  rawText=clean;syncActiveText();reconcileWatched();rawText=activeCollection().text||'';restartList();scheduleSave();return true;
 }
 // Identidad compartida por todas las listas. El ID TMDB tiene prioridad;
@@ -1725,6 +1749,7 @@ function sanitizeComparisonIDs(){
 }
 
 async function initLibrary({preserveNavigation=false}={}){
+ const revision=editRevision;
  await cineLoadRevisions();
  let loaded=false,sameList=true;
  try{
@@ -1732,6 +1757,7 @@ async function initLibrary({preserveNavigation=false}={}){
   if(response.ok){
    const state=await response.json();
    if(validLibrary(state)){
+    if(preserveNavigation&&(revision!==editRevision||saveNeeded))return false;
     const currentID=libraryState.active_id;
     sameList=state.lists.some(list=>list.id===currentID);
     if(preserveNavigation&&sameList)state.active_id=currentID;
@@ -1753,6 +1779,7 @@ async function initLibrary({preserveNavigation=false}={}){
   renderCollectionControls();update();renderStats();
  }
  if(reconciled)scheduleSave();
+ return loaded;
 }
 function validLibrary(s){return s&&s.version===1&&Array.isArray(s.lists)&&s.lists.length>0&&s.lists.length<=40&&typeof s.active_id==='string'&&s.lists.some(l=>l.id===s.active_id)&&s.lists.every(l=>typeof l.text==='string'&&typeof l.name==='string'&&typeof l.id==='string');}
 function restartList(){
@@ -1888,6 +1915,7 @@ $('applyList').addEventListener('click',()=>{
  if(editingListID){const it=libraryState.lists.find(x=>x.id===editingListID);if(it)it.name=name;renderCollectionControls();scheduleSave();closeListModal();return;}
  if(libraryState.lists.length>=40){alert('El límite es de 40 listas.');return;}
  syncActiveText();const text=$('newListText').value.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
+ if(new Blob([text]).size>listSizeLimit){alert('El texto supera el tamaño máximo de una lista.');return;}
  const id='lista_'+Date.now().toString(36)+'_'+Math.floor(Math.random()*100000).toString(36);
  libraryState.lists.push({id,name,text});virtualMode=false;libraryState.active_id=id;reconcileWatched();rawText=activeCollection().text||'';closeListModal();restartList();scheduleSave();showView('library');
 });
@@ -1909,7 +1937,7 @@ function appendImportedFilms(text){
    years.add(f.year||'');known.set(key,years);
  }
  const result=rawText.trimEnd()+(rawText.trim()&&added.length?'\n':'')+added.join('\n');
- if(result.length>900000)return {added:0,skipped,total:incoming.length,error:'La lista resultante supera el tamaño permitido.'};
+ if(new Blob([result]).size>listSizeLimit)return {added:0,skipped,total:incoming.length,error:'La lista resultante supera el tamaño permitido.'};
  if(added.length){rawText=result;syncActiveText();reconcileWatched();rawText=activeCollection().text||'';restartList();scheduleSave();}
  return {added:added.length,skipped,total:incoming.length};
 }
@@ -1949,7 +1977,9 @@ $('filmOverlay').addEventListener('click',e=>{if(e.target===$('filmOverlay'))add
 $('applyFilm').addEventListener('click',()=>{
  const title=$('newFilmTitle').value.trim(),year=$('newFilmYear').value.trim();if(!title){$('newFilmTitle').focus();return;}
  if(year && !/^(18|19|20|21)\d{2}$/.test(year)){alert('Año incorrecto');return;}
- rawText=rawText.trimEnd()+(rawText.trim()?'\n':'')+'☐ '+title+(year?' ('+year+')':'');
+ const text=rawText.trimEnd()+(rawText.trim()?'\n':'')+'☐ '+title+(year?' ('+year+')':'');
+ if(new Blob([text]).size>listSizeLimit){alert('La lista resultante supera el tamaño permitido.');return;}
+ rawText=text;
  syncActiveText();reconcileWatched();rawText=activeCollection().text||'';addFilmClose();update();renderCollectionControls();scheduleSave();notify('Película añadida a «'+activeCollection().name+'».');if(platformConfigured)void loadPlatforms(false);
 });
 // Eliminar una sola película de la lista activa sin tocar otras colecciones.
@@ -2033,16 +2063,15 @@ let restoringBackup=false;
 $('backupFile').addEventListener('change',async e=>{
  const f=e.target.files?.[0];if(!f)return;
  try{
-   if(f.size>256*1024*1024)throw new Error('El archivo es demasiado grande');
+   if(f.size>librarySizeLimit)throw new Error('El archivo es demasiado grande');
    const state=JSON.parse(await f.text());if(!validLibrary(state))throw new Error('No es una copia válida');
    if(!confirm('¿Restaurar '+state.lists.length+' listas? Se sustituirán todas las listas actuales.'))return;
    delete state.backup_created_at;
    const payload=JSON.stringify(state);
-   if(new Blob([payload]).size>3*1024*1024)throw new Error('La biblioteca supera el tamaño de guardado permitido');
+   if(new Blob([payload]).size>librarySizeLimit)throw new Error('La biblioteca supera el tamaño de guardado permitido');
    restoringBackup=true;document.body.inert=true;
    try{
-     if(saveTimer){clearTimeout(saveTimer);saveTimer=null;void saveLocal();}
-     await saveQueue.catch(()=>{});
+     if(!await flushLibrary())throw new Error('Hay cambios pendientes de guardar');
      ++saveEpoch;
      const saved=await fetch('/api/library',{method:'POST',headers:{'Content-Type':'application/json','X-Atlas-Token':token},body:payload});
      if(!saved.ok)throw new Error(await saved.text());
@@ -2265,13 +2294,19 @@ $('cloudRecoveryRestore').addEventListener('click',async()=>{
  if(!id)return;
  if(!confirm('¿Restaurar esta copia local? Se guardará una copia del estado actual antes de restaurar. Los cambios restaurados se compartirán con los demás dispositivos cuando OneDrive esté conectado.'))return;
  const button=$('cloudRecoveryRestore');button.disabled=true;
+ restoringBackup=true;document.body.inert=true;
  try{
-  await saveQueue.catch(()=>{});
+  if(!await flushLibrary())throw new Error('Hay cambios pendientes de guardar');
   $('cloudRecoveryStatus').textContent='Restaurando la copia local con protección…';
   const data=await cloudRequest('/api/sync/recovery/restore','POST',{id});
   if(data.warning)alert('Biblioteca restaurada localmente, pero OneDrive necesita revisión: '+data.warning);
-  location.reload();
+  virtualMode=false;
+  if(!await initLibrary())throw new Error('La copia se guardó en disco, pero no se pudo actualizar la vista');
+  restartList();
+  await cineRefreshRecovery();
+  $('cloudRecoveryStatus').textContent='✓ Biblioteca restaurada';
  }catch(e){$('cloudRecoveryStatus').textContent='⚠ No se ha restaurado: '+e.message;button.disabled=false;}
+ finally{restoringBackup=false;document.body.inert=false;}
 });
 $('cloudSyncNowFast').addEventListener('click',async()=>{
  const button=$('cloudSyncNowFast');button.disabled=true;
@@ -2340,12 +2375,12 @@ async function cloudAutoReceive(force=false){
  if(!force&&Date.now()-cloudAutoCheckedAt<20000)return;
  if(document.querySelector('.overlay:not([hidden])'))return;
  if(document.activeElement?.matches('input,textarea,select,[contenteditable="true"]'))return;
- if(saveTimer!==null)return;
+ if(saveTimer!==null||saveNeeded||restoringBackup||preparingClose)return;
  cloudAutoBusy=true;
- const beforeEpoch=saveEpoch;
+ const beforeEpoch=saveEpoch,beforeEdit=editRevision;
  try{
    await saveQueue.catch(()=>{});
-   if(beforeEpoch!==saveEpoch||saveTimer!==null)return;
+   if(beforeEpoch!==saveEpoch||beforeEdit!==editRevision||saveNeeded)return;
    cloudAutoCheckedAt=Date.now();
    try{
      const result=await cloudRequest('/api/cloud/auto','POST',{force});
@@ -2354,7 +2389,8 @@ async function cloudAutoReceive(force=false){
          ?'Primera vinculación pendiente: pulsa «Revisar sincronización».'
          :'⚠ Se han encontrado cambios incompatibles. Pulsa «Revisar sincronización» para decidir.';
      }else if(result.changed){
-       await initLibrary({preserveNavigation:true});
+       if(beforeEdit!==editRevision||saveNeeded||restoringBackup||preparingClose)return;
+       if(!await initLibrary({preserveNavigation:true}))return;
        $('cloudAutoStatus').textContent='✓ Cambios recibidos automáticamente de otro dispositivo.';
        await cloudRefresh();void cineRefreshHistory();
      }else if(!result.skipped){
@@ -2675,9 +2711,21 @@ let layoutResizeTimer=null;
 window.addEventListener('resize',()=>{clearTimeout(layoutResizeTimer);layoutResizeTimer=setTimeout(()=>{if(activeView==='library')renderList();else if(activeView==='statistics')renderStats();else renderCollectionControls();},100)});
 fetch('/api/ping',{cache:'no-store'}).catch(()=>{});
 setInterval(()=>{fetch('/api/ping',{cache:'no-store'}).catch(()=>{});},12000);
-window.addEventListener('pagehide',()=>{
- if(!restoringBackup)try{syncActiveText();navigator.sendBeacon('/api/library?token='+encodeURIComponent(token),new Blob([JSON.stringify(libraryState)],{type:'application/json'}));}catch(err){}
- try{navigator.sendBeacon('/api/quit?token='+encodeURIComponent(token),'cerrar');}catch(err){}
+let preparingClose=false;
+window.cinePrepareClose=async()=>{
+ if(restoringBackup||preparingClose)return false;
+ preparingClose=true;document.body.inert=true;
+ try{return await flushLibrary();}
+ finally{preparingClose=false;document.body.inert=false;}
+};
+window.chrome?.webview?.addEventListener('message',async event=>{
+ const match=typeof event.data==='string'&&/^cine-prepare-close:(\d+)$/.exec(event.data);
+ if(!match)return;
+ const saved=await window.cinePrepareClose();
+ window.chrome.webview.postMessage((saved?'cine-close-ready:':'cine-close-pending:')+match[1]);
+});
+window.addEventListener('beforeunload',event=>{
+ if(saveNeeded||restoringBackup){event.preventDefault();event.returnValue='';}
 });
 updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void initLibrary().then(async()=>{await initIdentities();await initPlatforms();void cloudAutoReceive(true);});
 })();

@@ -15,6 +15,7 @@ async function restore(backup, accept) {
   const context = {
     document: {body:{}}, Blob, token:'prueba', saveTimer:null, saveEpoch:0,
     saveQueue:Promise.resolve(), libraryState:original, confirm:()=>true,
+    librarySizeLimit:256*1024*1024, flushLibrary:async()=>true,
     alert:message=>{warning=message;}, validLibrary:()=>true,
     $:id=>id==='backupFile'?{addEventListener:(_,fn)=>{handler=fn;}}:status,
     activeCollection:()=>context.libraryState.lists[0], sanitizeComparisonIDs(){},

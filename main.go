@@ -95,8 +95,8 @@ func makeHTML(initial, token string) (string, error) {
  out = injectLabMaintenance(out)
 	if desktopFeatures && !appIsLab {
         out = strings.NewReplacer(
-            "<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.8</title>",
-            "🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.8",
+            "<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.9</title>",
+            "🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.9",
             ` <span class="lab-nav-tag">LAB</span>`, "",
             `<span class="lab-smart-caption">LAB</span>`, "",
             "SELECTOR CINE 365 · LAB WINDOWS", "SELECTOR CINE 365",
@@ -133,6 +133,8 @@ type runningApp struct {
 	graphUploadCh chan struct{}
 	syncStore     *desktopSyncStore
 	syncPreviewToken string
+	libraryRevision uint64 // protected by mu
+	syncPlanMu sync.Mutex // remote reads do not take the library mutex
     syncLastCheck atomic.Int64
     syncLastReceived atomic.Int64
     syncPendingConflict atomic.Bool
@@ -311,6 +313,7 @@ func serve() error {
   logDiagnostic("Sincronización no disponible: "+syncErr.Error())
  }
  app := &runningApp{libraryRecovered:recovered,html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath),appCacheRoot(filepath.Dir(savePath))), cloud: newCloudBackups(filepath.Dir(savePath)), graph:newDesktopGraph(filepath.Dir(savePath)), graphUploadCh:make(chan struct{},1), syncStore:syncStore, token: token, stopCh: make(chan struct{})}
+ defer func(){app.stop();app.flushLabCatalog()}()
 	app.touch()
 	go app.graphPublisher()
 	listener, err := net.Listen("tcp4", "127.0.0.1:0")

@@ -1,16 +1,15 @@
 package main
 
 import (
- "encoding/json"
  "errors"
  "reflect"
- "path/filepath"
  "time"
 )
 
 // cloudAutoSync imports only conflict-free changes after the user has explicitly
 // paired a folder in the manual preview/confirmation flow. No silent initial pairing.
 func (a *runningApp) cloudAutoSync() (map[string]any,error) {
+ a.syncPlanMu.Lock();defer a.syncPlanMu.Unlock()
  if a.cloud==nil || a.syncStore==nil {
   return map[string]any{"changed":false,"skipped":"disabled"},nil
  }
@@ -19,8 +18,15 @@ func (a *runningApp) cloudAutoSync() (map[string]any,error) {
   return map[string]any{"changed":false,"skipped":"not_paired","needs_review":folder!=""},nil
  }
  a.mu.Lock()
- plan,err:=a.cloudPlanFor(a.library,folder)
- if err!=nil{a.mu.Unlock();return nil,err}
+ local,revision:=a.library,a.libraryRevision
+ a.mu.Unlock()
+ plan,err:=a.cloudPlanFor(local,folder)
+ if err!=nil{return nil,err}
+ a.mu.Lock()
+ if revision!=a.libraryRevision||folder!=a.cloud.status().Folder{
+  a.mu.Unlock()
+  return map[string]any{"changed":false,"skipped":"local_changed"},nil
+ }
  a.syncLastCheck.Store(time.Now().UnixMilli())
  if len(plan.Conflicts)!=0{
   a.syncPendingConflict.Store(true)
@@ -40,12 +46,10 @@ func (a *runningApp) cloudAutoSync() (map[string]any,error) {
   return map[string]any{"changed":false},nil
  }
  if libChanged {
-  previous,err:=json.MarshalIndent(a.library,"","  ")
-  if err!=nil{a.mu.Unlock();return nil,err}
-  recovery:=filepath.Join(filepath.Dir(a.libraryPath),"sync_recuperacion",time.Now().UTC().Format("20060102T150405.000000000")+".json")
-  if err=cloudWriteFile(recovery,previous);err!=nil{a.mu.Unlock();return nil,err}
+  if err=a.saveSyncRecovery(a.library,"");err!=nil{a.mu.Unlock();return nil,err}
   if err=saveLibrary(a.libraryPath,a.savePath,plan.Library);err!=nil{a.mu.Unlock();return nil,err}
   a.library=plan.Library
+  a.libraryRevision++
   a.syncLastReceived.Store(time.Now().UnixMilli())
  }
  if err=a.syncStore.accept(plan,nil,folder);err!=nil{a.mu.Unlock();return nil,err}

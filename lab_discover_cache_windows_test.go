@@ -30,11 +30,14 @@ func TestLabCachePersistsSeparately(t *testing.T) {
  c:=&labCatalogCache{file:file,disk:labCacheDisk{Version:1,Items:map[string]labDetailRecord{},Resolved:map[string]int{}}}
  saved:=labDetailRecord{Data:map[string]any{"id":238,"title":"El padrino"},MetaAt:time.Now().Unix()}
  c.remember(238,saved,"el padrino|1972")
+ c.remember(239,labDetailRecord{Data:map[string]any{"title":"La conversación"}},"la conversacion|1974")
+ if _,err:=os.Stat(file);!os.IsNotExist(err){t.Fatal("las fichas deben esperar al guardado agrupado")}
+ c.flush()
  raw,err:=os.ReadFile(file)
  if err!=nil {t.Fatal("no se ha creado la caché persistente:",err)}
  var disk labCacheDisk
  if err=json.Unmarshal(raw,&disk);err!=nil{t.Fatal(err)}
- if disk.Items["238"].Data["title"]!="El padrino"||disk.Resolved["el padrino|1972"]!=238{
+ if disk.Items["238"].Data["title"]!="El padrino"||disk.Resolved["el padrino|1972"]!=238||disk.Items["239"].Data["title"]!="La conversación"{
   t.Fatal("datos o identificaciones no recuperables")
  }
  if _,err:=os.Stat(filepath.Join(filepath.Dir(file),"colecciones.json"));err==nil{t.Fatal("la caché jamás debe crear o modificar colecciones")}

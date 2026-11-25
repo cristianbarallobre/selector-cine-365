@@ -9,6 +9,7 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
@@ -31,6 +32,7 @@ const (
 	wmMove                  = 0x0003
 	wmSetFocus              = 0x0007
 	wmAppNavigate           = 0x8021
+	wmAppCloseResult        = 0x8022
 	wsOverlappedWindow      = 0x00CF0000
 	wsClipChildren          = 0x02000000
 	wsClipSiblings          = 0x04000000
@@ -82,6 +84,7 @@ var (
 	iidNavStartHandler    = winGuid{0x9adbe429, 0xf36d, 0x432b, [8]byte{0x9d, 0xdc, 0xf8, 0x88, 0x1f, 0xbd, 0x76, 0xe3}}
 	iidNavDoneHandler     = winGuid{0xd33a35bf, 0x1c49, 0x4f98, [8]byte{0x93, 0xab, 0x00, 0x6e, 0x05, 0x33, 0xfe, 0x1c}}
 	iidProcessFailHandler = winGuid{0x79e0aea4, 0x990b, 0x42d9, [8]byte{0xaa, 0x1d, 0x0f, 0xcc, 0x2e, 0x5b, 0xc7, 0xf1}}
+	iidWebMessageHandler  = winGuid{0x57213f19, 0x00e6, 0x49fa, [8]byte{0x8e, 0x07, 0x89, 0x8e, 0xa0, 0x1e, 0xcb, 0xd2}}
 )
 
 type callbackVTable struct{ QueryInterface, AddRef, Release, Invoke uintptr }
@@ -103,12 +106,18 @@ type nativeWindow struct {
 	navStartCallback    callbackObject
 	navDoneCallback     callbackObject
 	processFailCallback callbackObject
+	webMessageCallback  callbackObject
 	navStartVTable      callbackVTable
 	navDoneVTable       callbackVTable
 	processFailVTable   callbackVTable
+	webMessageVTable    callbackVTable
 	navStartToken       uint64
 	navDoneToken        uint64
 	processFailToken    uint64
+	webMessageToken     uint64
+	ready               bool
+	closing             bool
+	closeAttempt        uintptr
 	envVTable           callbackVTable
 	ctrlVTable          callbackVTable
 	loader              *syscall.DLL
@@ -139,6 +148,7 @@ var (
 	procGetModuleHandle  = kernel32DLL.NewProc("GetModuleHandleW")
 	procCoInitialize     = ole32DLL.NewProc("CoInitializeEx")
 	procCoUninitialize   = ole32DLL.NewProc("CoUninitialize")
+	procCoTaskMemFree    = ole32DLL.NewProc("CoTaskMemFree")
 	procSetAppID         = shell32DLL.NewProc("SetCurrentProcessExplicitAppUserModelID")
 	procExtractIcon      = shell32DLL.NewProc("ExtractIconExW")
 	procBlackBrush       = gdi32DLL.NewProc("GetStockObject")
@@ -196,7 +206,34 @@ func nativeWndProc(hwnd, msg, wparam, lparam uintptr) uintptr {
 		}
 		return 0
 	case wmClose:
+		if w != nil && w.ready && w.webview != 0 {
+			if w.closing {
+				return 0
+			}
+			w.closing = true
+			w.closeAttempt++
+			attempt := w.closeAttempt
+			message := utf16Ptr(fmt.Sprintf("cine-prepare-close:%d", attempt))
+			hr := invokeCOM(w.webview, 33, ptr(unsafe.Pointer(message))) // PostWebMessageAsString
+			runtime.KeepAlive(message)
+			if badHR(hr) {
+				procPostMessage.Call(hwnd, wmAppCloseResult, 0, attempt)
+			} else {
+				time.AfterFunc(20*time.Second, func() { procPostMessage.Call(hwnd, wmAppCloseResult, 0, attempt) })
+			}
+			return 0
+		}
 		procDestroyWindow.Call(hwnd)
+		return 0
+	case wmAppCloseResult:
+		if w != nil && w.closing && lparam == w.closeAttempt {
+			w.closing = false
+			if wparam == 1 {
+				procDestroyWindow.Call(hwnd)
+			} else {
+				notifyError("Selector Cine 365", "No se pudo terminar el guardado. Revisa el estado y vuelve a cerrar la ventana.")
+			}
+		}
 		return 0
 	case wmDestroy:
 		if w != nil {
@@ -232,7 +269,8 @@ func callbackQueryInterface(this, riid, out uintptr) uintptr {
 	if iid == iidIUnknown || (cb.Kind == 0 && iid == iidEnvironmentHandler) || (cb.Kind == 1 && iid == iidControllerHandler) ||
 		(cb.Kind == 2 && iid == iidNavStartHandler) ||
 		(cb.Kind == 3 && iid == iidNavDoneHandler) ||
-		(cb.Kind == 4 && iid == iidProcessFailHandler) {
+		(cb.Kind == 4 && iid == iidProcessFailHandler) ||
+		(cb.Kind == 5 && iid == iidWebMessageHandler) {
 		*(*uintptr)(unsafe.Pointer(out)) = this
 		atomic.AddInt32(&cb.RefCount, 1)
 		return sOK
@@ -249,6 +287,9 @@ func callbackRelease(this uintptr) uintptr {
 	return uintptr(atomic.AddInt32(&cb.RefCount, -1))
 }
 func navigationStarting(this, sender, args uintptr) uintptr {
+	if w := activeNativeWindow; w != nil {
+		w.ready = false
+	}
 	logDiagnostic("NavigationStarting: WebView2 ha iniciado navegación")
 	return sOK
 }
@@ -270,6 +311,43 @@ func navigationCompleted(this, sender, args uintptr) uintptr {
 		return sOK
 	}
 	logDiagnostic(fmt.Sprintf("NavigationCompleted: éxito=%v, WebErrorStatus=%d", success != 0, errorCode))
+	if w := activeNativeWindow; w != nil {
+		w.ready = success != 0 && webviewString(sender, 4, len(w.url)) == w.url
+	}
+	return sOK
+}
+func webviewString(object, method uintptr, maxLength int) string {
+	if object == 0 {
+		return ""
+	}
+	var value *uint16
+	if badHR(invokeCOM(object, method, ptr(unsafe.Pointer(&value)))) || value == nil {
+		return ""
+	}
+	defer procCoTaskMemFree.Call(ptr(unsafe.Pointer(value)))
+	for i, character := range unsafe.Slice(value, maxLength+1) {
+		if character == 0 {
+			return syscall.UTF16ToString(unsafe.Slice(value, i))
+		}
+	}
+	return ""
+}
+func webMessageReceived(this, sender, args uintptr) uintptr {
+	w := activeNativeWindow
+	if w == nil || !w.closing || args == 0 || sender != w.webview {
+		return sOK
+	}
+	if webviewString(args, 3, len(w.url)) != w.url {
+		return sOK
+	}
+	ready := fmt.Sprintf("cine-close-ready:%d", w.closeAttempt)
+	pending := fmt.Sprintf("cine-close-pending:%d", w.closeAttempt)
+	switch webviewString(args, 5, len(pending)) {
+	case ready:
+		procPostMessage.Call(w.hwnd, wmAppCloseResult, 1, w.closeAttempt)
+	case pending:
+		procPostMessage.Call(w.hwnd, wmAppCloseResult, 0, w.closeAttempt)
+	}
 	return sOK
 }
 func processFailed(this, sender, args uintptr) uintptr {
@@ -340,6 +418,7 @@ func controllerReady(this, hresult, controller uintptr) uintptr {
 		{"NavigationStarting", 7, &w.navStartCallback, &w.navStartToken},
 		{"NavigationCompleted", 15, &w.navDoneCallback, &w.navDoneToken},
 		{"ProcessFailed", 25, &w.processFailCallback, &w.processFailToken},
+		{"WebMessageReceived", 34, &w.webMessageCallback, &w.webMessageToken},
 	} {
 		hr = invokeCOM(webview, ev.method, ptr(unsafe.Pointer(ev.cb)), ptr(unsafe.Pointer(ev.token)))
 		logDiagnostic(fmt.Sprintf("Evento %s: registro 0x%08X", ev.name, uint32(hr)))
@@ -357,6 +436,18 @@ func controllerReady(this, hresult, controller uintptr) uintptr {
 // El SDK de Microsoft distribuye la DLL cargadora por separado del runtime.
 // Instalamos únicamente esa DLL desde NuGet oficial, una sola vez por usuario.
 const webview2PackageURL = "https://api.nuget.org/v3-flatcontainer/microsoft.web.webview2/1.0.3537.50/microsoft.web.webview2.1.0.3537.50.nupkg"
+const webview2LoaderSHA256 = "2f965e10aed3b356a408978a0e6d74eb86e3e722dd008fa9ad39f68884479e85"
+
+func verifiedWebview2Loader(path string) bool {
+	file, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+	defer file.Close()
+	hash := sha256.New()
+	size, err := io.Copy(hash, io.LimitReader(file, (5<<20)+1))
+	return err == nil && size <= 5<<20 && fmt.Sprintf("%x", hash.Sum(nil)) == webview2LoaderSHA256
+}
 
 func obtainWebview2Loader() (string, error) {
 	config, err := os.UserConfigDir()
@@ -364,13 +455,13 @@ func obtainWebview2Loader() (string, error) {
 		return "", err
 	}
 	dest := filepath.Join(config, "AtlasDelCine", "webview2", "WebView2Loader.dll")
-	if st, err := os.Stat(dest); err == nil && st.Size() > 20000 {
+	if verifiedWebview2Loader(dest) {
 		return dest, nil
 	}
 	// Primero intentamos con un DLL al lado del ejecutable, para instalaciones sin red.
 	if exe, err := os.Executable(); err == nil {
 		adjacent := filepath.Join(filepath.Dir(exe), "WebView2Loader.dll")
-		if st, err := os.Stat(adjacent); err == nil && st.Size() > 20000 {
+		if verifiedWebview2Loader(adjacent) {
 			return adjacent, nil
 		}
 	}
@@ -409,8 +500,8 @@ func obtainWebview2Loader() (string, error) {
 			break
 		}
 	}
-	if len(content) < 20000 || !bytes.HasPrefix(content, []byte("MZ")) {
-		return "", errors.New("el paquete oficial no contiene WebView2Loader.dll x64")
+	if fmt.Sprintf("%x", sha256.Sum256(content)) != webview2LoaderSHA256 {
+		return "", errors.New("no coincide la integridad de WebView2Loader.dll x64")
 	}
 	if err := os.MkdirAll(filepath.Dir(dest), 0700); err != nil {
 		return "", err
@@ -464,9 +555,11 @@ func nativeWindowLoop(url, profile string) error {
 	w.navStartVTable = callbackVTable{qi, add, release, syscall.NewCallback(navigationStarting)}
 	w.navDoneVTable = callbackVTable{qi, add, release, syscall.NewCallback(navigationCompleted)}
 	w.processFailVTable = callbackVTable{qi, add, release, syscall.NewCallback(processFailed)}
+	w.webMessageVTable = callbackVTable{qi, add, release, syscall.NewCallback(webMessageReceived)}
 	w.navStartCallback = callbackObject{VTable: &w.navStartVTable, RefCount: 1, Kind: 2}
 	w.navDoneCallback = callbackObject{VTable: &w.navDoneVTable, RefCount: 1, Kind: 3}
 	w.processFailCallback = callbackObject{VTable: &w.processFailVTable, RefCount: 1, Kind: 4}
+	w.webMessageCallback = callbackObject{VTable: &w.webMessageVTable, RefCount: 1, Kind: 5}
 	w.envCallback = callbackObject{VTable: &w.envVTable, RefCount: 1, Kind: 0}
 	w.ctrlCallback = callbackObject{VTable: &w.ctrlVTable, RefCount: 1, Kind: 1}
 	instance, _, _ := procGetModuleHandle.Call(0)

@@ -486,9 +486,14 @@ func (a *runningApp) cloudPlanFor(local libraryState,folder string) (syncPlan,er
 }
 func (a *runningApp) cloudSyncPreview() (map[string]any,error) {
  if a.syncStore==nil{return nil,errors.New("sincronización no inicializada")}
- a.mu.Lock();defer a.mu.Unlock()
+ a.syncPlanMu.Lock();defer a.syncPlanMu.Unlock()
  folder:=a.cloud.status().Folder
- p,err:=a.cloudPlanFor(a.library,folder);if err!=nil{return nil,err}
+ a.mu.Lock()
+ local,revision:=a.library,a.libraryRevision
+ a.mu.Unlock()
+ p,err:=a.cloudPlanFor(local,folder);if err!=nil{return nil,err}
+ a.mu.Lock();defer a.mu.Unlock()
+ if revision!=a.libraryRevision||folder!=a.cloud.status().Folder{return nil,errors.New("La biblioteca o la carpeta ha cambiado. Vuelve a revisar la sincronización")}
  a.syncPreviewToken=p.Token
  return map[string]any{"token":p.Token,"sources":p.Sources,"legacy":p.Legacy,
   "local_lists":len(a.library.Lists),"local_seen":syncWatched(a.library),
@@ -497,22 +502,25 @@ func (a *runningApp) cloudSyncPreview() (map[string]any,error) {
 }
 func (a *runningApp) cloudSyncConfirm(token string,decisions map[string]bool) (map[string]any,error) {
  if a.syncStore==nil{return nil,errors.New("sincronización no inicializada")}
+ a.syncPlanMu.Lock();defer a.syncPlanMu.Unlock()
  a.mu.Lock()
  folder:=a.cloud.status().Folder
  if token==""||token!=a.syncPreviewToken{a.mu.Unlock();return nil,errors.New("revisa los datos antes de sincronizar")}
- p,err:=a.cloudPlanFor(a.library,folder)
- if err!=nil{a.mu.Unlock();return nil,err}
- if p.Token!=token{a.mu.Unlock();return nil,errors.New("la carpeta o la biblioteca ha cambiado: vuelve a revisar")}
+ local,revision:=a.library,a.libraryRevision
+ a.mu.Unlock()
+ p,err:=a.cloudPlanFor(local,folder)
+ if err!=nil{return nil,err}
+ a.mu.Lock()
+ if p.Token!=token||token!=a.syncPreviewToken||revision!=a.libraryRevision||folder!=a.cloud.status().Folder{a.mu.Unlock();return nil,errors.New("la carpeta o la biblioteca ha cambiado: vuelve a revisar")}
  required:=map[string]bool{}
  for _,c:=range p.Conflicts{required[c.Key]=true}
  for key:=range required{if _,ok:=decisions[key];!ok{a.mu.Unlock();return nil,fmt.Errorf("falta resolver el conflicto: %s",key)}}
  // Copia adicional inmediata, independiente de la copia diaria habitual.
- before,_:=json.MarshalIndent(a.library,"","  ")
- recovery:=filepath.Join(filepath.Dir(a.libraryPath),"sync_recuperacion",time.Now().UTC().Format("20060102T150405.000000000")+".json")
- if err:=cloudWriteFile(recovery,before);err!=nil{a.mu.Unlock();return nil,err}
+ if err:=a.saveSyncRecovery(a.library,"");err!=nil{a.mu.Unlock();return nil,err}
  p.Library=syncApplyDecisions(p.Library,decisions)
  if err:=saveLibrary(a.libraryPath,a.savePath,p.Library);err!=nil{a.mu.Unlock();return nil,err}
  a.library=p.Library
+ a.libraryRevision++
  if err:=a.syncStore.accept(p,decisions,folder);err!=nil{a.mu.Unlock();return nil,err}
  a.syncPreviewToken=""
  a.syncPendingConflict.Store(false)

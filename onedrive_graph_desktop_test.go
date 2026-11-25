@@ -70,6 +70,38 @@ func TestDesktopGraphRejectsUntrustedPagination(t *testing.T){
  if err==nil||!strings.Contains(err.Error(),"no reconocida"){t.Fatalf("unsafe pagination should fail: %v",err)}
 }
 
+func TestGraphPreviewAllowsLocalSaveAndRejectsStalePlan(t *testing.T){
+ entered,release:=make(chan struct{}),make(chan struct{})
+ var reached,unblock sync.Once
+ finish:=func(){unblock.Do(func(){close(release)})}
+ server:=httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
+  reached.Do(func(){close(entered)})
+  <-release
+  _,_=io.WriteString(w,`{"value":[]}`)
+ }))
+ defer server.Close()
+ defer finish()
+ g:=newDesktopGraph()
+ g.client=server.Client();g.graphBase=server.URL+"/"
+ g.token="test-access";g.rootID="root";g.expiry=time.Now().Add(time.Hour)
+ dir:=t.TempDir()
+ store,err:=newDesktopSyncStore(dir);if err!=nil{t.Fatal(err)}
+ app:=&runningApp{graph:g,syncStore:store,token:"test",library:initialLibrary("☐ Antes (2024)"),libraryPath:filepath.Join(dir,"colecciones.json"),savePath:filepath.Join(dir,"peliculas.txt")}
+ preview:=make(chan error,1)
+ go func(){_,err:=app.graphSyncPreview();preview<-err}()
+ select{case <-entered:case <-time.After(5*time.Second):t.Fatal("preview did not reach Graph")}
+ saved:=make(chan int,1)
+ go func(){saved<-postTestLibrary(t,app,initialLibrary("☐ Después (2024)")).Code}()
+ select{
+ case code:=<-saved:
+  if code!=204{t.Fatalf("local save returned %d",code)}
+ case <-time.After(5*time.Second):
+  t.Fatal("local save waited for Graph")
+ }
+ finish()
+ if err:=<-preview;err==nil||!strings.Contains(err.Error(),"ha cambiado"){t.Fatalf("expected stale preview rejection, got %v",err)}
+}
+
 func TestGraphPreviewConfirmAndroidSnapshotWithoutOverwritingPeer(t *testing.T){
  remote:=initialLibrary("☑ Película compartida (2024)")
  remoteJSON,err:=json.Marshal(syncSnapshot{Protocol:2,DeviceID:"android-peer",Library:remote,Known:map[string]int64{},Revisions:map[string]syncRevision{}})

@@ -39,6 +39,7 @@ func TestLabCatalogEvictsOldestInsteadOfStoppingSaving(t *testing.T){
  if json.Unmarshal(raw,&disk)!=nil||len(disk.Items)!=labCacheMaxEntries{t.Fatal("El archivo compacto no se puede recargar")}
  // Al recordar una ficha nueva tampoco debe interrumpirse la persistencia.
  c.remember(999999,labDetailRecord{Data:map[string]any{"id":999999,"title":"Nueva"}}, "nueva|2026")
+ c.flush()
  raw,err=os.ReadFile(file);if err!=nil{t.Fatal(err)}
  if !strings.Contains(string(raw),"Nueva"){t.Fatal("Las nuevas fichas no se guardan tras limpiar")}
  if len(c.disk.Items)>labCacheMaxEntries{t.Fatal("Caché sin límite tras remember")}

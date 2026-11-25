@@ -4,6 +4,7 @@ import (
  "encoding/json"
  "errors"
  "fmt"
+ "io"
  "net/http"
  "os"
  "path/filepath"
@@ -16,6 +17,42 @@ import (
 // Recovery backups stay on this computer. No cloud file or arbitrary path is
 // accepted as a restore source, and restoration always creates a rescue point.
 var safeRecoveryName=regexp.MustCompile(`^[0-9A-Za-z._-]{5,95}\.json$`)
+var syncRecoveryName=regexp.MustCompile(`^\d{8}T\d{6}\.\d{9}Z?(?:_antes_restaurar)?\.json$`)
+
+func (a *runningApp) saveSyncRecovery(state libraryState, suffix string) error {
+ dir:=filepath.Join(filepath.Dir(a.libraryPath),"sync_recuperacion")
+ now:=time.Now()
+ data,err:=json.MarshalIndent(state,"","  ")
+ if err!=nil{return err}
+ name:=now.UTC().Format("20060102T150405.000000000Z")+suffix+".json"
+ if err=cloudWriteFile(filepath.Join(dir,name),data);err!=nil{return err}
+ names,err:=labBackupCandidates(dir,syncRecoveryName)
+ if err!=nil{return nil}
+ var bytes int64
+ kept:=0
+ for i:=len(names)-1;i>=0;i--{
+  file:=filepath.Join(dir,names[i])
+  info,err:=os.Stat(file)
+  if err!=nil{continue}
+  if names[i]!=name&&(kept>=20||bytes+info.Size()>256<<20||now.Sub(info.ModTime())>30*24*time.Hour){
+   _=os.Remove(file)
+   continue
+  }
+  kept++
+  bytes+=info.Size()
+ }
+ return nil
+}
+
+func readRecoveryFile(path string)([]byte,error){
+ f,err:=os.Open(path);if err!=nil{return nil,err}
+ defer f.Close()
+ stat,err:=f.Stat();if err!=nil{return nil,err}
+ if !stat.Mode().IsRegular()||stat.Size()==0||stat.Size()>libraryFileLimit{return nil,errors.New("Tamaño de copia de recuperación no válido")}
+ data,err:=io.ReadAll(io.LimitReader(f,libraryFileLimit+1))
+ if err==nil&&(len(data)==0||len(data)>libraryFileLimit){return nil,errors.New("Tamaño de copia de recuperación no válido")}
+ return data,err
+}
 type recoveryInfo struct {
  ID string `json:"id"`
  Name string `json:"name"`
@@ -36,7 +73,7 @@ func (a *runningApp) localRecoveryList() ([]recoveryInfo,error){
   if err!=nil{return nil,err}
   for _,entry:=range entries{
    if entry.IsDir()||!safeRecoveryName.MatchString(entry.Name()){continue}
-   info,err:=entry.Info();if err!=nil||info.Size()>3<<20{continue}
+   info,err:=entry.Info();if err!=nil||info.Size()>libraryFileLimit{continue}
    all=append(all,recoveryInfo{
     ID:d.prefix+":"+entry.Name(),Name:entry.Name(),
     WhenMS:info.ModTime().UnixMilli(),Bytes:info.Size(),
@@ -59,9 +96,8 @@ func (a *runningApp) previewLocalRecovery(id string) (map[string]any,error){
  case "quick":if protectedLibraryEnabled{dir=filepath.Join(root,"copias_rapidas_lab")}
  }
  if dir==""{return nil,errors.New("origen no permitido")}
- data,err:=os.ReadFile(filepath.Join(dir,name))
+ data,err:=readRecoveryFile(filepath.Join(dir,name))
  if err!=nil{return nil,err}
- if len(data)==0||len(data)>3<<20{return nil,errors.New("Copia demasiado grande o vacía")}
  var state libraryState
  if json.Unmarshal(data,&state)!=nil||validateLibrary(state)!=nil{
   return nil,errors.New("La copia no es válida. No es seguro restaurarla")
@@ -85,19 +121,16 @@ func (a *runningApp) restoreLocalRecovery(id string) (map[string]any,error) {
  default:return nil,errors.New("origen de recuperación no permitido")
  }
  filename:=filepath.Join(dir,name)
- data,err:=os.ReadFile(filename);if err!=nil{return nil,err}
- if len(data)==0||len(data)>3<<20{return nil,errors.New("tamaño de copia de recuperación no válido")}
+ data,err:=readRecoveryFile(filename);if err!=nil{return nil,err}
  var restored libraryState
  if err=json.Unmarshal(data,&restored);err!=nil{return nil,errors.New("la copia JSON no es válida")}
  if err=validateLibrary(restored);err!=nil{return nil,fmt.Errorf("no se ha restaurado: %w",err)}
  a.mu.Lock()
  before:=a.library
- oldBytes,err:=json.MarshalIndent(before,"","  ")
- if err!=nil{a.mu.Unlock();return nil,err}
- rescue:=filepath.Join(root,"sync_recuperacion",time.Now().UTC().Format("20060102T150405.000000000")+"_antes_restaurar.json")
- if err=cloudWriteFile(rescue,oldBytes);err!=nil{a.mu.Unlock();return nil,err}
+ if err=a.saveSyncRecovery(before,"_antes_restaurar");err!=nil{a.mu.Unlock();return nil,err}
  if err=saveLibrary(a.libraryPath,a.savePath,restored);err!=nil{a.mu.Unlock();return nil,err}
  a.library=restored
+ a.libraryRevision++
  if a.syncStore!=nil{
   if err=a.syncStore.observe(before,restored);err!=nil{a.mu.Unlock();return nil,err}
  }

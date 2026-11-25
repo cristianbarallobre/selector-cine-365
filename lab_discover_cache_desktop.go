@@ -56,15 +56,17 @@ type labCatalogCache struct {
  busy string
  errors int
  lastError string
+ dirty bool
+ flushTimer *time.Timer
 }
 var labCatalogMu sync.Mutex
 var labCatalogByPath=map[string]*labCatalogCache{}
 func (a *runningApp) labCatalog() *labCatalogCache {
  legacy:=filepath.Join(filepath.Dir(a.savePath),"tmdb_fichas_lab.json")
  path:=filepath.Join(appCacheRoot(filepath.Dir(a.savePath)),"tmdb_fichas_lab.json")
- if path!=legacy{_ =copyLegacyCacheIfMissing(legacy,path,25<<20)}
  labCatalogMu.Lock();defer labCatalogMu.Unlock()
  if c:=labCatalogByPath[path];c!=nil{return c}
+ if path!=legacy{_ =copyLegacyCacheIfMissing(legacy,path,25<<20)}
  c:=&labCatalogCache{file:path,app:a,disk:labCacheDisk{Version:1,Items:map[string]labDetailRecord{},Resolved:map[string]int{}},targets:map[string]labFilmJob{},queued:map[string]bool{}}
  if data,err:=os.ReadFile(path);err==nil&&len(data)<25<<20 {
   var saved labCacheDisk
@@ -164,8 +166,29 @@ func (c *labCatalogCache) remember(id int,rec labDetailRecord,identity string) {
  rec.LastUsedAt=time.Now().Unix()
  c.disk.Items[labID(id)]=rec
  if identity!=""{c.disk.Resolved[identity]=id}
+ c.scheduleFlushLocked()
+}
+func (c *labCatalogCache) scheduleFlushLocked(){
+ c.dirty=true
+ if c.flushTimer==nil{c.flushTimer=time.AfterFunc(3*time.Second,c.flush)}
+}
+func (c *labCatalogCache) flush(){
+ c.mu.Lock();defer c.mu.Unlock()
+ if c.flushTimer!=nil{c.flushTimer.Stop();c.flushTimer=nil}
+ if !c.dirty{return}
  c.pruneLocked()
- if err:=c.fileSaveLocked();err!=nil{c.lastError="No se pudo guardar la caché: "+err.Error()}
+ if err:=c.fileSaveLocked();err!=nil{
+  c.lastError="No se pudo guardar la caché: "+err.Error()
+  return
+ }
+ c.dirty=false
+}
+func (a *runningApp) flushLabCatalog(){
+ path:=filepath.Join(appCacheRoot(filepath.Dir(a.savePath)),"tmdb_fichas_lab.json")
+ labCatalogMu.Lock()
+ c:=labCatalogByPath[path]
+ labCatalogMu.Unlock()
+ if c!=nil{c.flush()}
 }
 func labExpired(at int64,ttl time.Duration) bool{return at<=0||time.Since(time.Unix(at,0))>=ttl}
 func labNeedsRefresh(r labDetailRecord) bool {
@@ -316,7 +339,11 @@ func (c *labCatalogCache) runWorker() {
      var fresh labDetailRecord
      fresh,err=labFreshDetail(ctx,j.ID,key,prior)
      if err==nil{c.remember(j.ID,fresh,k)}
-    }else{c.mu.Lock();c.disk.Resolved[k]=j.ID;c.mu.Unlock()}
+    }else{
+     c.mu.Lock()
+     if c.disk.Resolved[k]!=j.ID{c.disk.Resolved[k]=j.ID;c.scheduleFlushLocked()}
+     c.mu.Unlock()
+    }
    }
    cancel()
   }

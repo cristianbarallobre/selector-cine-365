@@ -222,8 +222,13 @@ func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(state)
 	case http.MethodPost:
 		var state libraryState
-		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 3<<20)).Decode(&state); err != nil {
-			http.Error(w, "JSON inválido", 400)
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, libraryFileLimit)).Decode(&state); err != nil {
+			var sizeErr *http.MaxBytesError
+			if errors.As(err, &sizeErr) {
+				http.Error(w, "La biblioteca supera el tamaño permitido", 413)
+			} else {
+				http.Error(w, "JSON inválido", 400)
+			}
 			return
 		}
 		if err := validateLibrary(state); err != nil {
@@ -238,6 +243,7 @@ func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		if err == nil {
 			a.library = state
+			a.libraryRevision++
             // Registrar cambios del usuario, no solo el snapshot final.
             if a.syncStore!=nil {
                 if syncErr:=a.syncStore.observe(before,state);syncErr!=nil{

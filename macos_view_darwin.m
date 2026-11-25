@@ -8,6 +8,9 @@
 @interface CineMacDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate>
 @property(retain) NSURL *appURL;
 @property(retain) NSMapTable *downloads;
+@property(retain) WKWebView *appView;
+@property BOOL preparingClose;
+@property BOOL closeApproved;
 @end
 
 @implementation CineMacDelegate
@@ -16,6 +19,42 @@
 }
 - (void)windowWillClose:(NSNotification *)notification {
     [NSApp stop:nil];
+}
+- (void)prepareClose:(void (^)(BOOL))reply {
+    self.preparingClose = YES;
+    [self.appView callAsyncJavaScript:
+        @"return typeof window.cinePrepareClose !== 'function' || await window.cinePrepareClose();"
+        arguments:@{} inFrame:nil inContentWorld:[WKContentWorld pageWorld]
+        completionHandler:^(id result, NSError *error) {
+            self.preparingClose = NO;
+            BOOL saved = !error && [result respondsToSelector:@selector(boolValue)] && [result boolValue];
+            if (!saved) {
+                NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+                alert.messageText = @"No se pudo terminar el guardado.";
+                alert.informativeText = @"Revisa el estado y vuelve a cerrar la ventana.";
+                [alert beginSheetModalForWindow:self.appView.window completionHandler:nil];
+            }
+            reply(saved);
+        }];
+}
+- (BOOL)windowShouldClose:(NSWindow *)window {
+    if (self.closeApproved) return YES;
+    if (!self.preparingClose) {
+        [self prepareClose:^(BOOL saved) {
+            self.closeApproved = saved;
+            if (saved) [window close];
+        }];
+    }
+    return NO;
+}
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
+    if (self.closeApproved) return NSTerminateNow;
+    if (self.preparingClose) return NSTerminateCancel;
+    [self prepareClose:^(BOOL saved) {
+        self.closeApproved = saved;
+        [sender replyToApplicationShouldTerminate:saved];
+    }];
+    return NSTerminateLater;
 }
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)action
  decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
@@ -143,6 +182,7 @@ int cine_macos_run(const char *targetURL) {
         configuration.websiteDataStore = [WKWebsiteDataStore nonPersistentDataStore];
         WKWebView *webView = [[WKWebView alloc] initWithFrame:[[window contentView] bounds]
                                                  configuration:configuration];
+        delegate.appView = webView;
         webView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
         [webView setNavigationDelegate:delegate];
         [webView setUIDelegate:delegate];
