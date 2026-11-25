@@ -40,7 +40,8 @@ main{max-width:1250px;padding:28px 28px 32px;margin:auto}.header{display:flex;al
 @media(max-width:650px){.platform-controls{gap:4px}.mini-ctrl{font-size:11px;padding:7px}.film-platforms{font-size:11px}.film-item .pill{display:none}.film-toggle{padding:10px}}
 
 /* V6: navigation, poster, ratings and libraries */
-.top-nav{display:flex;align-items:center;gap:8px;margin:-8px 0 20px;flex-wrap:wrap}
+.top-nav{display:grid;align-items:center;grid-template-columns:var(--library-columns);gap:var(--library-gap)}
+.nav-sections{display:flex;align-items:center;flex-wrap:wrap;gap:7px;min-width:0}
 .nav-btn{border:1px solid #3b4c60;background:#1a2737;color:#cfdae7;border-radius:11px;padding:11px 18px;font-weight:750;font-size:13px}
 .nav-btn:hover{background:#2c3d50}.nav-btn.active{border-color:#d9ac5c;background:#413724;color:#ffda89}
 .list-switch{margin-left:auto;min-width:190px;max-width:290px;flex:1;border:1px solid #485b71;border-radius:10px;background:#1e2a3a;color:#f0e6d6;padding:10px 12px;font-size:13px;font-weight:680}
@@ -98,7 +99,7 @@ main{max-width:1250px;padding:28px 28px 32px;margin:auto}.header{display:flex;al
 /* Beta 14: desplegables con apariencia consistente y cursor de mano también en las opciones. */
 .single-select-native{display:none!important}
 .single-select-picker{position:relative;min-width:0}
-.list-switch-picker{margin-left:auto;min-width:190px;max-width:290px;flex:1 1 190px;z-index:16}
+.list-switch-picker{width:100%;z-index:16}
 .list-switch-picker .list-switch{display:flex;width:100%;max-width:none;min-width:0;margin:0;flex:none}
 .top-nav{position:relative;z-index:15}
 .single-select-button{display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;cursor:pointer}
@@ -114,7 +115,6 @@ main{max-width:1250px;padding:28px 28px 32px;margin:auto}.header{display:flex;al
 .sort-platform-picker{z-index:12;width:100%}
 .sort-platform-picker .single-select-button{min-height:40px}
 .single-select-menu.opens-up{top:auto;bottom:calc(100% + 6px)}
-@media(max-width:650px){.list-switch-picker{max-width:none;width:100%;margin:0;flex:1 1 100%}}
 @media(max-width:650px){.library-platform-label{width:100%}.library-platform-picker{flex:1 1 210px}.library-platform-count{margin-left:0}.library-platform-menu{max-width:none;width:100%}}
 
 /* Copias automáticas en carpeta sincronizada */
@@ -145,9 +145,10 @@ main{height:100dvh;min-height:0;max-width:1340px;margin:auto;padding:14px 20px 1
 .brand{width:58px;height:58px;border-radius:13px}.brand svg{width:41px;height:41px}
 h1{font-size:29px}.eyebrow{font-size:11px}.header-side{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .header-tag{margin-left:0;padding:6px 10px;font-size:12px}.saved{margin:0;text-align:right;font-size:11px;min-height:12px}
-.top-nav{flex:0 0 auto;margin:0 0 11px;gap:7px}.nav-btn{padding:9px 13px}.list-switch{padding:9px 10px}
+.top-nav{flex:0 0 auto;margin:0 0 11px}.nav-btn{padding:9px 13px}.list-switch{padding:9px 10px}
 .view{flex:1;min-height:0;overflow:hidden}
-.columns{height:100%;min-height:0;align-items:stretch;gap:16px;grid-template-columns:minmax(0,1.26fr) minmax(350px,.74fr)}
+main{--library-columns:minmax(0,1.26fr) minmax(350px,.74fr);--library-gap:16px}
+.columns{height:100%;min-height:0;align-items:stretch;gap:var(--library-gap);grid-template-columns:var(--library-columns)}
 .panel{height:100%;min-height:0;padding:15px;overflow:hidden}
 #view-library .panel{display:flex;flex-direction:column}
 .panel-heading{margin-bottom:12px;flex:0 0 auto}
@@ -210,8 +211,8 @@ h2{font-size:19px}
 #view-collections .cloud-buttons .tool{min-width:0;min-height:34px;padding:7px 2px;font-size:11px}
 #view-collections .cloud-status{min-height:17px;margin-top:6px;font-size:11px;line-height:1.3}
 .overlay{overflow:hidden}.modal{max-height:calc(100dvh - 32px);overflow:auto}
-@media(max-width:980px){.columns{grid-template-columns:minmax(0,1.08fr) minmax(320px,.92fr)}.panel{padding:11px}.header-tag{display:none}.manager-tools{grid-template-columns:repeat(3,minmax(0,1fr))}.manager-tools .tool{font-size:11px}.film-item .pill{display:none}}
-@media(max-width:760px){main{padding:10px}.columns{grid-template-columns:1fr;grid-template-rows:60% 40%;gap:8px}.header{margin-bottom:8px}.top-nav{margin-bottom:8px}.panel{padding:10px}.manager-tools{grid-template-columns:repeat(2,minmax(0,1fr))}.manager-tools .tool:last-child{grid-column:span 2}}
+@media(max-width:980px){main{--library-columns:minmax(0,1.08fr) minmax(320px,.92fr)}.panel{padding:11px}.header-tag{display:none}.manager-tools{grid-template-columns:repeat(3,minmax(0,1fr))}.manager-tools .tool{font-size:11px}.film-item .pill{display:none}}
+@media(max-width:760px){main{padding:10px;--library-columns:minmax(0,1fr);--library-gap:8px}.columns{grid-template-rows:60% 40%}.header{margin-bottom:8px}.top-nav{margin-bottom:8px}.panel{padding:10px}.manager-tools{grid-template-columns:repeat(2,minmax(0,1fr))}.manager-tools .tool:last-child{grid-column:span 2}}
 @media(max-height:690px){.header{min-height:46px;margin-bottom:6px}.brand{width:43px;height:43px}.brand svg{width:31px;height:31px}h1{font-size:23px}.top-nav{margin-bottom:6px}.nav-btn{padding:6px 9px}#view-library .pick{min-height:70px}.stats-hero .stat-value{font-size:20px}#view-collections .cloud-box{padding:8px;margin-top:5px}#view-collections .cloud-title{margin-bottom:4px}#view-collections .cloud-buttons{margin-top:4px}}
 /* En ventanas muy pequeñas, preservar la accesibilidad antes que recortar controles. */
 @media(max-height:590px){html,body{overflow:auto}main{height:auto;min-height:590px;overflow:visible}.view{overflow:visible}.panel{height:auto;overflow:visible}}
@@ -381,6 +382,10 @@ h2{font-size:19px}
 .film-memberships-edit{color:#bce9ff}
 .membership-option{display:flex;align-items:center;gap:9px;cursor:pointer;padding:10px;border-radius:9px;border:1px solid #4c5a70;background:#243448;color:#eef4fa;font-size:13px}
 .membership-option input{width:17px;height:17px;accent-color:#f3c66d}
+.membership-confirm{margin-top:12px;padding:12px;border:1px solid #795057;border-radius:10px;background:#352631;color:#f4d2d3}
+.membership-confirm p{margin:0}
+.match-status.year-warning{color:#ffda92}
+#membershipActions[hidden]{display:none}
 .membership-options{display:flex;flex-direction:column;gap:6px;max-height:min(48dvh,340px);overflow:auto;padding:4px 2px}
 .membership-intro{font-size:13px;line-height:1.5;color:#c3cfdd}
 @media(max-width:650px){.film-memberships-numbers{max-width:114px}.film-filmmeta{gap:3px}.film-filmmeta .film-rating{font-size:9px}.film-memberships-title{font-size:9px}}
@@ -475,10 +480,12 @@ h2{font-size:19px}
     </div>
   </header>
   <nav class="top-nav" aria-label="Secciones">
-    <button class="nav-btn active" type="button" data-view="library">🎞 Biblioteca</button>
-    <button class="nav-btn" type="button" data-view="statistics">▥ Estadísticas</button>
-    <button class="nav-btn" type="button" data-view="collections">▤ Mis listas</button>
-    <button class="nav-btn" type="button" data-view="instructions">❔ Instrucciones</button>
+    <div class="nav-sections">
+      <button class="nav-btn active" type="button" data-view="library">🎞 Biblioteca</button>
+      <button class="nav-btn" type="button" data-view="statistics">▥ Estadísticas</button>
+      <button class="nav-btn" type="button" data-view="collections">▤ Mis listas</button>
+      <button class="nav-btn" type="button" data-view="instructions">❔ Instrucciones</button>
+    </div>
     <div class="single-select-picker list-switch-picker" id="listSwitcherPicker">
       <select id="listSwitcher" class="single-select-native" aria-hidden="true" tabindex="-1"></select>
       <button type="button" id="listSwitcherButton" class="list-switch single-select-button" aria-label="Seleccionar lista" aria-haspopup="listbox" aria-expanded="false" aria-controls="listSwitcherOptions"><span id="listSwitcherButtonLabel">Seleccionar lista</span><span class="library-platform-chevron" aria-hidden="true">▾</span></button>
@@ -776,7 +783,7 @@ h2{font-size:19px}
     <div class="match-title" id="matchFilmTitle"></div>
     <div class="match-hint">Busca la película en <a id="matchSearchLink" target="_blank" rel="noopener noreferrer" href="https://www.themoviedb.org/">TMDB ↗</a> y pega su número de identificación o el enlace completo. Se comprobará el año antes de guardarlo.</div>
     <input class="input-key" type="text" inputmode="numeric" id="matchID" placeholder="ID de TMDB o enlace de la película" autocomplete="off" aria-label="ID de TMDB">
-    <div class="modal-status" id="matchStatus" aria-live="polite"></div>
+    <div class="modal-status match-status" id="matchStatus" aria-live="polite"></div>
     <div class="match-controls">
       <button type="button" class="close" id="resetMatch">Volver a búsqueda automática</button>
       <button type="button" class="primary" id="saveMatch">Guardar identificación</button>
@@ -788,8 +795,11 @@ h2{font-size:19px}
   <div class="modal-head"><h2 id="membershipTitle">Listas de la película</h2><button class="close" id="closeMembership" type="button" aria-label="Cerrar">✕</button></div>
   <p class="membership-intro">Marca las listas donde debe aparecer esta película. El estado vista o pendiente se mantiene en todas.</p>
   <div id="membershipOptions" class="membership-options" role="group" aria-label="Listas disponibles"></div>
-  <div id="membershipWarning" class="modal-status" aria-live="polite"></div>
-  <div class="modal-actions"><button class="close" id="cancelMembership" type="button">Cancelar</button><button class="primary" id="applyMembership" type="button">Guardar cambios</button></div>
+  <div id="membershipConfirm" class="membership-confirm" hidden>
+   <p role="alert">Si guardas este cambio, la película dejará de aparecer en todas tus listas.</p>
+   <div class="modal-actions"><button class="close" id="backMembership" type="button">Volver</button><button class="danger-action" id="confirmMembership" type="button">Quitar de todas las listas</button></div>
+  </div>
+  <div class="modal-actions" id="membershipActions"><button class="close" id="cancelMembership" type="button">Cancelar</button><button class="primary" id="applyMembership" type="button">Guardar cambios</button></div>
  </section>
 </div>
 <div class="overlay" id="pasteOverlay" hidden>
@@ -923,6 +933,13 @@ $('platformRefresh').addEventListener('click',async()=>{await initPlatforms();if
 $('closePlatforms').addEventListener('click',closePlatformModal);
 $('cancelPlatforms').addEventListener('click',closePlatformModal);
 $('platformOverlay').addEventListener('click',e=>{if(e.target===$('platformOverlay'))closePlatformModal();});
+let warnedMatchID=0;
+function clearManualMatchWarning(){
+ warnedMatchID=0;
+ $('saveMatch').textContent='Guardar identificación';
+ $('matchStatus').classList.remove('year-warning');
+ $('matchStatus').textContent='';
+}
 function openMatchModal(f){
  if(!platformConfigured){showPlatformModal();return;}
  manualFilm={title:f.title,year:Number(f.year)||0};
@@ -930,18 +947,30 @@ function openMatchModal(f){
  $('matchFilmTitle').textContent=f.title+(f.year?' ('+f.year+')':'');
  $('matchID').value=r?.tmdb_id||knownTMDB(f)||'';
  $('matchSearchLink').href='https://www.themoviedb.org/search?query='+encodeURIComponent(f.title);
- $('matchStatus').textContent=''; $('matchOverlay').hidden=false; $('matchID').focus();
+ clearManualMatchWarning();$('matchOverlay').hidden=false; $('matchID').focus();
 }
 function closeMatchModal(){ $('matchOverlay').hidden=true;manualFilm=null; }
 $('closeMatch').addEventListener('click',closeMatchModal);
 $('matchOverlay').addEventListener('click',e=>{if(e.target===$('matchOverlay'))closeMatchModal();});
 async function applyManualMatch(id){
  if(!manualFilm)return;
- const film={...manualFilm},key=providerKey(film);
- $('saveMatch').disabled=true;$('resetMatch').disabled=true;
+ const film=manualFilm,key=providerKey(film);
+ const acceptYearMismatch=id>0&&id===warnedMatchID;
+ clearManualMatchWarning();
+ $('saveMatch').disabled=true;$('resetMatch').disabled=true;$('matchID').disabled=true;
  $('matchStatus').textContent=id?'Comprobando película…':'Reintentando búsqueda automática…';
  try {
-   await platformApi('/api/platforms/match',{title:film.title,year:film.year,id});
+   const result=await platformApi('/api/platforms/match',{title:film.title,year:film.year,id,accept_year_mismatch:acceptYearMismatch});
+   if(result.year_mismatch){
+    if(manualFilm===film){
+     warnedMatchID=id;
+     $('matchStatus').classList.add('year-warning');
+     $('matchStatus').textContent='⚠ TMDB indica '+result.year_mismatch+' y tu lista indica '+film.year+'. Puedes guardar esta identificación de todos modos.';
+     $('saveMatch').textContent='Guardar de todos modos';
+    }
+    return;
+   }
+   if(!result.saved)throw new Error('No se pudo guardar la identificación.');
    // Persistir en biblioteca compartida además de las preferencias privadas.
    libraryState.tmdb_overrides=libraryState.tmdb_overrides||{};
    libraryState.tmdb_overrides[key]=id;
@@ -950,10 +979,11 @@ async function applyManualMatch(id){
    const info=await platformApi('/api/platforms/lookup',{title:film.title,year:film.year,force:true});
    platformData.set(key,info);
    if(info?.tmdb_id>0)registerIdentity(film,info.tmdb_id);else{identityMap.delete(filmKey(film));queueIdentityReconcile();}
-   closeMatchModal();scheduledPlatformRender();void cloudRefresh();
+   if(manualFilm===film)closeMatchModal();
+   scheduledPlatformRender();void cloudRefresh();
    $('message').textContent=info.state==='not-found'?'No se encontró. Prueba a introducir el ID de TMDB.':'Identificación actualizada.';
- } catch(e){$('matchStatus').textContent='⚠ '+e.message;}
- finally{$('saveMatch').disabled=false;$('resetMatch').disabled=false;}
+ } catch(e){if(manualFilm===film)$('matchStatus').textContent='⚠ '+e.message;}
+ finally{$('saveMatch').disabled=false;$('resetMatch').disabled=false;$('matchID').disabled=false;}
 }
 $('saveMatch').addEventListener('click',()=>{
  const typed=$('matchID').value.trim();
@@ -962,6 +992,7 @@ $('saveMatch').addEventListener('click',()=>{
  void applyManualMatch(id);
 });
 $('resetMatch').addEventListener('click',()=>void applyManualMatch(0));
+$('matchID').addEventListener('input',clearManualMatchWarning);
 $('matchID').addEventListener('keydown',e=>{if(e.key==='Enter')$('saveMatch').click()});
 $('saveKey').addEventListener('click',async()=>{
  const key=$('apiKey').value.trim();if(!key)return;
@@ -1362,7 +1393,7 @@ function editMembership(f){
   const title=document.createElement('span');title.textContent=numberedListName(list);
   label.append(check,title);holder.appendChild(label);
  }
- $('membershipWarning').textContent='';$('membershipOverlay').hidden=false;
+ showMembershipConfirmation(false);$('membershipOverlay').hidden=false;
 }
 // Función pura comprobable mediante tests: conserva IDs y líneas ajenas.
 function applyFilmMembershipLists(lists,f,chosen,groups,parseFn=parse,keyFn=groupKey){
@@ -1391,17 +1422,36 @@ function toggleSearchedFilm(f){
 $('closeMembership').addEventListener('click',closeMembershipModal);
 $('cancelMembership').addEventListener('click',closeMembershipModal);
 $('membershipOverlay').addEventListener('click',e=>{if(e.target===$('membershipOverlay'))closeMembershipModal();});
-$('applyMembership').addEventListener('click',()=>{
+function showMembershipConfirmation(show){
+ $('membershipConfirm').hidden=!show;
+ $('membershipActions').hidden=show;
+ $('membershipOptions').inert=show;
+}
+function saveFilmMemberships(chosen){
  if(!membershipFilm)return;
- const chosen=new Set([...$('membershipOptions').querySelectorAll('input:checked')].map(x=>x.value));
- if(!chosen.size&&!confirm('¿Quitar esta película de todas las listas?'))return;
  syncActiveText();const groups=filmMembershipIndex().groups;
  const edits=applyFilmMembershipLists(libraryState.lists,membershipFilm,chosen,groups);
  closeMembershipModal();if(!edits)return;
  membershipCache=null;if(virtualMode)refreshVirtualContent();else rawText=activeCollection().text||'';
  resetChoice();update();renderStats();renderCollectionControls();scheduleSave();
  notify('Listas actualizadas: '+edits+' '+(edits===1?'registro':'registros')+'.');
+}
+$('applyMembership').addEventListener('click',()=>{
+ if(!membershipFilm)return;
+ const chosen=new Set([...$('membershipOptions').querySelectorAll('input:checked')].map(x=>x.value));
+ const remainsFavorite=typeof labReactionFor==='function'&&labReactionFor(membershipFilm)?.favorite;
+ if(!chosen.size&&!remainsFavorite&&filmMemberships(membershipFilm).length){
+  showMembershipConfirmation(true);
+  $('backMembership').focus();
+  return;
+ }
+ saveFilmMemberships(chosen);
 });
+$('backMembership').addEventListener('click',()=>{
+ showMembershipConfirmation(false);
+ $('applyMembership').focus();
+});
+$('confirmMembership').addEventListener('click',()=>saveFilmMemberships(new Set()));
 document.querySelectorAll('[data-search-scope]').forEach(b=>b.addEventListener('click',()=>selectSearchScope(b.dataset.searchScope)));
 // FIN FUNCIONES DE BÚSQUEDA GLOBAL BETA11
 
@@ -1620,12 +1670,35 @@ function sanitizeComparisonIDs(){
  if(virtualMode&&!hasComparison()){virtualMode=false;rawText=activeCollection().text||'';}
 }
 
-async function initLibrary(){
+async function initLibrary({preserveNavigation=false}={}){
  await cineLoadRevisions();
- try{const response=await fetch('/api/library',{headers:{'X-Atlas-Token':token},cache:'no-store'});
-   if(response.ok){const state=await response.json();if(validLibrary(state))libraryState=state;}
+ let loaded=false,sameList=true;
+ try{
+  const response=await fetch('/api/library',{headers:{'X-Atlas-Token':token},cache:'no-store'});
+  if(response.ok){
+   const state=await response.json();
+   if(validLibrary(state)){
+    const currentID=libraryState.active_id;
+    sameList=state.lists.some(list=>list.id===currentID);
+    if(preserveNavigation&&sameList)state.active_id=currentID;
+    libraryState=state;
+    loaded=true;
+   }
+  }
  }catch(e){}
- sanitizeComparisonIDs();await reconcileTMDBLibrary();const reconciled=reconcileWatched();rawText=activeCollection().text||'';renderCollectionControls();update();renderStats();if(reconciled)scheduleSave();
+ const wasComparing=virtualMode;
+ sanitizeComparisonIDs();
+ await reconcileTMDBLibrary();
+ const reconciled=reconcileWatched();
+ rawText=virtualMode?buildIntersection():activeCollection().text||'';
+ if(preserveNavigation&&loaded&&(!sameList||wasComparing&&!virtualMode)){
+  restartList();
+ }else{
+  // A new snapshot may change raw film indices, so discard the old draw.
+  if(preserveNavigation&&loaded)resetChoice();
+  renderCollectionControls();update();renderStats();
+ }
+ if(reconciled)scheduleSave();
 }
 function validLibrary(s){return s&&s.version===1&&Array.isArray(s.lists)&&s.lists.length>0&&s.lists.length<=40&&typeof s.active_id==='string'&&s.lists.some(l=>l.id===s.active_id)&&s.lists.every(l=>typeof l.text==='string'&&typeof l.name==='string'&&typeof l.id==='string');}
 function restartList(){
@@ -2227,7 +2300,7 @@ async function cloudAutoReceive(force=false){
          ?'Primera vinculación pendiente: pulsa «Revisar sincronización».'
          :'⚠ Se han encontrado cambios incompatibles. Pulsa «Revisar sincronización» para decidir.';
      }else if(result.changed){
-       await initLibrary();restartList();
+       await initLibrary({preserveNavigation:true});
        $('cloudAutoStatus').textContent='✓ Cambios recibidos automáticamente de otro dispositivo.';
        await cloudRefresh();void cineRefreshHistory();
      }else if(!result.skipped){

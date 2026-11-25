@@ -37,3 +37,16 @@ func TestReactionSyncNewerChangedAtWins(t *testing.T) {
  if err!=nil{t.Fatal(err)}
  if _,ok:=result.Reactions["ejemplo|2024"];!ok{t.Fatal("Un cliente antiguo borró la valoración")}
 }
+
+func TestFavoritesOrderMergeKeepsNewerOrder(t *testing.T) {
+ local:=initialLibrary("☐ Ejemplo (2024)")
+ remote:=initialLibrary("☐ Ejemplo (2024)")
+ local.FavoritesOrder=&favoritesOrder{Keys:[]string{"ejemplo|2024","otra|2025"},ChangedAt:200}
+ remote.FavoritesOrder=&favoritesOrder{Keys:[]string{"otra|2025","ejemplo|2024"},ChangedAt:100}
+ peer:=syncSnapshot{Protocol:syncProtocol,Library:remote}
+ older,_,_,_,err:=syncMerge(local,nil,nil,peer)
+ if err!=nil||older.FavoritesOrder==nil||older.FavoritesOrder.Keys[0]!="ejemplo|2024"{t.Fatalf("El orden antiguo sustituyó al reciente: %v",err)}
+ peer.Library.FavoritesOrder.ChangedAt=300
+ newer,_,_,_,err:=syncMerge(local,nil,nil,peer)
+ if err!=nil||newer.FavoritesOrder==nil||newer.FavoritesOrder.Keys[0]!="otra|2025"{t.Fatalf("No se aplicó el orden más reciente: %v",err)}
+}

@@ -1086,7 +1086,7 @@ function labCrossPageMove(e){
   document.body.appendChild(state.ghost);
  }
  if(e.cancelable)e.preventDefault();
- if(!filmOrderEditable()||libraryState.active_id!==state.listID){
+ if(!filmOrderEditable()||labReorderListID()!==state.listID){
   labCrossPageFinish(e,true);return;
  }
  const width=window.innerWidth||document.documentElement.clientWidth;
@@ -1116,7 +1116,7 @@ function labCrossPageMove(e){
    state.hoverTimer=setTimeout(()=>{
     state.hoverTimer=null;
     if(labCrossPageDrag!==state||!state.started||!filmOrderEditable()||
-       libraryState.active_id!==state.listID)return;
+       labReorderListID()!==state.listID)return;
     filmPage=page;
     state.to=null;state.hoverPage=null;state.lastNavigatedButton=button;
     renderList();
@@ -1127,13 +1127,19 @@ function labCrossPageMove(e){
   labCrossPageCancelHover(state);
  }
 }
+function labReorderListID(){
+ return typeof labFavoritesMode!=='undefined'&&labFavoritesMode?labFavoriteID:libraryState.active_id;
+}
+function labReorderEntries(){
+ return typeof labFavoritesMode!=='undefined'&&labFavoritesMode?labFavoritesFilms():parsed.entries;
+}
 function labCrossPageFinish(e,cancel=false){
  const state=labCrossPageDrag;
  if(!state||e.pointerId!==state.pointerId)return;
  // La película se identifica por su índice RAW, no por el número de página:
  // el movimiento reordena el TXT completo y no solo las filas visibles.
  let target=null,destinationPage=filmPage;
- if(!cancel&&state.started&&filmOrderEditable()&&libraryState.active_id===state.listID){
+ if(!cancel&&state.started&&filmOrderEditable()&&labReorderListID()===state.listID){
   const element=document.elementFromPoint(e.clientX,e.clientY);
   target=labReorderRowAt(element);
   const page=labReorderPageTarget(element);
@@ -1141,8 +1147,9 @@ function labCrossPageFinish(e,cancel=false){
    const button=element?.closest?.('#filmPaging button');
    // Un cambio ya realizado mantiene el destino en la página mostrada.
    destinationPage=button===state.lastNavigatedButton?filmPage:page;
-   const index=Math.min(destinationPage*labReorderPageSize(),parsed.entries.length-1);
-   target=parsed.entries[index]?.idx??null;
+   const entries=labReorderEntries();
+   const index=Math.min(destinationPage*labReorderPageSize(),entries.length-1);
+   target=entries[index]?.idx??null;
   }
  }
  labCrossPageDrag=null;
@@ -1165,11 +1172,11 @@ document.addEventListener('pointerdown',e=>{
  const row=grip.closest('.film-item');
  const idx=Number(row?.dataset.idx);
  if(!Number.isSafeInteger(idx)||idx<0)return;
- const movie=parsed.entries.find(f=>f.idx===idx);
+ const movie=labReorderEntries().find(f=>f.idx===idx);
  if(!movie)return;
  if(labCrossPageDrag)return;
  labCrossPageDrag={
-  pointerId:e.pointerId,from:idx,to:null,listID:libraryState.active_id,
+  pointerId:e.pointerId,from:idx,to:null,listID:labReorderListID(),
   name:movie.title||movie.name||'Película',startX:e.clientX,startY:e.clientY,
   started:false,hoverPage:null,hoverTimer:null,lastNavigatedButton:null,ghost:null
  };

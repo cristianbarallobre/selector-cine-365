@@ -321,6 +321,14 @@ func syncMergeVersioned(local libraryState,revisions map[string]syncRevision,kno
    result.Reactions[key]=remote
   }
  }
+ // El orden viaja por separado para que reordenar no cambie corazones ni notas.
+ if remote:=peer.Library.FavoritesOrder;remote!=nil{
+  current:=result.FavoritesOrder
+  if current==nil||remote.ChangedAt>current.ChangedAt||
+   (remote.ChangedAt==current.ChangedAt&&strings.Join(remote.Keys,"\x00")>strings.Join(current.Keys,"\x00")){
+   result.FavoritesOrder=remote
+  }
+ }
  remoteMarks:=syncStatuses(peer.Library)
  for _,other:=range peer.Library.Lists {
   if result.DeletedLists[other.ID]{continue}

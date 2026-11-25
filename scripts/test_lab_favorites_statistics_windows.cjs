@@ -24,7 +24,7 @@ for(const needle of [
  "labRefreshStatsPanels();"
 ])assert.ok(injector.includes(needle),'Falta integración en HTML de LAB: '+needle);
 assert.ok(filters.includes("labStatsHeroValues(seen,known,minutes)"),'Las estadísticas extendidas siguen activas');
-assert.match(injector,/function renderList\(\)\{labFiltersRefreshChoices\(\);if\(labFavoritesMode&&!labFavoriteCount\(\)\)\{labFavoritesMode=false;labRefreshStatsPanels\(\);\}/);
+assert.match(injector,/function renderList\(\)\{labReactionsByTMDB=null;labFiltersRefreshChoices\(\);if\(labFavoritesMode&&!labFavoriteCount\(\)\)\{labFavoritesMode=false;labRefreshStatsPanels\(\);\}/);
 assert.doesNotMatch(stable,/labStatsDataset\(/,'No alterar la versión estable');
 
 function slice(src,first,after){
@@ -98,7 +98,7 @@ const platformData=new Map([
 const ctx={
  $:id=>{assert.ok(ui[id],id);return ui[id];},
  document:{createElement:()=>new Element()},
- Map,Set,Array,String,Number,Object,Math,Date,parse,
+ Map,Set,Array,String,Number,Object,Math,Date,parse,knownTMDB:()=>0,
  libraryState:state,parsed:parse(lists[0].text),rawText:lists[0].text,
  membershipCache:null,virtualMode:false,selectedSortPlatforms:new Set(),
  platformData, chosen:null, statPages:new Map(),
@@ -128,45 +128,37 @@ assert.equal(ui.statsTitle.textContent,'Quiero ver');
 assert.equal(ui.statsHero.children[0].children[0].textContent,1);
 assert.equal(ctx.eligibleFilms().length,2);
 
-// Favoritos no debe heredar 3 títulos ni el porcentaje de «Quiero ver».
+let orderSaves=0;
+ctx.scheduleSave=()=>orderSaves++;
+ctx.notify=()=>{};
+const originalFavorites=ctx.labFavoritesRecords().map(([key])=>key);
+assert.equal(ctx.labMoveFavorite(0,2),true);
+assert.equal(orderSaves,1);
+assert.equal(JSON.stringify(state.favorites_order.keys),JSON.stringify([...originalFavorites.slice(1),originalFavorites[0]]));
+assert.equal(ctx.labMoveFavorite(3,2),false);
+state.favorites_order=JSON.parse(JSON.stringify(state.favorites_order));
+assert.equal(ctx.labFavoritesRecords().at(-1)[0],originalFavorites[0]);
+// La lista automática considera vistas todas las favoritas, incluidas las que no pertenecen a otras listas.
 x('labFavoritesMode=true');
 ctx.update();
 ctx.renderStats();
 assert.equal(ui.total.textContent,3);
-assert.equal(ui.watched.textContent,1);
-assert.equal(ui.remaining.textContent,2);
-assert.equal(ui.sortCount.textContent,'2 pendientes');
-assert.equal(ui.progressFill.style.width,'33%');
+assert.equal(ui.watched.textContent,3);
+assert.equal(ui.remaining.textContent,0);
+assert.equal(ui.progressFill.style.width,'100%');
 assert.equal(ui.statsTitle.textContent,'♥ Favoritos');
-assert.equal(ctx.eligibleFilms().length,2);
-assert.equal(ui.statsHero.children[0].children[0].textContent,1);
-assert.equal(ui.statsSections.children.length,4,'Actualizar gráficas de década, género, país y dirección');
-ctx.selectedSortPlatforms=new Set(['Filmin']);
-ctx.updateSortAvailability();
-assert.equal(ctx.eligibleFilms().length,1,'El sorteo usa solo las pendientes favoritas disponibles');
-assert.equal(ui.sortCount.textContent,'1 de 2 pendientes disponibles');
-
+assert.equal(ctx.eligibleFilms().length,0);
+assert.equal(ui.statsHero.children[0].children[0].textContent,3);
+assert.equal(ui.statsSections.children.length,4);
 state.reactions['pendiente|2021'].favorite=false;
 ctx.labRefreshStatsPanels();
 assert.equal(ui.total.textContent,2);
-assert.equal(ui.watched.textContent,1);
-assert.equal(ui.remaining.textContent,1);
-assert.equal(ui.sortCount.textContent,'0 de 1 pendientes disponibles');
+assert.equal(ui.watched.textContent,2);
 assert.equal(ui.choose.disabled,true);
-assert.equal(ui.progressFill.style.width,'50%');
-assert.equal(ui.statsTitle.textContent,'♥ Favoritos');
-
 state.reactions['fuera de listas|2025'].favorite=false;
-ctx.selectedSortPlatforms=new Set([]);
 ctx.labRefreshStatsPanels();
 assert.equal(ui.total.textContent,1);
-assert.equal(ui.watched.textContent,1);
-assert.equal(ui.remaining.textContent,0);
-assert.equal(ui.sortCount.textContent,'0 pendientes');
-assert.equal(ui.progressFill.style.width,'100%');
-assert.equal(ui.choose.disabled,true);
 assert.equal(ctx.labStatsDataset().entries[0].title,'Visto original');
-assert.equal(ui.statsHero.children[0].children[0].textContent,1);
 
 // Volver a la última lista normal restituye exclusivamente sus cifras.
 x('labFavoritesMode=false');

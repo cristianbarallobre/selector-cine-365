@@ -34,6 +34,10 @@ type filmReaction struct {
  Year string `json:"year,omitempty"`
  ChangedAt int64 `json:"changed_at"`
 }
+type favoritesOrder struct {
+ Keys []string  `json:"keys"`
+ ChangedAt int64 `json:"changed_at"`
+}
 type libraryState struct {
 	Version       int              `json:"version"`
 	ActiveID      string           `json:"active_id"`
@@ -43,6 +47,7 @@ type libraryState struct {
 	DeletedLists map[string]bool   `json:"deleted_lists,omitempty"`
 	// Identificaciones TMDB compartibles, nunca la clave API privada.
 	TMDBOverrides map[string]int   `json:"tmdb_overrides,omitempty"`
+ FavoritesOrder *favoritesOrder `json:"favorites_order,omitempty"`
  Reactions map[string]filmReaction `json:"reactions,omitempty"`
 }
 
@@ -78,6 +83,14 @@ func validateLibrary(l libraryState) error {
 	for key,id:=range l.TMDBOverrides {
 		if len(key)>275||!utf8.ValidString(key)||!strings.Contains(key,"|")||id<0||id>999999999 {return errors.New("Identificación TMDB inválida")}
 	}
+ if order:=l.FavoritesOrder;order!=nil{
+  if order.ChangedAt<0||order.ChangedAt>4102444800000||len(order.Keys)>15000{return errors.New("Orden de Favoritos inválido")}
+  seen:=make(map[string]bool,len(order.Keys))
+  for _,key:=range order.Keys{
+   if len(key)>275||!utf8.ValidString(key)||!strings.Contains(key,"|")||seen[key]{return errors.New("Título inválido en el orden de Favoritos")}
+   seen[key]=true
+  }
+ }
  if len(l.Reactions)>15000{return errors.New("Demasiadas valoraciones o favoritos")}
  for key,rec:=range l.Reactions {
   if !utf8.ValidString(key)||len(key)>275||!strings.Contains(key,"|")||

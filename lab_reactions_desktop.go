@@ -88,6 +88,9 @@ func injectLabReactions(page string) string {
  page=strings.Replace(page,
   "$('markWatched').addEventListener('click',()=>{if(chosen)toggle(chosen.idx);});",
   "$('markWatched').addEventListener('click',()=>{if(chosen&&!labFavoritesMode)toggle(chosen.idx);});",1)
+ page=strings.Replace(page,"const all=parsed.entries.map(f=>({...f}));","const all=labStatsDataset().entries.map(f=>({...f}));",1)
+ page=strings.Replace(page,"year:Number(f.year)||0,force:!!force","year:Number(f.year)||0,tmdb_id:f._favoriteTMDBID||0,force:!!force",1)
+ page=strings.Replace(page,"all.filter(f=>!platformData.has(providerKey(f)))","all.filter(f=>{const cached=platformData.get(providerKey(f));return !cached||(f._favoriteTMDBID&&cached.state!=='error'&&cached.tmdb_id!==f._favoriteTMDBID);})",1)
  // El sorteo inteligente también debe usar Favoritos, tanto para
  // seleccionar candidatas como para ponderar géneros ya vistos.
  page=strings.Replace(page,
@@ -103,22 +106,20 @@ func injectLabReactions(page string) string {
  // Si un dispositivo remoto retira el último corazón, no dejar la vista
  // virtual abierta sin opción válida en el selector.
  page=strings.Replace(page,"function renderList(){labFiltersRefreshChoices();",
-  "function renderList(){labFiltersRefreshChoices();if(labFavoritesMode&&!labFavoriteCount()){labFavoritesMode=false;labRefreshStatsPanels();}",1)
- page=strings.Replace(page,"function filmOrderEditable(){",
-  "function filmOrderEditable(){if(labFavoritesMode)return false;",1)
+  "function renderList(){labReactionsByTMDB=null;labFiltersRefreshChoices();if(labFavoritesMode&&!labFavoriteCount()){labFavoritesMode=false;labRefreshStatsPanels();}",1)
+ page=strings.Replace(page,"const locations=parsed.entries.map(f=>f.idx);",
+  "if(labFavoritesMode)return labMoveFavorite(fromRawIndex,toRawIndex);\n const locations=parsed.entries.map(f=>f.idx);",1)
  page=strings.Replace(page,"function selectSearchScope(scope){",
   "function selectSearchScope(scope){if(scope==='all'&&labFavoritesMode){labFavoritesMode=false;labRefreshStatsPanels();}",1)
  page=strings.Replace(page,"const source=global?filmMembershipIndex().rows:parsed.entries;",
   "const source=labFavoritesMode&&!global?labFavoritesFilms():global?filmMembershipIndex().rows:parsed.entries;",1)
  page=strings.Replace(page,"const readonly=virtualMode&&!global;",
   "const readonly=labFavoritesMode||virtualMode&&!global;",1)
- page=strings.Replace(page,"if(!global&&!virtualMode){",
-  "if(!global&&!virtualMode&&!labFavoritesMode){",1)
  // La lista automática solo aparece representada por un corazón
  // cuando la película está marcada. No cambia ni los números ni el lápiz.
  page=strings.Replace(page,
   "membership.append(caption,nums,edit);meta.appendChild(membership);",
-  "membership.append(caption,nums);const favoriteBadge=labFavoriteMembershipButton(f);if(favoriteBadge)membership.appendChild(favoriteBadge);membership.appendChild(edit);meta.appendChild(membership);",
+  "membership.append(caption,nums);const favoriteBadge=labFavoriteMembershipButton(f);if(favoriteBadge)membership.appendChild(favoriteBadge);if(!labFavoritesMode)membership.appendChild(edit);meta.appendChild(membership);",
   1)
  page=strings.Replace(page,"b.append(togg,pill,labCreateDetailButton(f),fix);frag.appendChild(b);",
   "b.append(togg,labFilmRowActions(f,pill,labCreateDetailButton(f),fix));frag.appendChild(b);",1)

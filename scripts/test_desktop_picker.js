@@ -2,10 +2,15 @@
 (() => {
   const el=id=>document.getElementById(id);
   const check=(value,message)=>{if(!value)throw Error(message)};
-  check(document.title.includes('9.2.0'),'Versión incorrecta');
+  check(document.title.endsWith('9.2.7'),'Versión incorrecta');
   for(const id of ['labDiscoverNav','labFilterOpen','labSmartEnabled','labMaintenanceRefresh','labFavoritesCollection']){
     check(el(id),'Falta '+id);
   }
+  const picker=el('listSwitcherButton').getBoundingClientRect();
+  const sortPanel=document.querySelector('#view-library section[aria-label="Sorteo de películas"]').getBoundingClientRect();
+  check(Math.abs(picker.left-sortPanel.left)<1 && Math.abs(picker.width-sortPanel.width)<1,'Selector de listas desalineado');
+  check(el('membershipConfirm')?.hidden,'Falta la confirmación integrada de listas');
+  check(el('matchStatus'),'Falta el aviso de identificación TMDB');
   const menu=el('sortPlatformMenu'),button=el('sortPlatformButton');
   if(menu.hidden)button.click();
   const option=name=>el('sortPlatformOptions').querySelector('[data-value="'+name+'"]');

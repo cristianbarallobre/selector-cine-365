@@ -124,12 +124,57 @@ const labRatingEmojis=['😫','☹️','😐','🙂','😄'];
 const labRatingDescriptions=['Muy mala','Mala','Normal','Buena','Excelente'];
 let labFavoritesMode=false,labRatingFilm=null,labRatingReturnFocus=null;
 let labFavoritesRevision=0;
-function labReactionKey(f){return filmKey(f);}
-function labReactionFor(f){return (libraryState.reactions||{})[labReactionKey(f)]||null;}
+let labReactionsByTMDB=null;
+function labReactionMovieID(f){
+ return Number(f?._favoriteTMDBID||knownTMDB(f)||0);
+}
+function labReactionRecordID(record){
+ return Number(record?.tmdb_id||labReactionMovieID(record)||0);
+}
+function labMatchingReactions(f){
+ const records=libraryState.reactions||{},key=filmKey(f),id=labReactionMovieID(f),direct=records[key];
+ if(!id)return direct?[[key,direct]]:[];
+ if(!labReactionsByTMDB){
+  labReactionsByTMDB=new Map();
+  for(const [storedKey,record] of Object.entries(records)){
+   if(!record?.title)continue;
+   const movieID=labReactionRecordID(record);
+   if(!movieID)continue;
+   const matches=labReactionsByTMDB.get(movieID)||[];
+   matches.push([storedKey,record]);labReactionsByTMDB.set(movieID,matches);
+  }
+ }
+ const matches=[...(labReactionsByTMDB.get(id)||[])];
+ if(direct&&!labReactionRecordID(direct))matches.push([key,direct]);
+ return matches.sort((a,b)=>Number(b[1].favorite===true)-Number(a[1].favorite===true)||
+  Number(b[0]===key)-Number(a[0]===key)||b[1].changed_at-a[1].changed_at);
+}
+function labReactionFor(f){return labMatchingReactions(f)[0]?.[1]||null;}
 function labFavoritesRecords(){
+ const seenIDs=new Set();
+ const positions=new Map((libraryState.favorites_order?.keys||[]).map((key,index)=>[key,index]));
  return Object.entries(libraryState.reactions||{})
   .filter(([,rec])=>rec&&rec.favorite===true&&rec.title)
-  .sort((a,b)=>b[1].changed_at-a[1].changed_at||a[0].localeCompare(b[0],'es'));
+  .sort((a,b)=>(positions.get(a[0])??Infinity)-(positions.get(b[0])??Infinity)||
+   b[1].changed_at-a[1].changed_at||a[0].localeCompare(b[0],'es'))
+  .filter(([,record])=>{
+   const id=labReactionRecordID(record);
+   if(!id)return true;
+   if(seenIDs.has(id))return false;
+   seenIDs.add(id);return true;
+  });
+}
+function labMoveFavorite(from,to){
+ const keys=labFavoritesRecords().map(([key])=>key);
+ if(!Number.isInteger(from)||!Number.isInteger(to)||from<0||to<0||from>=keys.length||to>=keys.length||from===to)return false;
+ const [moved]=keys.splice(from,1);
+ keys.splice(to,0,moved);
+ const previous=Number(libraryState.favorites_order?.changed_at)||0;
+ libraryState.favorites_order={keys,changed_at:Math.min(4102444800000,Math.max(Date.now(),previous+1))};
+ scheduleSave();
+ renderList();
+ notify('Orden de Favoritos actualizado.');
+ return true;
 }
 function labFavoriteCount(){return labFavoritesRecords().length;}
 // Las estadísticas y el sorteo consumen las mismas películas que muestra
@@ -152,7 +197,7 @@ function labRefreshStatsPanels(){
  $('progressFill').style.width=pct+'%';
  $('progress').setAttribute('aria-valuenow',pct);
  // Un sorteo empezado en otra lista no puede quedar asociado a Favoritos.
- if(labFavoritesMode&&chosen&&!current.entries.some(f=>labReactionKey(f)===labReactionKey(chosen))){
+ if(labFavoritesMode&&chosen&&!labReactionFor(chosen)?.favorite){
   resetChoice();
  }
  updateSortAvailability();
@@ -161,25 +206,16 @@ function labRefreshStatsPanels(){
 
 function labFavoritesFilms(){
  const records=labFavoritesRecords();
- const seen=new Set();
- for(const list of libraryState.lists){
-  for(const f of (typeof labIndexedEntries==='function'?labIndexedEntries(list):parse(list.text||'').entries)){
-   if(f.checked)seen.add(labReactionKey(f));
-  }
- }
- // Es una lista calculada; jamás se guarda como TXT ni se añade a lists.
- // Conservar títulos incluso si se retiraron de la biblioteca después.
- const lines=records.map(([key,rec])=>{
-  const checked=seen.has(key)?'☑':'☐';
+ const lines=records.map(([,rec])=>{
   const title=String(rec.title).replace(/[\r\n]+/g,' ').trim();
-  return checked+' '+title+(rec.year?' ('+rec.year+')':'');
+  return '☑ '+title+(rec.year?' ('+rec.year+')':'');
  });
  const films=parse(lines.join('\n')).entries;
- films.forEach((film,i)=>{film._favoriteTMDBID=Number(records[i]?.[1]?.tmdb_id)||0;});
+ films.forEach((film,i)=>{film._favoriteTMDBID=labReactionRecordID(records[i][1]);});
  return films;
 }
 function labWriteReaction(f,changes){
- const key=labReactionKey(f);
+ const matches=labMatchingReactions(f),key=matches[0]?.[0]||filmKey(f);
  if(!key||key.length>275)return;
  const data=libraryState.reactions||(libraryState.reactions={});
  labFavoritesRevision++;
@@ -190,10 +226,27 @@ function labWriteReaction(f,changes){
   favorite:changes.favorite===undefined?existing.favorite===true:changes.favorite===true,
   rating:changes.rating===undefined?(existing.rating||0):changes.rating,
   tmdb_id:Number(changes.tmdb_id||existing.tmdb_id||f._favoriteTMDBID||knownTMDB(f))||0,
-  title:String(f.title||'').trim().slice(0,200),
-  year:String(f.year||'').slice(0,4),
+  title:String(existing.title||f.title||'').trim().slice(0,200),
+  year:String(existing.title?existing.year||'':f.year||'').slice(0,4),
   changed_at:now
  };
+ if(changes.favorite===false){
+  for(const [alias,record] of matches.slice(1)){
+   if(record.favorite)data[alias]={...record,favorite:false,changed_at:Math.min(4102444800000,Math.max(now,(record.changed_at||0)+1))};
+  }
+ }
+ labReactionsByTMDB=null;
+ if(changes.favorite===true){
+  syncActiveText();
+  const groups=buildIdentityGroups(),id=data[key].tmdb_id;
+  const matching=id?filmMembershipIndex().rows.find(item=>knownTMDB(item)===id):null;
+  const target=matching||f;
+  if(propagateSeen(target,true)){
+   cineRecentIntents.set(groupKey(target,groups),{checked:true,until:Date.now()+90000});
+   rawText=virtualMode?buildIntersection():activeCollection().text||'';
+   update();
+  }
+ }
  scheduleSave();
  labUpdateFavoritesCard();
  renderList();
@@ -223,7 +276,9 @@ function labDiscoverReactionFilm(m){
 function labDiscoverFavoriteButton(m){
  const f=labDiscoverReactionFilm(m),button=document.createElement('button');
  button.type='button';button.className='lab-discover-favorite';
- button.dataset.favoriteKey=labReactionKey(f);
+ button.dataset.favoriteTitle=f.title;
+ button.dataset.favoriteYear=f.year;
+ button.dataset.favoriteID=String(f._favoriteTMDBID);
  button.textContent=labReactionFor(f)?.favorite?'♥':'♡';
  button.title=labReactionFor(f)?.favorite?'Quitar de Favoritos':'Añadir a Favoritos';
  if(labReactionFor(f)?.favorite)button.classList.add('lab-is-favorite');
@@ -234,7 +289,8 @@ function labDiscoverFavoriteButton(m){
 }
 function labRefreshDiscoverFavorites(){
  for(const button of document.querySelectorAll('.lab-discover-favorite')){
-  const fav=!!(libraryState.reactions||{})[button.dataset.favoriteKey]?.favorite;
+  const f={title:button.dataset.favoriteTitle,year:button.dataset.favoriteYear,_favoriteTMDBID:Number(button.dataset.favoriteID)};
+  const fav=!!labReactionFor(f)?.favorite;
   button.textContent=fav?'♥':'♡';
   button.title=fav?'Quitar de Favoritos':'Añadir a Favoritos';
   button.setAttribute('aria-pressed',String(fav));
@@ -259,8 +315,9 @@ $('labDetailFavorite').addEventListener('click',()=>{
 // automática de Favoritos, igual que los números son enlaces a sus listas.
 // NO cambia el estado favorito: eso corresponde al botón grande de la derecha.
 function labJumpToFavoriteFilm(f){
- const key=labReactionKey(f);
- if(!labReactionFor(f)?.favorite)return;
+ const favorite=labReactionFor(f);
+ if(!favorite?.favorite)return;
+ const id=labReactionRecordID(favorite),key=filmKey(favorite);
  const serial=++labListJumpSerial;
  labClearListJumpHighlight();
  if(typeof labCancelLibrarySearch==='function')labCancelLibrarySearch();
@@ -268,7 +325,7 @@ function labJumpToFavoriteFilm(f){
  labFiltersResetForList();
  labOpenFavorites();
  const films=labFavoritesFilms();
- const targetIndex=films.findIndex(item=>labReactionKey(item)===key);
+ const targetIndex=films.findIndex(item=>id?labReactionMovieID(item)===id:filmKey(item)===key);
  if(targetIndex<0)return;
  const target=films[targetIndex];
  const parent=$('filmList');
@@ -345,12 +402,12 @@ function labReactionControls(f){
  return wrap;
 }
 function labRatingIsWatched(f){
- const key=labReactionKey(f);
- return libraryState.lists.some(l=>parse(l.text||'').entries.some(x=>x.checked&&labReactionKey(x)===key));
+ const key=filmKey(f);
+ return !!labReactionFor(f)?.favorite||libraryState.lists.some(l=>parse(l.text||'').entries.some(x=>x.checked&&filmKey(x)===key));
 }
 function labOpenRating(f){
  if(!f?.checked||!labRatingIsWatched(f))return;
- labRatingFilm={title:f.title,year:f.year};
+ labRatingFilm={title:f.title,year:f.year,_favoriteTMDBID:labReactionMovieID(f)};
  labRatingReturnFocus=document.activeElement;
  $('labRatingTitle').textContent=f.title+(f.year?' ('+f.year+')':'')+' · Escoge uno de los cinco emoticonos.';
  const options=$('labRatingOptions');options.replaceChildren();
@@ -405,5 +462,6 @@ function labOpenFavorites(openLibrary=true){
  labFavoritesMode=true;
  restartList();
  if(openLibrary)showView('library');
+ if(platformConfigured)void loadPlatforms(false);
 }
 $('labFavoritesOpen').addEventListener('click',labOpenFavorites);

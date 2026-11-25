@@ -480,8 +480,12 @@ func names(a []struct {
 	return ret
 }
 func (p *availabilityServer) fetchFilm(ctx context.Context, title string, year int, force bool) providerResult {
+ return p.fetchFilmWithID(ctx,title,year,force,0)
+}
+
+func (p *availabilityServer) fetchFilmWithID(ctx context.Context,title string,year int,force bool,preferredID int) providerResult {
 	cacheKey := movieCacheKey(title, year)
-	if c, ok := p.getCached(cacheKey, force); ok {
+	if c, ok := p.getCached(cacheKey, force); ok && (preferredID==0 || c.State=="error" || c.TMDBID==preferredID) {
 		return c
 	}
 	apiKey := p.getKey()
@@ -501,6 +505,7 @@ func (p *availabilityServer) fetchFilm(ctx context.Context, title string, year i
 		Results []movie `json:"results"`
 	}
 	id, matched := p.overrideFor(title, year), ""
+ if id==0 {id=preferredID}
 	if id == 0 {
 		// First try the full title, then its likely shorter/original aliases.
 		for _, query := range titleSearchVariants(title) {
@@ -716,6 +721,7 @@ func (a *runningApp) servePlatformHTTP(w http.ResponseWriter, r *http.Request) {
 			Title string `json:"title"`
 			Year  int    `json:"year"`
 			ID    int    `json:"id"`
+			AcceptYearMismatch bool `json:"accept_year_mismatch"`
 		}
 		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&body); err != nil {
 			http.Error(w, "JSON inválido", 400)
@@ -742,10 +748,10 @@ func (a *runningApp) servePlatformHTTP(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "El ID no corresponde a una película", 400)
 				return
 			}
-			if body.Year > 0 && yearFromDate(film.Released) > 0 {
-				delta := body.Year - yearFromDate(film.Released)
+			if year := yearFromDate(film.Released); body.Year > 0 && year > 0 && !body.AcceptYearMismatch {
+				delta := body.Year - year
 				if delta < -2 || delta > 2 {
-					http.Error(w, fmt.Sprintf("La película encontrada es de %d, no de %d", yearFromDate(film.Released), body.Year), 400)
+					_ = json.NewEncoder(w).Encode(map[string]any{"saved": false, "year_mismatch": year})
 					return
 				}
 			}
@@ -767,19 +773,20 @@ func (a *runningApp) servePlatformHTTP(w http.ResponseWriter, r *http.Request) {
 			Title string `json:"title"`
 			Year  int    `json:"year"`
 			Force bool   `json:"force"`
+   TMDBID int `json:"tmdb_id"`
 		}
 		if json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&body) != nil {
 			http.Error(w, "JSON inválido", 400)
 			return
 		}
 		body.Title = strings.TrimSpace(body.Title)
-		if body.Title == "" || len(body.Title) > 250 || body.Year < 0 || body.Year > 2200 {
+		if body.Title == "" || len(body.Title) > 250 || body.Year < 0 || body.Year > 2200 || body.TMDBID<0 || body.TMDBID>999999999 {
 			http.Error(w, "Película no válida", 400)
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 35*time.Second)
 		defer cancel()
-		result := a.platforms.fetchFilm(ctx, body.Title, body.Year, body.Force)
+		result := a.platforms.fetchFilmWithID(ctx, body.Title, body.Year, body.Force, body.TMDBID)
 		_ = json.NewEncoder(w).Encode(result)
 	default:
 		http.NotFound(w, r)

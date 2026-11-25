@@ -65,7 +65,7 @@ const parse=text=>{
   const m=/^[☐☑] (.+?)(?: \((\d{4})\))?$/.exec(row);
   return m?{idx,checked:row[0]==='☑',title:m[1],year:m[2]||'',name:m[1]}:null;
  }).filter(Boolean);
- return {entries,seen:entries.filter(x=>x.checked).length};
+ return {lines:String(text).split('\n'),entries,seen:entries.filter(x=>x.checked).length};
 };
 const libraryState={
  active_id:'lista1',
@@ -77,6 +77,10 @@ const ctx={
  window:{addEventListener(){}},document:doc,libraryState,
  filmKey:f=>f.title.toLowerCase()+'|'+(Number(f.year)||0),
  knownTMDB:()=>0,parse,Date,Math,Number,String,Array,Object,
+ platformConfigured:false,
+ buildIdentityGroups:()=>new Map(),groupKey:f=>ctx.filmKey(f),
+ filmMembershipIndex:()=>({rows:libraryState.lists.flatMap(list=>parse(list.text).entries)}),
+ cineRecentIntents:new Map(),update:()=>{},
  labCurrentMovie:null,
  scheduleSave:()=>{saves++},
  renderList:()=>{
@@ -112,7 +116,8 @@ const ctx={
  clearTimeout:id=>timers.delete(id),
 };
 vm.createContext(ctx);
-vm.runInContext(source,ctx);
+const base=fs.readFileSync('plantilla.html','utf8');
+vm.runInContext(base.slice(base.indexOf('function setMarkOnLine'),base.indexOf('// Se ejecuta al abrir, importar'))+source,ctx);
 const evaluate=js=>vm.runInContext(js,ctx);
 const watched={title:'Una película',year:'2024',checked:true};
 const pending={title:'Otra',year:'2025',checked:false};
@@ -249,6 +254,18 @@ assert.equal(ctx.labFavoriteMembershipButton({title:'Película descubierta',year
 assert.equal(evaluate('labFavoriteCount()'),0);
 assert.equal(libraryState.lists.length,2,'No crea ni borra listas normales');
 
+// El mismo ID de TMDB une títulos en distintos idiomas, incluso con reacciones previas.
+ctx.knownTMDB=f=>['La comunidad del anillo','The Fellowship of the Ring'].includes(f.title)?120:0;
+const spanish={title:'La comunidad del anillo',year:'2001',checked:true};
+const english={title:'The Fellowship of the Ring',year:'2001',checked:true};
+ctx.labWriteReaction(spanish,{favorite:true,rating:5});
+assert.equal(ctx.labReactionFor(english).rating,5);
+assert.equal(ctx.labFavoriteMembershipButton(english).textContent,'♥');
+assert.equal(ctx.labReactionControls(english).children[0].textContent,'♥');
+ctx.labToggleFavorite(english);
+assert.equal(ctx.labReactionFor(spanish).favorite,false);
+assert.equal(ctx.labFavoriteMembershipButton(english),null);
+assert.equal(libraryState.reactions['the fellowship of the ring|2001'],undefined);
 // Más de una página de favoritos: localizar la película sin filtrar por nombre.
 libraryState.reactions={};
 for(let i=0;i<13;i++){
