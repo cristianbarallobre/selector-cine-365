@@ -1,12 +1,12 @@
 name: Escritorio 9.2.7 · macOS y Windows
 on:
   push:
-    branches: [release/desktop-9.2.7, publish/desktop-9.2.7]
+    branches: [release/desktop-9.2.7-cross, publish/desktop-9.2.7]
 permissions:
   contents: read
 jobs:
   windows:
-    if: github.ref == 'refs/heads/release/desktop-9.2.7'
+    if: github.ref == 'refs/heads/release/desktop-9.2.7-cross'
     runs-on: windows-latest
     timeout-minutes: 25
     steps:
@@ -28,12 +28,12 @@ jobs:
       - uses: actions/upload-artifact@v4
         with: { name: Windows, path: Selector_Cine_365_Windows_9.2.7.exe, if-no-files-found: error }
   mac:
-    if: github.ref == 'refs/heads/release/desktop-9.2.7'
+    if: github.ref == 'refs/heads/release/desktop-9.2.7-cross'
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {runner: macos-26, arch: arm64, label: Apple_Silicon}
+          - {runner: macos-15-intel, arch: arm64, label: Apple_Silicon}
           - {runner: macos-15-intel, arch: amd64, label: Intel}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
@@ -53,7 +53,9 @@ jobs:
           security default-keychain -d user -s "$kc"
           security list-keychains -d user -s "$kc"
       - run: bash scripts/build_macos_app.sh
+        env: { CC: clang }
       - run: bash scripts/test_macos_package.sh "dist/Selector_Cine_365_Mac_${MAC_LABEL}_9.2.7.zip"
+        if: matrix.arch == 'amd64'
       - uses: actions/upload-artifact@v4
         with:
           name: Mac_${{ matrix.label }}
@@ -68,8 +70,9 @@ jobs:
         with: { merge-multiple: true }
       - env: { GH_TOKEN: "${{ github.token }}", GH_REPO: "${{ github.repository }}" }
         run: |
+          if gh release view v9.2.7-desktop >/dev/null 2>&1; then exit 0; fi
           sha256sum Selector_Cine_365_* > SHA256SUMS.txt
-          gh release create v9.2.7-desktop --target "$GITHUB_SHA" --prerelease --title "Selector Cine 365 · Mac y Windows 9.2.7" --notes "Windows x64 y macOS Intel y Apple Silicon (macOS 12 o posterior). Favoritos conserva el orden manual, carga las fichas y comparte corazones y valoraciones entre títulos con el mismo ID de TMDB. La sincronización en segundo plano conserva la página. La edición de listas respeta Favoritos y la identificación manual permite confirmar una diferencia de año. Los paquetes Mac llevan firma ad hoc y carecen de notarización de Apple. Para Android continúa disponible la release v9.0.0." Selector_Cine_365_* SHA256SUMS.txt
+          gh release create v9.2.7-desktop --target "$GITHUB_SHA" --prerelease --title "Selector Cine 365 · Mac y Windows 9.2.7" --notes "Windows x64 y macOS Intel y Apple Silicon (macOS 12 o posterior). Favoritos conserva el orden manual, carga las fichas y comparte corazones y valoraciones entre títulos con el mismo ID de TMDB. La sincronización en segundo plano conserva la página. La edición de listas respeta Favoritos y la identificación manual permite confirmar una diferencia de año. Los paquetes Mac llevan firma ad hoc y carecen de notarización de Apple. El paquete Apple Silicon se compiló para arm64 en un Mac Intel y se verificó su firma. La prueba de ejecución en macOS se realizó en Intel. Para Android continúa disponible la release v9.0.0." Selector_Cine_365_* SHA256SUMS.txt
   publicar:
     if: github.ref == 'refs/heads/publish/desktop-9.2.7'
     runs-on: ubuntu-latest
