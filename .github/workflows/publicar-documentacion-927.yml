@@ -39,3 +39,10 @@ jobs:
         run: |
           test "$(gh release view --json tagName --jq .tagName)" = 'v9.2.7-desktop'
           gh release edit v9.2.7-desktop --notes-file RELEASE_NOTES_v9_2_7_DESKTOP.md
+
+          gh release view v9.0.0 --json body --jq .body > "$RUNNER_TEMP/android-original.md"
+          if ! grep -qF 'Esta publicación conserva la APK estable de Android' "$RUNNER_TEMP/android-original.md"; then
+            printf '%s\n\n' '> Esta publicación conserva la APK estable de Android (Beta 13.13 Limpia). Las descargas actuales de Windows y macOS están en la [última versión de escritorio](https://github.com/cristianbarallobre/selector-cine-365/releases/latest). Consulta la [guía vigente de Android](https://github.com/cristianbarallobre/selector-cine-365/blob/main/android/LEEME_ANDROID_v9_BETA.md).' > "$RUNNER_TEMP/android-notas.md"
+            cat "$RUNNER_TEMP/android-original.md" >> "$RUNNER_TEMP/android-notas.md"
+            gh release edit v9.0.0 --notes-file "$RUNNER_TEMP/android-notas.md"
+          fi
