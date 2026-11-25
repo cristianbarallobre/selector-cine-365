@@ -1,20 +1,14 @@
-# Ubicaciones de datos — Selector Cine 365 v9.0.0
+# Rutas de datos de Selector Cine 365
 
-**Vigente el 22 de noviembre de 2026.** Estos directorios pertenecen al programa, no a los ejecutables que se descargan.
+| Sistema | Biblioteca | Caché y sesión |
+| --- | --- | --- |
+| Windows 9.2.7 | %APPDATA%\Selector_Cine_365\ | Caché bajo %LOCALAPPDATA%\Selector_Cine_365\. Sesión OneDrive protegida por DPAPI |
+| macOS 9.2.7 | ~/Library/Application Support/Selector_Cine_365/ | ~/Library/Caches/Selector_Cine_365/. Sesión OneDrive en el llavero |
+| Android estable | Almacenamiento privado de es.cine365.app.limpia | Las otras ediciones usan almacenamiento independiente |
+| OneDrive | Carpeta lógica Selector_Cine_365 cuando se usa Graph | Las copias y revisiones dependen de la configuración y la vinculación |
 
-| Plataforma | Datos locales |
-| --- | --- |
-| Windows | `%APPDATA%\Selector_Cine_365` |
-| macOS Intel / Apple Silicon | `~/Library/Application Support/Selector_Cine_365` |
-| Android estable | Almacenamiento privado del paquete **`es.cine365.app.limpia`**, carpeta `Selector_Cine_365` |
-| OneDrive (opcional) | Carpeta lógica `Selector_Cine_365` de la cuenta Microsoft personal conectada; snapshots en `Selector_Cine_365_Copias/sincronizacion/dispositivos/` cuando se utilice ese esquema |
+En escritorio la biblioteca se guarda en colecciones.json. Pueden existir copias en copias_automaticas y sync_recuperacion. Algunas instalaciones conservan un TXT de compatibilidad. La carpeta histórica AtlasDelCine puede contener diagnósticos y componentes de la ventana, como el cargador de WebView2 en Windows.
 
-**Archivos habituales en escritorio:** `colecciones.json` (biblioteca), respaldo `copias_automaticas` y/o `sync_recuperacion` (si se generaron). En Windows la sesión Microsoft tiene un archivo DPAPI denominado `onedrive_sesion_dpapi.bin`, ligado al usuario que autorizó; no se debe copiar a otros equipos ni publicar.
+Los carteles y los datos de disponibilidad se pueden volver a descargar desde TMDB. Conserva la biblioteca, las copias y las identificaciones manuales al limpiar la caché. Para mover datos entre equipos o ediciones Android, utiliza la exportación JSON.
 
-**Android:** `es.cine365.app.limpia` y `es.cine365.app` son **dos aplicaciones diferentes**, con cachés, datos y preferencias privadas separadas. La APK v9.0.0 actualiza Beta 13.12 Limpia con la misma firma; no instala una actualización de la aplicación histórica. Desinstalar Android elimina normalmente los datos privados del paquete afectado, **pero no borra OneDrive**. Para recuperar listas exporta JSON y revisa las copias en la nube.
-
-**Cachés TMDB:** se guardan localmente por dispositivo; la carátula descargada en Windows no se comparte a Android. La clave personal de TMDB tampoco viaja con OneDrive.
-
-**Nombre antiguo:** `AtlasDelCine` no se migra automáticamente a la carpeta actual; conserva los archivos antiguos que necesites por separado.
-
-Consulta [Manual completo](MANUAL_COMPLETO_SELECTOR_CINE_365.md), [Sincronización segura](GUIA_SINCRONIZACION_SEGURA.md) y [Release estable](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0).
+[Manual completo](MANUAL_COMPLETO_SELECTOR_CINE_365.md) · [Guía de recuperación](GUIA_SINCRONIZACION_SEGURA.md)

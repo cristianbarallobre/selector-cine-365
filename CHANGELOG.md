@@ -1,5 +1,18 @@
 # Historial de cambios — Selector Cine 365
 
+## 9.2.7 de escritorio
+
+- Windows y macOS incorporan las correcciones de escritorio de la serie 9.2.
+- Favoritos guarda su orden manual, carga fichas aunque el título solo figure allí y reconoce títulos equivalentes con el mismo ID de TMDB.
+- La recepción automática conserva la lista, la búsqueda y la página. El selector se alinea con el panel de sorteo.
+- Quitar una película de las listas numeradas conserva Favoritos. La identificación manual permite aceptar una diferencia de año.
+- Windows utiliza el icono de la app. Mac guarda la caché aparte de la biblioteca y protege la sesión de OneDrive en el llavero.
+- La APK estable de Android sigue disponible en la publicación v9.0.0.
+
+[Publicación 9.2.7](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.7-desktop) · [Manual completo](docs/MANUAL_COMPLETO_SELECTOR_CINE_365.md)
+
+---
+
 ## v9.0.0 — estable (22 de noviembre de 2026)
 
 **Estado:** canal estable recomendado, basado en las compilaciones **Windows/macOS Beta 14** y **Android Beta 13.13 Limpia**, sin recompilación de los binarios. El usuario ha comprobado esta combinación en los dispositivos previstos.

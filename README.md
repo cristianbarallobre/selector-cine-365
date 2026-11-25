@@ -1,61 +1,35 @@
-# Selector Cine 365 🎬
+# Selector Cine 365
 
-**Versión estable recomendada: v9.0.0 — 22 de noviembre de 2026.**
+Aplicación de uso personal para organizar colecciones de cine. Puedes marcar películas como vistas, buscarlas en tus listas y sortear qué ver. TMDB añade fichas, carteles y disponibilidad en España. OneDrive es opcional para compartir la biblioteca entre equipos.
 
-Selector Cine 365 es una aplicación de organización de películas para **Windows**, **macOS (Intel y Apple Silicon)** y **Android**. Permite administrar colecciones independientes, marcar películas vistas, buscar, sortear películas pendientes, consultar TMDB y, opcionalmente, sincronizar mediante OneDrive. También funciona completamente **sin cuenta Microsoft y sin clave TMDB**.
+## Descargas
 
-La versión estable reúne **exactamente las compilaciones que se probaron en los dispositivos**, sin modificar sus binarios:
-
-- Windows y macOS: **Beta 14** (nombre de versión interno conservado).
-- Android: **Beta 13.13 Limpia**, `versionCode 9027`, `es.cine365.app.limpia`, misma firma privada original de Beta 13.12 Limpia.
-
-El **canal de distribución es estable v9.0.0**; los nombres «Beta 14» y «Beta 13.13» seguirán apareciendo dentro de la aplicación porque no se ha recompilado ninguna de ellas. Esto permite preservar exactamente lo que ya fue probado y comprobar sus huellas SHA-256.
-
-## Descargar la versión estable
-
-**[Abrir GitHub Releases — Selector Cine 365 v9.0.0 ESTABLE](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0)**
-
-| Plataforma | Descarga directa desde GitHub | Requisitos |
+| Equipo | Versión estable | Requisitos |
 | --- | --- | --- |
-| Windows 10/11 x64 | [Selector_Cine_365_Windows_Beta14.exe](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.0.0/Selector_Cine_365_Windows_Beta14.exe) | WebView2; EXE portátil, sin instalador MSI |
-| Android 8+ | [Selector_Cine_365_Android_Beta13_13_Limpia.apk](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.0.0/Selector_Cine_365_Android_Beta13_13_Limpia.apk) | Paquete `es.cine365.app.limpia`, APK con firma original |
-| Mac Apple Silicon | [Selector_Cine_365_Mac_AppleSilicon_Beta14.zip](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.0.0/Selector_Cine_365_Mac_AppleSilicon_Beta14.zip) | macOS 12+, ZIP con `.app`, sin notarización |
-| Mac Intel | [Selector_Cine_365_Mac_Intel_Beta14.zip](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.0.0/Selector_Cine_365_Mac_Intel_Beta14.zip) | macOS 12+, ZIP con `.app`, sin notarización |
+| Windows | [9.2.7 para Windows](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.2.7-desktop/Selector_Cine_365_Windows_9.2.7.exe) | Windows 10 u 11 de 64 bits y Microsoft Edge WebView2 Runtime |
+| Mac con chip de Apple | [9.2.7 para Apple Silicon](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.2.7-desktop/Selector_Cine_365_Mac_Apple_Silicon_9.2.7.zip) | macOS 12 o posterior |
+| Mac con procesador Intel | [9.2.7 para Intel](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.2.7-desktop/Selector_Cine_365_Mac_Intel_9.2.7.zip) | macOS 12 o posterior |
+| Android | [APK estable de la publicación v9.0.0](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0) | Android 8 o posterior. Compilación Beta 13.13 Limpia |
 
-**La descarga es desde GitHub**, no desde un enlace temporal del chat. La publicación incluye `SHA256SUMS.txt`, los manuales PDF/DOCX y el código fuente ZIP.
+Windows y Mac comparten la interfaz y las funciones de escritorio. Android tiene interfaz táctil propia. La candidata Android 9.2.4 sigue siendo una compilación de pruebas separada de la APK estable de GitHub.
 
-### Actualizar sin perder datos
+## Instalar o actualizar
 
-En **Windows**, cierra la aplicación y utiliza el nuevo EXE. Los datos residen en `%APPDATA%\Selector_Cine_365` y no en el ejecutable.
+- **Windows.** Cierra la app anterior y abre el nuevo EXE portátil. Si falta WebView2, instala el runtime de Microsoft. SmartScreen puede mostrar un aviso al abrir la descarga.
+- **Mac.** Descomprime el ZIP de tu procesador y mueve la aplicación a **Aplicaciones**. Los paquetes tienen firma ad hoc y Apple no los ha notarizado. Verifica su origen antes de autorizar la apertura en **Privacidad y seguridad**.
+- **Android.** La APK pública usa el identificador es.cine365.app.limpia. Actualiza la instalación Limpia cuando coinciden el identificador y el certificado. Exporta un JSON antes de sustituir cualquier edición.
 
-En **Android**, el paquete estable es **`es.cine365.app.limpia`**. Puede instalarse encima de Beta 13.12 Limpia, con la misma firma, sin desinstalar. **No** es una actualización de la antigua aplicación `es.cine365.app`, que tiene datos privados independientes. Nunca desinstales sin exportar previamente una copia JSON de las listas.
+[Última versión de escritorio](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.7-desktop) · [Sumas SHA-256](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.2.7-desktop/SHA256SUMS.txt) · [Todas las publicaciones](https://github.com/cristianbarallobre/selector-cine-365/releases)
 
-En **Mac**, elige el ZIP de tu arquitectura y reemplaza la aplicación conservando tu carpeta de datos. Estas compilaciones todavía no tienen firma/notarización Apple.
+## Manuales
 
-### Sincronización y carátulas: límites conocidos
+- [Manual completo](docs/MANUAL_COMPLETO_SELECTOR_CINE_365.md) · [PDF](docs/MANUAL_COMPLETO_SELECTOR_CINE_365.pdf) · [Word](docs/MANUAL_COMPLETO_SELECTOR_CINE_365.docx)
+- [Guía de Mac](MACOS.md) · [Guía de Android](android/LEEME_ANDROID_v9_BETA.md)
+- [Sincronización y recuperación](docs/GUIA_SINCRONIZACION_SEGURA.md) · [Configuración de Entra](docs/GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.md)
+- [Rutas de datos](docs/UBICACIONES_DATOS_SELECTOR_CINE_365.md) · [Índice de documentación](docs/README.md) · [Historial](CHANGELOG.md)
 
-- Cada lista debe conservar **sus propias películas**. Las versiones estables bloquean fusiones sospechosas de listas con IDs coincidentes. **No reparan automáticamente datos mezclados por versiones anteriores**: ante conteos inesperados, cancela la sincronización y recupera una copia JSON verificada.
-- Android **sincroniza bajo confirmación manual**; Windows dispone de integración Microsoft Graph y puede sincronizar según las opciones seleccionadas. El modo local nunca exige OneDrive.
-- Las identificaciones manuales de TMDB pueden viajar como IDs; las **carátulas y plataformas descargadas se guardan localmente** en cada dispositivo y pueden tardar en completarse. Las claves TMDB y los tokens de Microsoft no se comparten.
-- Windows conserva la sesión Microsoft mediante DPAPI; Android usa su almacenamiento seguro y Mac todavía puede solicitar iniciar sesión tras reiniciar.
+## Código y versiones anteriores
 
-## Documentación vigente
+El tag de escritorio identifica el código que se compiló para Windows y macOS 9.2.7. La rama principal centraliza la documentación. La APK pública de Android tiene su propia publicación. [Fuente 9.2.7](https://github.com/cristianbarallobre/selector-cine-365/tree/v9.2.7-desktop) · [Publicación Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0)
 
-- [Manual completo v9 estable (Markdown)](docs/MANUAL_COMPLETO_SELECTOR_CINE_365.md)
-- [Manual completo en PDF](docs/MANUAL_COMPLETO_SELECTOR_CINE_365.pdf)
-- [Guía de sincronización segura](docs/GUIA_SINCRONIZACION_SEGURA.md)
-- [Configuración de Microsoft Entra y OneDrive](docs/GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.md)
-- [Historial de versiones](CHANGELOG.md) · [Política de releases](docs/POLITICA_DE_RELEASES.md)
-- [Rutas de datos por plataforma](docs/UBICACIONES_DATOS_SELECTOR_CINE_365.md)
-- [Notas de lanzamiento estable](RELEASE_NOTES_v9_ESTABLE.md)
-- [Código fuente v9.0.0](https://github.com/cristianbarallobre/selector-cine-365/tree/v9.0.0)
-
-**Histórico:** [Beta 14, versión de referencia previa](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0-beta.14), [otras versiones conservadas](https://github.com/cristianbarallobre/selector-cine-365/releases) y [documentación histórica](docs/POLITICA_DE_RELEASES.md). El historial y los tags de Git se conservan aunque se retiren algunos instaladores públicos redundantes.
-
-## Desarrollo y seguridad
-
-El código de **Windows/macOS (Go + interfaz web)** y **Android (Java/Gradle + WebView)** está en este repositorio. El tag `v9.0.0` fija la fuente asociada al lanzamiento; los archivos de distribución conservan las huellas SHA-256 de las betas que fueron probadas.
-
-**Nunca publiques** contraseñas, archivos de firma Android (`.p12`, `.jks`), claves TMDB ni tokens de OneDrive en el código o los informes de incidencias. La firma permanente Android requiere secretos protegidos de GitHub Actions para futuras compilaciones; la APK publicada utiliza el certificado original, sin incluir el material privado.
-
-**Autor:** Cristian Barallobre Rúa.
+Autor: Cristian Barallobre Rúa.
