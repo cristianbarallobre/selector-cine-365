@@ -28,4 +28,8 @@ Windows y Mac comparten la interfaz y las funciones de escritorio. Android tiene
 - [Sincronización y recuperación](docs/GUIA_SINCRONIZACION_SEGURA.md) · [Configuración de Entra](docs/GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.md)
 - [Rutas de datos](docs/UBICACIONES_DATOS_SELECTOR_CINE_365.md) · [Índice de documentación](docs/README.md) · [Historial](CHANGELOG.md)
 
+## Código y versiones anteriores
+
+El tag de escritorio identifica el código que se compiló para Windows y macOS 9.2.7. La rama principal centraliza la documentación. La APK pública de Android tiene su propia publicación. [Fuente 9.2.7](https://github.com/cristianbarallobre/selector-cine-365/tree/v9.2.7-desktop) · [Publicación Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0)
+
 Autor: Cristian Barallobre Rúa.
