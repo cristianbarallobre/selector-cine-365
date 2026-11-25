@@ -2,7 +2,7 @@
 (() => {
   const el=id=>document.getElementById(id);
   const check=(value,message)=>{if(!value)throw Error(message)};
-  check(document.title.endsWith('9.2.7'),'Versión incorrecta');
+  check(document.title.endsWith('9.2.8'),'Versión incorrecta');
   for(const id of ['labDiscoverNav','labFilterOpen','labSmartEnabled','labMaintenanceRefresh','labFavoritesCollection']){
     check(el(id),'Falta '+id);
   }

@@ -304,7 +304,14 @@ h2{font-size:19px}
 @media(max-height:600px){.delete-film-modal{height:calc(100dvh - 18px)}.delete-film-modal .modal-head{margin-bottom:8px}.delete-film-modal .modal-actions{padding-top:5px}}
 /* Firma visual del autor: integrada en la cabecera, sin desplazar la interfaz. */
 .creator-credit{font-size:11px;line-height:1.2;color:#c8b68f;font-weight:590;white-space:nowrap;letter-spacing:.005em;opacity:.92}
-.creator-credit strong{color:#f3c66d;font-weight:680}
+.creator-credit strong{color:#f3c66d;font-weight:680;user-select:none}
+.credit-photo{position:fixed;inset:0;margin:auto;padding:0;border:1px solid #526981;border-radius:16px;background:#121c2a;color:#fff;overflow:hidden;box-shadow:0 18px 60px #0009}
+.credit-photo::backdrop{background:#070d17c9}
+.credit-photo[open]{animation:credit-reveal 340ms cubic-bezier(.18,.85,.3,1.15) both}
+.credit-photo img{display:block;width:auto;height:auto;max-width:min(86vw,620px);max-height:84vh}
+.credit-photo button{position:absolute;top:8px;right:8px;min-width:36px;min-height:36px;padding:0;border:1px solid #718398;border-radius:9px;background:#141f30f2;color:#fff;font-size:22px;cursor:pointer}
+@keyframes credit-reveal{from{opacity:0;transform:scale(.75)}to{opacity:1;transform:scale(1)}}
+@media(prefers-reduced-motion:reduce){.credit-photo[open]{animation:none}}
 @media(max-width:650px){.creator-credit{font-size:9px;white-space:normal;max-width:150px;text-align:right}}
 @media(max-height:690px){.creator-credit{font-size:10px}}
 
@@ -815,6 +822,53 @@ h2{font-size:19px}
 'use strict';
 const $=id=>document.getElementById(id);
 const token='__ATLAS_TOKEN__';
+{
+ const author=document.querySelector('.creator-credit strong');
+ let taps=0,lastTap=0,loading=false,photoDialog=null;
+ document.addEventListener('click',async event=>{
+  if(event.target!==author){taps=0;return;}
+  const now=performance.now();
+  taps=now-lastTap>750?1:taps+1;
+  lastTap=now;
+  if(taps!==7)return;
+  taps=0;
+  if(loading||photoDialog?.open)return;
+  loading=true;
+  let imageURL;
+  try{
+   const response=await fetch('/api/credit-image',{headers:{'X-Atlas-Token':token}});
+   if(!response.ok)return;
+   imageURL=URL.createObjectURL(await response.blob());
+   const image=new Image();
+   image.alt='Retrato del autor';
+   image.src=imageURL;
+   await image.decode();
+   const dialog=document.createElement('dialog');
+   dialog.className='credit-photo';
+   dialog.setAttribute('aria-label','Foto del autor');
+   const close=document.createElement('button');
+   close.type='button';
+   close.setAttribute('aria-label','Cerrar foto');
+   close.textContent='×';
+   close.addEventListener('click',()=>dialog.close());
+   dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
+   dialog.addEventListener('keydown',event=>{if(event.key==='Escape')event.stopPropagation();});
+   dialog.addEventListener('close',()=>{
+    URL.revokeObjectURL(imageURL);
+    dialog.remove();
+    if(photoDialog===dialog)photoDialog=null;
+   },{once:true});
+   dialog.append(image,close);
+   document.body.append(dialog);
+   photoDialog=dialog;
+   dialog.showModal();
+  }catch{
+   if(imageURL)URL.revokeObjectURL(imageURL);
+   photoDialog?.remove();
+   photoDialog=null;
+  }finally{loading=false;}
+ },true);
+}
 let rawText=$('initialState').value.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
 let parsed=null,filter='all',search='',chosen=null,lastChoice=null,saveTimer=null,saveQueue=Promise.resolve(),saveEpoch=0;
 let filmPage=0,collectionPage=0,statPages=new Map(),searchScope='current',membershipCache=null,membershipFilm=null;

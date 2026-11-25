@@ -21,7 +21,7 @@ import (
 	"unicode/utf8"
 )
 
-//go:embed plantilla.html lista_inicial.txt icon.png
+//go:embed plantilla.html lista_inicial.txt icon.png credit.jpg
 var resources embed.FS
 
 func countFilms(data string) int {
@@ -95,8 +95,8 @@ func makeHTML(initial, token string) (string, error) {
  out = injectLabMaintenance(out)
 	if desktopFeatures && !appIsLab {
         out = strings.NewReplacer(
-            "<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.7</title>",
-            "🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.7",
+            "<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.8</title>",
+            "🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.8",
             ` <span class="lab-nav-tag">LAB</span>`, "",
             `<span class="lab-smart-caption">LAB</span>`, "",
             "SELECTOR CINE 365 · LAB WINDOWS", "SELECTOR CINE 365",
@@ -184,6 +184,18 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header().Set("Content-Type", "image/png")
+		w.Write(data)
+	case "/api/credit-image":
+		if !desktopFeatures || !a.auth(r) || r.Method != http.MethodGet {
+			http.NotFound(w, r)
+			return
+		}
+		data, err := resources.ReadFile("credit.jpg")
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "image/jpeg")
 		w.Write(data)
 	case "/api/library":
 		a.serveLibraryHTTP(w, r)
