@@ -392,6 +392,8 @@ h2{font-size:19px}
 .membership-confirm p{margin:0}
 .match-status.year-warning{color:#ffda92}
 #membershipActions[hidden]{display:none}
+#libraryStartup{max-width:480px;margin:24px auto}
+#libraryApp[hidden],#libraryStartup[hidden],#libraryStartupRetry[hidden]{display:none!important}
 .membership-options{display:flex;flex-direction:column;gap:6px;max-height:min(48dvh,340px);overflow:auto;padding:4px 2px}
 .membership-intro{font-size:13px;line-height:1.5;color:#c3cfdd}
 @media(max-width:650px){.film-memberships-numbers{max-width:114px}.film-filmmeta{gap:3px}.film-filmmeta .film-rating{font-size:9px}.film-memberships-title{font-size:9px}}
@@ -475,13 +477,19 @@ h2{font-size:19px}
 </head>
 <body>
 <textarea id="initialState" hidden>__ATLAS_LISTA_INICIAL__</textarea>
-<main data-created-by="__APP_AUTHOR__" data-repository="cristianbarallobre/selector-cine-365">
+<section class="panel" id="libraryStartup" aria-labelledby="libraryStartupTitle">
+ <h1 id="libraryStartupTitle">Selector Cine 365</h1>
+ <p id="libraryStartupState" role="status">Cargando biblioteca…</p>
+ <button class="tool" id="libraryStartupRetry" type="button" hidden>Reintentar</button>
+</section>
+<main id="libraryApp" data-created-by="__APP_AUTHOR__" data-repository="cristianbarallobre/selector-cine-365" hidden>
   <header class="header">
     <div class="brand" aria-hidden="true"><img src="/icon.png" alt="" style="width:58px;height:58px;object-fit:contain"></div>
     <div><div class="eyebrow">Selector Cine 365</div><h1>¿Qué película veo hoy?</h1></div>
     <div class="header-side">
       <div class="header-tag">🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview</div>
       <div class="saved" id="saveState" aria-live="polite">✓ Guardado</div>
+      <button class="tool" id="reloadLibraryAfterConflict" type="button" hidden>Cargar biblioteca actual</button>
       <div class="creator-credit" title="__APP_COPYRIGHT__">Hecho por <strong>__APP_AUTHOR__</strong></div>
     </div>
   </header>
@@ -820,6 +828,7 @@ h2{font-size:19px}
 (() => {
 'use strict';
 const $=id=>document.getElementById(id);
+/* CINE_NETWORK_INTERCEPTOR */
 const token='__ATLAS_TOKEN__';
 {
  const author=document.querySelector('.creator-credit strong');
@@ -881,7 +890,13 @@ const token='__ATLAS_TOKEN__';
 let rawText=$('initialState').value.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
 const librarySizeLimit=256*1024*1024,listSizeLimit=900000;
 let parsed=null,filter='all',search='',chosen=null,lastChoice=null,saveTimer=null,saveQueue=Promise.resolve(),saveEpoch=0;
-let saveNeeded=false,editRevision=0;
+let saveNeeded=false,editRevision=0,libraryETag='',libraryReady=false;
+document.addEventListener('click',event=>{
+ if(!libraryReady&&!$('libraryStartup').contains(event.target)){
+  event.preventDefault();
+  event.stopImmediatePropagation();
+ }
+},true);
 let filmPage=0,collectionPage=0,statPages=new Map(),searchScope='current',membershipCache=null,membershipFilm=null;
 let platformConfigured=false, platformStatusUnavailable=false, platformData=new Map(),platformRun=0,platformActive=false,platformFinished=0,platformTotal=0;
 let libraryState={version:1,active_id:'atlas',lists:[{id:'atlas',name:'Selector Cine 365 · 365',text:rawText}]};
@@ -984,7 +999,9 @@ async function loadPlatforms(force){
  // Solo títulos no cacheados, salvo cuando se pulsa Actualizar.
  let idx=0;
  async function worker(){while(current===platformRun){const n=idx++;if(n>=entries.length)break;const f=entries[n];
-   try{const r=await platformApi('/api/platforms/lookup',{title:f.title,year:Number(f.year)||0,force:!!force});if(current===platformRun){platformData.set(providerKey(f),r);if(r?.tmdb_id>0)registerIdentity(f,r.tmdb_id);}}
+   try{const r=await platformApi('/api/platforms/lookup',{title:f.title,year:Number(f.year)||0,force:!!force});
+    const manual=libraryState.tmdb_overrides?.[providerKey(f)];
+    if(current===platformRun&&r.state!=='superseded'&&(!manual||!r.tmdb_id||manual===r.tmdb_id)){platformData.set(providerKey(f),r);if(r.tmdb_id>0)registerIdentity(f,r.tmdb_id);}}
    catch(err){if(current===platformRun)platformData.set(providerKey(f),{state:'error',note:err.message});}
    if(current===platformRun){platformFinished++;if(platformFinished%5===0||platformFinished===platformTotal){updatePlatformProgress();scheduledPlatformRender();}}
  }}
@@ -1040,10 +1057,15 @@ async function applyManualMatch(id){
    libraryState.tmdb_overrides=libraryState.tmdb_overrides||{};
    libraryState.tmdb_overrides[key]=id;
    if(id>0)identityMap.set(filmKey(film),id);else identityMap.delete(filmKey(film));
+   platformData.delete(key);
+   scheduledPlatformRender();
    scheduleSave();
    const info=await platformApi('/api/platforms/lookup',{title:film.title,year:film.year,force:true});
-   platformData.set(key,info);
-   if(info?.tmdb_id>0)registerIdentity(film,info.tmdb_id);else{identityMap.delete(filmKey(film));queueIdentityReconcile();}
+   if(info.state!=='superseded'&&libraryState.tmdb_overrides[key]===id){
+    platformData.set(key,info);
+    if(info.tmdb_id>0)registerIdentity(film,info.tmdb_id);
+    else if(id===0){identityMap.delete(filmKey(film));queueIdentityReconcile();}
+   }
    if(manualFilm===film)closeMatchModal();
    scheduledPlatformRender();void cloudRefresh();
    $('message').textContent=info.state==='not-found'?'No se encontró. Prueba a introducir el ID de TMDB.':'Identificación actualizada.';
@@ -1337,8 +1359,7 @@ async function saveLocal(){
  syncActiveText();const snapshot=JSON.stringify(libraryState);const epoch=++saveEpoch,revision=editRevision;
  saveNeeded=true;
  saveQueue=saveQueue.catch(()=>{}).then(async()=>{
-   const response=await fetch('/api/library',{method:'POST',headers:{'Content-Type':'application/json','X-Atlas-Token':token},body:snapshot,cache:'no-store'});
-   if(!response.ok)throw new Error('HTTP '+response.status);
+   const response=await writeLibrary(snapshot);
    return {cloudResult:response.headers.get('X-Cine-Cloud'),txtPending:response.headers.get('X-Cine-Legacy')==='pending'};
  });
  try{const {cloudResult,txtPending}=await saveQueue;
@@ -1347,7 +1368,19 @@ async function saveLocal(){
  if(epoch===saveEpoch&&revision===editRevision){cineRecentIntents.clear();$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + carpeta de nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':cloudResult==='pending'?'✓ Local · Revisar sincronización':'✓ Guardado';
  if(txtPending)$('saveState').textContent+=' · ⚠ Copia TXT pendiente';
  void cloudRefresh();setTimeout(()=>{if(!document.hidden)void cloudAutoReceive();},3500);}}
- catch(err){if(epoch===saveEpoch)$('saveState').textContent='⚠ Error al guardar';}
+ catch(err){if(epoch===saveEpoch)$('saveState').textContent=err.message||'⚠ Guardado no confirmado';}
+}
+async function writeLibrary(payload){
+ if(!libraryETag)throw new Error('⚠ No se pudo cargar la biblioteca. Exporta tus cambios antes de recargar.');
+ const response=await fetch('/api/library',{method:'POST',headers:{'Content-Type':'application/json','X-Atlas-Token':token,'If-Match':libraryETag},body:payload,cache:'no-store'});
+ if(response.status===412){
+  $('reloadLibraryAfterConflict').hidden=false;
+  throw new Error('⚠ La biblioteca cambió. Puedes exportar tus cambios en Mis listas antes de cargar la versión guardada.');
+ }
+ if(!response.ok)throw new Error('⚠ Guardado no confirmado · comprueba la lista antes de cerrar. '+(await response.text()).trim());
+ libraryETag=response.headers.get('ETag')||libraryETag;
+ $('reloadLibraryAfterConflict').hidden=true;
+ return response;
 }
 async function flushLibrary(){
  if(saveTimer!==null){clearTimeout(saveTimer);saveTimer=null;void saveLocal();}
@@ -1614,6 +1647,8 @@ function reconcileWatched(){
 // La identificación se efectúa en segundo plano, sin bloquear la interfaz.
 function registerIdentity(f,id){
  if(!(id>0))return false;
+ const manual=libraryState.tmdb_overrides?.[providerKey(f)];
+ if(manual>0&&manual!==id)return false;
  const key=filmKey(f),existing=identityMap.get(key);
  if(existing===id)return false;
  identityMap.set(key,id);queueIdentityReconcile();return true;
@@ -1630,29 +1665,32 @@ function queueIdentityReconcile(){
 }
 function identityStatus(text){$('identityStatus').textContent=text;}
 // Intercambiar solo identificadores TMDB, nunca la clave de la API.
-async function reconcileTMDBLibrary(){
- const remote=libraryState.tmdb_overrides||{};
+async function reconcileTMDBLibrary(state,canApply){
+ const remote=state.tmdb_overrides||{};
  try{
   const data=await platformApi('/api/platforms/overrides');
+  if(!canApply())return false;
   const stored=data.overrides||{};
   const merged={...stored,...remote};
   if(Object.keys(merged).length){
    const changed=Object.keys(merged).some(key=>!Object.prototype.hasOwnProperty.call(remote,key)||remote[key]!==merged[key]);
-   libraryState.tmdb_overrides=merged;
    const needsImport=Object.keys(merged).some(key=>stored[key]!==merged[key]);
    if(needsImport){
     await platformApi('/api/platforms/overrides/import',{overrides:merged});
-    for(const key of Object.keys(merged))if(stored[key]!==merged[key])platformData.delete(key);
    }
+   if(!canApply())return false;
+   state.tmdb_overrides=merged;
+   if(needsImport)for(const key of Object.keys(merged))if(stored[key]!==merged[key])platformData.delete(key);
    for(const [key,id] of Object.entries(merged)){
     if(id>0)identityMap.set(key,id);else identityMap.delete(key);
    }
-   if(changed)scheduleSave();
+   return changed;
   }
  }catch(error){
   // Un fallo puntual no elimina una configuración válida.
   console.warn('Identificaciones TMDB locales no disponibles:',error.message);
  }
+ return false;
 }
 async function initIdentities(){
  try{
@@ -1750,25 +1788,29 @@ function sanitizeComparisonIDs(){
 
 async function initLibrary({preserveNavigation=false}={}){
  const revision=editRevision;
+ const canApply=()=>!preserveNavigation||
+  (revision===editRevision&&!saveNeeded&&!restoringBackup&&!preparingClose);
  await cineLoadRevisions();
- let loaded=false,sameList=true;
+ let incoming=null,etag='',sameList=true;
  try{
   const response=await fetch('/api/library',{headers:{'X-Atlas-Token':token},cache:'no-store'});
   if(response.ok){
    const state=await response.json();
-   if(validLibrary(state)){
-    if(preserveNavigation&&(revision!==editRevision||saveNeeded))return false;
-    const currentID=libraryState.active_id;
-    sameList=state.lists.some(list=>list.id===currentID);
-    if(preserveNavigation&&sameList)state.active_id=currentID;
-    libraryState=state;
-    loaded=true;
-   }
+   if(validLibrary(state)){incoming=state;etag=response.headers.get('ETag')||'';}
   }
  }catch(e){}
- const wasComparing=virtualMode;
+ if(!canApply()||(!libraryReady&&(!incoming||!etag)))return false;
+ const metadataChanged=await reconcileTMDBLibrary(incoming||libraryState,canApply);
+ if(!canApply())return false;
+ const loaded=incoming!==null,wasComparing=virtualMode;
+ if(loaded){
+  const currentID=libraryState.active_id;
+  sameList=incoming.lists.some(list=>list.id===currentID);
+  if(preserveNavigation&&sameList)incoming.active_id=currentID;
+  libraryState=incoming;
+  libraryETag=etag;
+ }
  sanitizeComparisonIDs();
- await reconcileTMDBLibrary();
  const reconciled=reconcileWatched();
  rawText=virtualMode?buildIntersection():activeCollection().text||'';
  if(preserveNavigation&&loaded&&(!sameList||wasComparing&&!virtualMode)){
@@ -1778,7 +1820,7 @@ async function initLibrary({preserveNavigation=false}={}){
   if(preserveNavigation&&loaded)resetChoice();
   renderCollectionControls();update();renderStats();
  }
- if(reconciled)scheduleSave();
+ if(reconciled||metadataChanged)scheduleSave();
  return loaded;
 }
 function validLibrary(s){return s&&s.version===1&&Array.isArray(s.lists)&&s.lists.length>0&&s.lists.length<=40&&typeof s.active_id==='string'&&s.lists.some(l=>l.id===s.active_id)&&s.lists.every(l=>typeof l.text==='string'&&typeof l.name==='string'&&typeof l.id==='string');}
@@ -2060,6 +2102,19 @@ $('downloadBackup').addEventListener('click',()=>{
 });
 $('restoreBackup').addEventListener('click',()=>$('backupFile').click());
 let restoringBackup=false;
+$('reloadLibraryAfterConflict').addEventListener('click',async()=>{
+ if(restoringBackup||!confirm('¿Cargar la biblioteca guardada? Se perderán los cambios de esta ventana que aún no hayas exportado.'))return;
+ restoringBackup=true;document.body.inert=true;
+ clearTimeout(saveTimer);saveTimer=null;
+ try{
+  await saveQueue.catch(()=>{});
+  cineRecentIntents.clear();
+  if(!await initLibrary())throw new Error('No se pudo cargar la biblioteca guardada');
+  if(saveTimer===null){saveNeeded=false;$('saveState').textContent='✓ Biblioteca cargada';}
+  $('reloadLibraryAfterConflict').hidden=true;
+ }catch(error){$('saveState').textContent='⚠ '+error.message;}
+ finally{restoringBackup=false;document.body.inert=false;}
+});
 $('backupFile').addEventListener('change',async e=>{
  const f=e.target.files?.[0];if(!f)return;
  try{
@@ -2073,8 +2128,7 @@ $('backupFile').addEventListener('change',async e=>{
    try{
      if(!await flushLibrary())throw new Error('Hay cambios pendientes de guardar');
      ++saveEpoch;
-     const saved=await fetch('/api/library',{method:'POST',headers:{'Content-Type':'application/json','X-Atlas-Token':token},body:payload});
-     if(!saved.ok)throw new Error(await saved.text());
+     const saved=await writeLibrary(payload);
      libraryState=state;
      virtualMode=false;sanitizeComparisonIDs();rawText=activeCollection().text||'';restartList();showView('library');
      $('saveState').textContent=saved.headers.get('X-Cine-Legacy')==='pending'?'✓ Restaurado · ⚠ Copia TXT pendiente':'✓ Copia restaurada';
@@ -2085,9 +2139,14 @@ $('backupFile').addEventListener('change',async e=>{
 // Copia adicional de las listas en una carpeta local sincronizada con la nube.
 async function cloudRequest(path,method='GET',payload){
  const opts={method,headers:{'X-Atlas-Token':token},cache:'no-store'};
+ if(path==='/api/sync/recovery/restore')opts.headers['If-Match']=libraryETag;
  if(payload!==undefined){opts.headers['Content-Type']='application/json';opts.body=JSON.stringify(payload)}
- const r=await fetch(path,opts);const data=await r.json();
- if(!r.ok)throw new Error(data.error||'No se pudo completar la operación');return data;
+ const r=await fetch(path,opts);const raw=await r.text();
+ let data;
+ try{data=raw?JSON.parse(raw):{};}
+ catch{throw new Error('OneDrive: '+(raw.slice(0,160)||'Respuesta no válida del servidor local'));}
+ if(!r.ok)throw new Error('OneDrive: '+(data.error||'HTTP '+r.status));
+ return data;
 }
 let cineGraphConnected=false;
 function updateCloudGuide(s){
@@ -2299,12 +2358,11 @@ $('cloudRecoveryRestore').addEventListener('click',async()=>{
   if(!await flushLibrary())throw new Error('Hay cambios pendientes de guardar');
   $('cloudRecoveryStatus').textContent='Restaurando la copia local con protección…';
   const data=await cloudRequest('/api/sync/recovery/restore','POST',{id});
-  if(data.warning)alert('Biblioteca restaurada localmente, pero OneDrive necesita revisión: '+data.warning);
   virtualMode=false;
   if(!await initLibrary())throw new Error('La copia se guardó en disco, pero no se pudo actualizar la vista');
   restartList();
   await cineRefreshRecovery();
-  $('cloudRecoveryStatus').textContent='✓ Biblioteca restaurada';
+  $('cloudRecoveryStatus').textContent=data.warning?'✓ Biblioteca restaurada · ⚠ '+data.warning:'✓ Biblioteca restaurada';
  }catch(e){$('cloudRecoveryStatus').textContent='⚠ No se ha restaurado: '+e.message;button.disabled=false;}
  finally{restoringBackup=false;document.body.inert=false;}
 });
@@ -2318,13 +2376,18 @@ $('cloudSyncNowFast').addEventListener('click',async()=>{
  }finally{button.disabled=false;}
 });
 
-let syncPreviewToken='';
+let syncPreviewToken='',syncPreviewEdit=0,cloudManualBusy=false;
 $('cloudSyncReview').addEventListener('click',async()=>{
+ if(cloudManualBusy)return;
+ cloudManualBusy=true;syncPreviewToken='';
  const button=$('cloudSyncReview');button.disabled=true;$('cloudSyncPanel').hidden=true;
  try{
-  await saveQueue;
+  if(!await flushLibrary())throw new Error('Hay cambios pendientes de guardar. Resuélvelos antes de revisar la sincronización.');
+  const revision=editRevision;
   const data=await cloudRequest('/api/cloud/preview','POST');
+  if(revision!==editRevision||saveNeeded)throw new Error('La biblioteca cambió. Vuelve a revisar la sincronización.');
   syncPreviewToken=data.token;
+  syncPreviewEdit=revision;
   $('cloudSyncSummary').textContent='Copias de otros dispositivos encontradas: '+data.sources+
    '. En este PC: '+data.local_lists+' listas y '+data.local_seen+
    ' películas vistas. Resultado previsto al combinar: '+data.result_lists+
@@ -2341,37 +2404,50 @@ $('cloudSyncReview').addEventListener('click',async()=>{
   }
   $('cloudSyncPanel').hidden=false;
  }catch(e){syncPreviewToken='';$('cloudStatus').textContent='⚠ '+e.message;}
- finally{button.disabled=false;}
+ finally{cloudManualBusy=false;button.disabled=false;}
 });
 $('cloudSyncCancel').addEventListener('click',()=>{syncPreviewToken='';$('cloudSyncPanel').hidden=true;});
 $('cloudSyncConfirm').addEventListener('click',async()=>{
- if(!syncPreviewToken)return;
+ if(!syncPreviewToken||cloudManualBusy)return;
  const decisions={};
  for(const select of $('cloudSyncConflicts').querySelectorAll('select')){
   if(select.value===''){select.focus();return;}
   decisions[select.dataset.key]=select.value==='true';
  }
- const button=$('cloudSyncConfirm');button.disabled=true;
+ const button=$('cloudSyncConfirm');button.disabled=true;cloudManualBusy=true;
  try{
+  if(!await flushLibrary())throw new Error('Hay cambios pendientes de guardar. Resuélvelos antes de sincronizar.');
+  if(!syncPreviewToken||syncPreviewEdit!==editRevision){
+   syncPreviewToken='';
+   $('cloudSyncSummary').textContent='⚠ La biblioteca cambió. Vuelve a pulsar «Revisar sincronización».';
+   return;
+  }
+  const revision=editRevision;
   $('cloudSyncSummary').textContent='Combinando y creando copia de recuperación…';
   const data=await cloudRequest('/api/cloud/sync','POST',{token:syncPreviewToken,decisions});
   syncPreviewToken='';$('cloudSyncPanel').hidden=true;
-  await initLibrary();restartList();
+  const loaded=revision===editRevision&&!saveNeeded&&!restoringBackup&&!preparingClose&&
+   await initLibrary({preserveNavigation:true});
   await cloudRefresh();void cineRefreshHistory();void cineRefreshRecovery();
-  $('cloudAutoStatus').textContent='✓ Revisión confirmada: '+data.lists+' listas y '+data.seen+' vistas. Copia enviada y verificada en OneDrive.';
-  $('cloudSyncManualResult').textContent='Primera sincronización completada. Puedes seguir con el paso 3.';
+  const publication=data.warning?'⚠ '+data.warning:'Copia enviada y verificada en OneDrive.';
+  $('cloudAutoStatus').textContent='✓ Biblioteca combinada en este equipo. '+publication;
+  $('cloudSyncManualResult').textContent=loaded
+   ?(data.warning?'Biblioteca actualizada. '+publication:'Primera sincronización completada. Puedes seguir con el paso 3.')
+   :(revision!==editRevision||saveNeeded
+      ?'La biblioteca combinada está guardada. Tus ediciones siguen en esta ventana. '
+      :'La biblioteca combinada está guardada. No se pudo actualizar la vista. ')+publication;
  }catch(e){
    const timeout=/deadline|timeout|tiempo de espera|context canceled/i.test(e.message);
    $('cloudSyncSummary').textContent=timeout
     ?'⚠ Se agotó el tiempo de espera. La copia podría haberse enviado igualmente. Consulta la carpeta de OneDrive y el estado de sincronización antes de repetir la operación.'
     :'⚠ '+e.message+' No se ha confirmado la subida; tus listas siguen guardadas localmente.';
    await cloudRefresh().catch(()=>{});
- }finally{button.disabled=false;}
+ }finally{cloudManualBusy=false;button.disabled=false;}
 });
 // Se activa solo tras la primera revisión manual. No consulta TMDB ni sube fichas.
 let cloudAutoBusy=false,cloudAutoCheckedAt=0;
 async function cloudAutoReceive(force=false){
- if(cloudAutoBusy||syncPreviewToken||!$('cloudSyncPanel').hidden)return;
+ if(!libraryReady||cloudAutoBusy||cloudManualBusy||syncPreviewToken||!$('cloudSyncPanel').hidden)return;
  if(!force&&Date.now()-cloudAutoCheckedAt<20000)return;
  if(document.querySelector('.overlay:not([hidden])'))return;
  if(document.activeElement?.matches('input,textarea,select,[contenteditable="true"]'))return;
@@ -2389,10 +2465,14 @@ async function cloudAutoReceive(force=false){
          ?'Primera vinculación pendiente: pulsa «Revisar sincronización».'
          :'⚠ Se han encontrado cambios incompatibles. Pulsa «Revisar sincronización» para decidir.';
      }else if(result.changed){
-       if(beforeEdit!==editRevision||saveNeeded||restoringBackup||preparingClose)return;
-       if(!await initLibrary({preserveNavigation:true}))return;
-       $('cloudAutoStatus').textContent='✓ Cambios recibidos automáticamente de otro dispositivo.';
-       await cloudRefresh();void cineRefreshHistory();
+       const loaded=beforeEdit===editRevision&&!saveNeeded&&!restoringBackup&&!preparingClose&&
+        await initLibrary({preserveNavigation:true});
+       const message=loaded?'✓ Cambios recibidos automáticamente de otro dispositivo.':
+        '✓ Cambios recibidos y guardados. La vista actual se conserva.';
+       $('cloudAutoStatus').textContent=message+(result.warning?' ⚠ '+result.warning:'');
+       void cineRefreshHistory();
+     }else if(result.warning){
+       $('cloudAutoStatus').textContent='⚠ '+result.warning;
      }else if(!result.skipped){
        $('cloudAutoStatus').textContent='✓ Sincronización automática al día.';
      }
@@ -2727,7 +2807,28 @@ window.chrome?.webview?.addEventListener('message',async event=>{
 window.addEventListener('beforeunload',event=>{
  if(saveNeeded||restoringBackup){event.preventDefault();event.returnValue='';}
 });
-updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void initLibrary().then(async()=>{await initIdentities();await initPlatforms();void cloudAutoReceive(true);});
+async function finishLibraryStartup(loaded){
+ if(!loaded){
+  $('libraryStartupState').textContent='No se pudo cargar la biblioteca. Reintenta para volver a leer los datos guardados.';
+  $('libraryStartupRetry').hidden=false;
+  return;
+ }
+ libraryReady=true;
+ $('libraryStartup').hidden=true;
+ $('libraryApp').hidden=false;
+ update();renderCollectionControls();updatePlatformProgress();
+ await initIdentities();
+ await initPlatforms();
+ void cloudAutoReceive();
+ /* CINE_DESKTOP_READY */
+}
+$('libraryStartupRetry').addEventListener('click',async()=>{
+ if($('libraryStartupRetry').hidden)return;
+ $('libraryStartupRetry').hidden=true;
+ $('libraryStartupState').textContent='Cargando biblioteca…';
+ await finishLibraryStartup(await initLibrary());
+});
+updateListPlatformOptions();update();renderCollectionControls();updatePlatformProgress();void initLibrary().then(finishLibraryStartup);
 })();
 </script>
 </body>

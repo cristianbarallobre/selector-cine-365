@@ -83,7 +83,10 @@ assert.equal(elements.cloudGraphConnect.disabled,true,'No mezclar carpeta local 
 
 const confirmation=script.slice(script.indexOf("$('cloudSyncConfirm').addEventListener("),script.indexOf('// Se activa solo tras la primera revisión manual.'));
 assert.ok(!confirmation.includes('location.reload()'),'Sin recargar después de una sincronización confirmada');
-assert.ok(confirmation.includes('await initLibrary();restartList();'),'Refrescar biblioteca sin terminar la sesión');
+assert.ok(confirmation.includes('await initLibrary({preserveNavigation:true})'),'Refrescar biblioteca sin terminar la sesión');
+assert.ok(confirmation.indexOf('await flushLibrary()')<confirmation.indexOf("cloudRequest('/api/cloud/sync'"),'Guardar los cambios antes de confirmar');
+assert.ok(confirmation.includes('revision===editRevision&&!saveNeeded'),'Conservar las ediciones hechas mientras se espera');
+assert.ok(confirmation.includes('data.warning'),'Distinguir el cambio local del resultado de la subida');
 assert.ok(confirmation.includes('await cloudRefresh()'),'Actualizar estado tras confirmar');
 assert.ok(confirmation.includes('La copia podría haberse enviado'),'Timeout no se presenta como pérdida definitiva');
 assert.ok(script.includes('Se agotó el tiempo de espera'));

@@ -288,7 +288,7 @@ body.lab-crosspage-dragging,body.lab-crosspage-dragging *{user-select:none!impor
         <div class="lab-detail-label">BIOGRAFÍA</div>
         <p class="lab-person-bio" id="labPersonBio"></p>
         <button class="lab-person-original" id="labPersonOriginal" type="button" hidden>Ver biografía original en inglés</button>
-        <div class="lab-detail-label">FILMOGRAFÍA</div>
+        <div class="lab-detail-label" id="labPersonFilmsTitle">FILMOGRAFÍA</div>
         <div class="lab-person-film-controls">
           <label for="labPersonFilmSort">Ordenar por
             <select id="labPersonFilmSort">
@@ -599,13 +599,13 @@ function labSyncDetailNavigation(){
  $('labDetailBack').hidden=!canGoBack;
  $('labPersonBack').hidden=!canGoBack;
 }
-function labEnterDetail(kind,id,record=true){
+function labEnterDetail(kind,id,record=true,role=''){
  if(record){
   // Una apertura desde Biblioteca o Descubrir inicia un historial independiente.
   if(labDetailOverlay.hidden&&labPersonOverlay.hidden){labDetailTrail=[];}
   else labRememberDetailScroll();
   const last=labDetailCurrent();
-  if(!last||last.kind!==kind||last.id!==id)labDetailTrail.push({kind,id,scrollTop:0});
+  if(!last||last.kind!==kind||last.id!==id||last.role!==role)labDetailTrail.push({kind,id,role,scrollTop:0});
  }
  labSyncDetailNavigation();
 }
@@ -621,7 +621,7 @@ function labDetailBack(){
  labRememberDetailScroll();
  labDetailTrail.pop();
  const previous=labDetailCurrent();
- if(previous.kind==='person'){void labOpenPerson(previous.id,false);}
+ if(previous.kind==='person'){void labOpenPerson(previous.id,false,previous.role);}
  else{void labShowDetail(previous.id,false);}
 }
 $('labDetailBack').addEventListener('click',labDetailBack);
@@ -692,8 +692,15 @@ function labRenderCredits(movie){
  const root=$('labDetailCast');root.replaceChildren();
  const director=document.createElement('div');director.className='lab-cast-director';
  const directorLabel=document.createElement('span');directorLabel.className='lab-cast-director-label';directorLabel.textContent='Dirección:';
- const directorName=document.createElement('strong');directorName.textContent=movie.director||'Sin datos';
- director.append(directorLabel,directorName);root.appendChild(director);
+ director.appendChild(directorLabel);
+ const directors=(Array.isArray(movie.directors)?movie.directors:[]).filter(person=>person&&person.name);
+ if(directors.length){
+  for(const person of directors)director.appendChild(labCreditLink(person,'director'));
+ }else{
+  const directorName=document.createElement('strong');directorName.textContent=movie.director||'Sin datos';
+  director.appendChild(directorName);
+ }
+ root.appendChild(director);
  const people=(Array.isArray(movie.cast)?movie.cast:[]).filter(person=>person&&person.name);
  if(!people.length)return;
  const heading=document.createElement('div');heading.className='lab-cast-heading';heading.textContent='Reparto y personajes';
@@ -701,19 +708,7 @@ function labRenderCredits(movie){
  const entries=document.createElement('div');entries.className='lab-cast-grid';
  for(const person of people){
   const entry=document.createElement('div');entry.className='lab-cast-entry';
-  const personID=Number(person.id);
-  const clickable=Number.isSafeInteger(personID)&&personID>0&&personID<=999999999;
-  const actor=document.createElement(clickable?'button':'strong');
-  actor.className='lab-cast-actor';actor.textContent=person.name;
-  if(clickable){
-   actor.type='button';actor.setAttribute('aria-label','Ver ficha de '+person.name);
-   actor.addEventListener('mouseenter',()=>labShowActorPhoto(actor,person));
-   actor.addEventListener('mouseleave',labHideActorPhoto);
-   actor.addEventListener('focus',()=>labShowActorPhoto(actor,person,true));
-   actor.addEventListener('blur',labHideActorPhoto);
-   actor.addEventListener('click',()=>{labHideActorPhoto();void labOpenPerson(personID);});
-  }
-  entry.appendChild(actor);
+  entry.appendChild(labCreditLink(person));
   if(person.character){
    const role=document.createElement('span');role.className='lab-cast-role';role.textContent=person.character;
    entry.appendChild(role);
@@ -721,6 +716,21 @@ function labRenderCredits(movie){
   entries.appendChild(entry);
  }
  root.appendChild(entries);
+}
+function labCreditLink(person,role=''){
+ const personID=Number(person.id);
+ const clickable=Number.isSafeInteger(personID)&&personID>0&&personID<=999999999;
+ const link=document.createElement(clickable?'button':'strong');
+ link.className='lab-cast-actor';link.textContent=person.name;
+ if(clickable){
+  link.type='button';link.setAttribute('aria-label','Ver ficha de '+person.name);
+  link.addEventListener('mouseenter',()=>labShowActorPhoto(link,person));
+  link.addEventListener('mouseleave',labHideActorPhoto);
+  link.addEventListener('focus',()=>labShowActorPhoto(link,person,true));
+  link.addEventListener('blur',labHideActorPhoto);
+  link.addEventListener('click',()=>{labHideActorPhoto();void labOpenPerson(personID,true,role);});
+ }
+ return link;
 }
 // Clasificaciones locales: TMDB no publica una lista canónica de papeles
 // destacados. Combinamos valoración con confianza, posición en el reparto y
@@ -798,13 +808,16 @@ function labShowPersonBiography(person){
   };
  }
 }
-async function labOpenPerson(id,record=true){
+async function labOpenPerson(id,record=true,role=''){
  labHideActorPhoto();
- labEnterDetail('person',id,record);
+ labEnterDetail('person',id,record,role);
+ const directing=role==='director';
  const serial=++labPersonSerial;
  labPersonOverlay.hidden=false;labPersonOverlay.scrollTop=0;
  $('labPersonBack').focus();
- $('labPersonName').textContent='Cargando intérprete…';
+ $('labPersonHeading').textContent=directing?'Ficha de dirección':'Ficha de intérprete';
+ $('labPersonFilmsTitle').textContent=directing?'PELÍCULAS DIRIGIDAS':'FILMOGRAFÍA';
+ $('labPersonName').textContent=directing?'Cargando ficha…':'Cargando intérprete…';
  $('labPersonSubtitle').textContent='';$('labPersonBio').textContent='';
  $('labPersonOriginal').hidden=true;$('labPersonOriginal').onclick=null;
  labPersonMovies=[];
@@ -815,14 +828,15 @@ async function labOpenPerson(id,record=true){
  $('labPersonPlaceholder').hidden=false;
  $('labPersonNote').textContent='Consultando TMDB…';
  try{
-  const p=await labGet('/api/discover/person?id='+encodeURIComponent(id));
+  const p=await labGet('/api/discover/person?id='+encodeURIComponent(id)+(directing?'&role=director':''));
   if(serial!==labPersonSerial)return;
-  $('labPersonName').textContent=p.name||'Intérprete';
+  $('labPersonName').textContent=p.name||(directing?'Dirección':'Intérprete');
   const dates=p.birthday?(p.deathday?'Nacimiento: '+labFormatSpanishDate(p.birthday,true)+' · Fallecimiento: '+labFormatSpanishDate(p.deathday,true):'Nacimiento: '+labFormatSpanishDate(p.birthday,true)):'';
   $('labPersonSubtitle').textContent=[labPersonDepartmentES[p.known_for_department]||p.known_for_department||'',dates,p.place_of_birth||''].filter(Boolean).join(' · ');
   labShowPersonBiography(p);
   if(p.profile_path){
    const portrait=$('labPersonPortrait');
+   portrait.alt='Fotografía de '+p.name;
    portrait.src=labPosterSrc(p.profile_path);portrait.hidden=false;$('labPersonPlaceholder').hidden=true;
    portrait.onerror=()=>{if(serial===labPersonSerial){portrait.hidden=true;$('labPersonPlaceholder').hidden=false;}};
   }
@@ -832,7 +846,7 @@ async function labOpenPerson(id,record=true){
    const link=document.createElement('a');link.href=p.tmdb_url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='↗ Ficha de TMDB';
    $('labPersonLinks').appendChild(link);
   }
-  $('labPersonNote').textContent='Ficha de intérprete consultada en TMDB.';
+  $('labPersonNote').textContent='Ficha consultada en TMDB.';
   labPersonOverlay.scrollTop=labDetailCurrent()?.kind==='person'?labDetailCurrent().scrollTop||0:0;
  }catch(e){if(serial===labPersonSerial){$('labPersonName').textContent='Ficha no disponible';$('labPersonNote').textContent='⚠ '+e.message;}}
 }

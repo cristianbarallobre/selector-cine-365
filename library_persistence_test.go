@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http/httptest"
 	"os"
@@ -12,6 +13,32 @@ import (
 	"testing"
 )
 
+func TestOversizedSyncPreviewKeepsLocalLibraryUsable(t *testing.T) {
+	dir, folder := t.TempDir(), t.TempDir()
+	state := initialLibrary(strings.Repeat("☐ Película (2000)\n", 40500))
+	for i := 1; i < 12; i++ {
+		state.Lists = append(state.Lists, filmCollection{ID: fmt.Sprint(i), Name: "Lista", Text: state.Lists[0].Text})
+	}
+	store, err := newDesktopSyncStore(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cloud := newCloudBackups(dir)
+	if err = cloud.configure(folder); err != nil {
+		t.Fatal(err)
+	}
+	app := &runningApp{cloud: cloud, syncStore: store, libraryPath: filepath.Join(dir, "colecciones.json"), savePath: filepath.Join(dir, "legacy.txt"), token: "test"}
+	if w := postTestLibrary(t, app, state); w.Code != 204 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	if _, err = app.cloudSyncPreview(); !errors.Is(err, errSyncSnapshotTooLarge) {
+		t.Fatal(err)
+	}
+	if app.syncPreviewToken != "" || !reflect.DeepEqual(loadLibrary(app.libraryPath, ""), state) {
+		t.Fatal("preflight changed local data")
+	}
+}
+
 func postTestLibrary(t *testing.T, a *runningApp, state libraryState) *httptest.ResponseRecorder {
 	t.Helper()
 	body, err := json.Marshal(state)
@@ -20,6 +47,9 @@ func postTestLibrary(t *testing.T, a *runningApp, state libraryState) *httptest.
 	}
 	r := httptest.NewRequest("POST", "/api/library", bytes.NewReader(body))
 	r.Header.Set("X-Atlas-Token", a.token)
+	a.mu.Lock()
+	r.Header.Set("If-Match", a.libraryETag())
+	a.mu.Unlock()
 	w := httptest.NewRecorder()
 	a.serveHTTP(w, r)
 	return w
@@ -48,11 +78,46 @@ func TestLargeLibraryCanBeSavedAndRestored(t *testing.T) {
 	if w := postTestLibrary(t, a, initialLibrary("Cambiada")); w.Code != 204 {
 		t.Fatalf("replace: %d %s", w.Code, w.Body.String())
 	}
-	if _, err := a.restoreLocalRecovery(copies[0].ID); err != nil {
+	if _, err := a.restoreLocalRecovery(copies[0].ID, a.libraryETag()); err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(loadLibrary(a.libraryPath, ""), state) {
 		t.Fatal("large library changed on recovery")
+	}
+}
+
+func TestLibraryRejectsStaleWriter(t *testing.T) {
+	dir := t.TempDir()
+	a := &runningApp{library: initialLibrary("☐ Vértigo (1958)"), libraryPath: filepath.Join(dir, "colecciones.json"), savePath: filepath.Join(dir, "legacy.txt"), token: "test"}
+	revision := a.libraryETag()
+	newer := initialLibrary("☑ Vértigo (1958)")
+	first := postTestLibrary(t, a, newer)
+	if first.Code != 204 || first.Header().Get("ETag") == revision {
+		t.Fatalf("first save: %d %v", first.Code, first.Header())
+	}
+	send := func(state libraryState, ifMatch string) *httptest.ResponseRecorder {
+		payload, err := json.Marshal(state)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r := httptest.NewRequest("POST", "/api/library", bytes.NewReader(payload))
+		r.Header.Set("X-Atlas-Token", a.token)
+		r.Header.Set("If-Match", ifMatch)
+		w := httptest.NewRecorder()
+		a.serveHTTP(w, r)
+		return w
+	}
+	if w := send(initialLibrary("☐ Origen (2010)"), revision); w.Code != 412 {
+		t.Fatalf("stale save returned %d", w.Code)
+	}
+	if w := send(newer, ""); w.Code != 412 {
+		t.Fatalf("missing revision returned %d", w.Code)
+	}
+	if w := send(newer, revision); w.Code != 204 || w.Header().Get("ETag") != first.Header().Get("ETag") {
+		t.Fatalf("retry of an already committed save: %d", w.Code)
+	}
+	if !reflect.DeepEqual(loadLibrary(a.libraryPath, ""), newer) {
+		t.Fatal("stale save changed library")
 	}
 }
 

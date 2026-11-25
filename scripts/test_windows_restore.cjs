@@ -5,6 +5,8 @@ const vm = require('node:vm');
 
 const page = fs.readFileSync('plantilla.html', 'utf8');
 const start = page.indexOf('let restoringBackup=false;');
+const writeStart = page.indexOf('async function writeLibrary(payload)');
+const writeEnd = page.indexOf('async function flushLibrary()', writeStart);
 const end = page.indexOf('// Copia adicional', start);
 assert.ok(start >= 0 && end > start);
 
@@ -13,25 +15,27 @@ async function restore(backup, accept) {
   let handler, sent, warning;
   const status = {};
   const context = {
-    document: {body:{}}, Blob, token:'prueba', saveTimer:null, saveEpoch:0,
+    document: {body:{}}, Blob, token:'prueba', saveTimer:null, saveEpoch:0, libraryETag:'"library-1"',
     saveQueue:Promise.resolve(), libraryState:original, confirm:()=>true,
     librarySizeLimit:256*1024*1024, flushLibrary:async()=>true,
     alert:message=>{warning=message;}, validLibrary:()=>true,
-    $:id=>id==='backupFile'?{addEventListener:(_,fn)=>{handler=fn;}}:status,
+    $:id=>id==='backupFile'?{addEventListener:(_,fn)=>{handler=fn;}}:id==='reloadLibraryAfterConflict'?{addEventListener(){}}:status,
     activeCollection:()=>context.libraryState.lists[0], sanitizeComparisonIDs(){},
     restartList(){}, showView(){}, cineLoadRevisions:async()=>{},
     fetch:async(url,opts)=>{
       assert.equal(url,'/api/library');
+      assert.equal(opts.headers['If-Match'],'"library-1"');
       sent=JSON.parse(opts.body);
-      return {ok:accept, text:async()=>'Biblioteca inválida', headers:{get:()=>null}};
+      return {ok:accept, status:accept?204:412, text:async()=>'Biblioteca inválida', headers:{get:name=>name==='ETag'?'"library-2"':null}};
     }
   };
-  vm.runInNewContext(page.slice(start,end),context);
+  vm.runInNewContext(page.slice(writeStart,writeEnd)+page.slice(start,end),context);
   const contents=JSON.stringify({...backup,backup_created_at:'2026-11-24'});
   await handler({target:{files:[{size:Buffer.byteLength(contents),text:async()=>contents}]}});
   assert.deepEqual(sent,backup);
   assert.deepEqual(JSON.parse(JSON.stringify(context.libraryState)),accept?backup:original);
   assert.equal(Boolean(warning),!accept);
+  assert.equal(context.libraryETag,accept?'"library-2"':'"library-1"');
   assert.equal(context.document.body.inert,false);
 }
 

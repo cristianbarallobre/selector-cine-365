@@ -31,11 +31,11 @@ class FakeElement {
  click(){this.events.click?.();this.onclick?.();}
 }
 const credits=new FakeElement();
-let actorID=0;
+let actorID=0,creditRole='';
 const ctx={
  $:id=>{assert.equal(id,'labDetailCast');return credits;},
  document:{createElement:tag=>new FakeElement(tag)},
- labOpenPerson:async id=>{actorID=id;},labHideActorPhoto:()=>{}
+ labOpenPerson:async (id,record,role)=>{actorID=id;creditRole=role;},labHideActorPhoto:()=>{}
 };
 vm.createContext(ctx);
 const render=js.slice(js.indexOf('function labRenderCredits(movie){'),js.indexOf('// Clasificaciones locales:',js.indexOf('function labRenderCredits(movie){')));
@@ -52,6 +52,11 @@ assert.equal(cards[0].children[0]['aria-label'],'Ver ficha de Actriz de prueba')
 cards[0].children[0].click();
 assert.equal(actorID,1234);
 assert.equal(cards[1].children[0].tagName,'strong','No abrir identidades dudosas sin ID');
+ctx.labRenderCredits({directors:[{id:500,name:'Directora',profile_path:'/directora.jpg'},{id:501,name:'Codirector'}]});
+assert.equal(credits.children[0].children.length,3);
+credits.children[0].children[1].click();
+assert.equal(actorID,500);
+assert.equal(creditRole,'director');
 
 const elements={};
 const get=id=>elements[id]??(elements[id]=new FakeElement());
@@ -76,7 +81,7 @@ const detailCtx={
 };
 vm.createContext(detailCtx);
 const open=js.slice(js.indexOf('// Clasificaciones locales:'),js.indexOf('async function labShowDetail(id,record=true){'));
-assert.ok(open.includes('async function labOpenPerson(id,record=true){'));
+assert.ok(open.includes("async function labOpenPerson(id,record=true,role=''){"));
 vm.runInContext(open,detailCtx);
 
 (async()=>{
@@ -107,6 +112,9 @@ vm.runInContext(open,detailCtx);
  assert.equal(get('labPersonFilms').children.length,2);
  assert.equal(get('labPersonFilmSort').value,'featured');
  assert.match(get('labPersonFilmsCount').textContent,/2 de 2/);
+ await detailCtx.labOpenPerson(1234,true,'director');
+ assert.equal(request,'/api/discover/person?id=1234&role=director');
+ assert.equal(get('labPersonFilmsTitle').textContent,'PELÍCULAS DIRIGIDAS');
  assert.ok(get('labPersonFilms').children[0].textContent==='');
  assert.equal(get('labPersonFilms').children[0].children[0].textContent,'Película A (2026)');
  assert.equal(get('labPersonLinks').children[0].href,'https://www.themoviedb.org/person/1234');

@@ -62,6 +62,7 @@ func TestLibraryAPIAuthenticatesAndWrites(t *testing.T) {
 	if w.Code != 200 || !strings.Contains(w.Body.String(), "Una") {
 		t.Fatalf("bad library response: %d %s", w.Code, w.Body.String())
 	}
+	etag := w.Header().Get("ETag")
 	state.Lists = append(state.Lists, filmCollection{ID: "lista2", Name: "Otra", Text: "☐ Tres (2022)"})
 	payload, err := json.Marshal(state)
 	if err != nil {
@@ -69,6 +70,7 @@ func TestLibraryAPIAuthenticatesAndWrites(t *testing.T) {
 	}
 	r = httptest.NewRequest(http.MethodPost, "/api/library", bytes.NewReader(payload))
 	r.Header.Set("X-Atlas-Token", "secret")
+	r.Header.Set("If-Match", etag)
 	w = httptest.NewRecorder()
 	a.serveHTTP(w, r)
 	if w.Code != 204 {

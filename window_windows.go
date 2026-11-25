@@ -96,9 +96,9 @@ type callbackObject struct {
 
 type nativeWindow struct {
 	hwnd                uintptr
-	environment         uintptr
-	controller          uintptr
-	webview             uintptr
+	environment         unsafe.Pointer
+	controller          unsafe.Pointer
+	webview             unsafe.Pointer
 	url                 string
 	profile             string
 	envCallback         callbackObject
@@ -157,19 +157,20 @@ var (
 func utf16Ptr(s string) *uint16    { return syscall.StringToUTF16Ptr(s) }
 func ptr(p unsafe.Pointer) uintptr { return uintptr(p) }
 func badHR(hr uintptr) bool        { return uint32(hr)&0x80000000 != 0 }
-func comMethod(obj uintptr, index uintptr) uintptr {
-	table := *(*uintptr)(unsafe.Pointer(obj))
-	return *(*uintptr)(unsafe.Pointer(table + index*unsafe.Sizeof(uintptr(0))))
+func comMethod(obj unsafe.Pointer, index uintptr) uintptr {
+	table := *(*unsafe.Pointer)(obj)
+	return *(*uintptr)(unsafe.Add(table, index*unsafe.Sizeof(uintptr(0))))
 }
-func invokeCOM(obj uintptr, index uintptr, args ...uintptr) uintptr {
+func invokeCOM(obj unsafe.Pointer, index uintptr, args ...uintptr) uintptr {
 	argv := make([]uintptr, 0, len(args)+1)
-	argv = append(argv, obj)
+	argv = append(argv, uintptr(obj))
 	argv = append(argv, args...)
 	result, _, _ := syscall.SyscallN(comMethod(obj, index), argv...)
+	runtime.KeepAlive(obj)
 	return result
 }
 func resizeNativeWebview(w *nativeWindow) {
-	if w == nil || w.controller == 0 || w.hwnd == 0 {
+	if w == nil || w.controller == nil || w.hwnd == 0 {
 		return
 	}
 	var rc winRect
@@ -183,12 +184,12 @@ func nativeWndProc(hwnd, msg, wparam, lparam uintptr) uintptr {
 		resizeNativeWebview(w)
 		return 0
 	case wmMove:
-		if w != nil && w.controller != 0 {
+		if w != nil && w.controller != nil {
 			invokeCOM(w.controller, 23)
 		}
 		return 0
 	case wmAppNavigate:
-		if w != nil && w.webview != 0 {
+		if w != nil && w.webview != nil {
 			logDiagnostic("WM_APP: iniciando Navigate, fuera del callback COM")
 			addr := utf16Ptr(w.url)
 			hr := invokeCOM(w.webview, 5, ptr(unsafe.Pointer(addr)))
@@ -201,12 +202,12 @@ func nativeWndProc(hwnd, msg, wparam, lparam uintptr) uintptr {
 		}
 		return 0
 	case wmSetFocus:
-		if w != nil && w.controller != 0 {
+		if w != nil && w.controller != nil {
 			invokeCOM(w.controller, 12, 0)
 		}
 		return 0
 	case wmClose:
-		if w != nil && w.ready && w.webview != 0 {
+		if w != nil && w.ready && w.webview != nil {
 			if w.closing {
 				return 0
 			}
@@ -237,20 +238,20 @@ func nativeWndProc(hwnd, msg, wparam, lparam uintptr) uintptr {
 		return 0
 	case wmDestroy:
 		if w != nil {
-			if w.controller != 0 {
+			if w.controller != nil {
 				invokeCOM(w.controller, 24) // Close
 			}
-			if w.webview != 0 {
+			if w.webview != nil {
 				invokeCOM(w.webview, 2) // Release AddRef
-				w.webview = 0
+				w.webview = nil
 			}
-			if w.controller != 0 {
+			if w.controller != nil {
 				invokeCOM(w.controller, 2) // Release AddRef
-				w.controller = 0
+				w.controller = nil
 			}
-			if w.environment != 0 {
+			if w.environment != nil {
 				invokeCOM(w.environment, 2)
-				w.environment = 0
+				w.environment = nil
 			}
 			w.hwnd = 0
 		}
@@ -260,41 +261,38 @@ func nativeWndProc(hwnd, msg, wparam, lparam uintptr) uintptr {
 	r, _, _ := procDefWindow.Call(hwnd, msg, wparam, lparam)
 	return r
 }
-func callbackQueryInterface(this, riid, out uintptr) uintptr {
-	if riid == 0 || out == 0 {
+func callbackQueryInterface(cb *callbackObject, riid *winGuid, out **callbackObject) uintptr {
+	if riid == nil || out == nil {
 		return eFail
 	}
-	cb := (*callbackObject)(unsafe.Pointer(this))
-	iid := *(*winGuid)(unsafe.Pointer(riid))
+	iid := *riid
 	if iid == iidIUnknown || (cb.Kind == 0 && iid == iidEnvironmentHandler) || (cb.Kind == 1 && iid == iidControllerHandler) ||
 		(cb.Kind == 2 && iid == iidNavStartHandler) ||
 		(cb.Kind == 3 && iid == iidNavDoneHandler) ||
 		(cb.Kind == 4 && iid == iidProcessFailHandler) ||
 		(cb.Kind == 5 && iid == iidWebMessageHandler) {
-		*(*uintptr)(unsafe.Pointer(out)) = this
+		*out = cb
 		atomic.AddInt32(&cb.RefCount, 1)
 		return sOK
 	}
-	*(*uintptr)(unsafe.Pointer(out)) = 0
+	*out = nil
 	return eNoInterface
 }
-func callbackAddRef(this uintptr) uintptr {
-	cb := (*callbackObject)(unsafe.Pointer(this))
+func callbackAddRef(cb *callbackObject) uintptr {
 	return uintptr(atomic.AddInt32(&cb.RefCount, 1))
 }
-func callbackRelease(this uintptr) uintptr {
-	cb := (*callbackObject)(unsafe.Pointer(this))
+func callbackRelease(cb *callbackObject) uintptr {
 	return uintptr(atomic.AddInt32(&cb.RefCount, -1))
 }
-func navigationStarting(this, sender, args uintptr) uintptr {
+func navigationStarting(_, _, _ unsafe.Pointer) uintptr {
 	if w := activeNativeWindow; w != nil {
 		w.ready = false
 	}
 	logDiagnostic("NavigationStarting: WebView2 ha iniciado navegación")
 	return sOK
 }
-func navigationCompleted(this, sender, args uintptr) uintptr {
-	if args == 0 {
+func navigationCompleted(_ unsafe.Pointer, sender, args unsafe.Pointer) uintptr {
+	if args == nil {
 		logDiagnostic("NavigationCompleted: sin argumentos")
 		return sOK
 	}
@@ -316,8 +314,8 @@ func navigationCompleted(this, sender, args uintptr) uintptr {
 	}
 	return sOK
 }
-func webviewString(object, method uintptr, maxLength int) string {
-	if object == 0 {
+func webviewString(object unsafe.Pointer, method uintptr, maxLength int) string {
+	if object == nil {
 		return ""
 	}
 	var value *uint16
@@ -332,9 +330,9 @@ func webviewString(object, method uintptr, maxLength int) string {
 	}
 	return ""
 }
-func webMessageReceived(this, sender, args uintptr) uintptr {
+func webMessageReceived(_ unsafe.Pointer, sender, args unsafe.Pointer) uintptr {
 	w := activeNativeWindow
-	if w == nil || !w.closing || args == 0 || sender != w.webview {
+	if w == nil || !w.closing || args == nil || sender != w.webview {
 		return sOK
 	}
 	if webviewString(args, 3, len(w.url)) != w.url {
@@ -350,9 +348,9 @@ func webMessageReceived(this, sender, args uintptr) uintptr {
 	}
 	return sOK
 }
-func processFailed(this, sender, args uintptr) uintptr {
+func processFailed(_, _, args unsafe.Pointer) uintptr {
 	var kind int32
-	if args != 0 {
+	if args != nil {
 		if hr := invokeCOM(args, 3, ptr(unsafe.Pointer(&kind))); badHR(hr) {
 			logDiagnostic(fmt.Sprintf("ProcessFailed: get_ProcessFailedKind 0x%08X", uint32(hr)))
 		}
@@ -360,12 +358,12 @@ func processFailed(this, sender, args uintptr) uintptr {
 	logDiagnostic(fmt.Sprintf("ProcessFailed: kind=%d", kind))
 	return sOK
 }
-func environmentReady(this, hresult, env uintptr) uintptr {
+func environmentReady(_ unsafe.Pointer, hresult uintptr, env unsafe.Pointer) uintptr {
 	w := activeNativeWindow
 	if w == nil || w.hwnd == 0 {
 		return sOK
 	}
-	if badHR(hresult) || env == 0 {
+	if badHR(hresult) || env == nil {
 		logDiagnostic(fmt.Sprintf("Environment failed: 0x%08X", uint32(hresult)))
 		w.failure = fmt.Errorf("WebView2 no pudo arrancar (HRESULT 0x%08X). Comprueba que Microsoft Edge WebView2 Runtime esté instalado", uint32(hresult))
 		procDestroyWindow.Call(w.hwnd)
@@ -383,12 +381,12 @@ func environmentReady(this, hresult, env uintptr) uintptr {
 	}
 	return sOK
 }
-func controllerReady(this, hresult, controller uintptr) uintptr {
+func controllerReady(_ unsafe.Pointer, hresult uintptr, controller unsafe.Pointer) uintptr {
 	w := activeNativeWindow
 	if w == nil || w.hwnd == 0 {
 		return sOK
 	}
-	if badHR(hresult) || controller == 0 {
+	if badHR(hresult) || controller == nil {
 		logDiagnostic(fmt.Sprintf("Controller failed: 0x%08X", uint32(hresult)))
 		w.failure = fmt.Errorf("WebView2 no pudo crear la ventana (0x%08X)", uint32(hresult))
 		procDestroyWindow.Call(w.hwnd)
@@ -399,9 +397,9 @@ func controllerReady(this, hresult, controller uintptr) uintptr {
 	w.controller = controller
 	resizeNativeWebview(w)
 	invokeCOM(controller, 4, 1) // mostrar WebView2
-	var webview uintptr
+	var webview unsafe.Pointer
 	hr := invokeCOM(controller, 25, ptr(unsafe.Pointer(&webview)))
-	if badHR(hr) || webview == 0 {
+	if badHR(hr) || webview == nil {
 		w.failure = fmt.Errorf("Error al iniciar la vista WebView2: 0x%08X", uint32(hr))
 		procDestroyWindow.Call(w.hwnd)
 		return sOK

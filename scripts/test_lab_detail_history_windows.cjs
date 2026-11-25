@@ -10,7 +10,7 @@ assert.match(html,/id="labDetailBack"[^>]*hidden/,'La primera película no muest
 assert.match(html,/id="labPersonBack"/,'Los intérpretes tienen Atrás');
 assert.match(html,/id="labPersonClose" aria-label="Cerrar todas las fichas"/,'La X del intérprete cierra todo');
 assert.match(js,/labEnterDetail\('movie',id,record\)/,'Cada película registra su visita');
-assert.match(js,/labEnterDetail\('person',id,record\)/,'Cada intérprete registra su visita');
+assert.match(js,/labEnterDetail\('person',id,record,role\)/,'Cada persona registra el tipo de filmografía');
 assert.match(js,/labDetailOverlay\.scrollTop=labDetailCurrent\(\)\?\.kind==='movie'/,'Restaurar scroll de película');
 assert.match(js,/labPersonOverlay\.scrollTop=labDetailCurrent\(\)\?\.kind==='person'/,'Restaurar scroll de intérprete');
 new vm.Script('(()=>{\n'+js+'\n})();');
@@ -38,8 +38,9 @@ ctx.labShowDetail=(id,record=true)=>{
  ctx.labEnterDetail('movie',id,record);
  ctx.labHidePerson();overlay.hidden=false;
 };
-ctx.labOpenPerson=(id,record=true)=>{
- ctx.labEnterDetail('person',id,record);person.hidden=false;
+let currentRole='';
+ctx.labOpenPerson=(id,record=true,role='')=>{
+ currentRole=role;ctx.labEnterDetail('person',id,record,role);person.hidden=false;
 };
 vm.createContext(ctx);
 vm.runInContext(js.slice(start,end),ctx);
@@ -57,12 +58,13 @@ openMovie(102);
 assert.equal(person.hidden,true);
 assert.deepEqual(trail(),['movie:101','person:201','movie:102']);
 overlay.scrollTop=130;
-openPerson(202);
+openPerson(202,true,'director');
 openMovie(103);
 assert.deepEqual(trail(),['movie:101','person:201','movie:102','person:202','movie:103']);
 buttons.labDetailBack.click();
 assert.deepEqual(trail(),['movie:101','person:201','movie:102','person:202']);
 assert.equal(person.hidden,false);
+assert.equal(currentRole,'director','Atrás conserva la filmografía de dirección');
 buttons.labPersonBack.click();
 assert.deepEqual(trail(),['movie:101','person:201','movie:102']);
 buttons.labDetailBack.click();

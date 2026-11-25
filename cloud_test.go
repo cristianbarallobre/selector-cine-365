@@ -117,6 +117,9 @@ func TestCloudAPIAndLocalSave(t *testing.T) {
 	a := &runningApp{libraryPath: filepath.Join(root, "colecciones.json"), savePath: filepath.Join(root, "mis_365_peliculas.txt"), library: state, cloud: newCloudBackups(root), token: "demo"}
 	request := func(path, method, body string, auth bool) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(method, path, strings.NewReader(body))
+		if path == "/api/library" && method == "POST" {
+			req.Header.Set("If-Match", a.libraryETag())
+		}
 		if auth {
 			req.Header.Set("X-Atlas-Token", "demo")
 		}

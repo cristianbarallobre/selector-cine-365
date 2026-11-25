@@ -23,7 +23,7 @@ assert.match(windows,/\/\/go:build windows/);
 assert.doesNotMatch(injector,/if !appIsLab/,'También disponible en Windows estable');
 assert.doesNotMatch(windows,/if !appIsLab/,'También disponible en Windows estable');
 assert.match(main,/out = injectLabSmartSort\(out\)/);
-assert.match(main,/a\.serveLabSmartCache\(w,r\)/);
+assert.match(main,/a\.serveLabSmartCache\(w,\s*r\)/);
 assert.match(discover,/LAB-02\.15 WINDOWS/);
 assert.match(windows,/!a\.auth\(r\)/,'La caché de metadatos requiere token');
 assert.match(windows,/c\.mu\.Lock\(\)/,'Caché local protegida');

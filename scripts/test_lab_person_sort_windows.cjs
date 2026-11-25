@@ -33,7 +33,7 @@ const ctx={
 };
 vm.createContext(ctx);
 const start=js.indexOf('let labPersonMovies=[];');
-const end=js.indexOf('async function labOpenPerson(id,record=true){',start);
+const end=js.indexOf('async function labOpenPerson(',start);
 assert.ok(start>0&&end>start);
 vm.runInContext(js.slice(start,end),ctx);
 const movies=[

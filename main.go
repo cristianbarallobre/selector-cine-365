@@ -48,14 +48,20 @@ func getSavePath() string {
 // Las cachés desechables de Windows LAB se guardan en LocalAppData;
 // los TXT, las listas, la nube y las identificaciones permanecen en Roaming.
 func appCacheRoot(dataDir string) string {
- if runtime.GOOS == "darwin" {
-  if root,err:=os.UserCacheDir();err==nil && root!="" {return filepath.Join(root,appDataDirectoryName)}
-  return dataDir
- }
- if !appIsLab || runtime.GOOS!="windows"{return dataDir}
- root,err:=os.UserCacheDir()
- if err!=nil||root=="" {return dataDir} // no bloquear la aplicación por un error de entorno
- return filepath.Join(root,appDataDirectoryName,"cache_lab")
+	if runtime.GOOS == "darwin" {
+		if root, err := os.UserCacheDir(); err == nil && root != "" {
+			return filepath.Join(root, appDataDirectoryName)
+		}
+		return dataDir
+	}
+	if !appIsLab || runtime.GOOS != "windows" {
+		return dataDir
+	}
+	root, err := os.UserCacheDir()
+	if err != nil || root == "" {
+		return dataDir
+	} // no bloquear la aplicación por un error de entorno
+	return filepath.Join(root, appDataDirectoryName, "cache_lab")
 }
 
 const desktopFeatures = runtime.GOOS == "windows" || runtime.GOOS == "darwin"
@@ -92,58 +98,59 @@ func makeHTML(initial, token string) (string, error) {
 	out = injectLabLibraryFilters(out)
 	out = injectLabReactions(out)
 	out = injectLabSearchPerformance(out)
- out = injectLabMaintenance(out)
+	out = injectLabMaintenance(out)
 	if desktopFeatures && !appIsLab {
-        out = strings.NewReplacer(
-            "<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.9</title>",
-            "🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.9",
-            ` <span class="lab-nav-tag">LAB</span>`, "",
-            `<span class="lab-smart-caption">LAB</span>`, "",
-            "SELECTOR CINE 365 · LAB WINDOWS", "SELECTOR CINE 365",
-            "SELECTOR CINE 365 · LAB</p>", "SELECTOR CINE 365</p>",
-            "Mantenimiento de Windows LAB", "Mantenimiento",
-        ).Replace(out)
-    }
-    if runtime.GOOS == "darwin" {
-        out = strings.NewReplacer(
-            "WebView2 administra su propia caché y no se elimina mientras la aplicación está abierta.", "WebKit gestiona los datos temporales de esta ventana.",
-            "entre Windows y Android", "entre Mac, Windows y Android",
-            "En Windows la autorización se guarda cifrada para este usuario", "En el Mac la autorización se guarda en tu llavero",
-            "actualizar el EXE", "actualizar la aplicación",
-            "desde Windows", "desde el llavero del Mac",
-            "guardada cifrada en Windows", "guardada en el llavero del Mac",
-            "En Windows se recordará", "En el Mac se recordará",
-            "instalada en Windows", "instalada en el Mac",
-            "dos versiones de Windows", "dos versiones de la aplicación",
-            "este PC", "este Mac",
-        ).Replace(out)
-    }
-    return strings.ReplaceAll(out, "__ATLAS_LISTA_INICIAL__", html.EscapeString(initial)), nil
+		out = strings.NewReplacer(
+			"<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.10</title>",
+			"🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.10",
+			` <span class="lab-nav-tag">LAB</span>`, "",
+			`<span class="lab-smart-caption">LAB</span>`, "",
+			"SELECTOR CINE 365 · LAB WINDOWS", "SELECTOR CINE 365",
+			"SELECTOR CINE 365 · LAB</p>", "SELECTOR CINE 365</p>",
+			"Mantenimiento de Windows LAB", "Mantenimiento",
+		).Replace(out)
+	}
+	if runtime.GOOS == "darwin" {
+		out = strings.NewReplacer(
+			"WebView2 administra su propia caché y no se elimina mientras la aplicación está abierta.", "WebKit gestiona los datos temporales de esta ventana.",
+			"entre Windows y Android", "entre Mac, Windows y Android",
+			"En Windows la autorización se guarda cifrada para este usuario", "En el Mac la autorización se guarda en tu llavero",
+			"actualizar el EXE", "actualizar la aplicación",
+			"desde Windows", "desde el llavero del Mac",
+			"guardada cifrada en Windows", "guardada en el llavero del Mac",
+			"En Windows se recordará", "En el Mac se recordará",
+			"instalada en Windows", "instalada en el Mac",
+			"dos versiones de Windows", "dos versiones de la aplicación",
+			"este PC", "este Mac",
+		).Replace(out)
+	}
+	return strings.ReplaceAll(out, "__ATLAS_LISTA_INICIAL__", html.EscapeString(initial)), nil
 }
 
 type runningApp struct {
-	mu            sync.Mutex
-	savePath      string
-	libraryPath   string
-	library       libraryState
- libraryRecovered bool
-	platforms     *availabilityServer
-	cloud         *cloudBackups
-	graph         *desktopGraph
-	graphUploadCh chan struct{}
-	syncStore     *desktopSyncStore
-	syncPreviewToken string
-	libraryRevision uint64 // protected by mu
-	syncPlanMu sync.Mutex // remote reads do not take the library mutex
-    syncLastCheck atomic.Int64
-    syncLastReceived atomic.Int64
-    syncPendingConflict atomic.Bool
-	html          []byte
-	token         string
-	lastActivity  atomic.Int64
-	pageHeartbeat atomic.Bool
-	stopCh        chan struct{}
-	stopOnce      sync.Once
+	mu                  sync.Mutex
+	savePath            string
+	libraryPath         string
+	library             libraryState
+	libraryRecovered    bool
+	platforms           *availabilityServer
+	cloud               *cloudBackups
+	graph               *desktopGraph
+	graphUploadCh       chan struct{}
+	syncStore           *desktopSyncStore
+	syncPreviewToken    string
+	libraryRevision     uint64     // protected by mu
+	syncPlanMu          sync.Mutex // remote reads do not take the library mutex
+	folderPublishMu     sync.Mutex
+	syncLastCheck       atomic.Int64
+	syncLastReceived    atomic.Int64
+	syncPendingConflict atomic.Bool
+	html                []byte
+	token               string
+	lastActivity        atomic.Int64
+	pageHeartbeat       atomic.Bool
+	stopCh              chan struct{}
+	stopOnce            sync.Once
 }
 
 func (a *runningApp) touch() { a.lastActivity.Store(time.Now().Unix()) }
@@ -153,8 +160,9 @@ func (a *runningApp) auth(r *http.Request) bool {
 }
 func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	a.touch()
-	if r.URL.Path=="/" && r.Method==http.MethodGet && (r.URL.Query().Has("code")||r.URL.Query().Has("error")) {
-		a.serveGraphCallback(w,r);return
+	if r.URL.Path == "/" && r.Method == http.MethodGet && (r.URL.Query().Has("code") || r.URL.Query().Has("error")) {
+		a.serveGraphCallback(w, r)
+		return
 	}
 	if r.URL.Path == "/" || r.URL.Path == "/api/ping" {
 		traceHTTP(r.URL.Path, r.UserAgent())
@@ -202,17 +210,17 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/api/library":
 		a.serveLibraryHTTP(w, r)
 	case "/api/sync/history", "/api/sync/revisions", "/api/sync/recovery/list", "/api/sync/recovery/preview", "/api/sync/recovery/restore":
-		a.serveSyncSupport(w,r)
+		a.serveSyncSupport(w, r)
 	case "/api/cloud/status", "/api/cloud/config", "/api/cloud/backup", "/api/cloud/browse", "/api/cloud/preview", "/api/cloud/sync", "/api/cloud/auto", "/api/cloud/auto-folder", "/api/cloud/mode":
 		a.serveCloudHTTP(w, r)
 	case "/api/onedrive-desktop/status", "/api/onedrive-desktop/start", "/api/onedrive-desktop/disconnect":
-        a.serveGraphAuthHTTP(w,r)
+		a.serveGraphAuthHTTP(w, r)
 	case "/api/lab/maintenance":
-  a.serveLabMaintenance(w,r)
+		a.serveLabMaintenance(w, r)
 	case "/api/lab/network-log":
-		a.serveLabNetworkLog(w,r)
+		a.serveLabNetworkLog(w, r)
 	case "/api/discover/smart-cache":
-		a.serveLabSmartCache(w,r)
+		a.serveLabSmartCache(w, r)
 	case "/api/discover/list", "/api/discover/search", "/api/discover/detail", "/api/discover/person", "/api/discover/resolve", "/api/discover/poster", "/api/discover/prefetch", "/api/discover/prefetch/pause":
 		a.serveLabDiscovery(w, r)
 	case "/api/poster":
@@ -290,6 +298,11 @@ func serve() error {
 		return err
 	}
 	savePath := getSavePath()
+	unlock, err := lockProfile(filepath.Dir(savePath))
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	state, err := getInitialState(savePath)
 	if err != nil {
 		return err
@@ -299,29 +312,35 @@ func serve() error {
 		return err
 	}
 	libPath := filepath.Join(filepath.Dir(savePath), "colecciones.json")
-	lib := loadLibrary(libPath, state)
- recovered:=false
- if protectedLibraryEnabled {
-  var recoveryErr error
-  lib,recovered,recoveryErr=labLoadLibraryProtected(libPath,state)
-  if recoveryErr!=nil{return recoveryErr}
-  if recovered {logDiagnostic("Biblioteca recuperada de copia local válida; original dañado conservado en cuarentena")}
- }
+	var lib libraryState
+	recovered := false
+	if protectedLibraryEnabled {
+		var recoveryErr error
+		lib, recovered, recoveryErr = labLoadLibraryProtected(libPath, state)
+		if recoveryErr != nil {
+			return recoveryErr
+		}
+		if recovered {
+			logDiagnostic("Biblioteca recuperada de copia local válida; original dañado conservado en cuarentena")
+		}
+	} else {
+		lib = loadLibrary(libPath, state)
+	}
 	syncStore, syncErr := newDesktopSyncStore(filepath.Dir(savePath))
- if syncErr!=nil {
-  // Un fallo en el estado de sincronización no debe impedir usar datos locales.
-  logDiagnostic("Sincronización no disponible: "+syncErr.Error())
- }
- app := &runningApp{libraryRecovered:recovered,html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath),appCacheRoot(filepath.Dir(savePath))), cloud: newCloudBackups(filepath.Dir(savePath)), graph:newDesktopGraph(filepath.Dir(savePath)), graphUploadCh:make(chan struct{},1), syncStore:syncStore, token: token, stopCh: make(chan struct{})}
- defer func(){app.stop();app.flushLabCatalog()}()
+	if syncErr != nil {
+		// Un fallo en el estado de sincronización no debe impedir usar datos locales.
+		logDiagnostic("Sincronización no disponible: " + syncErr.Error())
+	}
+	app := &runningApp{libraryRecovered: recovered, html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath), appCacheRoot(filepath.Dir(savePath))), cloud: newCloudBackups(filepath.Dir(savePath)), graph: newDesktopGraph(filepath.Dir(savePath)), graphUploadCh: make(chan struct{}, 1), syncStore: syncStore, token: token, stopCh: make(chan struct{})}
+	defer func() { app.stop(); app.flushLabCatalog(); app.platforms.flushProviderCache() }()
 	app.touch()
 	go app.graphPublisher()
 	listener, err := net.Listen("tcp4", "127.0.0.1:0")
 	if err != nil {
 		return fmt.Errorf("no se ha podido iniciar la aplicación local: %w", err)
 	}
-	_,port,_:=net.SplitHostPort(listener.Addr().String())
-	app.graph.setRedirect("http://localhost:"+port+"/")
+	_, port, _ := net.SplitHostPort(listener.Addr().String())
+	app.graph.setRedirect("http://localhost:" + port + "/")
 	server := &http.Server{Handler: http.HandlerFunc(app.serveHTTP), ReadHeaderTimeout: 6 * time.Second}
 	go func() { _ = server.Serve(listener) }()
 	url := "http://" + listener.Addr().String() + "/"
@@ -352,15 +371,15 @@ func serve() error {
 // deadline is not an application error and must not open a native Windows
 // 'context deadline exceeded' dialog after the library was already saved.
 func closeLocalServer(server *http.Server) error {
- ctx,cancel:=context.WithTimeout(context.Background(),3*time.Second)
- defer cancel()
- err:=server.Shutdown(ctx)
- if errors.Is(err,context.DeadlineExceeded) {
-  logDiagnostic("Cierre del servidor local: operación pendiente excedió el tiempo; se cierra la conexión sin mostrar error de aplicación")
-  _=server.Close()
-  return nil
- }
- return err
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	err := server.Shutdown(ctx)
+	if errors.Is(err, context.DeadlineExceeded) {
+		logDiagnostic("Cierre del servidor local: operación pendiente excedió el tiempo; se cierra la conexión sin mostrar error de aplicación")
+		_ = server.Close()
+		return nil
+	}
+	return err
 }
 
 func main() {

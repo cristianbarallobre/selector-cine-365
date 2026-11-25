@@ -15,11 +15,11 @@ assert.match(html,/id="labActorPhotoTooltip" role="tooltip" hidden/);
 assert.match(html,/#labActorPhotoTooltip\{position:fixed;z-index:150/,'Evitar que la ventana recorte la foto');
 assert.match(html,/#labActorPhotoTooltip\[hidden\]\{display:none!important\}/);
 assert.match(html,/@media\(hover:none\)/,'No mostrar tooltips en dispositivos táctiles');
-assert.match(js,/actor\.addEventListener\('mouseenter',/);
-assert.match(js,/actor\.addEventListener\('mouseleave',labHideActorPhoto\)/);
-assert.match(js,/actor\.addEventListener\('focus',/);
-assert.match(js,/actor\.addEventListener\('blur',labHideActorPhoto\)/);
-assert.match(js,/actor\.addEventListener\('click',\(\)=>\{labHideActorPhoto\(\);void labOpenPerson\(personID\);\}\)/);
+assert.match(js,/link\.addEventListener\('mouseenter',/);
+assert.match(js,/link\.addEventListener\('mouseleave',labHideActorPhoto\)/);
+assert.match(js,/link\.addEventListener\('focus',/);
+assert.match(js,/link\.addEventListener\('blur',labHideActorPhoto\)/);
+assert.match(js,/link\.addEventListener\('click',\(\)=>\{labHideActorPhoto\(\);void labOpenPerson\(personID,true,role\);\}\)/);
 
 class FakeElement {
  constructor(tag){this.tagName=tag;this.children=[];this.hidden=true;this.className='';this.textContent='';this.isConnected=true;this.events={};this.style={};}
@@ -93,4 +93,13 @@ assert.equal(timers.size,1);
 overlay.hidden=true;
 for(const run of timers.values())run();timers.clear();
 assert.equal(tooltip.hidden,true,'Si la ficha se cierra mientras carga, no mostrar el retrato');
+overlay.hidden=false;
+ctx.labRenderCredits({directors:[{id:17,name:'Directora de prueba',profile_path:'/portrait_d.jpg'}]});
+const direction=credits.children[0].children[1];
+direction.events.mouseenter();
+for(const run of timers.values())run();timers.clear();
+assert.equal(tooltip.hidden,false);
+assert.match(tooltip.children[0].src,/portrait_d\.jpg/);
+direction.events.blur();
+assert.equal(tooltip.hidden,true);
 console.log('OK: retratos al hover/foco, carga diferida, sin descargas de golpe, sin fotos falsas ni ventanas cortadas');

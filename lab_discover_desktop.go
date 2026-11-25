@@ -37,7 +37,7 @@ func injectLabDiscovery(page string) string {
  page = strings.Replace(page, "b.append(togg,pill,fix,link);frag.appendChild(b);", "b.append(togg,pill,labCreateDetailButton(f),fix);frag.appendChild(b);", 1)
  page = strings.Replace(page, `<input type="search" id="search"`, `<div class="lab-prefetch-banner" id="labPrefetchBanner" role="status" aria-live="polite"><span id="labPrefetchText">Fichas TMDB: comprobando caché…</span><button type="button" id="labPrefetchPause" hidden>Pausar</button></div><input type="search" id="search"`, 1)
  // La precarga se inicia tras cargar biblioteca e identificaciones TMDB, y se actualiza al editar listas.
- page = strings.Replace(page, "void cloudAutoReceive(true);});", "void cloudAutoReceive(true);labQueuePrefetchSoon();});", 1)
+ page = strings.Replace(page, "/* CINE_DESKTOP_READY */", "labQueuePrefetchSoon();", 1)
  page = strings.Replace(page, "function scheduleSave(){membershipCache=null;", "function scheduleSave(){labQueuePrefetchSoon();membershipCache=null;", 1)
  page = strings.Replace(page, "function showView(name){if(", "function showView(name){labLeave();if(name==='library')labQueuePrefetchSoon();if(", 1)
  // La confirmación nativa confirm() revela 127.0.0.1 y el puerto local.
@@ -221,7 +221,7 @@ func (a *runningApp) labDiscoveryPoster(w http.ResponseWriter,r *http.Request) {
 }
 
   
-// Fichas de intérpretes de TMDB: se sirven desde el backend LAB, nunca con la API key en el navegador.
+// Las fichas de personas se sirven desde el backend, sin exponer la clave de TMDB.
 type labPersonFilm struct {
  ID int `json:"id"`
  Title string `json:"title"`
@@ -231,14 +231,17 @@ type labPersonFilm struct {
  VoteAverage float64 `json:"vote_average"`
  VoteCount int `json:"vote_count"`
  CastOrder int `json:"order"`
+ Job string `json:"job,omitempty"`
 }
 func (a *runningApp) labPersonDetail(w http.ResponseWriter,r *http.Request) {
  w.Header().Set("Content-Type","application/json; charset=utf-8")
  fail:=func(code int,msg string){w.WriteHeader(code);_ =json.NewEncoder(w).Encode(map[string]string{"error":msg})}
  id,err:=strconv.Atoi(r.URL.Query().Get("id"))
  if err!=nil||id<=0||id>999999999{fail(400,"ID de persona no válido");return}
+ role:=r.URL.Query().Get("role")
+ if role!=""&&role!="director"{fail(400,"Tipo de filmografía no válido");return}
  key:=a.platforms.getKey()
- if key==""{fail(412,"Conecta TMDB para consultar intérpretes.");return}
+ if key==""{fail(412,"Conecta TMDB para consultar fichas de personas.");return}
  ctx,cancel:=context.WithTimeout(r.Context(),22*time.Second);defer cancel()
  var p struct {
   ID int `json:"id"`
@@ -249,7 +252,7 @@ func (a *runningApp) labPersonDetail(w http.ResponseWriter,r *http.Request) {
   PlaceOfBirth string `json:"place_of_birth"`
   KnownFor string `json:"known_for_department"`
   ProfilePath string `json:"profile_path"`
-  Credits struct{Cast []labPersonFilm `json:"cast"`} `json:"movie_credits"`
+  Credits struct{Cast []labPersonFilm `json:"cast"`;Crew []labPersonFilm `json:"crew"`} `json:"movie_credits"`
  }
  params:=url.Values{"language":{"es-ES"},"append_to_response":{"movie_credits"}}
  if err:=requestTMDB(ctx,"/person/"+strconv.Itoa(id),params,key,&p);err!=nil{fail(502,err.Error());return}
@@ -273,9 +276,12 @@ func (a *runningApp) labPersonDetail(w http.ResponseWriter,r *http.Request) {
   }
  }
  limit:=func(s string,n int)string{v:=[]rune(strings.TrimSpace(s));if len(v)>n{v=v[:n]};return string(v)}
- films:=make([]labPersonFilm,0,len(p.Credits.Cast))
+ credits:=p.Credits.Cast
+ if role=="director"{credits=p.Credits.Crew}
+ films:=make([]labPersonFilm,0,len(credits))
  seen:=map[int]bool{}
- for _,film:=range p.Credits.Cast {
+ for _,film:=range credits {
+  if role=="director"&&film.Job!="Director"{continue}
   if film.ID<=0||film.ID>999999999||seen[film.ID]||strings.TrimSpace(film.Title)==""{continue}
   seen[film.ID]=true
   film.Title=limit(film.Title,180)

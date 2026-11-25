@@ -2,7 +2,7 @@
 (() => {
   const el=id=>document.getElementById(id);
   const check=(value,message)=>{if(!value)throw Error(message)};
-  check(document.title.endsWith('9.2.9'),'Versión incorrecta');
+  check(document.title.endsWith('9.2.10'),'Versión incorrecta');
   check(typeof window.cinePrepareClose==='function','Falta el guardado previo al cierre');
   for(const id of ['labDiscoverNav','labFilterOpen','labSmartEnabled','labMaintenanceRefresh','labFavoritesCollection']){
     check(el(id),'Falta '+id);

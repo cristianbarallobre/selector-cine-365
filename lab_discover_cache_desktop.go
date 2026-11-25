@@ -217,7 +217,16 @@ func labFreshDetail(ctx context.Context,id int,key string,prior labDetailRecord)
   if d.ID!=id||d.Title==""{return prior,errors.New("TMDB no devolvió una película válida")}
   d.labMovie=safeLabMovie(d.labMovie)
   director:=""
-  for _,p:=range d.Credits.Crew {if p.Job=="Director"&&p.Name!="" {if director!=""{director+=" / "};director+=p.Name;if len(director)>220{break}}}
+  directors:=make([]labPerson,0)
+  knownDirectors:=make(map[int]bool)
+  for _,p:=range d.Credits.Crew {
+   if p.Job!="Director"||p.Name==""||(p.ID>0&&knownDirectors[p.ID]){continue}
+   if p.ID>0{knownDirectors[p.ID]=true}
+   if !validPosterPath(p.ProfilePath){p.ProfilePath=""}
+   directors=append(directors,p)
+   if director!=""{director+=" / "}
+   director+=p.Name
+  }
   cast:=make([]map[string]any,0,10)
   for _,p:=range d.Credits.Cast {
    if len(cast)>=10{break}
@@ -237,7 +246,7 @@ func labFreshDetail(ctx context.Context,id int,key string,prior labDetailRecord)
   rec.Data["release_date"]=d.ReleaseDate;rec.Data["overview"]=d.Overview
   rec.Data["poster_path"]=d.PosterPath;rec.Data["vote_average"]=d.VoteAverage
   rec.Data["vote_count"]=d.VoteCount;rec.Data["runtime"]=d.Runtime
-  rec.Data["genres"]=genres;rec.Data["director"]=director;rec.Data["cast"]=cast
+  rec.Data["genres"]=genres;rec.Data["director"]=director;rec.Data["directors"]=directors;rec.Data["cast"]=cast
   rec.Data["trailer"]=trailer;rec.Data["tmdb_url"]=fmt.Sprintf("https://www.themoviedb.org/movie/%d",id)
   rec.MetaAt=now;rec.ExtraAt=now
  } else if labExpired(prior.ExtraAt,labExtraTTL) {
@@ -420,7 +429,8 @@ func (a *runningApp) labDetailFromCache(w http.ResponseWriter,r *http.Request) {
  if err!=nil||id<=0||id>999999999{http.Error(w,"ID de película no válido",400);return}
  c:=a.labCatalog()
  if prior,ok:=c.record(id);ok{
-  if labCastWithoutIDs(prior.Data){
+  legacyDirector,_:=prior.Data["director"].(string)
+  if labCastWithoutIDs(prior.Data)||(legacyDirector!=""&&prior.Data["directors"]==nil){
    if key:=a.platforms.getKey();key!=""{
     ctx,cancel:=context.WithTimeout(r.Context(),22*time.Second)
     stale:=prior;stale.MetaAt=0
