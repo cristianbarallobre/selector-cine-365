@@ -1,0 +1,30 @@
+name: Revisar manuales de escritorio
+on:
+  push:
+    branches: [docs/render-9.2.15]
+permissions:
+  contents: write
+jobs:
+  manuales:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libreoffice-writer fonts-crosextra-carlito poppler-utils
+      - name: Convertir Word a PDF y comprobar el contenido
+        run: |
+          set -euo pipefail
+          for name in MANUAL_COMPLETO_SELECTOR_CINE_365 GUIA_SINCRONIZACION_SEGURA GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365; do
+            libreoffice -env:UserInstallation="file://$RUNNER_TEMP/lo-$name" --headless --convert-to pdf --outdir "$RUNNER_TEMP" "docs/$name.docx"
+            test -s "$RUNNER_TEMP/$name.pdf"
+            pdftotext "$RUNNER_TEMP/$name.pdf" "$RUNNER_TEMP/$name.txt"
+            grep -q '9.2.15' "$RUNNER_TEMP/$name.txt"
+            tr '\n' ' ' < "$RUNNER_TEMP/$name.txt" | grep -q 'Sincronizar con la nube'
+            cp "$RUNNER_TEMP/$name.pdf" "docs/$name.pdf"
+            git add "docs/$name.pdf"
+          done
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'docs: renderizar PDF de la versión 9.2.15'
+          git push origin HEAD:refs/heads/docs/render-9.2.15

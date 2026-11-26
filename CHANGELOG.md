@@ -1,5 +1,14 @@
 # Historial de cambios — Selector Cine 365
 
+## 9.2.15 de escritorio
+
+- Sincronización manual con OneDrive en Windows y macOS. El botón de la cabecera muestra subida y recepción pendientes cuando hay una cuenta Microsoft conectada.
+- La ventana de sincronización bloquea la edición mientras se aplican los cambios. El guardado local sigue siendo automático.
+- Se reaplican las retiradas de películas compatibles con una revisión concurrente y se actualizan los números de lista al recargar.
+- Los avisos de guardado explican qué hacer. Las copias anteriores se consultan en Mantenimiento.
+
+[Publicación 9.2.15](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.15-desktop) · [Guía de sincronización](docs/GUIA_SINCRONIZACION_SEGURA.md)
+
 ## 9.2.7 de escritorio
 
 - Windows y macOS incorporan las correcciones de escritorio de la serie 9.2.
