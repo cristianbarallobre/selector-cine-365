@@ -1,0 +1,127 @@
+name: Archivar releases redundantes de escritorio y betas v9
+on:
+  push:
+    branches: [maintenance/archive-releases-2026-11-27]
+permissions:
+  contents: write
+concurrency:
+  group: selector-cine-archive-releases
+  cancel-in-progress: false
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      ARCHIVE_TAG: archivo-releases-redundantes-2026-11-27
+      ARCHIVE_FILE: Selector_Cine_365_Releases_Archivadas_2026-11-27.zip
+    steps:
+      - name: Exigir versiones vigentes y respaldar las publicaciones autorizadas
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import datetime, hashlib, json, os, pathlib, subprocess, zipfile
+          repo=os.environ['GH_REPO']
+          archive=os.environ['ARCHIVE_FILE']
+          expected={
+              'v9.2.7-desktop':458286938, 'v9.2.8-desktop':458327197,
+              'v9.2.9-desktop':458585525, 'v9.2.10-desktop':459268701,
+              'v9.2.11-desktop':459280150, 'v9.2.12-desktop':459298172,
+              'v9.2.13-desktop':459339170, 'v9.2.14-desktop':459421996,
+              'v9.2.15-desktop':459424529, 'v9.2.16-desktop':459449727,
+              'v9.2.17-desktop':459788565, 'v9.1.0-windows':457210677,
+              'v9.0.0-beta.14':453835987, 'v9.0.0-beta.13.3':453322799,
+              'v9.0.0-beta.13.1':453258078, 'v9.0.0-beta.9':453086810,
+          }
+          keep=['v9.2.19-desktop','v9.2.18-desktop','v9.2.0-desktop','v9.2.5-android','v9.0.0','v8.2']
+          def api(path):
+              return json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/{path}'],text=True))
+          def digest(file):
+              with open(file,'rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
+          assert api('releases/latest')['tag_name']=='v9.2.19-desktop', 'Latest cambió'
+          for tag in keep:
+              release=api(f'releases/tags/{tag}')
+              assert not release['draft'] and release['assets'],tag
+          root=pathlib.Path('respaldo')
+          root.mkdir()
+          manifest={'created_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'retained_public_releases':keep,'releases':[]}
+          for tag,release_id in expected.items():
+              source=api(f'releases/tags/{tag}')
+              assert source['id']==release_id and not source['draft'] and source['assets'],tag
+              ref=api(f'git/ref/tags/{tag}')
+              assert ref['ref']==f'refs/tags/{tag}'
+              folder=root/tag
+              folder.mkdir()
+              subprocess.run(['gh','release','download',tag,'--dir',str(folder),'--pattern','*'],check=True)
+              assets={a['name']:a for a in source['assets']}
+              assert {f.name for f in folder.iterdir()}==set(assets),f'Activos incompletos: {tag}'
+              records=[]
+              for name,a in assets.items():
+                  file=folder/name
+                  assert file.stat().st_size==a['size'] and a['size']>0,file
+                  sha=digest(file)
+                  if a.get('digest'):assert a['digest']=='sha256:'+sha,file
+                  records.append({'name':name,'size':a['size'],'sha256':sha,'downloads_before_archiving':a['download_count']})
+              manifest['releases'].append({'tag':tag,'release_id':release_id,'tag_object':ref['object'],'target':source['target_commitish'],'published_at':source['published_at'],'title':source['name'],'body':source['body'],'prerelease':source['prerelease'],'assets':records})
+              print(f'{tag}: {len(records)} activos verificados',flush=True)
+          (root/'MANIFIESTO.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding='utf-8')
+          (root/'LEEME.txt').write_text('Archivo histórico de releases retiradas. Se conservan etiquetas y código fuente. Ver MANIFIESTO.json para notas, tamaños y SHA-256. No utilizar versiones antiguas como descargas recomendadas.\n',encoding='utf-8')
+          with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED,compresslevel=5) as z:
+              for file in sorted(root.rglob('*')):
+                  if file.is_file():z.write(file,file.relative_to(root))
+          with zipfile.ZipFile(archive) as z:assert z.testzip() is None
+          pathlib.Path('SHA256_ARCHIVO.txt').write_text(f'{digest(archive)}  {archive}\n')
+          print(f'Archivo íntegro de {len(expected)} releases creado y verificado.')
+          PY
+      - name: Crear borrador y comprobar copia descargada
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$ARCHIVE_TAG" >/dev/null 2>&1; then
+            echo "El borrador ya existe: no se sobrescribe."
+            exit 1
+          fi
+          gh release create "$ARCHIVE_TAG" "$ARCHIVE_FILE" SHA256_ARCHIVO.txt \
+            --draft --target 765262c3f1100dde46f9be2a59dbad17aa96e2cb \
+            --title "Archivo histórico verificado - escritorio v9 y betas (2026-11-27)" \
+            --notes "Copia de los activos y notas de 16 publicaciones redundantes, con manifiesto y SHA-256. Se conservan todos los tags originales. No publicar como descarga vigente."
+          test "$(gh release view "$ARCHIVE_TAG" --json isDraft --jq .isDraft)" = true
+          mkdir revalidacion
+          gh release download "$ARCHIVE_TAG" --dir revalidacion --pattern "$ARCHIVE_FILE" --pattern 'SHA256_ARCHIVO.txt'
+          cmp "$ARCHIVE_FILE" "revalidacion/$ARCHIVE_FILE"
+          cmp SHA256_ARCHIVO.txt revalidacion/SHA256_ARCHIVO.txt
+          (cd revalidacion && sha256sum -c SHA256_ARCHIVO.txt)
+          unzip -t "revalidacion/$ARCHIVE_FILE" | tail -1
+      - name: Retirar únicamente las releases verificadas y conservar tags
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,subprocess
+          repo=os.environ['GH_REPO']
+          manifest=json.load(open('respaldo/MANIFIESTO.json'))
+          def api(path):
+              return json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/{path}'],text=True))
+          assert api('releases/latest')['tag_name']=='v9.2.19-desktop'
+          for r in manifest['releases']:
+              tag=r['tag']
+              assert tag not in manifest['retained_public_releases']
+              current=api(f'releases/tags/{tag}')
+              assert current['id']==r['release_id'] and not current['draft']
+              assert {(a['name'],a['size']) for a in current['assets']}=={(a['name'],a['size']) for a in r['assets']}
+              assert api(f'git/ref/tags/{tag}')['object']==r['tag_object']
+          assert len(manifest['releases'])==16
+          for r in manifest['releases']:
+              tag=r['tag']
+              subprocess.run(['gh','api','-X','DELETE',f'repos/{repo}/releases/{r["release_id"]}'],check=True)
+              assert api(f'git/ref/tags/{tag}')['object']==r['tag_object']
+              result=subprocess.run(['gh','api',f'repos/{repo}/releases/tags/{tag}'],capture_output=True,text=True)
+              assert result.returncode!=0 and '404' in result.stderr,tag
+              print(f'Archivada y retirada: {tag}; etiqueta conservada.',flush=True)
+          for tag in manifest['retained_public_releases']:
+              assert not api(f'releases/tags/{tag}')['draft']
+          assert api('releases/latest')['tag_name']=='v9.2.19-desktop'
+          print('16 publicaciones retiradas, 6 públicas conservadas, Latest intacta.')
+          PY
