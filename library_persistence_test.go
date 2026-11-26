@@ -195,3 +195,55 @@ func TestLibraryFailedCommitPreservesMirrorAndMemory(t *testing.T) {
 		t.Fatalf("failed commit: HTTP %d TXT=%q err=%v", w.Code, data, err)
 	}
 }
+
+func TestDesktopCloseRecoveryPreservesBothVersions(t *testing.T) {
+	if !desktopFeatures {
+		t.Skip("Solo escritorio")
+	}
+	dir := t.TempDir()
+	a := &runningApp{libraryPath: filepath.Join(dir, "colecciones.json"), savePath: filepath.Join(dir, "legacy.txt"), token: "test"}
+	stale := a.libraryETag()
+	current := initialLibrary("☑ Vértigo (1958)")
+	pending := initialLibrary("☑ Origen (2010)")
+	if w := postTestLibrary(t, a, current); w.Code != 204 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	payload, err := json.Marshal(pending)
+	if err != nil {
+		t.Fatal(err)
+	}
+	send := func(url, token string, body []byte) *httptest.ResponseRecorder {
+		r := httptest.NewRequest("POST", url, bytes.NewReader(body))
+		r.Header.Set("X-Atlas-Token", token)
+		r.Header.Set("If-Match", stale)
+		w := httptest.NewRecorder()
+		a.serveHTTP(w, r)
+		return w
+	}
+	const endpoint = "/api/sync/recovery/pending"
+	if w := send("/api/library", a.token, payload); w.Code != 412 {
+		t.Fatal("stale save", w.Code, w.Body.String())
+	}
+	if w := send(endpoint, "", payload); w.Code != 403 {
+		t.Fatal("unauthorized recovery", w.Code)
+	}
+	if w := send(endpoint, a.token, []byte("{}")); w.Code != 400 {
+		t.Fatal("invalid recovery", w.Code)
+	}
+	if w := send(endpoint, a.token, payload); w.Code != 204 {
+		t.Fatal("pending recovery", w.Code, w.Body.String())
+	}
+	if !reflect.DeepEqual(a.library, current) || !reflect.DeepEqual(loadLibrary(a.libraryPath, ""), current) {
+		t.Fatal("the pending copy overwrote the saved library")
+	}
+	copies, err := a.localRecoveryList()
+	if err != nil || len(copies) != 1 || !strings.HasSuffix(copies[0].Name, pendingRecoverySuffix+".json") {
+		t.Fatalf("pending copy missing: %v, %v", copies, err)
+	}
+	if _, err := a.restoreLocalRecovery(copies[0].ID, a.libraryETag()); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(loadLibrary(a.libraryPath, ""), pending) {
+		t.Fatal("the pending edits were not recoverable")
+	}
+}

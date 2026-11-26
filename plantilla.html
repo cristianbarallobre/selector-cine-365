@@ -489,6 +489,7 @@ h2{font-size:19px}
     <div class="header-side">
       <div class="header-tag">🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview</div>
       <div class="saved" id="saveState" aria-live="polite">✓ Guardado</div>
+      <button class="tool" id="pendingCloseRecovery" type="button" hidden>Ver copia de cambios pendientes</button>
       <button class="tool" id="reloadLibraryAfterConflict" type="button" hidden>Cargar biblioteca actual</button>
       <div class="creator-credit" title="__APP_COPYRIGHT__">Hecho por <strong>__APP_AUTHOR__</strong></div>
     </div>
@@ -1621,6 +1622,7 @@ function cinePreferRevision(a,b){
 function reconcileWatched(){
  // Reconciliation is never allowed until local causal revisions have loaded.
  if(!cineRevisionsLoaded)return 0;
+ const isFavorite=typeof labFavoriteSeenLookup==='function'?labFavoriteSeenLookup():()=>false;
  const groups=buildIdentityGroups(),legacySeen=new Set(),revised=new Map();
  for(const list of libraryState.lists){
   for(const f of parse(list.text).entries){
@@ -1636,7 +1638,7 @@ function reconcileWatched(){
    const group=groupKey(f,groups),intent=cineRecentIntents.get(group),revision=revised.get(group);
    const desired=intent&&intent.until>Date.now()?intent.checked:
       revision?.conflict?f.checked:
-      revision?!!revision.checked:legacySeen.has(group);
+      revision?!!revision.checked:legacySeen.has(group)||isFavorite(f);
    if(f.checked===desired)continue;
    lines[f.idx]=setMarkOnLine(lines[f.idx],desired);changed++;touched=true;
   }
@@ -2334,17 +2336,29 @@ async function cineRefreshHistory(){
  }
 }
 async function cineRefreshRecovery(){
- const selector=$('cloudRecoveryList');
+ const selector=$('cloudRecoveryList'),notice=$('pendingCloseRecovery');
  try{
   const data=await cloudRequest('/api/sync/recovery/list');
+  const pending=(data.copies||[]).find(item=>item.id.endsWith('_cambios_pendientes.json'));
+  notice.hidden=!pending;
+  notice.dataset.recoveryId=pending?.id||'';
   selector.replaceChildren(new Option('Selecciona una copia guardada',''));
   for(const item of data.copies||[]){
-   selector.append(new Option(cineSyncAt(item.when_ms)+' · '+(item.id.startsWith('rec:')?'Antes de sincronizar':'Copia diaria')+' · '+Math.round(item.bytes/1024)+' KB',item.id));
+   const label=item.id.endsWith('_cambios_pendientes.json')?'Cambios pendientes al cerrar':item.id.startsWith('rec:')?'Antes de sincronizar':'Copia diaria';
+   selector.append(new Option(cineSyncAt(item.when_ms)+' · '+label+' · '+Math.round(item.bytes/1024)+' KB',item.id));
   }
   $('cloudRecoveryRestore').disabled=true;
   $('cloudRecoveryStatus').textContent=(data.copies||[]).length?'Hay copias locales disponibles.':'Todavía no hay copias locales de recuperación.';
  }catch(e){$('cloudRecoveryStatus').textContent='⚠ '+e.message;}
 }
+$('pendingCloseRecovery').addEventListener('click',()=>{
+ showView('instructions');
+ const selector=$('cloudRecoveryList');
+ for(let parent=selector.parentElement;parent;parent=parent.parentElement){if(parent.tagName==='DETAILS')parent.open=true;}
+ selector.value=$('pendingCloseRecovery').dataset.recoveryId;
+ selector.dispatchEvent(new Event('change'));
+ selector.focus();
+});
 $('cloudHistoryRefresh').addEventListener('click',()=>void cineRefreshHistory());
 $('cloudRecoveryRefresh').addEventListener('click',()=>void cineRefreshRecovery());
 $('cloudRecoveryList').addEventListener('change',()=>{$('cloudRecoveryRestore').disabled=!$('cloudRecoveryList').value;});
@@ -2795,8 +2809,17 @@ let preparingClose=false;
 window.cinePrepareClose=async()=>{
  if(restoringBackup||preparingClose)return false;
  preparingClose=true;document.body.inert=true;
- try{return await flushLibrary();}
- finally{preparingClose=false;document.body.inert=false;}
+ try{
+  if(await flushLibrary())return true;
+  syncActiveText();
+  const response=await fetch('/api/sync/recovery/pending',{method:'POST',headers:{'Content-Type':'application/json','X-Atlas-Token':token},body:JSON.stringify(libraryState),cache:'no-store'});
+  if(response.status!==204)throw new Error();
+  saveNeeded=false;
+  return true;
+ }catch{
+  $('saveState').textContent='⚠ No se pudo guardar la copia local. Exporta tus cambios en Mis listas antes de cerrar.';
+  return false;
+ }finally{preparingClose=false;document.body.inert=false;}
 };
 window.chrome?.webview?.addEventListener('message',async event=>{
  const match=typeof event.data==='string'&&/^cine-prepare-close:(\d+)$/.exec(event.data);

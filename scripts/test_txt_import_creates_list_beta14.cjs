@@ -47,3 +47,21 @@ for(const path of [process.argv[2]||'plantilla.html']){
  for(const script of html.matchAll(/<script>([\s\S]*?)<\/script>/g))assert.doesNotThrow(()=>new Function(script[1]));
  console.log('OK: TXT import and platform selector behavior '+path);
 }
+
+{
+ const html=fs.readFileSync('plantilla.html','utf8');
+ const reactions=fs.readFileSync('lab_reactions_windows.html','utf8');
+ const take=(s,from,to)=>s.slice(s.indexOf(from),s.indexOf(to,s.indexOf(from)));
+ const state=new Function([
+  "const libraryState={lists:[{text:'☐ Matrix (1999)\\n☐ The Lord of the Rings (2001)\\n☐ Otra (2020)'}],reactions:{'matrix|1999':{title:'Matrix',year:'1999',favorite:true},'el señor de los anillos|2001':{title:'El señor de los anillos',year:'2001',tmdb_id:120,favorite:true}}};",
+  "let labReactionsByTMDB=null,cineRevisionsLoaded=true;const cineRecentIntents=new Map(),cineRevisionCache=new Map();",
+  "const filmIdentity=f=>f.title.toLowerCase(),filmKey=f=>filmIdentity(f)+'|'+f.year,knownTMDB=f=>f.title==='The Lord of the Rings'?120:0;",
+  "const parse=text=>{const lines=text.split('\\n');return {lines,entries:lines.map((line,idx)=>({idx,checked:line[0]==='☑',title:line.slice(2,-7),year:line.slice(-5,-1)}))};};",
+  "const setMarkOnLine=(line,checked)=>(checked?'☑':'☐')+line.slice(1);",
+  take(html,'function buildIdentityGroups(){','// INICIO FUNCIONES DE BÚSQUEDA GLOBAL'),
+  take(html,'function cineRevisionKey(f){','// La identificación se efectúa'),
+  take(reactions,'function labReactionMovieID(f){','function labFavoritesRecords(){'),
+  "assert.equal(reconcileWatched(),2);return libraryState.lists[0].text;"
+ ].join('\n').replace('assert.equal(reconcileWatched(),2);','if(reconcileWatched()!==2)throw Error("No se heredaron los dos favoritos");'))();
+ assert.equal(state,'☑ Matrix (1999)\n☑ The Lord of the Rings (2001)\n☐ Otra (2020)');
+}

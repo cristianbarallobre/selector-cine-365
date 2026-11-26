@@ -17,17 +17,25 @@ import (
 // Recovery backups stay on this computer. No cloud file or arbitrary path is
 // accepted as a restore source, and restoration always creates a rescue point.
 var safeRecoveryName = regexp.MustCompile(`^[0-9A-Za-z._-]{5,95}\.json$`)
-var syncRecoveryName = regexp.MustCompile(`^\d{8}T\d{6}\.\d{9}Z?(?:_antes_restaurar)?\.json$`)
+var syncRecoveryName = regexp.MustCompile(`^\d{8}T\d{6}\.\d{9}Z?(?:_antes_restaurar|_cambios_pendientes)?\.json$`)
+
+const pendingRecoverySuffix = "_cambios_pendientes"
 
 func (a *runningApp) saveSyncRecovery(state libraryState, suffix string) error {
 	dir := filepath.Join(filepath.Dir(a.libraryPath), "sync_recuperacion")
 	now := time.Now()
-	data, err := json.MarshalIndent(state, "", "  ")
+	data, err := json.Marshal(state)
 	if err != nil {
 		return err
 	}
+	if len(data) > libraryFileLimit {
+		return errors.New("La copia de recuperación supera el límite de tamaño")
+	}
 	name := now.UTC().Format("20060102T150405.000000000Z") + suffix + ".json"
-	if err = cloudWriteFile(filepath.Join(dir, name), data); err != nil {
+	if err = os.MkdirAll(dir, 0700); err != nil {
+		return err
+	}
+	if err = replaceLibraryFile(filepath.Join(dir, name), data); err != nil {
 		return err
 	}
 	names, err := labBackupCandidates(dir, syncRecoveryName)
@@ -271,6 +279,29 @@ func (a *runningApp) serveSyncSupport(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		respond(200, map[string]any{"events": a.syncStore.history()})
+	case "/api/sync/recovery/pending":
+		if !desktopFeatures {
+			http.NotFound(w, r)
+			return
+		}
+		if r.Method != http.MethodPost {
+			respond(http.StatusMethodNotAllowed, map[string]string{"error": "Método incorrecto"})
+			return
+		}
+		var state libraryState
+		body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, libraryFileLimit))
+		if err != nil || json.Unmarshal(body, &state) != nil || validateLibrary(state) != nil {
+			respond(http.StatusBadRequest, map[string]string{"error": "Copia de recuperación no válida"})
+			return
+		}
+		a.mu.Lock()
+		err = a.saveSyncRecovery(state, pendingRecoverySuffix)
+		a.mu.Unlock()
+		if err != nil {
+			respond(http.StatusInternalServerError, map[string]string{"error": "No se pudo guardar la copia de recuperación"})
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
 	case "/api/sync/recovery/list":
 		if r.Method != http.MethodGet {
 			respond(405, map[string]string{"error": "Método incorrecto"})

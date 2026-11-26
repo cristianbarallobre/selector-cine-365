@@ -149,6 +149,10 @@ function labMatchingReactions(f){
  return matches.sort((a,b)=>Number(b[1].favorite===true)-Number(a[1].favorite===true)||
   Number(b[0]===key)-Number(a[0]===key)||b[1].changed_at-a[1].changed_at);
 }
+function labFavoriteSeenLookup(){
+ labReactionsByTMDB=null;
+ return film=>labReactionFor(film)?.favorite===true;
+}
 function labReactionFor(f){return labMatchingReactions(f)[0]?.[1]||null;}
 function labFavoritesRecords(){
  const seenIDs=new Set();

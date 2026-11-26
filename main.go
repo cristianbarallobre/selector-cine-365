@@ -101,8 +101,8 @@ func makeHTML(initial, token string) (string, error) {
 	out = injectLabMaintenance(out)
 	if desktopFeatures && !appIsLab {
 		out = strings.NewReplacer(
-			"<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.10</title>",
-			"🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.10",
+			"<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.11</title>",
+			"🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.11",
 			` <span class="lab-nav-tag">LAB</span>`, "",
 			`<span class="lab-smart-caption">LAB</span>`, "",
 			"SELECTOR CINE 365 · LAB WINDOWS", "SELECTOR CINE 365",
@@ -209,7 +209,7 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write(data)
 	case "/api/library":
 		a.serveLibraryHTTP(w, r)
-	case "/api/sync/history", "/api/sync/revisions", "/api/sync/recovery/list", "/api/sync/recovery/preview", "/api/sync/recovery/restore":
+	case "/api/sync/history", "/api/sync/revisions", "/api/sync/recovery/list", "/api/sync/recovery/pending", "/api/sync/recovery/preview", "/api/sync/recovery/restore":
 		a.serveSyncSupport(w, r)
 	case "/api/cloud/status", "/api/cloud/config", "/api/cloud/backup", "/api/cloud/browse", "/api/cloud/preview", "/api/cloud/sync", "/api/cloud/auto", "/api/cloud/auto-folder", "/api/cloud/mode":
 		a.serveCloudHTTP(w, r)
