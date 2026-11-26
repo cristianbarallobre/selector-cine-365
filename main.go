@@ -101,8 +101,8 @@ func makeHTML(initial, token string) (string, error) {
 	out = injectLabMaintenance(out)
 	if desktopFeatures && !appIsLab {
 		out = strings.NewReplacer(
-			"<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.17</title>",
-			"🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.17",
+			"<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.18</title>",
+			"🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.18",
 			` <span class="lab-nav-tag">LAB</span>`, "",
 			`<span class="lab-smart-caption">LAB</span>`, "",
 			"SELECTOR CINE 365 · LAB WINDOWS", "SELECTOR CINE 365",
@@ -153,6 +153,9 @@ type runningApp struct {
 	stopCh              chan struct{}
 	stopOnce            sync.Once
 }
+
+// A native Windows host owns the server lifetime, even while WebView2 is suspended.
+var nativeDesktopWindowActive atomic.Bool
 
 func (a *runningApp) touch() { a.lastActivity.Store(time.Now().Unix()) }
 func (a *runningApp) stop()  { a.stopOnce.Do(func() { close(a.stopCh) }) }
@@ -363,7 +366,7 @@ func serve() error {
 		case <-app.stopCh:
 			return closeLocalServer(server)
 		case <-ticker.C:
-			if time.Since(time.Unix(app.lastActivity.Load(), 0)) > 12*time.Minute {
+			if !nativeDesktopWindowActive.Load() && time.Since(time.Unix(app.lastActivity.Load(), 0)) > 12*time.Minute {
 				return closeLocalServer(server)
 			}
 		}

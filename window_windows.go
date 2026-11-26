@@ -118,6 +118,7 @@ type nativeWindow struct {
 	ready               bool
 	closing             bool
 	closeAttempt        uintptr
+	closeDetail         string
 	envVTable           callbackVTable
 	ctrlVTable          callbackVTable
 	loader              *syscall.DLL
@@ -213,6 +214,7 @@ func nativeWndProc(hwnd, msg, wparam, lparam uintptr) uintptr {
 			}
 			w.closing = true
 			w.closeAttempt++
+			w.closeDetail = ""
 			attempt := w.closeAttempt
 			message := utf16Ptr(fmt.Sprintf("cine-prepare-close:%d", attempt))
 			hr := invokeCOM(w.webview, 33, ptr(unsafe.Pointer(message))) // PostWebMessageAsString
@@ -228,11 +230,17 @@ func nativeWndProc(hwnd, msg, wparam, lparam uintptr) uintptr {
 		return 0
 	case wmAppCloseResult:
 		if w != nil && w.closing && lparam == w.closeAttempt {
-			w.closing = false
 			if wparam == 1 {
 				procDestroyWindow.Call(hwnd)
 			} else {
-				notifyError("Selector Cine 365", "No se pudo terminar el guardado. Revisa el estado y vuelve a cerrar la ventana.")
+				// Invalidate late replies before entering the native modal message loop.
+				w.closeAttempt++
+				logDiagnostic("Cierre: guardado no confirmado; se ofrece cerrar de todas formas")
+				if confirmCloseWithoutSave(hwnd, w.closeDetail) {
+					procDestroyWindow.Call(hwnd)
+				} else {
+					w.closing = false
+				}
 			}
 		}
 		return 0
@@ -340,10 +348,12 @@ func webMessageReceived(_ unsafe.Pointer, sender, args unsafe.Pointer) uintptr {
 	}
 	ready := fmt.Sprintf("cine-close-ready:%d", w.closeAttempt)
 	pending := fmt.Sprintf("cine-close-pending:%d", w.closeAttempt)
-	switch webviewString(args, 5, len(pending)) {
-	case ready:
+	message := webviewString(args, 5, len(pending)+1200)
+	switch {
+	case message == ready:
 		procPostMessage.Call(w.hwnd, wmAppCloseResult, 1, w.closeAttempt)
-	case pending:
+	case message == pending || strings.HasPrefix(message, pending+":"):
+		w.closeDetail = strings.TrimPrefix(strings.TrimPrefix(message, pending), ":")
 		procPostMessage.Call(w.hwnd, wmAppCloseResult, 0, w.closeAttempt)
 	}
 	return sOK
@@ -623,7 +633,9 @@ func launchVisualWindow(url, profile string, onClose func(), heartbeat func() bo
 	// Do not pass SW_HIDE via STARTUPINFO to a process whose first ShowWindow
 	// must display a native window; -H=windowsgui already hides its console.
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: false}
+	nativeDesktopWindowActive.Store(true)
 	if err := cmd.Start(); err != nil {
+		nativeDesktopWindowActive.Store(false)
 		logDiagnostic("No se pudo arrancar proceso WebView2: " + err.Error())
 		return launchCompatibleBrowser(url, filepath.Join(filepath.Dir(profile), "perfil_compatible_v7_3"))
 	}
@@ -638,6 +650,7 @@ func launchVisualWindow(url, profile string, onClose func(), heartbeat func() bo
 	})
 	go func() {
 		err := cmd.Wait()
+		nativeDesktopWindowActive.Store(false)
 		finished.Store(true)
 		watchdog.Stop()
 		if err != nil {
@@ -748,6 +761,20 @@ func maybeNativeChild() bool {
 	os.Exit(0)
 	return true
 }
+// The native dialog is independent of the renderer and HTTP server.
+func confirmCloseWithoutSave(hwnd uintptr, detail string) bool {
+	if detail == "" {
+		detail = "La interfaz no respondió; no se puede identificar qué cambios quedaron pendientes."
+	}
+	proc := user32DLL.NewProc("MessageBoxW")
+	body := utf16Ptr("No se pudo confirmar el guardado local.\n\n" + detail + "\n\nSi cierras ahora, puedes perder cambios sin guardar.\n\n¿Cerrar de todas formas?\nSí: cerrar ahora.\nNo: volver para reintentar o exportar una copia de emergencia.")
+	title := utf16Ptr("Selector Cine 365 · Guardado no confirmado")
+	result, _, _ := proc.Call(hwnd, ptr(unsafe.Pointer(body)), ptr(unsafe.Pointer(title)), 0x4|0x30|0x100)
+	runtime.KeepAlive(body)
+	runtime.KeepAlive(title)
+	return result == 6 // IDYES; default button is No.
+}
+
 func notifyError(title, body string) {
 	proc := user32DLL.NewProc("MessageBoxW")
 	proc.Call(0, ptr(unsafe.Pointer(utf16Ptr(body))), ptr(unsafe.Pointer(utf16Ptr(title))), 0x10)

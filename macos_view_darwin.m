@@ -22,19 +22,36 @@
 }
 - (void)prepareClose:(void (^)(BOOL))reply {
     self.preparingClose = YES;
+    __block BOOL finished = NO;
+    void (^finish)(BOOL, NSString *) = ^(BOOL saved, NSString *detail) {
+        if (finished) return;
+        finished = YES;
+        if (saved) {
+            self.preparingClose = NO;
+            reply(YES);
+            return;
+        }
+        NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+        alert.alertStyle = NSAlertStyleWarning;
+        alert.messageText = @"No se pudo confirmar el guardado local.";
+        NSString *reason = detail.length ? detail : @"La interfaz no respondió; no se puede identificar qué cambios quedaron pendientes.";
+        alert.informativeText = [reason stringByAppendingString:@"\n\nSi cierras ahora, puedes perder cambios sin guardar. Puedes permanecer en la aplicación para reintentar o exportar una copia de emergencia."];
+        [alert addButtonWithTitle:@"Cancelar"];
+        [alert addButtonWithTitle:@"Cerrar de todas formas"];
+        NSModalResponse choice = [alert runModal];
+        self.preparingClose = NO;
+        reply(choice == NSAlertSecondButtonReturn);
+    };
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 20 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        finish(NO, nil);
+    });
     [self.appView callAsyncJavaScript:
-        @"return typeof window.cinePrepareClose !== 'function' || await window.cinePrepareClose();"
+        @"if (typeof window.cinePrepareClose !== 'function') return true; return await window.cinePrepareClose() ? true : (window.cineCloseFailureDetail || 'Guardado no confirmado.');"
         arguments:@{} inFrame:nil inContentWorld:[WKContentWorld pageWorld]
         completionHandler:^(id result, NSError *error) {
-            self.preparingClose = NO;
-            BOOL saved = !error && [result respondsToSelector:@selector(boolValue)] && [result boolValue];
-            if (!saved) {
-                NSAlert *alert = [[[NSAlert alloc] init] autorelease];
-                alert.messageText = @"No se pudo terminar el guardado.";
-                alert.informativeText = @"Revisa el estado y vuelve a cerrar la ventana.";
-                [alert beginSheetModalForWindow:self.appView.window completionHandler:nil];
-            }
-            reply(saved);
+            BOOL saved = !error && [result isKindOfClass:[NSNumber class]] && [result boolValue];
+            NSString *detail = !error && [result isKindOfClass:[NSString class]] ? result : nil;
+            finish(saved, detail);
         }];
 }
 - (BOOL)windowShouldClose:(NSWindow *)window {

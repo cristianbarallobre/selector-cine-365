@@ -145,6 +145,13 @@ main{height:100dvh;min-height:0;max-width:1340px;margin:auto;padding:14px 20px 1
 .brand{width:58px;height:58px;border-radius:13px}.brand svg{width:41px;height:41px}
 h1{font-size:29px}.eyebrow{font-size:11px}.header-side{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .header-tag{margin-left:0;padding:6px 10px;font-size:12px}.saved{margin:0;text-align:right;font-size:11px;min-height:12px}
+#saveState[data-warning="true"]{color:#ffb19a}
+#localConnectionState{order:4;color:#ffb19a;text-align:right;font-size:11px;max-width:390px}
+#saveRecovery{order:5;max-width:390px;text-align:right;font-size:11px;color:#ffcf9f}
+#saveRecovery[hidden],#localConnectionState[hidden]{display:none!important}
+#savePendingDetails{white-space:pre-line;max-height:58px;overflow:auto;margin:2px 0 4px;overflow-wrap:anywhere}
+#saveRecovery .tool{min-height:26px;padding:4px 8px;font-size:11px;margin-left:4px}
+#saveRecovery .tool:disabled{opacity:.55;cursor:wait}
 .top-nav{flex:0 0 auto;margin:0 0 11px}.nav-btn{padding:9px 13px}.list-switch{padding:9px 10px}
 .view{flex:1;min-height:0;overflow:hidden}
 main{--library-columns:minmax(0,1.26fr) minmax(350px,.74fr);--library-gap:16px}
@@ -501,6 +508,12 @@ h2{font-size:19px}
     <div class="header-side">
       <div class="header-tag">🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview</div>
       <div class="saved" id="saveState" aria-live="polite">✓ Guardado</div>
+      <div id="localConnectionState" role="status" hidden></div>
+      <div id="saveRecovery" hidden>
+        <div id="savePendingDetails"></div>
+        <button class="tool" id="retryLocalSave" type="button">Reintentar guardado</button>
+        <button class="tool" id="emergencyBackup" type="button">Exportar copia de emergencia</button>
+      </div>
       <button class="tool" id="reloadLibraryAfterConflict" type="button" hidden>Cargar biblioteca actual</button>
       <div class="creator-credit" title="__APP_COPYRIGHT__">Hecho por <strong>__APP_AUTHOR__</strong></div>
     </div>
@@ -2918,23 +2931,129 @@ $('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0
 
 let layoutResizeTimer=null;
 window.addEventListener('resize',()=>{clearTimeout(layoutResizeTimer);layoutResizeTimer=setTimeout(()=>{if(activeView==='library')renderList();else if(activeView==='statistics')renderStats();else renderCollectionControls();},100)});
-fetch('/api/ping',{cache:'no-store'}).catch(()=>{});
-setInterval(()=>{fetch('/api/ping',{cache:'no-store'}).catch(()=>{});},12000);
-let preparingClose=false;
-window.cinePrepareClose=async()=>{
- if(restoringBackup||preparingClose||cloudManualBusy)return false;
- preparingClose=true;document.body.inert=true;
+let localPingBusy=false;
+async function checkLocalConnection(){
+ if(localPingBusy)return;
+ localPingBusy=true;
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),4000);
+ const state=$('localConnectionState');
  try{
-  if(savePump)await savePump;
-  if(!saveNeeded||recoverySavedRevision!==editRevision&&await flushLibrary())return true;
+  const response=await fetch('/api/ping',{cache:'no-store',signal:controller.signal});
+  if(response.status!==204)throw new Error('Servidor local no disponible');
+  state.hidden=true;state.textContent='';
+ }catch{
+  state.hidden=false;state.textContent='⚠ Sin comunicación con el motor local. Si hay cambios pendientes, exporta una copia de emergencia.';
+ }finally{clearTimeout(timer);localPingBusy=false;}
+}
+void checkLocalConnection();
+setInterval(()=>void checkLocalConnection(),12000);
+window.addEventListener('focus',()=>void checkLocalConnection());
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)void checkLocalConnection();});
+
+// Compare the in-memory library with the last acknowledged local snapshot.
+// A lost response is not proof of data loss, so describe differences as unconfirmed.
+function describePendingChanges(){
+ if(!saveNeeded)return 'No hay ediciones locales pendientes identificadas; hay una operación cuyo final no se ha podido confirmar.';
+ try{
+  syncActiveText();
+  if(!libraryBase)return 'No se dispone de una copia de referencia para identificar los cambios pendientes.';
+  const before=JSON.parse(libraryBase),after=libraryState,changes=[];
+  const oldLists=new Map(before.lists.map(l=>[l.id,l])),newLists=new Map(after.lists.map(l=>[l.id,l]));
+  const label=f=>String(f.title||f.name)+(f.year?' ('+f.year+')':'');
+  const filmKey=f=>String(f.title||f.name)+'|'+String(f.year||'');
+  const brief=items=>items.slice(0,3).join(', ')+(items.length>3?' y '+(items.length-3)+' más':'');
+  const equal=(a,b)=>JSON.stringify(a??null)===JSON.stringify(b??null);
+  for(const [id,list] of newLists){
+   const old=oldLists.get(id);
+   if(!old){changes.push('Lista nueva: «'+list.name+'»');continue;}
+   if(old.name!==list.name)changes.push('Lista renombrada: «'+old.name+'» → «'+list.name+'»');
+   if(old.text!==list.text){
+    const first=parse(old.text).entries,second=parse(list.text).entries;
+    const a=new Map(first.map(f=>[filmKey(f),f])),b=new Map(second.map(f=>[filmKey(f),f]));
+    const added=[],removed=[],marked=[];
+    for(const [key,f] of b){
+     if(!a.has(key))added.push(label(f));
+     else if(a.get(key).checked!==f.checked)marked.push(label(f)+' ('+(f.checked?'vista':'pendiente')+')');
+    }
+    for(const [key,f] of a)if(!b.has(key))removed.push(label(f));
+    const details=[];
+    if(added.length)details.push('añadidas: '+brief(added));
+    if(removed.length)details.push('retiradas: '+brief(removed));
+    if(marked.length)details.push('marcas: '+brief(marked));
+    if(!added.length&&!removed.length&&!equal(first.map(filmKey),second.map(filmKey)))details.push('orden de películas');
+    changes.push('«'+list.name+'»: '+(details.join('; ')||'contenido modificado'));
+   }else if(!equal(old.order_changed_at,list.order_changed_at))changes.push('Orden de «'+list.name+'»');
+  }
+  for(const [id,list] of oldLists)if(!newLists.has(id))changes.push('Lista eliminada: «'+list.name+'»');
+  if(!equal(before.reactions,after.reactions)){
+   const a=before.reactions||{},b=after.reactions||{},titles=[];
+   for(const key of new Set([...Object.keys(a),...Object.keys(b)]))if(!equal(a[key],b[key]))titles.push((b[key]||a[key])?.title||key);
+   changes.push('Favoritos o valoraciones: '+brief(titles));
+  }
+  if(!equal(before.favorites_order,after.favorites_order))changes.push('Orden de Favoritos');
+  if(!equal(before.tmdb_overrides,after.tmdb_overrides))changes.push('Identificaciones de TMDB');
+  if(!equal(before.comparison_ids,after.comparison_ids))changes.push('Selección de listas para comparar');
+  if(!equal(before.lists.map(l=>l.id),after.lists.map(l=>l.id))&&!changes.length)changes.push('Orden de listas');
+  if(before.active_id!==after.active_id&&!changes.length)changes.push('Lista activa');
+  if(!changes.length)return 'No se identifican diferencias concretas; la última escritura sigue sin confirmar.';
+  const summary=changes.slice(0,6).join('\n')+(changes.length>6?'\nY '+(changes.length-6)+' cambios más.':'');
+  return 'Cambios sin confirmar:\n'+summary.slice(0,900);
+ }catch{return 'No se ha podido determinar qué cambios concretos quedaron pendientes.';}
+}
+function updateSaveWarning(){
+ const state=$('saveState'),busy=state.textContent==='Guardando…';
+ const failed=saveNeeded&&!busy;
+ state.dataset.warning=String(failed||state.textContent.includes('⚠'));
+ $('saveRecovery').hidden=!libraryReady||!failed;
+ $('savePendingDetails').textContent=failed&&libraryReady?describePendingChanges():'';
+}
+new MutationObserver(updateSaveWarning).observe($('saveState'),{childList:true,characterData:true,subtree:true});
+function awaitCloseStep(promise,deadline){
+ const remaining=Math.max(0,deadline-Date.now());
+ let timer;
+ return Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('El motor local no respondió a tiempo.')),remaining);})]).finally(()=>clearTimeout(timer));
+}
+$('retryLocalSave').addEventListener('click',async()=>{
+ const button=$('retryLocalSave');button.disabled=true;
+ try{
+  if(!await awaitCloseStep(flushLibrary(),Date.now()+12000))throw new Error('Guardado no confirmado.');
+ }catch(error){$('saveState').textContent='⚠ '+error.message;}
+ finally{button.disabled=false;updateSaveWarning();}
+});
+$('emergencyBackup').addEventListener('click',()=>{
+ // This is a Blob download of the live library, not a call to the server.
+ if(!libraryReady)return;
+ syncActiveText();const stamp=new Date().toISOString();
+ saveDownload('Cine365_emergencia_'+stamp.replace(/[:.]/g,'-')+'.json',JSON.stringify({...libraryState,backup_created_at:stamp},null,2),'application/json;charset=utf-8');
+});
+let preparingClose=false;
+window.cineCloseFailureDetail='';
+window.cinePrepareClose=async()=>{
+ window.cineCloseFailureDetail='';
+ if(restoringBackup||preparingClose||cloudManualBusy){
+  window.cineCloseFailureDetail='Hay una operación de guardado, restauración o sincronización en curso.\n'+describePendingChanges();
+  return false;
+ }
+ preparingClose=true;document.body.inert=true;
+ const deadline=Date.now()+12000;
+ try{
+  if(savePump)await awaitCloseStep(savePump,deadline);
+  if(!saveNeeded||recoverySavedRevision!==editRevision&&await awaitCloseStep(flushLibrary(),deadline))return true;
   if(recoverySavedRevision===editRevision){saveNeeded=false;return true;}
   syncActiveText();
-  const response=await fetch('/api/sync/recovery/pending',{method:'POST',headers:{'Content-Type':'application/json','X-Atlas-Token':token},body:JSON.stringify(libraryState),cache:'no-store'});
-  if(response.status!==204)throw new Error();
-  saveNeeded=false;
+  const revision=editRevision,controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),Math.max(0,deadline-Date.now()));
+  let response;
+  try{
+   response=await awaitCloseStep(fetch('/api/sync/recovery/pending',{method:'POST',headers:{'Content-Type':'application/json','X-Atlas-Token':token},body:JSON.stringify(libraryState),cache:'no-store',signal:controller.signal}),deadline);
+  }finally{clearTimeout(timer);}
+  if(response.status!==204||revision!==editRevision)throw new Error('No se pudo confirmar la copia de recuperación local.');
+  recoverySavedRevision=revision;saveNeeded=false;
   return true;
- }catch{
-  $('saveState').textContent='⚠ No se pudo guardar la copia local. Exporta tus cambios en Mis listas antes de cerrar.';
+ }catch(error){
+  window.cineCloseFailureDetail=(describePendingChanges()+'\nMotivo: '+(error.message||'Guardado no confirmado.')).slice(0,1100);
+  $('saveState').textContent='⚠ No se pudo confirmar el guardado local.';
+  updateSaveWarning();
   return false;
  }finally{preparingClose=false;document.body.inert=false;}
 };
@@ -2942,7 +3061,7 @@ window.chrome?.webview?.addEventListener('message',async event=>{
  const match=typeof event.data==='string'&&/^cine-prepare-close:(\d+)$/.exec(event.data);
  if(!match)return;
  const saved=await window.cinePrepareClose();
- window.chrome.webview.postMessage((saved?'cine-close-ready:':'cine-close-pending:')+match[1]);
+ window.chrome.webview.postMessage(saved?'cine-close-ready:'+match[1]:'cine-close-pending:'+match[1]+':'+window.cineCloseFailureDetail);
 });
 window.addEventListener('beforeunload',event=>{
  if(saveNeeded||restoringBackup){event.preventDefault();event.returnValue='';}
