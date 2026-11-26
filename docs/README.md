@@ -1,6 +1,6 @@
 # Documentación de Selector Cine 365
 
-Guías vigentes para [Windows y Mac 9.2.17](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.17-desktop) y la [APK estable de Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0).
+Guías vigentes para [Windows y Mac 9.2.19](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.19-desktop) y la [APK estable de Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0).
 
 | Documento | Contenido |
 | --- | --- |

@@ -1,6 +1,6 @@
 # Manual de Selector Cine 365
 
-Windows y macOS 9.2.17. Android estable de la publicación v9.0.0.
+Windows y macOS 9.2.19. Android estable de la publicación v9.0.0.
 
 ## Instalar y proteger la biblioteca
 
@@ -10,7 +10,7 @@ Windows y macOS 9.2.17. Android estable de la publicación v9.0.0.
 4. Si Windows o Mac avisan sobre el editor, verifica primero que el archivo procede de la publicación oficial y comprueba su SHA-256. Los paquetes Mac llevan firma ad hoc y carecen de notarización.
 5. En Android instala la APK Limpia con el mismo identificador y la misma firma que tu instalación compatible. Para cambiar de edición, importa una copia JSON en la nueva.
 
-[Descargas de escritorio](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.17-desktop) · [APK oficial de Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0)
+[Descargas de escritorio](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.19-desktop) · [APK oficial de Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0)
 
 ## Biblioteca y listas
 
@@ -57,3 +57,7 @@ Si una edición no se guardó por un conflicto local, carga la biblioteca guarda
 La edición pública se identifica como **Beta 13.13 Limpia**. Tiene biblioteca, navegación táctil, estadísticas, sorteo, copias y sincronización mediante revisión manual. La candidata Android 9.2.4 añade cambios de interfaz y funciones de escritorio adaptadas al móvil. Se instala como una app de pruebas separada.
 
 Autor: Cristian Barallobre Rúa.
+
+## Diagnóstico y cierre seguro (escritorio 9.2.18–9.2.19)
+
+Si el guardado no se confirma, revisa los cambios pendientes, reintenta o exporta una copia JSON de emergencia. Es posible cerrar voluntariamente con advertencia de pérdida de cambios. En Mis listas → Mantenimiento → Exportar registro de diagnóstico puedes guardar los registros técnicos locales para revisar incidencias.

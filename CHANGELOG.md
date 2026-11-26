@@ -1,5 +1,19 @@
 # Historial de cambios — Selector Cine 365
 
+## 9.2.19 de escritorio
+
+- Registro de diagnóstico local del motor y la ventana, con rotación y exportación desde Mantenimiento.
+- Diagnóstico de guardado, recuperación, sincronización, TMDB y comunicación con la interfaz, sin registrar contenido de listas ni credenciales.
+
+[Publicación 9.2.19](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.19-desktop)
+
+## 9.2.18 de escritorio
+
+- El motor local de Windows permanece activo mientras esté abierta la ventana nativa.
+- Avisos de cambios sin confirmar, reintento de guardado, copia JSON de emergencia y cierre voluntario con advertencia.
+
+[Publicación 9.2.18](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.18-desktop)
+
 ## 9.2.17 de escritorio
 
 - Al añadir una película desde Descubrir, Biblioteca reutiliza el cartel y la ficha de TMDB guardados localmente.
@@ -7,7 +21,7 @@
 - Se conservan los carteles disponibles en caché al actualizar las fichas de Biblioteca.
 - Compilaciones de Windows x64 y macOS Intel y Apple Silicon verificadas mediante GitHub Actions.
 
-[Publicación 9.2.17](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.17-desktop)
+[Código fuente 9.2.17 (release archivada)](https://github.com/cristianbarallobre/selector-cine-365/tree/v9.2.17-desktop)
 
 ## 9.2.16 de escritorio
 
@@ -15,7 +29,7 @@
 - Si una versión anterior ya volvió a añadir la película, quítala de nuevo en la 9.2.16 y sincroniza.
 - El estado de la nube aparece junto al botón de sincronizar.
 
-[Publicación 9.2.16](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.16-desktop)
+[Código fuente 9.2.16 (release archivada)](https://github.com/cristianbarallobre/selector-cine-365/tree/v9.2.16-desktop)
 
 ## 9.2.15 de escritorio
 
@@ -24,7 +38,7 @@
 - Se reaplican las retiradas de películas compatibles con una revisión concurrente y se actualizan los números de lista al recargar.
 - Los avisos de guardado explican qué hacer. Las copias anteriores se consultan en Mantenimiento.
 
-[Publicación 9.2.15](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.15-desktop) · [Guía de sincronización](docs/GUIA_SINCRONIZACION_SEGURA.md)
+[Código fuente 9.2.15 (release archivada)](https://github.com/cristianbarallobre/selector-cine-365/tree/v9.2.15-desktop) · [Guía de sincronización](docs/GUIA_SINCRONIZACION_SEGURA.md)
 
 ## 9.2.7 de escritorio
 
@@ -35,7 +49,7 @@
 - Windows utiliza el icono de la app. Mac guarda la caché aparte de la biblioteca y protege la sesión de OneDrive en el llavero.
 - La APK estable de Android sigue disponible en la publicación v9.0.0.
 
-[Publicación 9.2.7](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.7-desktop) · [Manual completo](docs/MANUAL_COMPLETO_SELECTOR_CINE_365.md)
+[Código fuente 9.2.7 (release archivada)](https://github.com/cristianbarallobre/selector-cine-365/tree/v9.2.7-desktop) · [Manual completo](docs/MANUAL_COMPLETO_SELECTOR_CINE_365.md)
 
 ---
 
