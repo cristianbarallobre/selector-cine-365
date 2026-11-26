@@ -4,6 +4,7 @@ package main
 
 import (
  "context"
+ "encoding/json"
  "fmt"
  "net/http"
  "net/http/httptest"
@@ -81,6 +82,13 @@ func TestLabMergedJavaScriptSyntax(t *testing.T){
  if err!=nil{t.Fatalf("JavaScript completo no compila: %v\n%s",err,out)}
 }
 
+func serveSmokeLibrary(w http.ResponseWriter,r *http.Request,initial string){
+ if r.Method!=http.MethodGet||r.Header.Get("X-Atlas-Token")!="smoke-token"{http.Error(w,"Solicitud inesperada",http.StatusBadRequest);return}
+ w.Header().Set("Content-Type","application/json")
+ w.Header().Set("ETag",`"library-0"`)
+ _=json.NewEncoder(w).Encode(map[string]any{"version":1,"active_id":"atlas","lists":[]map[string]string{{"id":"atlas","name":"Cine","text":initial}}})
+}
+
 // Prueba de integración con un navegador real en Windows; detecta excepciones
 // iniciales, no solo compilaciones de Go y presencia de elementos HTML.
 func TestLabStartupHeadlessBrowser(t *testing.T){
@@ -93,14 +101,16 @@ func TestLabStartupHeadlessBrowser(t *testing.T){
  }
  for _,p:=range candidates{if info,err:=os.Stat(p);err==nil&&!info.IsDir(){browser=p;break}}
  if browser==""{t.Skip("No hay Edge/Chrome instalados para prueba de interfaz")}
- page,err:=makeHTML("☐ Ejemplo de prueba (2024)\n☑ Otra película (1988)","smoke-token")
+ initial:="☐ Ejemplo de prueba (2024)\n☑ Otra película (1988)"
+ page,err:=makeHTML(initial,"smoke-token")
  if err!=nil{t.Fatal(err)}
  watchScript:=`<script>
  window.__labSmokeErrors=[];
  window.addEventListener('error',e=>window.__labSmokeErrors.push(e.message||String(e.error)));
  window.addEventListener('unhandledrejection',e=>window.__labSmokeErrors.push(String(e.reason)));
  window.addEventListener('DOMContentLoaded',()=>{
-   setTimeout(()=>{
+   function waitForLibrary(){
+     if(document.getElementById("libraryApp")?.hidden){setTimeout(waitForLibrary,50);return;}
      try{
        const list=document.getElementById('filmList');
        const films=list?list.querySelectorAll('.film-item').length:0;
@@ -179,13 +189,17 @@ func TestLabStartupHeadlessBrowser(t *testing.T){
      }catch(err){
        document.body.setAttribute('data-lab-smoke',encodeURIComponent(JSON.stringify({error:String(err)})));
      }
-   },1000);
+   }
+   waitForLibrary();
  });
  </script>`
  // El detector debe instalarse antes del script principal y su evento DCL
  // se dispara incluso cuando el arranque de la app no llega a completarse.
  page=strings.Replace(page,"</head>",watchScript+"\n</head>",1)
  srv:=httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
+  if r.URL.Path=="/api/library"{
+   serveSmokeLibrary(w,r,initial);return
+  }
   if r.URL.Path=="/"{
    w.Header().Set("Content-Type","text/html; charset=utf-8")
    _,_=w.Write([]byte(page));return

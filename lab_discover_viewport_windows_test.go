@@ -31,11 +31,13 @@ func TestLabDiscoverFillsVisibleRowsInEdge(t *testing.T){
   if info,err:=os.Stat(p);err==nil&&!info.IsDir(){browser=p;break}
  }
  if browser==""{t.Skip("Edge o Chrome no disponibles")}
- page,err:=makeHTML("☐ Prueba visual (2026)","smoke-token")
+ initial:="☐ Prueba visual (2026)"
+ page,err:=makeHTML(initial,"smoke-token")
  if err!=nil{t.Fatal(err)}
  script:=`<script>
 window.addEventListener('DOMContentLoaded',()=>{
- setTimeout(()=>{
+ function waitForLibrary(){
+   if(document.getElementById("libraryApp")?.hidden){setTimeout(waitForLibrary,50);return;}
    document.getElementById('labDiscoverNav')?.click();
    setTimeout(()=>{
      const grid=document.getElementById('labMoviesGrid');
@@ -67,13 +69,17 @@ window.addEventListener('DOMContentLoaded',()=>{
        },450);
      },1000);
    },1000);
- },100);
+ }
+ waitForLibrary();
 });
 </script>`
  page=strings.Replace(page,"</head>",script+"\n</head>",1)
  var mu sync.Mutex
  requests:=map[string]int{}
  server:=httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
+  if r.URL.Path=="/api/library"{
+   serveSmokeLibrary(w,r,initial);return
+  }
   if r.URL.Path=="/"{
    w.Header().Set("Content-Type","text/html; charset=utf-8")
    _,_=w.Write([]byte(page));return

@@ -1365,7 +1365,7 @@ async function saveLocal(){
  try{const {cloudResult,txtPending}=await saveQueue;
  if(epoch===saveEpoch&&revision===editRevision)saveNeeded=false;
  await cineLoadRevisions();
- if(epoch===saveEpoch&&revision===editRevision){cineRecentIntents.clear();$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + carpeta de nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':cloudResult==='pending'?'✓ Local · Revisar sincronización':'✓ Guardado';
+ if(epoch===saveEpoch&&revision===editRevision){cineRecentIntents.clear();$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + carpeta de nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':cloudResult==='review'?'✓ Guardado local · Revisar sincronización':'✓ Guardado';
  if(txtPending)$('saveState').textContent+=' · ⚠ Copia TXT pendiente';
  void cloudRefresh();setTimeout(()=>{if(!document.hidden)void cloudAutoReceive();},3500);}}
  catch(err){if(epoch===saveEpoch)$('saveState').textContent=err.message||'⚠ Guardado no confirmado';}

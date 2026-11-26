@@ -304,9 +304,10 @@ func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 		if a.graph != nil && a.graph.active() {
 			if a.syncStore != nil && a.syncStore.isPaired(a.graph.pairingID()) {
 				a.queueGraphUpload()
+				w.Header().Set("X-Cine-Cloud", "pending")
+			} else {
+				w.Header().Set("X-Cine-Cloud", "review")
 			}
-			// Pending means local save succeeded but the cloud write is asynchronous.
-			w.Header().Set("X-Cine-Cloud", "pending")
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
@@ -314,7 +315,7 @@ func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 			folder := a.cloud.status().Folder
 			if a.syncStore != nil && !a.syncStore.isPaired(folder) && cloudHasDeviceSnapshots(folder) {
 				// Un PC nuevo no sobrescribe el respaldo de otro dispositivo.
-				w.Header().Set("X-Cine-Cloud", "pending")
+				w.Header().Set("X-Cine-Cloud", "review")
 			} else {
 				cloudState := a.cloud.backup()
 				if cloudState.Enabled {
