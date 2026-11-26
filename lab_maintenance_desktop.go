@@ -54,13 +54,8 @@ func labLocalFileUsage(path string) labFileUsage {
  return usage
 }
 func labLocalPosterUsage(path string) labFileUsage {
- var usage labFileUsage
- entries,err:=os.ReadDir(path);if err!=nil{return usage}
- for _,entry:=range entries{
-  if !entry.Type().IsRegular()||!validPosterPath("/"+entry.Name()){continue}
-  if info,e:=entry.Info();e==nil{usage.Files++;usage.Bytes+=info.Size()}
- }
- return usage
+ files,bytes:=posterDiskUsage(path)
+ return labFileUsage{Files:files,Bytes:bytes}
 }
 func (a *runningApp) serveLabMaintenance(w http.ResponseWriter,r *http.Request) {
  w.Header().Set("Content-Type","application/json; charset=utf-8")
@@ -68,6 +63,7 @@ func (a *runningApp) serveLabMaintenance(w http.ResponseWriter,r *http.Request) 
  root:=filepath.Dir(a.libraryPath)
  cacheRoot:=appCacheRoot(root)
  posterDir:=filepath.Join(cacheRoot,"carteles")
+ discoveryDir:=discoveryImageDir(a.libraryPath)
  respond:=func(code int,data any){w.WriteHeader(code);_ =json.NewEncoder(w).Encode(data)}
  switch r.Method{
  case http.MethodGet:
@@ -79,6 +75,7 @@ func (a *runningApp) serveLabMaintenance(w http.ResponseWriter,r *http.Request) 
    "tmdb_details":labLocalFileUsage(filepath.Join(cacheRoot,"tmdb_fichas_lab.json")),
    "platform_cache":labLocalFileUsage(filepath.Join(cacheRoot,"plataformas_cache.json")),
    "posters":labLocalPosterUsage(posterDir),
+   "discovery_images":labLocalPosterUsage(discoveryDir),
    "backup_daily":len(daily),"backup_quick":len(quick),
    "library_recovered":a.libraryRecovered,
    "tmdb_connected":a.platforms!=nil&&a.platforms.configured(),
@@ -99,10 +96,16 @@ func (a *runningApp) serveLabMaintenance(w http.ResponseWriter,r *http.Request) 
   case "prune_posters":
    n,err:=prunePosterCache(posterDir,appPosterMaxFiles,appPosterMaxBytes,appPosterMaxAge)
    if err!=nil{respond(500,map[string]string{"error":"No se han podido revisar los carteles"});return}
+   extra,err:=a.discoveryImages.maintain(discoveryDir,false)
+   if err!=nil{respond(500,map[string]string{"error":"No se han podido revisar las imágenes de Descubrir"});return}
+   n+=extra
    respond(200,map[string]any{"removed":n})
   case "clear_posters":
    n,err:=prunePosterCache(posterDir,0,0,0)
    if err!=nil{respond(500,map[string]string{"error":"No se han podido eliminar las miniaturas"});return}
+   extra,err:=a.discoveryImages.maintain(discoveryDir,true)
+   if err!=nil{respond(500,map[string]string{"error":"No se han podido eliminar las imágenes de Descubrir"});return}
+   n+=extra
    respond(200,map[string]any{"removed":n})
   default:respond(400,map[string]string{"error":"Acción de mantenimiento no permitida"})
   }

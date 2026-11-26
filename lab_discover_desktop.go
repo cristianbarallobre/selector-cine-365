@@ -9,6 +9,7 @@ import (
  "io"
  "net/http"
  "net/url"
+ "path/filepath"
  "sort"
  "strconv"
  "strings"
@@ -209,15 +210,24 @@ func (a *runningApp) serveLabDiscovery(w http.ResponseWriter,r *http.Request) {
 func (a *runningApp) labDiscoveryPoster(w http.ResponseWriter,r *http.Request) {
  path:=r.URL.Query().Get("path")
  if !validPosterPath(path){http.Error(w,"Imagen no válida",400);return}
+ dir:=discoveryImageDir(a.libraryPath)
+ name:=filepath.Base(path)
+ if data:=a.discoveryImages.get(dir,name);len(data)>0 {writeDiscoveryImage(w,data);return}
  ctx,cancel:=context.WithTimeout(r.Context(),17*time.Second);defer cancel()
  req,err:=http.NewRequestWithContext(ctx,"GET","https://image.tmdb.org/t/p/w342"+path,nil)
  if err!=nil {http.Error(w,"Imagen no disponible",502);return}
  resp,err:=tmdbClient.Do(req);if err!=nil {http.Error(w,"Imagen no disponible",502);return}
  defer resp.Body.Close()
  if resp.StatusCode!=200 {http.Error(w,"Imagen no disponible",502);return}
- mime:="image/jpeg";if strings.HasSuffix(path,".png"){mime="image/png"}else if strings.HasSuffix(path,".webp"){mime="image/webp"}
- w.Header().Set("Content-Type",mime);w.Header().Set("Cache-Control","private, max-age=86400")
- _,_=io.Copy(w,io.LimitReader(resp.Body,2<<20))
+ data,err:=io.ReadAll(io.LimitReader(resp.Body,discoveryImageMaxSize+1))
+ if err!=nil||len(data)>discoveryImageMaxSize||discoveryImageType(data)=="" {http.Error(w,"Imagen no válida",502);return}
+ a.discoveryImages.put(dir,name,data)
+ writeDiscoveryImage(w,data)
+}
+
+func writeDiscoveryImage(w http.ResponseWriter,data []byte) {
+ w.Header().Set("Content-Type",discoveryImageType(data));w.Header().Set("Cache-Control","private, max-age=86400")
+ _,_=w.Write(data)
 }
 
   
