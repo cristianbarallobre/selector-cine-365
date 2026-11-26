@@ -221,7 +221,7 @@ func TestDesktopCloseRecoveryPreservesBothVersions(t *testing.T) {
 		return w
 	}
 	const endpoint = "/api/sync/recovery/pending"
-	if w := send("/api/library", a.token, payload); w.Code != 412 {
+	if w := send("/api/library", a.token, payload); w.Code != 412 || w.Header().Get("X-Cine-Recovery") != "saved" {
 		t.Fatal("stale save", w.Code, w.Body.String())
 	}
 	if w := send(endpoint, "", payload); w.Code != 403 {
@@ -229,9 +229,6 @@ func TestDesktopCloseRecoveryPreservesBothVersions(t *testing.T) {
 	}
 	if w := send(endpoint, a.token, []byte("{}")); w.Code != 400 {
 		t.Fatal("invalid recovery", w.Code)
-	}
-	if w := send(endpoint, a.token, payload); w.Code != 204 {
-		t.Fatal("pending recovery", w.Code, w.Body.String())
 	}
 	if !reflect.DeepEqual(a.library, current) || !reflect.DeepEqual(loadLibrary(a.libraryPath, ""), current) {
 		t.Fatal("the pending copy overwrote the saved library")

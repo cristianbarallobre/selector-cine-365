@@ -60,6 +60,14 @@ func (a *runningApp) saveSyncRecovery(state libraryState, suffix string) error {
 	return nil
 }
 
+// preservePendingSave runs with the library mutex held. A failed backup
+// never changes the original save result.
+func (a *runningApp) preservePendingSave(w http.ResponseWriter, state libraryState) {
+	if a.saveSyncRecovery(state, pendingRecoverySuffix) == nil {
+		w.Header().Set("X-Cine-Recovery", "saved")
+	}
+}
+
 func readRecoveryFile(path string) ([]byte, error) {
 	f, err := os.Open(path)
 	if err != nil {

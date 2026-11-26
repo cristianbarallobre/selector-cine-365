@@ -271,6 +271,9 @@ func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusNoContent)
 				return
 			}
+			if desktopFeatures && r.Header.Get("If-Match") != "" {
+				a.preservePendingSave(w, state)
+			}
 			a.mu.Unlock()
 			http.Error(w, "La biblioteca cambió desde que se abrió esta ventana", http.StatusPreconditionFailed)
 			return
@@ -291,6 +294,8 @@ func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			a.syncPreviewToken = "" // una vista previa anterior ya no es válida
+		} else if desktopFeatures {
+			a.preservePendingSave(w, state)
 		}
 		a.mu.Unlock()
 		if err != nil {

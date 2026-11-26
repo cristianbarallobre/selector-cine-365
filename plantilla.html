@@ -890,8 +890,9 @@ const token='__ATLAS_TOKEN__';
 }
 let rawText=$('initialState').value.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
 const librarySizeLimit=256*1024*1024,listSizeLimit=900000;
-let parsed=null,filter='all',search='',chosen=null,lastChoice=null,saveTimer=null,saveQueue=Promise.resolve(),saveEpoch=0;
+let parsed=null,filter='all',search='',chosen=null,lastChoice=null,saveQueue=Promise.resolve(),saveEpoch=0;
 let saveNeeded=false,editRevision=0,libraryETag='',libraryReady=false;
+let savePump=null,recoverySavedRevision=-1;
 document.addEventListener('click',event=>{
  if(!libraryReady&&!$('libraryStartup').contains(event.target)){
   event.preventDefault();
@@ -1355,7 +1356,14 @@ $('filmPageGotoForm').addEventListener('submit',e=>{
  filmPage=page-1;renderList();input.value='';
 });
 function resetChoice(){chosen=null;$('resultPoster').hidden=true;$('resultPoster').removeAttribute('src');$('resultPlatforms').replaceChildren();$('resultTag').textContent='EL SORTEO TE ESPERA';$('resultTitle').textContent='Tu próxima película aparecerá aquí';$('resultDetails').textContent='';$('markWatched').disabled=true;$('copyChoice').disabled=true;}
-function scheduleSave(){membershipCache=null;saveNeeded=true;editRevision++;$('saveState').textContent='Guardando…';clearTimeout(saveTimer);saveTimer=setTimeout(()=>{saveTimer=null;void saveLocal();},240);}
+function scheduleSave(){
+ membershipCache=null;saveNeeded=true;editRevision++;$('saveState').textContent='Guardando…';
+ if(savePump)return;
+ savePump=(async()=>{
+  let revision;
+  do{revision=editRevision;await saveLocal();}while(revision!==editRevision&&!restoringBackup);
+ })().finally(()=>{savePump=null;});
+}
 async function saveLocal(){
  syncActiveText();const snapshot=JSON.stringify(libraryState);const epoch=++saveEpoch,revision=editRevision;
  saveNeeded=true;
@@ -1369,22 +1377,26 @@ async function saveLocal(){
  if(epoch===saveEpoch&&revision===editRevision){cineRecentIntents.clear();$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + carpeta de nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':cloudResult==='review'?'✓ Guardado local · Revisar sincronización':'✓ Guardado';
  if(txtPending)$('saveState').textContent+=' · ⚠ Copia TXT pendiente';
  void cloudRefresh();setTimeout(()=>{if(!document.hidden)void cloudAutoReceive();},3500);}}
- catch(err){if(epoch===saveEpoch)$('saveState').textContent=err.message||'⚠ Guardado no confirmado';}
+ catch(err){
+  if(err.recoverySaved){recoverySavedRevision=revision;void cineRefreshRecovery();}
+  if(epoch===saveEpoch&&revision===editRevision)$('saveState').textContent=err.message||'⚠ Guardado no confirmado';
+ }
 }
 async function writeLibrary(payload){
  if(!libraryETag)throw new Error('⚠ No se pudo cargar la biblioteca. Exporta tus cambios antes de recargar.');
  const response=await fetch('/api/library',{method:'POST',headers:{'Content-Type':'application/json','X-Atlas-Token':token,'If-Match':libraryETag},body:payload,cache:'no-store'});
+ const recovered=response.headers.get('X-Cine-Recovery')==='saved';
  if(response.status===412){
   $('reloadLibraryAfterConflict').hidden=false;
-  throw new Error('⚠ La biblioteca cambió. Puedes exportar tus cambios en Mis listas antes de cargar la versión guardada.');
+  throw Object.assign(new Error(recovered?'⚠ La biblioteca cambió. Tus cambios están en una copia local de recuperación.':'⚠ La biblioteca cambió. Puedes exportar tus cambios en Mis listas antes de cargar la versión guardada.'),{recoverySaved:recovered});
  }
- if(!response.ok)throw new Error('⚠ Guardado no confirmado · comprueba la lista antes de cerrar. '+(await response.text()).trim());
+ if(!response.ok)throw Object.assign(new Error(recovered?'⚠ El guardado falló. Tus cambios están en una copia local de recuperación.':'⚠ Guardado no confirmado · comprueba la lista antes de cerrar. '+(await response.text()).trim()),{recoverySaved:recovered});
  libraryETag=response.headers.get('ETag')||libraryETag;
  $('reloadLibraryAfterConflict').hidden=true;
  return response;
 }
 async function flushLibrary(){
- if(saveTimer!==null){clearTimeout(saveTimer);saveTimer=null;void saveLocal();}
+ if(savePump)await savePump;
  try{await saveQueue;}catch{}
  if(saveNeeded){
   void saveLocal();
@@ -2107,12 +2119,12 @@ let restoringBackup=false;
 $('reloadLibraryAfterConflict').addEventListener('click',async()=>{
  if(restoringBackup||!confirm('¿Cargar la biblioteca guardada? Se perderán los cambios de esta ventana que aún no hayas exportado.'))return;
  restoringBackup=true;document.body.inert=true;
- clearTimeout(saveTimer);saveTimer=null;
+ if(savePump)await savePump;
  try{
   await saveQueue.catch(()=>{});
   cineRecentIntents.clear();
   if(!await initLibrary())throw new Error('No se pudo cargar la biblioteca guardada');
-  if(saveTimer===null){saveNeeded=false;$('saveState').textContent='✓ Biblioteca cargada';}
+  if(!savePump){saveNeeded=false;$('saveState').textContent='✓ Biblioteca cargada';}
   $('reloadLibraryAfterConflict').hidden=true;
  }catch(error){$('saveState').textContent='⚠ '+error.message;}
  finally{restoringBackup=false;document.body.inert=false;}
@@ -2465,7 +2477,7 @@ async function cloudAutoReceive(force=false){
  if(!force&&Date.now()-cloudAutoCheckedAt<20000)return;
  if(document.querySelector('.overlay:not([hidden])'))return;
  if(document.activeElement?.matches('input,textarea,select,[contenteditable="true"]'))return;
- if(saveTimer!==null||saveNeeded||restoringBackup||preparingClose)return;
+ if(savePump||saveNeeded||restoringBackup||preparingClose)return;
  cloudAutoBusy=true;
  const beforeEpoch=saveEpoch,beforeEdit=editRevision;
  try{
@@ -2810,7 +2822,9 @@ window.cinePrepareClose=async()=>{
  if(restoringBackup||preparingClose)return false;
  preparingClose=true;document.body.inert=true;
  try{
-  if(await flushLibrary())return true;
+  if(savePump)await savePump;
+  if(!saveNeeded||recoverySavedRevision!==editRevision&&await flushLibrary())return true;
+  if(recoverySavedRevision===editRevision){saveNeeded=false;return true;}
   syncActiveText();
   const response=await fetch('/api/sync/recovery/pending',{method:'POST',headers:{'Content-Type':'application/json','X-Atlas-Token':token},body:JSON.stringify(libraryState),cache:'no-store'});
   if(response.status!==204)throw new Error();
