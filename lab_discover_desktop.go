@@ -146,6 +146,7 @@ func labTrailer(vs []labVideo) string {
 func (a *runningApp) serveLabDiscovery(w http.ResponseWriter,r *http.Request) {
  if !a.auth(r) {http.Error(w,"No autorizado",403);return}
  if r.URL.Path=="/api/discover/prefetch"||r.URL.Path=="/api/discover/prefetch/pause" {a.serveLabPrefetch(w,r);return}
+ if r.URL.Path=="/api/discover/library-cache" {a.labCacheLibraryDetails(w,r);return}
  if r.Method!=http.MethodGet {http.Error(w,"Método no permitido",405);return}
  if r.URL.Path=="/api/discover/detail" {a.labDetailFromCache(w,r);return}
  if r.URL.Path=="/api/discover/person" {a.labPersonDetail(w,r);return}

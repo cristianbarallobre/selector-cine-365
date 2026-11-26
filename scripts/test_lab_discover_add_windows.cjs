@@ -18,9 +18,9 @@ assert.match(body,/vote_average:Number\(movie\.vote_average\)/);
 assert.match(body,/subscriptions:Array\.isArray\(movie\.subscriptions\)/);
 assert.match(script,/labHydrateAddedMovie\(movie,\{title,year\}\);\s*update\(\);/,
  'La lista debe recuperar metadatos ANTES de renderizar, no esperar a otra consulta');
-assert.match(body,/platformApi\('\/api\/platforms\/lookup',\{title:film\.title,year:Number\(film\.year\)\|\|0,force:false\}\)/,
- 'Sincronizar la caché de plataformas en segundo plano');
-assert.match(body,/Number\(info\.tmdb_id\)===Number\(movie\.id\)/,
+assert.match(body,/platformApi\('\/api\/discover\/library-cache',\{id:Number\(movie\.id\)\}\)/,
+ 'Pasar la ficha local a la caché de Biblioteca por ID');
+assert.match(body,/info\?\.tmdb_id===Number\(movie\.id\)/,
  'No sustituir una ficha correcta por otro resultado que coincida solo por título');
 
 (async()=>{

@@ -933,6 +933,7 @@ function platformBadge(f){
  if(!platformConfigured)return [platformStatusUnavailable?'TMDB: comprobación pendiente':'Configurar plataformas','muted'];
  if(!r)return ['Por consultar…','muted'];
  if(r.state==='error')return ['Sin conexión','offline'];
+ if(r.state==='partial')return ['Disponibilidad sin comprobar','muted'];
  if(r.state==='not-found')return ['Título sin identificar','muted'];
  if(r.state==='no-data')return ['Sin disponibilidad registrada','muted'];
  let p=[...(r.subscriptions||[]),...(r.free||[]),...(r.ads||[])];p=[...new Set(p)];
@@ -990,7 +991,7 @@ async function initPlatforms(){
  if(platformConfigured){
   try{
    const cached=await platformApi('/api/platforms/cache');
-   for(const [key,entry] of Object.entries(cached.entries||{}))platformData.set(key,entry);
+   for(const [key,entry] of Object.entries(cached.entries||{}))storePlatformLookup(key,entry);
   }catch(err){
    console.warn('No se pudo leer la caché TMDB; la clave sigue configurada:',err.message);
    updatePlatformChoices();updateListPlatformOptions();renderList();renderStats();
@@ -1004,11 +1005,19 @@ async function initPlatforms(){
  updatePlatformProgress();updatePlatformChoices();updateListPlatformOptions();renderList();renderStats();
  return true;
 }
+function storePlatformLookup(key,result){
+ const known=platformData.get(key);
+ if(known?.tmdb_id>0&&known.poster_path){
+  if(!result.tmdb_id&&result.state!=='ok')return;
+  if(known.tmdb_id===result.tmdb_id&&!result.poster_path)result={...result,poster_path:known.poster_path};
+ }
+ platformData.set(key,result);
+}
 async function loadPlatforms(force){
  if(!platformConfigured){showPlatformModal();return;}
  const current=++platformRun;
  const all=parsed.entries.map(f=>({...f}));
- const entries=force?all:all.filter(f=>!platformData.has(providerKey(f)));
+ const entries=force?all:all.filter(f=>{const cached=platformData.get(providerKey(f));return !cached||cached.state==='partial';});
  platformTotal=all.length;platformFinished=all.length-entries.length;
  platformActive=entries.length>0;updatePlatformProgress();renderList();
  if(!entries.length){updateListPlatformOptions();return;}
@@ -1017,8 +1026,8 @@ async function loadPlatforms(force){
  async function worker(){while(current===platformRun){const n=idx++;if(n>=entries.length)break;const f=entries[n];
    try{const r=await platformApi('/api/platforms/lookup',{title:f.title,year:Number(f.year)||0,force:!!force});
     const manual=libraryState.tmdb_overrides?.[providerKey(f)];
-    if(current===platformRun&&r.state!=='superseded'&&(!manual||!r.tmdb_id||manual===r.tmdb_id)){platformData.set(providerKey(f),r);if(r.tmdb_id>0)registerIdentity(f,r.tmdb_id);}}
-   catch(err){if(current===platformRun)platformData.set(providerKey(f),{state:'error',note:err.message});}
+    if(current===platformRun&&r.state!=='superseded'&&(!manual||!r.tmdb_id||manual===r.tmdb_id)){storePlatformLookup(providerKey(f),r);if(r.tmdb_id>0)registerIdentity(f,r.tmdb_id);}}
+   catch(err){if(current===platformRun)storePlatformLookup(providerKey(f),{state:'error',note:err.message});}
    if(current===platformRun){platformFinished++;if(platformFinished%5===0||platformFinished===platformTotal){updatePlatformProgress();scheduledPlatformRender();}}
  }}
  await Promise.all([worker(),worker(),worker()]);if(current!==platformRun)return;
@@ -1775,7 +1784,7 @@ async function reconcileTMDBLibrary(state,canApply){
    }
    if(!canApply())return false;
    state.tmdb_overrides=merged;
-   if(needsImport)for(const key of Object.keys(merged))if(stored[key]!==merged[key])platformData.delete(key);
+   if(needsImport)for(const key of Object.keys(merged))if(stored[key]!==merged[key]&&platformData.get(key)?.tmdb_id!==merged[key])platformData.delete(key);
    for(const [key,id] of Object.entries(merged)){
     if(id>0)identityMap.set(key,id);else identityMap.delete(key);
    }

@@ -391,14 +391,14 @@ $('labPrefetchPause').addEventListener('click',async()=>{
 });
 setInterval(()=>{if(!document.hidden)void labPrefetchStatus();},4000);
 
-let labKind='trending',labQuery='',labPage=1,labPages=1,labRequestSerial=0,labDetailSerial=0,labCurrentMovie=null;
+let labKind='trending',labQuery='',labBrowseBeforeSearch=null,labPage=1,labPages=1,labRequestSerial=0,labDetailSerial=0,labCurrentMovie=null;
 // Paginación por PELÍCULAS, independiente de las páginas de 20 resultados de TMDB.
 // Los resultados sobrantes se guardan y aparecen en la siguiente pantalla visual.
 let labMoviePool=[],labMovieIDs=new Set(),labTMDBNextPage=1,labTMDBTotal=0;
 let labMovieResponseCache=new Map(),labLastFillTarget=0,labResizeTimer=null;
 function labResetBrowsePages(){
- labPage=1;labPages=1;labMoviePool=[];labMovieIDs.clear();labTMDBNextPage=1;labTMDBTotal=0;
- labMovieResponseCache.clear();labLastFillTarget=0;
+ labPage=1;labPages=1;labMoviePool=[];labMovieIDs=new Set();labTMDBNextPage=1;labTMDBTotal=0;
+ labMovieResponseCache=new Map();labLastFillTarget=0;
 }
 const labFold=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es').replace(/[^\p{L}\p{N}]+/gu,' ').trim();
 const labPosterSrc=path=>'/api/discover/poster?path='+encodeURIComponent(path)+'&token='+encodeURIComponent(token);
@@ -452,7 +452,7 @@ function labSyncDiscoverFilters(){
 }
 $('labDiscoverGenre').addEventListener('change',()=>{labResetBrowsePages();labSyncDiscoverFilters();void labBrowse();});
 function labKindSelect(kind){
- labKind=kind;labQuery='';labResetBrowsePages();$('labSearchInput').value='';
+ labKind=kind;labQuery='';labBrowseBeforeSearch=null;labResetBrowsePages();$('labSearchInput').value='';
  document.querySelectorAll('[data-lab-kind]').forEach(b=>b.classList.toggle('active',b.dataset.labKind===kind));
  labSyncDiscoverFilters();void labBrowse();
 }
@@ -460,8 +460,28 @@ document.querySelectorAll('[data-lab-kind]').forEach(b=>b.addEventListener('clic
 $('labSearchForm').addEventListener('submit',e=>{
  e.preventDefault();const q=$('labSearchInput').value.trim();
  if(q.length<2){labStatus('Escribe al menos dos caracteres.');return;}
- labQuery=q;labResetBrowsePages();document.querySelectorAll('[data-lab-kind]').forEach(b=>b.classList.remove('active'));labSyncDiscoverFilters();void labBrowse();
+ labStartSearch(q);
 });
+function labStartSearch(query){
+ if(!labQuery)labBrowseBeforeSearch={
+  page:labPage,pages:labPages,pool:labMoviePool,ids:labMovieIDs,
+  next:labTMDBNextPage,total:labTMDBTotal,cache:labMovieResponseCache
+ };
+ labQuery=query;labResetBrowsePages();
+ document.querySelectorAll('[data-lab-kind]').forEach(b=>b.classList.remove('active'));
+ labSyncDiscoverFilters();void labBrowse();
+}
+function labClearSearch(){
+ if(!labQuery||$('labSearchInput').value.trim())return;
+ const previous=labBrowseBeforeSearch;
+ if(!previous){labKindSelect(labKind);return;}
+ labQuery='';labBrowseBeforeSearch=null;
+ labPage=previous.page;labPages=previous.pages;labMoviePool=previous.pool;labMovieIDs=previous.ids;
+ labTMDBNextPage=previous.next;labTMDBTotal=previous.total;labMovieResponseCache=previous.cache;
+ document.querySelectorAll('[data-lab-kind]').forEach(b=>b.classList.toggle('active',b.dataset.labKind===labKind));
+ labSyncDiscoverFilters();void labBrowse();
+}
+for(const event of ['input','search'])$('labSearchInput').addEventListener(event,labClearSearch);
 // Calcular tarjetas necesarias a partir de las columnas reales y el alto visible.
 // Se piden páginas TMDB consecutivas sin repetirlas en la siguiente página visual.
 function labDiscoverFillTarget(){
@@ -961,7 +981,7 @@ function labHydrateAddedMovie(movie,film){
  const key=providerKey(film);
  const old=platformData.get(key)||{};
  const data={
-  ...old,state:'ok',tmdb_id:Number(movie.id)||0,
+  ...old,state:movie.availability_note?'partial':'ok',tmdb_id:Number(movie.id)||0,
   metadata_version:2,poster_path:movie.poster_path||'',
   vote_average:Number(movie.vote_average)||0,vote_count:Number(movie.vote_count)||0,
   runtime:Number(movie.runtime)||0,genres:Array.isArray(movie.genres)?movie.genres:[],
@@ -973,12 +993,12 @@ function labHydrateAddedMovie(movie,film){
   film_url:movie.watch_link||movie.tmdb_url||''
  };
  platformData.set(key,data);
- // Refrescar también la caché nativa de plataformas de manera asíncrona.
+ // Compartir la ficha existente con la caché persistente de Biblioteca.
  // No bloquear el guardado de la lista ni perder el contenido ya visible
  // si hay un error de TMDB o la consulta devuelve datos incompletos.
- void platformApi('/api/platforms/lookup',{title:film.title,year:Number(film.year)||0,force:false})
+ void platformApi('/api/discover/library-cache',{id:Number(movie.id)})
   .then(info=>{
-   if(info?.state==='ok'&&Number(info.tmdb_id)===Number(movie.id)){
+   if(info?.tmdb_id===Number(movie.id)){
     // La consulta de plataformas puede no incluir todos los metadatos:
     // conservar la ficha ya obtenida si llegan campos vacíos o parciales.
     platformData.set(key,{
@@ -1044,7 +1064,7 @@ async function labOpenFilmDetails(f){
   const data=await labGet('/api/discover/search?q='+encodeURIComponent(title)+'&page=1');
   const matches=(data.results||[]).filter(m=>labFold(m.title)===labFold(title)&&(!year||String(m.release_date||'').slice(0,4)===String(year)));
   if(matches.length===1){void labShowDetail(matches[0].id);return;}
-  labOpen();$('labSearchInput').value=title;labQuery=title;labPage=1;void labBrowse();
+  labOpen();$('labSearchInput').value=title;labStartSearch(title);
   labStatus('Selecciona la película correcta para abrir sus detalles.');
  }catch(err){labOpen();labStatus('⚠ '+err.message);}
 }

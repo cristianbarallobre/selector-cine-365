@@ -101,8 +101,8 @@ func makeHTML(initial, token string) (string, error) {
 	out = injectLabMaintenance(out)
 	if desktopFeatures && !appIsLab {
 		out = strings.NewReplacer(
-			"<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.16</title>",
-			"🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.16",
+			"<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.17</title>",
+			"🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.17",
 			` <span class="lab-nav-tag">LAB</span>`, "",
 			`<span class="lab-smart-caption">LAB</span>`, "",
 			"SELECTOR CINE 365 · LAB WINDOWS", "SELECTOR CINE 365",
@@ -222,7 +222,7 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		a.serveLabNetworkLog(w, r)
 	case "/api/discover/smart-cache":
 		a.serveLabSmartCache(w, r)
-	case "/api/discover/list", "/api/discover/search", "/api/discover/detail", "/api/discover/person", "/api/discover/resolve", "/api/discover/poster", "/api/discover/prefetch", "/api/discover/prefetch/pause":
+	case "/api/discover/list", "/api/discover/search", "/api/discover/detail", "/api/discover/person", "/api/discover/resolve", "/api/discover/library-cache", "/api/discover/poster", "/api/discover/prefetch", "/api/discover/prefetch/pause":
 		a.serveLabDiscovery(w, r)
 	case "/api/poster":
 		a.servePosterHTTP(w, r)

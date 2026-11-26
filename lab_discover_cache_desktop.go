@@ -457,3 +457,65 @@ func (a *runningApp) labDetailFromCache(w http.ResponseWriter,r *http.Request) {
  data:=labCopyMap(rec.Data);data["cache_state"]="descargada"
  _=json.NewEncoder(w).Encode(data)
 }
+
+
+func (a *runningApp) labCacheLibraryDetails(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
+		return
+	}
+	var request struct {
+		ID int `json:"id"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&request); err != nil ||
+		request.ID <= 0 || request.ID > 999999999 {
+		http.Error(w, "ID de película no válido", http.StatusBadRequest)
+		return
+	}
+	record, found := a.labCatalog().record(request.ID)
+	if !found {
+		http.Error(w, "La ficha no está en la caché local", http.StatusNotFound)
+		return
+	}
+	body, err := json.Marshal(record.Data)
+	var result providerResult
+	if err != nil || json.Unmarshal(body, &result) != nil || result.Title == "" {
+		http.Error(w, "Ficha local no válida", http.StatusBadRequest)
+		return
+	}
+	date, _ := record.Data["release_date"].(string)
+	year := 0
+	if len(date) >= 4 {
+		year, _ = strconv.Atoi(date[:4])
+	}
+	if !validPosterPath(result.PosterPath) {
+		result.PosterPath = ""
+	}
+	result.FilmURL, _ = record.Data["watch_link"].(string)
+	result.TMDBID = request.ID
+	result.State, result.MetadataVersion = "partial", 2
+	if record.ProvidersAt > 0 {
+		result.State, result.MetadataVersion = "ok", 3
+		result.Date = time.Unix(record.ProvidersAt, 0).UTC().Format(time.RFC3339)
+	}
+	key := movieCacheKey(result.Title, year)
+	p := a.platforms
+	p.mu.Lock()
+	if manual := p.overrides[key]; manual > 0 && manual != request.ID {
+		p.mu.Unlock()
+		http.Error(w, "La Biblioteca tiene otra identificación manual para este título", http.StatusConflict)
+		return
+	}
+	if prior := p.cache[key]; prior.TMDBID == request.ID && prior.MetadataVersion >= 3 && prior.Date >= result.Date {
+		if prior.PosterPath == "" && result.PosterPath != "" {
+			prior.PosterPath = result.PosterPath
+			p.putCachedLocked(key, prior)
+		}
+		result = prior
+	} else {
+		p.putCachedLocked(key, result)
+	}
+	p.mu.Unlock()
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	_ = json.NewEncoder(w).Encode(result)
+}

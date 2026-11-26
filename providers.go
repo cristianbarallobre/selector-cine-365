@@ -204,7 +204,9 @@ func (p *availabilityServer) importManualOverrides(mappings map[string]int) erro
 		} else {
 			p.identities[key] = filmIdentityRecord{TMDBID: id, State: "ok", Updated: stamp}
 		}
-		delete(p.cache, key)
+		if id == 0 || p.cache[key].TMDBID != id {
+			delete(p.cache, key)
+		}
 	}
 	p.identityDirty = true
 	p.cacheDirty = true
@@ -299,6 +301,15 @@ func (p *availabilityServer) finishAvailability(key string, revision uint64, res
 			return current
 		}
 		return providerResult{State: "superseded"}
+	}
+	if prior := p.cache[key]; prior.TMDBID > 0 && prior.PosterPath != "" &&
+		(p.overrides[key] == 0 || p.overrides[key] == prior.TMDBID) {
+		if result.TMDBID == 0 && (result.State == "error" || result.State == "not-found") {
+			return prior
+		}
+		if result.TMDBID == prior.TMDBID && result.PosterPath == "" {
+			result.PosterPath = prior.PosterPath
+		}
 	}
 	p.putCachedLocked(key, result)
 	return result
@@ -935,6 +946,14 @@ func (a *runningApp) servePosterHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "private, max-age=604800")
 		_, _ = w.Write(b)
 		return
+	}
+	if desktopFeatures {
+		if data := a.discoveryImages.get(discoveryImageDir(a.libraryPath), filepath.Base(path)); len(data) > 0 {
+			w.Header().Set("Content-Type", discoveryImageType(data))
+			w.Header().Set("Cache-Control", "private, max-age=604800")
+			_, _ = w.Write(data)
+			return
+		}
 	}
 	// Copia bajo demanda el cartel de Roaming si existe; otra versión puede
 	// seguir usando ese directorio, por eso no se borra su copia.

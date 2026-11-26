@@ -61,3 +61,30 @@ ctx.labQuery='';ctx.labKind='popular';ctx.labSyncDiscoverFilters();
 assert.equal(ids.labDiscoverGenre.disabled,false);
 assert.equal(ids.labDiscoverFilterHint.hidden,true);
 console.log('OK: Descubrir filtra solo por género, conserva validación y rejilla de tres filas');
+
+
+{
+ const input={value:'',handlers:{},addEventListener(event,fn){this.handlers[event]=fn;}};
+ const form={addEventListener(){}};
+ const tabs=['trending','popular'].map(kind=>({dataset:{labKind:kind},classList:{remove(){},toggle(){}},addEventListener(){}}));
+ const context={
+   $:id=>id==='labSearchInput'?input:form,
+   document:{querySelectorAll:()=>tabs},labSyncDiscoverFilters(){},labStatus(){},
+   labBrowse(){context.calls++;},calls:0
+ };
+ vm.createContext(context);
+ const state=js.slice(js.indexOf("let labKind='trending'"),js.indexOf('const labFold='));
+ const search=js.slice(js.indexOf('function labKindSelect(kind){'),js.indexOf('// Calcular tarjetas'));
+ vm.runInContext(state+search,context);
+ vm.runInContext("labKindSelect('popular');labPage=3;labMoviePool.push({id:42});",context);
+ input.value='buena suerte';
+ vm.runInContext("labStartSearch('buena suerte');labMoviePool.push({id:99});",context);
+ input.value='';
+ input.handlers.input();
+ assert.equal(vm.runInContext('labKind',context),'popular');
+ assert.equal(vm.runInContext('labPage',context),3);
+ assert.equal(vm.runInContext('labQuery',context),'');
+ assert.equal(vm.runInContext('labMoviePool[0].id',context),42);
+ input.handlers.search();
+ assert.equal(context.calls,3,'La cruz restaura la categoría una vez y no repite la carga');
+}
