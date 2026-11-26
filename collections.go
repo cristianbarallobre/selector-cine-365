@@ -289,6 +289,7 @@ func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 			recordMembershipEdits(before, &state)
 		}
 		mirrorPending, err := commitLibrary(a.libraryPath, a.savePath, state)
+		diagnosticError("guardado", "commit de biblioteca local", err)
 		if mirrorPending {
 			w.Header().Set("X-Cine-Legacy", "pending")
 		}
@@ -299,11 +300,15 @@ func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 			// Registrar cambios del usuario, no solo el snapshot final.
 			if a.syncStore != nil {
 				if syncErr := a.syncStore.observe(before, state); syncErr != nil {
+					diagnosticError("sincronizacion", "registrar cambios locales", syncErr)
 					w.Header().Set("X-Cine-Cloud", "error")
 				}
 			}
-			if desktopFeatures && a.markManualCloudUpload() != nil {
-				w.Header().Set("X-Cine-Cloud", "error")
+			if desktopFeatures {
+				if err := a.markManualCloudUpload(); err != nil {
+					diagnosticError("sincronizacion", "marcar subida pendiente", err)
+					w.Header().Set("X-Cine-Cloud", "error")
+				}
 			}
 			a.syncPreviewToken = "" // una vista previa anterior ya no es válida
 		} else if desktopFeatures {

@@ -537,7 +537,7 @@ func (a *runningApp) retryGraphPublication(op graphOperation, force bool, result
 
 func (a *runningApp) queueGraphUpload() {
 	if err := a.syncStore.markGraphUploadPending(); err != nil {
-		logDiagnostic("Estado de subida pendiente: " + err.Error())
+		diagnosticError("sincronizacion", "estado de subida pendiente", err)
 	}
 	if a.graphUploadCh == nil || a.cloud == nil || !a.cloud.autoMode() {
 		return

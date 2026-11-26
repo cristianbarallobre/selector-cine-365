@@ -915,6 +915,17 @@ const token='__ATLAS_TOKEN__';
   }finally{loading=false;}
  },true);
 }
+// Diagnostic messages are fixed event names, never library contents or credentials.
+globalThis.cineDiagnostic=event=>{
+ try{
+  if(window.chrome?.webview){window.chrome.webview.postMessage('cine-diagnostic:'+event);return;}
+  if(window.webkit?.messageHandlers?.cineDiagnostics){window.webkit.messageHandlers.cineDiagnostics.postMessage(event);return;}
+  void fetch('/api/diagnostics',{method:'POST',headers:{'X-Atlas-Token':token},body:event,cache:'no-store'}).catch(()=>{});
+ }catch{}
+};
+window.addEventListener('error',event=>{const line=Math.min(999999,Math.max(0,Number(event.lineno)||0)),col=Math.min(999999,Math.max(0,Number(event.colno)||0));globalThis.cineDiagnostic('js_error:'+Math.floor(line)+':'+Math.floor(col));});
+window.addEventListener('unhandledrejection',()=>globalThis.cineDiagnostic('unhandled_rejection'));
+globalThis.cineDiagnostic('ui_started');
 let rawText=$('initialState').value.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
 const librarySizeLimit=256*1024*1024,listSizeLimit=900000;
 let parsed=null,filter='all',search='',chosen=null,lastChoice=null,saveQueue=Promise.resolve(),saveEpoch=0;
@@ -1413,12 +1424,14 @@ async function saveLocal(){
  });
  try{const result=await saveQueue;if(!result)return;
  const {cloudResult,txtPending}=result;
+ globalThis.cineDiagnostic?.('save_confirmed');
  if(epoch===saveEpoch&&revision===editRevision)saveNeeded=false;
  await cineLoadRevisions();
  if(epoch===saveEpoch&&revision===editRevision){cineRecentIntents.clear();$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + carpeta de nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':cloudResult==='review'?'✓ Guardado local · Revisar sincronización':'✓ Guardado';
  if(txtPending)$('saveState').textContent+=' · ⚠ Copia TXT pendiente';
  void cloudRefresh();}}
  catch(err){
+  globalThis.cineDiagnostic?.('save_failed');
   if(err.recoverySaved){recoverySavedRevision=revision;void cineRefreshRecovery();}
   if(epoch===saveEpoch&&revision===editRevision)$('saveState').textContent=err.message||'⚠ Guardado no confirmado';
  }
@@ -2571,7 +2584,7 @@ async function checkCloudIncoming(){
  try{
   const status=await cloudRequest('/api/cloud/pending');
   if(folder===cloudHeaderState?.folder&&checked===cloudIncomingChecked)cloudIncomingState=status.incoming_pending;
- }catch{if(folder===cloudHeaderState?.folder)cloudIncomingState=null;}
+ }catch{globalThis.cineDiagnostic?.('cloud_check_failed');if(folder===cloudHeaderState?.folder)cloudIncomingState=null;}
  finally{cloudIncomingBusy=false;renderCloudHeader();}
 }
 const cloudDialog=$('cloudSyncDialog');
@@ -2594,6 +2607,7 @@ for(const type of ['click','keydown','focusin'])document.addEventListener(type,e
  event.preventDefault();event.stopImmediatePropagation();$('cloudSyncDialogMessage').focus();
 },true);
 function showCloudSyncError(message){
+ globalThis.cineDiagnostic?.('sync_failed');
  cloudHeaderError='⚠ '+message;
  $('cloudSyncManualResult').textContent=cloudHeaderError;
  renderCloudHeader();
@@ -2608,6 +2622,7 @@ async function syncCloudNow(){
   showView('collections');await reviewCloudSync();return;
  }
  cloudManualBusy=true;
+ globalThis.cineDiagnostic?.('sync_started');
  let review=false;
  openCloudDialog('Guardando los cambios en este equipo…');
  try{
@@ -2620,6 +2635,7 @@ async function syncCloudNow(){
   cloudIncomingState=review;cloudIncomingChecked=Date.now();
   $('cloudSyncManualResult').textContent=result.warning||(!review?'Sincronización completada.':'Hay cambios que requieren revisión.');
   if(result.warning)showCloudSyncError(result.warning);
+  else globalThis.cineDiagnostic?.('sync_finished');
   await cloudRefresh();void cineRefreshHistory();void cineRefreshRecovery();
  }catch(error){showCloudSyncError(error.message);}
  finally{closeCloudDialog();cloudManualBusy=false;renderCloudHeader();}
@@ -2940,8 +2956,10 @@ async function checkLocalConnection(){
  try{
   const response=await fetch('/api/ping',{cache:'no-store',signal:controller.signal});
   if(response.status!==204)throw new Error('Servidor local no disponible');
+  if(!state.hidden)globalThis.cineDiagnostic?.('local_connection_restored');
   state.hidden=true;state.textContent='';
  }catch{
+  if(state.hidden)globalThis.cineDiagnostic?.('local_connection_lost');
   state.hidden=false;state.textContent='⚠ Sin comunicación con el motor local. Si hay cambios pendientes, exporta una copia de emergencia.';
  }finally{clearTimeout(timer);localPingBusy=false;}
 }
@@ -3015,6 +3033,7 @@ function awaitCloseStep(promise,deadline){
 }
 $('retryLocalSave').addEventListener('click',async()=>{
  const button=$('retryLocalSave');button.disabled=true;
+ globalThis.cineDiagnostic?.('retry_save');
  try{
   if(!await awaitCloseStep(flushLibrary(),Date.now()+12000))throw new Error('Guardado no confirmado.');
  }catch(error){$('saveState').textContent='⚠ '+error.message;}
@@ -3023,6 +3042,7 @@ $('retryLocalSave').addEventListener('click',async()=>{
 $('emergencyBackup').addEventListener('click',()=>{
  // This is a Blob download of the live library, not a call to the server.
  if(!libraryReady)return;
+ globalThis.cineDiagnostic?.('emergency_export');
  syncActiveText();const stamp=new Date().toISOString();
  saveDownload('Cine365_emergencia_'+stamp.replace(/[:.]/g,'-')+'.json',JSON.stringify({...libraryState,backup_created_at:stamp},null,2),'application/json;charset=utf-8');
 });
@@ -3031,6 +3051,7 @@ window.cineCloseFailureDetail='';
 window.cinePrepareClose=async()=>{
  window.cineCloseFailureDetail='';
  if(restoringBackup||preparingClose||cloudManualBusy){
+  globalThis.cineDiagnostic?.('close_failed');
   window.cineCloseFailureDetail='Hay una operación de guardado, restauración o sincronización en curso.\n'+describePendingChanges();
   return false;
  }
@@ -3051,6 +3072,7 @@ window.cinePrepareClose=async()=>{
   recoverySavedRevision=revision;saveNeeded=false;
   return true;
  }catch(error){
+  globalThis.cineDiagnostic?.('close_failed');
   window.cineCloseFailureDetail=(describePendingChanges()+'\nMotivo: '+(error.message||'Guardado no confirmado.')).slice(0,1100);
   $('saveState').textContent='⚠ No se pudo confirmar el guardado local.';
   updateSaveWarning();
@@ -3061,6 +3083,7 @@ window.chrome?.webview?.addEventListener('message',async event=>{
  const match=typeof event.data==='string'&&/^cine-prepare-close:(\d+)$/.exec(event.data);
  if(!match)return;
  const saved=await window.cinePrepareClose();
+ if(saved)globalThis.cineDiagnostic?.('close_ready');
  window.chrome.webview.postMessage(saved?'cine-close-ready:'+match[1]:'cine-close-pending:'+match[1]+':'+window.cineCloseFailureDetail);
 });
 window.addEventListener('beforeunload',event=>{

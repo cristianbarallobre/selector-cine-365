@@ -490,7 +490,9 @@ func (g *desktopGraph) accessToken() (string, error) {
 	g.expiry = time.Now().Add(time.Duration(ttl-90) * time.Second)
 	return g.token, nil
 }
-func (op graphOperation) request(path, method string, body []byte, contentType string) ([]byte, error) {
+func (op graphOperation) request(path, method string, body []byte, contentType string) (result []byte, resultErr error) {
+	started := time.Now()
+	defer func() { if resultErr != nil { diagnosticEvent("WARN", "onedrive", fmt.Sprintf("peticion Graph fallida cause=%s ms=%d", diagnosticErrorKind(resultErr), time.Since(started).Milliseconds())) } }()
 	if !strings.HasPrefix(path, "me/drive/") {
 		return nil, errors.New("Ruta Microsoft Graph no autorizada")
 	}
@@ -525,6 +527,7 @@ func (op graphOperation) request(path, method string, body []byte, contentType s
 	if !op.current() {
 		return nil, errGraphSessionChanged
 	}
+	if resp.StatusCode >= 400 { diagnosticEvent("WARN", "onedrive", fmt.Sprintf("Graph status=%d", resp.StatusCode)) }
 	if resp.StatusCode == 401 {
 		return nil, errors.New("La sesión Microsoft necesita volver a conectarse")
 	}

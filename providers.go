@@ -457,7 +457,9 @@ func titleSearchVariants(title string) []string {
 }
 
 func newAvailabilityError(s string) providerResult { return providerResult{State: "error", Note: s} }
-func requestTMDB(ctx context.Context, path string, params url.Values, key string, v any) error {
+func requestTMDB(ctx context.Context, path string, params url.Values, key string, v any) (resultErr error) {
+	started := time.Now()
+	defer func() { if resultErr != nil { diagnosticEvent("WARN", "tmdb", fmt.Sprintf("consulta fallida cause=%s ms=%d", diagnosticErrorKind(resultErr), time.Since(started).Milliseconds())) } }()
 	if !strings.HasPrefix(key, "eyJ") && !strings.Contains(key, ".") {
 		params.Set("api_key", key)
 	}
@@ -475,6 +477,7 @@ func requestTMDB(ctx context.Context, path string, params url.Values, key string
 		return fmt.Errorf("Conexión no disponible: %w", e)
 	}
 	defer res.Body.Close()
+	if res.StatusCode != 200 { diagnosticEvent("WARN", "tmdb", fmt.Sprintf("TMDB status=%d", res.StatusCode)) }
 	if res.StatusCode == 401 || res.StatusCode == 403 {
 		return errors.New("Clave TMDB incorrecta o sin autorización")
 	}

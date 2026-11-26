@@ -958,7 +958,7 @@ func (a *runningApp) cloudSyncConfirm(token string, decisions map[string]bool) (
 func syncResult(plan syncPlan, changed bool, metadataErr error, publish func() error) map[string]any {
 	result := map[string]any{"changed": changed, "sources": plan.Sources, "lists": len(plan.Library.Lists), "seen": syncWatched(plan.Library)}
 	if metadataErr != nil {
-		logDiagnostic("Estado de sincronización pendiente: " + metadataErr.Error())
+		diagnosticError("sincronizacion", "estado pendiente de guardar", metadataErr)
 		result["warning"] = "Estado de sincronización pendiente de guardar."
 	} else if err := publish(); err != nil {
 		result["warning"] = "Subida pendiente: " + err.Error()

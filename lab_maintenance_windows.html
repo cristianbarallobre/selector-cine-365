@@ -21,11 +21,13 @@
   <p id="labMaintenancePaths" class="lab-maintenance-paths"></p>
   <div class="lab-maintenance-actions">
     <button type="button" id="labMaintenanceRefresh">Comprobar estado</button>
+    <button type="button" id="labDiagnosticsExport">Exportar registro de diagnóstico</button>
     <button type="button" id="labMaintenancePrune">Revisar imágenes antiguas</button>
     <button type="button" id="labMaintenanceClear">Limpiar imágenes descargadas</button>
     <a target="_blank" rel="noopener noreferrer" href="https://github.com/cristianbarallobre/selector-cine-365/releases">Versiones estables en GitHub</a>
   </div>
   <p>WebView2 administra su propia caché y no se elimina mientras la aplicación está abierta. Las copias locales se conservan por separado.</p>
+  <p>El registro de diagnóstico es local, no contiene las listas ni claves de acceso y no se envía automáticamente. Se conserva en la carpeta <strong>logs</strong> de los datos de Selector Cine 365.</p>
   <p id="labMaintenanceStatus" role="status" aria-live="polite"></p>
 </details>
 <!-- LAB_MAINTENANCE_SCRIPT -->
@@ -76,6 +78,17 @@ async function labMaintenanceRefresh(){
  }catch(e){info.textContent='⚠ '+e.message;}
 }
 $('labMaintenanceRefresh').addEventListener('click',()=>void labMaintenanceRefresh());
+$('labDiagnosticsExport')?.addEventListener('click',async()=>{
+ const button=$('labDiagnosticsExport');button.disabled=true;
+ try{
+  const result=await fetch('/api/diagnostics',{headers:{'X-Atlas-Token':token},cache:'no-store'});
+  if(!result.ok)throw new Error('No se pudo leer el registro');
+  saveDownload('Selector_Cine_365_diagnostico_'+new Date().toISOString().slice(0,10)+'.log',await result.text(),'text/plain;charset=utf-8');
+  $('labMaintenanceStatus').textContent='Registro preparado para exportar. Revísalo antes de compartirlo.';
+ }catch{
+  $('labMaintenanceStatus').textContent='No se pudo exportar. Puedes copiar los archivos de la carpeta logs de Selector Cine 365.';
+ }finally{button.disabled=false;}
+});
 $('labMaintenanceDetails').addEventListener('toggle',()=>{
  if($('labMaintenanceDetails').open)void labMaintenanceRefresh();
 });

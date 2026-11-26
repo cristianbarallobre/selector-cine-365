@@ -4,8 +4,9 @@
 // de terceros. Autor: Cristian Barallobre Rúa.
 #import <Cocoa/Cocoa.h>
 #import <WebKit/WebKit.h>
+extern void cine_log_ui_event(char *event);
 
-@interface CineMacDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate>
+@interface CineMacDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate, WKScriptMessageHandler>
 @property(retain) NSURL *appURL;
 @property(retain) NSMapTable *downloads;
 @property(retain) WKWebView *appView;
@@ -14,6 +15,17 @@
 @end
 
 @implementation CineMacDelegate
+- (void)userContentController:(WKUserContentController *)controller didReceiveScriptMessage:(WKScriptMessage *)message {
+    WKSecurityOrigin *source = message.frameInfo.securityOrigin;
+    if (![message.name isEqualToString:@"cineDiagnostics"] || !message.frameInfo.isMainFrame ||
+        ![source.protocol isEqualToString:self.appURL.scheme] || ![source.host isEqualToString:self.appURL.host] ||
+        source.port != self.appURL.port.integerValue || ![message.body isKindOfClass:[NSString class]]) return;
+    NSString *event = message.body;
+    if (event.length <= 128) cine_log_ui_event((char *)[event UTF8String]);
+}
+- (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView {
+    cine_log_ui_event("renderer_terminated");
+}
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {
     return YES;
 }
@@ -27,10 +39,12 @@
         if (finished) return;
         finished = YES;
         if (saved) {
+            cine_log_ui_event("close_ready");
             self.preparingClose = NO;
             reply(YES);
             return;
         }
+        cine_log_ui_event("close_failed");
         NSAlert *alert = [[[NSAlert alloc] init] autorelease];
         alert.alertStyle = NSAlertStyleWarning;
         alert.messageText = @"No se pudo confirmar el guardado local.";
@@ -39,6 +53,7 @@
         [alert addButtonWithTitle:@"Cancelar"];
         [alert addButtonWithTitle:@"Cerrar de todas formas"];
         NSModalResponse choice = [alert runModal];
+        cine_log_ui_event(choice == NSAlertSecondButtonReturn ? "close_forced" : "close_cancelled");
         self.preparingClose = NO;
         reply(choice == NSAlertSecondButtonReturn);
     };
@@ -197,6 +212,7 @@ int cine_macos_run(const char *targetURL) {
 
         WKWebViewConfiguration *configuration = [[WKWebViewConfiguration alloc] init];
         configuration.websiteDataStore = [WKWebsiteDataStore nonPersistentDataStore];
+        [configuration.userContentController addScriptMessageHandler:delegate name:@"cineDiagnostics"];
         WKWebView *webView = [[WKWebView alloc] initWithFrame:[[window contentView] bounds]
                                                  configuration:configuration];
         delegate.appView = webView;
@@ -208,6 +224,7 @@ int cine_macos_run(const char *targetURL) {
         [window makeKeyAndOrderFront:nil];
         [app activateIgnoringOtherApps:YES];
         [app run];
+        [configuration.userContentController removeScriptMessageHandlerForName:@"cineDiagnostics"];
         return 0;
     }
 }

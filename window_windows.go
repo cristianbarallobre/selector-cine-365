@@ -237,8 +237,10 @@ func nativeWndProc(hwnd, msg, wparam, lparam uintptr) uintptr {
 				w.closeAttempt++
 				logDiagnostic("Cierre: guardado no confirmado; se ofrece cerrar de todas formas")
 				if confirmCloseWithoutSave(hwnd, w.closeDetail) {
+					diagnosticEvent("WARN", "cierre", "usuario confirma cierre sin guardado confirmado")
 					procDestroyWindow.Call(hwnd)
 				} else {
+					diagnosticEvent("INFO", "cierre", "usuario cancela cierre")
 					w.closing = false
 				}
 			}
@@ -340,15 +342,20 @@ func webviewString(object unsafe.Pointer, method uintptr, maxLength int) string 
 }
 func webMessageReceived(_ unsafe.Pointer, sender, args unsafe.Pointer) uintptr {
 	w := activeNativeWindow
-	if w == nil || !w.closing || args == nil || sender != w.webview {
+	if w == nil || args == nil || sender != w.webview {
 		return sOK
 	}
 	if webviewString(args, 3, len(w.url)) != w.url {
 		return sOK
 	}
+	message := webviewString(args, 5, 1400)
+	if strings.HasPrefix(message, "cine-diagnostic:") {
+		diagnosticUIEvent(strings.TrimPrefix(message, "cine-diagnostic:"))
+		return sOK
+	}
+	if !w.closing { return sOK }
 	ready := fmt.Sprintf("cine-close-ready:%d", w.closeAttempt)
 	pending := fmt.Sprintf("cine-close-pending:%d", w.closeAttempt)
-	message := webviewString(args, 5, len(pending)+1200)
 	switch {
 	case message == ready:
 		procPostMessage.Call(w.hwnd, wmAppCloseResult, 1, w.closeAttempt)
@@ -536,7 +543,7 @@ func nativeWindowLoop(url, profile string) error {
 	if err != nil {
 		return err
 	}
-	logDiagnostic("DLL hallada: " + loaderFile)
+	logDiagnostic("DLL de WebView2 localizada")
 	dll, err := syscall.LoadDLL(loaderFile)
 	if err != nil {
 		return fmt.Errorf("no se pudo cargar WebView2Loader.dll: %w", err)
@@ -624,19 +631,13 @@ func launchVisualWindow(url, profile string, onClose func(), heartbeat func() bo
 	}
 	logDiagnostic("Ventana WebView2: arrancando proceso independiente")
 	cmd := exec.Command(exe, "--webview2-host", url, profile)
-	// La compilación windowsgui no dispone de consola: guardamos sus errores.
-	diag := diagnosticFile()
-	if diag != nil {
-		cmd.Stdout, cmd.Stderr = diag, diag
-		defer diag.Close()
-	}
 	// Do not pass SW_HIDE via STARTUPINFO to a process whose first ShowWindow
 	// must display a native window; -H=windowsgui already hides its console.
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: false}
 	nativeDesktopWindowActive.Store(true)
 	if err := cmd.Start(); err != nil {
 		nativeDesktopWindowActive.Store(false)
-		logDiagnostic("No se pudo arrancar proceso WebView2: " + err.Error())
+		diagnosticError("nativo", "no se pudo arrancar WebView2", err)
 		return launchCompatibleBrowser(url, filepath.Join(filepath.Dir(profile), "perfil_compatible_v7_3"))
 	}
 	// Impide que WebView2 mantenga una ventana negra indefinidamente.
@@ -654,7 +655,7 @@ func launchVisualWindow(url, profile string, onClose func(), heartbeat func() bo
 		finished.Store(true)
 		watchdog.Stop()
 		if err != nil {
-			logDiagnostic("Host WebView2 falló: " + err.Error())
+			diagnosticError("nativo", "Host WebView2 falló", err)
 			fbErr := launchCompatibleBrowser(url, filepath.Join(filepath.Dir(profile), "perfil_compatible_v7_3"))
 			if fbErr != nil {
 				notifyError("Selector de Cine 365", "WebView2 no pudo iniciarse ni fue posible abrir el navegador: "+fbErr.Error()+"\nArchivo de errores: "+diagnosticPath())
@@ -700,7 +701,7 @@ func launchCompatibleBrowser(url, profile string) error {
 		cmd := exec.Command(path, args...)
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 		if err := cmd.Start(); err == nil {
-			logDiagnostic("Modo compatible abierto con: " + path)
+			logDiagnostic("Modo compatible abierto con navegador dedicado")
 			go func() { _ = cmd.Wait() }()
 			return nil
 		}
@@ -715,33 +716,6 @@ func launchCompatibleBrowser(url, profile string) error {
 	logDiagnostic("Modo compatible abierto con navegador predeterminado")
 	return nil
 }
-func diagnosticPath() string {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		dir = os.TempDir()
-	}
-	return filepath.Join(dir, "AtlasDelCine", "diagnostico_v7_3.txt")
-}
-func diagnosticFile() *os.File {
-	path := diagnosticPath()
-	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
-		return nil
-	}
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
-	if err != nil {
-		return nil
-	}
-	return f
-}
-func logDiagnostic(msg string) {
-	f := diagnosticFile()
-	if f == nil {
-		return
-	}
-	defer f.Close()
-	fmt.Fprintf(f, "%s %s\n", time.Now().Format("2006-01-02 15:04:05"), msg)
-}
-
 // Se llama antes del servidor HTTP en el proceso secundario.
 func maybeNativeChild() bool {
 	if len(os.Args) < 2 || os.Args[1] != "--webview2-host" {
@@ -751,10 +725,10 @@ func maybeNativeChild() bool {
 		logDiagnostic("Host: argumentos incompletos")
 		os.Exit(2)
 	}
-	logDiagnostic("Host: inicializando WebView2 (v8.1 - arranque estable de v7.3)")
+	logDiagnostic("Host: inicializando WebView2")
 	err := nativeWindowLoop(os.Args[2], os.Args[3])
 	if err != nil {
-		logDiagnostic("Host: error de WebView2: " + err.Error())
+		diagnosticError("nativo", "Host: error de WebView2", err)
 		os.Exit(3)
 	}
 	logDiagnostic("Host: cerrado sin errores")
@@ -780,10 +754,14 @@ func notifyError(title, body string) {
 	proc.Call(0, ptr(unsafe.Pointer(utf16Ptr(body))), ptr(unsafe.Pointer(utf16Ptr(title))), 0x10)
 }
 
-// traceHTTP records whether the embedded renderer reached the local app.
-func traceHTTP(path, userAgent string) {
-	if len(userAgent) > 160 {
-		userAgent = userAgent[:160]
+// Record startup and resumed heartbeats rather than every 12-second ping.
+var lastWindowsHeartbeat atomic.Int64
+func traceHTTP(path, _ string) {
+	if path == "/" { diagnosticEvent("INFO", "motor", "interfaz solicitada"); return }
+	if path != "/api/ping" { return }
+	now := time.Now().Unix()
+	previous := lastWindowsHeartbeat.Swap(now)
+	if previous == 0 { diagnosticEvent("INFO", "motor", "primer heartbeat") } else if now-previous > 45 {
+		diagnosticEvent("WARN", "motor", fmt.Sprintf("heartbeat reanudado tras %d s", now-previous))
 	}
-	logDiagnostic("Servidor local " + path + " (" + userAgent + ")")
 }

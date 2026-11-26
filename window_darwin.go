@@ -12,10 +12,8 @@ import "C"
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"runtime"
 	"sync"
-	"time"
 	"unsafe"
 )
 
@@ -46,18 +44,8 @@ var firstWebKitHeartbeat sync.Once
 func traceHTTP(path, _ string) {
 	if path == "/api/ping" { firstWebKitHeartbeat.Do(func(){ logDiagnostic("WKWebView: interfaz iniciada") }) }
 }
-func logDiagnostic(message string) {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		return
-	}
-	path := filepath.Join(dir, "AtlasDelCine", "diagnostico_macos.txt")
-	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
-		return
-	}
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
-	if err == nil {
-		defer f.Close()
-		fmt.Fprintf(f, "%s %s\n", time.Now().Format("2006-01-02 15:04:05"), message)
-	}
+
+//export cine_log_ui_event
+func cine_log_ui_event(event *C.char) {
+	if event != nil { diagnosticUIEvent(C.GoString(event)) }
 }

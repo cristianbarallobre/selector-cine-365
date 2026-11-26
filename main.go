@@ -101,8 +101,8 @@ func makeHTML(initial, token string) (string, error) {
 	out = injectLabMaintenance(out)
 	if desktopFeatures && !appIsLab {
 		out = strings.NewReplacer(
-			"<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.18</title>",
-			"🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.18",
+			"<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.19</title>",
+			"🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.19",
 			` <span class="lab-nav-tag">LAB</span>`, "",
 			`<span class="lab-smart-caption">LAB</span>`, "",
 			"SELECTOR CINE 365 · LAB WINDOWS", "SELECTOR CINE 365",
@@ -219,6 +219,8 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		a.serveCloudHTTP(w, r)
 	case "/api/onedrive-desktop/status", "/api/onedrive-desktop/start", "/api/onedrive-desktop/disconnect":
 		a.serveGraphAuthHTTP(w, r)
+	case "/api/diagnostics":
+		a.serveDiagnostics(w, r)
 	case "/api/lab/maintenance":
 		a.serveLabMaintenance(w, r)
 	case "/api/lab/network-log":
@@ -333,7 +335,7 @@ func serve() error {
 	syncStore, syncErr := newDesktopSyncStore(filepath.Dir(savePath))
 	if syncErr != nil {
 		// Un fallo en el estado de sincronización no debe impedir usar datos locales.
-		logDiagnostic("Sincronización no disponible: " + syncErr.Error())
+		diagnosticError("sincronizacion", "estado local no disponible", syncErr)
 	}
 	app := &runningApp{libraryRecovered: recovered, html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath), appCacheRoot(filepath.Dir(savePath))), cloud: newCloudBackups(filepath.Dir(savePath)), graph: newDesktopGraph(filepath.Dir(savePath)), graphUploadCh: make(chan struct{}, 1), syncStore: syncStore, token: token, stopCh: make(chan struct{})}
 	defer func() { app.stop(); app.flushLabCatalog(); app.platforms.flushProviderCache() }()
@@ -347,10 +349,14 @@ func serve() error {
 	}
 	_, port, _ := net.SplitHostPort(listener.Addr().String())
 	app.graph.setRedirect("http://localhost:" + port + "/")
-	server := &http.Server{Handler: http.HandlerFunc(app.serveHTTP), ReadHeaderTimeout: 6 * time.Second}
-	go func() { _ = server.Serve(listener) }()
+	server := &http.Server{Handler: diagnosticHTTP(http.HandlerFunc(app.serveHTTP)), ReadHeaderTimeout: 6 * time.Second}
+	go func() {
+		if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			diagnosticError("motor", "servidor detenido inesperadamente", err)
+		}
+	}()
 	url := "http://" + listener.Addr().String() + "/"
-	logDiagnostic("Servidor local activo en " + url)
+	diagnosticEvent("INFO", "motor", "servidor local activo")
 	if err := launchVisualWindow(url, filepath.Join(appCacheRoot(filepath.Dir(savePath)), "perfil_webview2_v7_3"), app.stop, func() bool { return app.pageHeartbeat.Load() }); err != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
@@ -364,9 +370,11 @@ func serve() error {
 	for {
 		select {
 		case <-app.stopCh:
+			diagnosticEvent("INFO", "motor", "cierre solicitado")
 			return closeLocalServer(server)
 		case <-ticker.C:
 			if !nativeDesktopWindowActive.Load() && time.Since(time.Unix(app.lastActivity.Load(), 0)) > 12*time.Minute {
+				diagnosticEvent("WARN", "motor", "cierre por inactividad de modo compatible")
 				return closeLocalServer(server)
 			}
 		}
@@ -389,10 +397,14 @@ func closeLocalServer(server *http.Server) error {
 }
 
 func main() {
+	diagnosticStart()
+	defer diagnosticPanic()
+	defer diagnosticEvent("INFO", "sesion", "fin")
 	if maybeNativeChild() {
 		return
 	}
 	if err := serve(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		diagnosticError("motor", "fallo fatal", err)
 		notifyError("Selector Cine 365", err.Error())
 	}
 }
