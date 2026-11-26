@@ -55,7 +55,7 @@ vm.runInContext(parseSource+closeSource,ctx);
  assert.match(main,/!nativeDesktopWindowActive.Load\(\) && time.Since/);
  assert.match(win,/nativeDesktopWindowActive.Store\(true\)/);
  assert.match(win,/cmd.Wait\(\)\s+nativeDesktopWindowActive.Store\(false\)/);
- assert.match(win,/if confirmCloseWithoutSave\(hwnd, w.closeDetail\) \{\s+procDestroyWindow.Call\(hwnd\)/);
+ assert.match(win,/if confirmCloseWithoutSave\(hwnd, w.closeDetail\) \{\s+diagnosticEvent\("WARN", "cierre", "[^"]+"\)\s+procDestroyWindow.Call\(hwnd\)/);
  assert.match(mac,/Cerrar de todas formas/);
  assert.match(mac,/reply\(choice == NSAlertSecondButtonReturn\)/);
  assert.match(mac,/dispatch_after\(dispatch_time\(DISPATCH_TIME_NOW, 20 \* NSEC_PER_SEC\)/);
