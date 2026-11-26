@@ -214,6 +214,9 @@ func (a *runningApp) restoreLocalRecovery(id, etag string) (map[string]any, erro
 		return nil, errLibraryChanged
 	}
 	before := a.library
+	if desktopFeatures {
+		recordMembershipEdits(before, &restored)
+	}
 	if err = a.saveSyncRecovery(before, "_antes_restaurar"); err != nil {
 		a.mu.Unlock()
 		return nil, err

@@ -397,8 +397,9 @@ h2{font-size:19px}
 .cloud-dialog-fallback{overflow:hidden}
 .cloud-dialog-fallback #cloudSyncDialog{position:fixed;z-index:10000;top:50%;left:50%;margin:0;transform:translate(-50%,-50%);box-shadow:0 0 0 100vmax #090f19e6}
 .header-title{min-width:0}
-#cloudHeaderControls:not([hidden]){grid-column:1/-1;display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:8px}
+#cloudHeaderControls:not([hidden]){grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin-top:8px}
 #cloudHeaderPending,#cloudHeaderMessage{margin:0;font-size:12px}
+#cloudHeaderMessage{flex-basis:100%}
 .match-status.year-warning{color:#ffda92}
 #membershipActions[hidden]{display:none}
 #libraryStartup{max-width:480px;margin:24px auto}
@@ -728,7 +729,7 @@ h2{font-size:19px}
         <article><h3>2. Conectar TMDB</h3><p>Abre <strong>Conectar TMDB</strong>, escribe una clave personal de TMDB y guarda. Aparecerán carteles, puntuaciones y plataformas en España. Los datos ya consultados se guardan en caché; Actualizar vuelve a consultar cuando tú lo pidas.</p></article>
         <article><h3>3. Sorteo y estadísticas</h3><p>En Sorteo eliges una película pendiente al azar. En Estadísticas encontrarás el progreso de tu colección, periodos, géneros, directores y otros datos disponibles.</p></article>
         <article><h3>4. Mis listas</h3><p>Crea, renombra y abre listas. Utiliza los números de página para recorrerlas. Puedes comparar listas y consultar sus coincidencias en la biblioteca.</p></article>
-        <article><h3>5. OneDrive y sincronización</h3><p>En <strong>Mis listas → OneDrive y copias de seguridad</strong> sigue los pasos numerados: <strong>1) Conectar cuenta Microsoft</strong> (se crea la carpeta Selector_Cine_365; inicialmente puede estar vacía), <strong>2) Revisar y confirmar</strong> las listas del PC y de OneDrive (primera vez obligatoria), Luego pulsa <strong>Sincronizar con la nube</strong> bajo el título para enviar y recibir cambios. Debajo del botón se indica si hay cambios por subir o por recibir. La ventana de progreso bloquea la edición hasta terminar. El guardado local funciona sin nube. Si otro dispositivo cambió el mismo dato de forma incompatible, elige qué conservar.</p></article>
+        <article><h3>5. OneDrive y sincronización</h3><p>En <strong>Mis listas → OneDrive y copias de seguridad</strong> sigue los pasos numerados: <strong>1) Conectar cuenta Microsoft</strong> (se crea la carpeta Selector_Cine_365; inicialmente puede estar vacía), <strong>2) Revisar y confirmar</strong> las listas del PC y de OneDrive (primera vez obligatoria), Luego pulsa <strong>Sincronizar con la nube</strong> bajo el título para enviar y recibir cambios. Junto al botón se indica si hay cambios por subir o por recibir. La ventana de progreso bloquea la edición hasta terminar. El guardado local funciona sin nube. Si otro dispositivo cambió el mismo dato de forma incompatible, elige qué conservar.</p></article>
         <article><h3>6. Copias y seguridad</h3><p>Exporta una copia JSON desde <strong>Mis listas → Copia de seguridad</strong>. Si una edición no se guardó, carga la biblioteca actual y repite solo el cambio que falte. Puedes consultar la copia del guardado fallido en <strong>Mis listas → OneDrive y copias de seguridad → Actividad reciente, historial y copias de recuperación</strong>. Restaurar una copia sustituye la biblioteca completa.</p></article>
       </div>
       <p><strong>¿Necesitas todos los detalles?</strong> El manual extenso incluye ejemplos, procedimientos paso a paso, sincronización, solución de problemas y recuperación.</p>

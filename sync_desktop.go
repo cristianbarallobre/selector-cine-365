@@ -560,8 +560,16 @@ func syncMergeVersioned(local libraryState, revisions map[string]syncRevision, k
 			result.FavoritesOrder = remote
 		}
 	}
+	result.MembershipChanges = mergeMembershipChanges(result.MembershipChanges, peer.Library.MembershipChanges)
+	for id := range result.DeletedLists {
+		delete(result.MembershipChanges, id)
+	}
+	for i, list := range result.Lists {
+		result.Lists[i] = filterRemovedMemberships(list, result.MembershipChanges)
+	}
 	remoteMarks := syncStatuses(peer.Library)
 	for _, other := range peer.Library.Lists {
+		other = filterRemovedMemberships(other, result.MembershipChanges)
 		if result.DeletedLists[other.ID] {
 			continue
 		}

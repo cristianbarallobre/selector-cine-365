@@ -41,10 +41,11 @@ type favoritesOrder struct {
 	ChangedAt int64    `json:"changed_at"`
 }
 type libraryState struct {
-	Version       int              `json:"version"`
-	ActiveID      string           `json:"active_id"`
-	Lists         []filmCollection `json:"lists"`
-	ComparisonIDs []string         `json:"comparison_ids,omitempty"`
+	Version           int                   `json:"version"`
+	ActiveID          string                `json:"active_id"`
+	Lists             []filmCollection      `json:"lists"`
+	ComparisonIDs     []string              `json:"comparison_ids,omitempty"`
+	MembershipChanges syncMembershipChanges `json:"membership_changes,omitempty"`
 	// Tombstones compartidas: una lista borrada NO puede volver de una copia atrasada.
 	DeletedLists map[string]bool `json:"deleted_lists,omitempty"`
 	// Identificaciones TMDB compartibles, nunca la clave API privada.
@@ -59,6 +60,9 @@ func initialLibrary(legacy string) libraryState {
 	return libraryState{Version: 1, ActiveID: "atlas", Lists: []filmCollection{{ID: "atlas", Name: "Selector Cine 365 · 365", Text: legacy}}}
 }
 func validateLibrary(l libraryState) error {
+	if err := validateMembershipChanges(l.MembershipChanges); err != nil {
+		return err
+	}
 	if l.Version != 1 || len(l.Lists) < 1 || len(l.Lists) > 40 {
 		return errors.New("Formato o cantidad de listas no válido")
 	}
@@ -265,7 +269,9 @@ func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		a.mu.Lock()
 		if r.Header.Get("If-Match") != a.libraryETag() {
-			if r.Header.Get("If-Match") != "" && reflect.DeepEqual(state, a.library) {
+			retry := state
+			retry.MembershipChanges = a.library.MembershipChanges
+			if r.Header.Get("If-Match") != "" && reflect.DeepEqual(retry, a.library) {
 				w.Header().Set("ETag", a.libraryETag())
 				a.mu.Unlock()
 				w.WriteHeader(http.StatusNoContent)
@@ -279,6 +285,9 @@ func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		before := a.library
+		if desktopFeatures {
+			recordMembershipEdits(before, &state)
+		}
 		mirrorPending, err := commitLibrary(a.libraryPath, a.savePath, state)
 		if mirrorPending {
 			w.Header().Set("X-Cine-Legacy", "pending")

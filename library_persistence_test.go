@@ -81,7 +81,9 @@ func TestLargeLibraryCanBeSavedAndRestored(t *testing.T) {
 	if _, err := a.restoreLocalRecovery(copies[0].ID, a.libraryETag()); err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(loadLibrary(a.libraryPath, ""), state) {
+	restored := loadLibrary(a.libraryPath, "")
+	restored.MembershipChanges = nil
+	if !reflect.DeepEqual(restored, state) {
 		t.Fatal("large library changed on recovery")
 	}
 }
@@ -169,7 +171,9 @@ func TestLibraryCommitWithUnavailableMirror(t *testing.T) {
 	}
 	state := initialLibrary("After")
 	w := postTestLibrary(t, a, state)
-	if w.Code != 204 || w.Header().Get("X-Cine-Legacy") != "pending" || !reflect.DeepEqual(state, a.library) || !reflect.DeepEqual(state, loadLibrary(a.libraryPath, "")) {
+	saved := a.library
+	saved.MembershipChanges = nil
+	if w.Code != 204 || w.Header().Get("X-Cine-Legacy") != "pending" || !reflect.DeepEqual(state, saved) || !reflect.DeepEqual(a.library, loadLibrary(a.libraryPath, "")) {
 		t.Fatalf("inconsistent commit: HTTP %d headers=%v", w.Code, w.Header())
 	}
 	if err := os.Remove(a.savePath); err != nil {
@@ -240,7 +244,9 @@ func TestDesktopCloseRecoveryPreservesBothVersions(t *testing.T) {
 	if _, err := a.restoreLocalRecovery(copies[0].ID, a.libraryETag()); err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(loadLibrary(a.libraryPath, ""), pending) {
+	restored := loadLibrary(a.libraryPath, "")
+	restored.MembershipChanges = nil
+	if !reflect.DeepEqual(restored, pending) {
 		t.Fatal("the pending edits were not recoverable")
 	}
 }
