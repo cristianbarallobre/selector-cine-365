@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"os"
 	"reflect"
 	"time"
 )
@@ -70,4 +72,54 @@ func (a *runningApp) cloudAutoSync() (map[string]any, error) {
 	result := syncResult(plan, libChanged, metadataErr, a.publishFolderSync)
 	result["metadata_updated"] = metadataChanged && metadataErr == nil
 	return result, nil
+}
+
+func (a *runningApp) markManualCloudUpload() error {
+	if a.syncStore == nil || a.cloud == nil || !(a.cloud.status().Enabled || a.graph != nil && a.graph.active()) {
+		return nil
+	}
+	return a.syncStore.markGraphUploadPending()
+}
+
+// Read other devices without applying a plan or publishing a snapshot.
+func (a *runningApp) cloudIncomingPending() (bool, error) {
+	if a.syncStore == nil || a.cloud == nil {
+		return false, errors.New("Nube sin configurar")
+	}
+	if !a.syncPlanMu.TryLock() {
+		return false, errors.New("Hay otra comprobación en curso")
+	}
+	defer a.syncPlanMu.Unlock()
+	a.mu.Lock()
+	local, revision := a.library, a.libraryRevision
+	a.mu.Unlock()
+
+	var plan syncPlan
+	var err error
+	if a.graph != nil && a.graph.active() {
+		op, cancel := a.graph.operation().bounded()
+		defer cancel()
+		plan, err = a.graphPlanFor(local, op)
+		if err == nil && !op.current() {
+			return false, errGraphSessionChanged
+		}
+	} else {
+		folder := a.cloud.status().Folder
+		if info, err := os.Stat(folder); err != nil || !info.IsDir() {
+			return false, errors.New("Carpeta de nube no disponible")
+		}
+		plan, err = a.cloudPlanFor(local, folder)
+		if err == nil && folder != a.cloud.status().Folder {
+			return false, errors.New("La carpeta ha cambiado")
+		}
+	}
+	if err != nil {
+		return false, err
+	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if revision != a.libraryRevision {
+		return false, errors.New("La biblioteca ha cambiado")
+	}
+	return len(plan.Conflicts) != 0 || !reflect.DeepEqual(local, plan.Library), nil
 }

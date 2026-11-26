@@ -161,7 +161,10 @@ func TestDesktopSaveDoesNotOverwriteUnpairedRemote(t *testing.T) {
 	if w.Code != 204 {
 		t.Fatalf("local save failed: %d %s", w.Code, w.Body.String())
 	}
-	if w.Header().Get("X-Cine-Cloud") != "review" {
+	if desktopFeatures && !store.graphUploadPending() {
+		t.Fatal("No quedó registrada la subida pendiente")
+	}
+	if !desktopFeatures && w.Header().Get("X-Cine-Cloud") != "review" {
 		t.Fatalf("expected pending review, got %s", w.Header().Get("X-Cine-Cloud"))
 	}
 	saved, _ := os.ReadFile(actual)

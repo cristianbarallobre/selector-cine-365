@@ -141,7 +141,7 @@ main{max-width:1250px;padding:28px 28px 32px;margin:auto}.header{display:flex;al
 html,body{height:100%;overflow:hidden}
 body{min-height:0}
 main{height:100dvh;min-height:0;max-width:1340px;margin:auto;padding:14px 20px 17px;display:flex;flex-direction:column;overflow:hidden}
-.header{flex:0 0 auto;margin:0 0 12px;gap:13px;min-height:62px}
+.header{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;flex:0 0 auto;margin:0 0 12px;gap:0 13px;min-height:62px}
 .brand{width:58px;height:58px;border-radius:13px}.brand svg{width:41px;height:41px}
 h1{font-size:29px}.eyebrow{font-size:11px}.header-side{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .header-tag{margin-left:0;padding:6px 10px;font-size:12px}.saved{margin:0;text-align:right;font-size:11px;min-height:12px}
@@ -390,6 +390,15 @@ h2{font-size:19px}
 .membership-option input{width:17px;height:17px;accent-color:#f3c66d}
 .membership-confirm{margin-top:12px;padding:12px;border:1px solid #795057;border-radius:10px;background:#352631;color:#f4d2d3}
 .membership-confirm p{margin:0}
+#cloudSyncDialog{color:#eef4fa;background:#192533;border:1px solid #435973;border-radius:16px;padding:22px;width:min(420px,calc(100% - 32px));box-sizing:border-box}
+#cloudSyncDialog::backdrop{background:#090f19c9}
+#cloudSyncDialog p{margin-bottom:0}
+#cloudSyncDialog[hidden]{display:none}
+.cloud-dialog-fallback{overflow:hidden}
+.cloud-dialog-fallback #cloudSyncDialog{position:fixed;z-index:10000;top:50%;left:50%;margin:0;transform:translate(-50%,-50%);box-shadow:0 0 0 100vmax #090f19e6}
+.header-title{min-width:0}
+#cloudHeaderControls:not([hidden]){grid-column:1/-1;display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:8px}
+#cloudHeaderPending,#cloudHeaderMessage{margin:0;font-size:12px}
 .match-status.year-warning{color:#ffda92}
 #membershipActions[hidden]{display:none}
 #libraryStartup{max-width:480px;margin:24px auto}
@@ -485,13 +494,19 @@ h2{font-size:19px}
 <main id="libraryApp" data-created-by="__APP_AUTHOR__" data-repository="cristianbarallobre/selector-cine-365" hidden>
   <header class="header">
     <div class="brand" aria-hidden="true"><img src="/icon.png" alt="" style="width:58px;height:58px;object-fit:contain"></div>
-    <div><div class="eyebrow">Selector Cine 365</div><h1>¿Qué película veo hoy?</h1></div>
+    <div class="header-title">
+      <div class="eyebrow">Selector Cine 365</div><h1>¿Qué película veo hoy?</h1>
+    </div>
     <div class="header-side">
       <div class="header-tag">🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview</div>
       <div class="saved" id="saveState" aria-live="polite">✓ Guardado</div>
-      <button class="tool" id="pendingCloseRecovery" type="button" hidden>Ver copia de cambios pendientes</button>
       <button class="tool" id="reloadLibraryAfterConflict" type="button" hidden>Cargar biblioteca actual</button>
       <div class="creator-credit" title="__APP_COPYRIGHT__">Hecho por <strong>__APP_AUTHOR__</strong></div>
+    </div>
+    <div id="cloudHeaderControls" hidden>
+      <button class="tool" id="cloudHeaderSync" type="button">Sincronizar con la nube</button>
+      <div id="cloudHeaderPending" class="cloud-status" aria-live="polite"></div>
+      <div id="cloudHeaderMessage" class="cloud-status warn" role="status" hidden></div>
     </div>
   </header>
   <nav class="top-nav" aria-label="Secciones">
@@ -617,7 +632,7 @@ h2{font-size:19px}
               <span class="cloud-guide-number" aria-hidden="true">1</span>
               <div><h3 id="cloudStepConnectTitle">Conecta OneDrive</h3><p>Inicia sesión con la cuenta Microsoft donde quieres guardar tus películas.</p></div>
             </div>
-            <p class="cloud-guide-step-note">La conexión crea o encuentra <strong>Selector_Cine_365</strong>. Es normal que esté vacía hasta confirmar el paso 2. En Windows la autorización se guarda cifrada para este usuario: al volver a abrir la app o actualizar el EXE, la cuenta se recupera automáticamente. Si vienes de una versión anterior, conecta una última vez para guardarla.</p>
+            <p class="cloud-guide-step-note">La conexión crea o encuentra <strong>Selector_Cine_365</strong>. Es normal que esté vacía hasta confirmar el paso 2. La sesión se conserva para este usuario y se recupera al reabrir o actualizar la app. Si vienes de una versión anterior, conecta una última vez para guardarla.</p>
             <button class="primary cloud-guide-action" type="button" id="cloudGraphConnect">☁ Conectar cuenta Microsoft</button>
             <div class="cloud-status cloud-guide-feedback" id="cloudGraphStatus" aria-live="polite">Pendiente de conectar.</div>
             <div id="cloudGraphLogin" hidden>
@@ -642,13 +657,6 @@ h2{font-size:19px}
             </div>
             <button class="tool cloud-guide-action" type="button" id="cloudSyncNowFast" disabled>↻ Sincronizar ahora</button>
             <p class="cloud-guide-hint" id="cloudSyncHint">Completa y confirma el paso 2 para activar este botón.</p>
-            <label class="cloud-guide-mode" for="cloudSyncMode">Después, mantener al día:
-              <select id="cloudSyncMode">
-                <option value="automatic">Automáticamente</option>
-                <option value="manual">Solo cuando pulse sincronizar</option>
-              </select>
-            </label>
-            <p class="cloud-guide-mode-desc">El modo automático comprueba los cambios periódicamente. El manual solo sincroniza al pulsar el botón. Ninguno sustituye la revisión inicial.</p>
           </section>
         </div>
         <div class="cloud-guide-where">
@@ -689,8 +697,9 @@ h2{font-size:19px}
             <p id="cloudHistoryChecked" class="cine-history-checked" role="status" aria-live="polite">El historial empieza a registrarse desde las versiones que incluyen esta función; no recupera acciones anteriores.</p>
             <p>Las horas son orientativas. Para decidir qué cambio prevalece se comprueban las revisiones y el orden causal, no solo el reloj.</p>
             <div class="cine-sync-title"><strong>Copias locales de recuperación</strong><button class="tool" type="button" id="cloudRecoveryRefresh">Buscar copias</button></div>
-            <p>Restaurar una copia es opcional y siempre requiere confirmación. Antes se guarda otra copia del estado actual.</p>
+            <p>Si echas en falta una edición, aquí puedes revisar las copias locales. Restaurar una copia sustituye la biblioteca actual y guarda otra copia de seguridad antes.</p>
             <div class="cine-recovery-controls">
+              <button class="tool" id="pendingCloseRecovery" type="button" hidden>Seleccionar la última copia de un guardado fallido</button>
               <select id="cloudRecoveryList" aria-label="Seleccionar una copia local para restaurar"><option value="">Selecciona una copia guardada</option></select>
               <button class="tool" type="button" id="cloudRecoveryRestore" disabled>Restaurar copia seleccionada</button>
             </div>
@@ -719,7 +728,7 @@ h2{font-size:19px}
         <article><h3>2. Conectar TMDB</h3><p>Abre <strong>Conectar TMDB</strong>, escribe una clave personal de TMDB y guarda. Aparecerán carteles, puntuaciones y plataformas en España. Los datos ya consultados se guardan en caché; Actualizar vuelve a consultar cuando tú lo pidas.</p></article>
         <article><h3>3. Sorteo y estadísticas</h3><p>En Sorteo eliges una película pendiente al azar. En Estadísticas encontrarás el progreso de tu colección, periodos, géneros, directores y otros datos disponibles.</p></article>
         <article><h3>4. Mis listas</h3><p>Crea, renombra y abre listas. Utiliza los números de página para recorrerlas. Puedes comparar listas y consultar sus coincidencias en la biblioteca.</p></article>
-        <article><h3>5. OneDrive y sincronización</h3><p>En <strong>Mis listas → OneDrive y copias de seguridad</strong> sigue los pasos numerados: <strong>1) Conectar cuenta Microsoft</strong> (se crea la carpeta Selector_Cine_365; inicialmente puede estar vacía), <strong>2) Revisar y confirmar</strong> las listas del PC y de OneDrive (primera vez obligatoria), <strong>3) Sincronizar ahora</strong> y comprobar el estado. Después puedes elegir sincronización automática o manual. Android debe conectarse a la misma cuenta y completar su propia revisión. Los conflictos requieren decisión; el guardado local funciona sin nube.</p></article>
+        <article><h3>5. OneDrive y sincronización</h3><p>En <strong>Mis listas → OneDrive y copias de seguridad</strong> sigue los pasos numerados: <strong>1) Conectar cuenta Microsoft</strong> (se crea la carpeta Selector_Cine_365; inicialmente puede estar vacía), <strong>2) Revisar y confirmar</strong> las listas del PC y de OneDrive (primera vez obligatoria), <strong>3) Sincronizar ahora</strong> y comprobar el estado. Después pulsa <strong>Sincronizar con la nube</strong> bajo el título para enviar y recibir cambios. La ventana de progreso bloquea la edición hasta terminar. El guardado local funciona sin nube. Si otro dispositivo cambió el mismo dato de forma incompatible, elige qué conservar.</p></article>
         <article><h3>6. Copias y seguridad</h3><p>Antes de importar muchas películas o cambiar de versión, exporta una copia JSON. Puedes usar la app solo en local y desactivar la nube sin perder las películas guardadas en el PC. No abras simultáneamente dos versiones de Windows.</p></article>
       </div>
       <p><strong>¿Necesitas todos los detalles?</strong> El manual extenso incluye ejemplos, procedimientos paso a paso, sincronización, solución de problemas y recuperación.</p>
@@ -825,6 +834,10 @@ h2{font-size:19px}
     <div class="modal-actions"><button class="close" id="cancelPaste" type="button">Cancelar</button><button class="primary" type="button" id="applyPaste">Cargar lista</button></div>
   </section>
 </div>
+<dialog id="cloudSyncDialog" role="dialog" aria-modal="true" aria-labelledby="cloudSyncDialogTitle" aria-describedby="cloudSyncDialogMessage" hidden>
+ <h2 id="cloudSyncDialogTitle">Sincronizando con la nube</h2>
+ <p id="cloudSyncDialogMessage" role="status" tabindex="-1">Guardando los cambios en este equipo…</p>
+</dialog>
 <script>
 (() => {
 'use strict';
@@ -892,7 +905,7 @@ let rawText=$('initialState').value.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n')
 const librarySizeLimit=256*1024*1024,listSizeLimit=900000;
 let parsed=null,filter='all',search='',chosen=null,lastChoice=null,saveQueue=Promise.resolve(),saveEpoch=0;
 let saveNeeded=false,editRevision=0,libraryETag='',libraryReady=false;
-let savePump=null,recoverySavedRevision=-1;
+let savePump=null,recoverySavedRevision=-1,libraryBase=null,membershipEditRevision=-1;
 document.addEventListener('click',event=>{
  if(!libraryReady&&!$('libraryStartup').contains(event.target)){
   event.preventDefault();
@@ -904,7 +917,7 @@ let platformConfigured=false, platformStatusUnavailable=false, platformData=new 
 let libraryState={version:1,active_id:'atlas',lists:[{id:'atlas',name:'Selector Cine 365 · 365',text:rawText}]};
 let editingListID=null,activeView='library',selectedSortPlatforms=new Set();
 const identityMap=new Map(); // clave título-año -> ID TMDB guardado
-let identityScanRunning=false,identityScanAgain=false,identityScanProgress=0,identityScanTotal=0,identityRefreshTimer=null;
+let identityScanRunning=false,identityScanAgain=false,identityScanProgress=0,identityScanTotal=0,identityRefreshTimer=null,identityReconcileDeferred=false;
 let identityConfigured=false;
 
 const virtualID='__coincidencias__';
@@ -1356,8 +1369,10 @@ $('filmPageGotoForm').addEventListener('submit',e=>{
  filmPage=page-1;renderList();input.value='';
 });
 function resetChoice(){chosen=null;$('resultPoster').hidden=true;$('resultPoster').removeAttribute('src');$('resultPlatforms').replaceChildren();$('resultTag').textContent='EL SORTEO TE ESPERA';$('resultTitle').textContent='Tu próxima película aparecerá aquí';$('resultDetails').textContent='';$('markWatched').disabled=true;$('copyChoice').disabled=true;}
-function scheduleSave(){
- membershipCache=null;saveNeeded=true;editRevision++;$('saveState').textContent='Guardando…';
+function scheduleSave(membershipEdit=false){
+ membershipCache=null;saveNeeded=true;editRevision++;
+ if(membershipEdit===true)membershipEditRevision=editRevision;
+ $('saveState').textContent='Guardando…';
  if(savePump)return;
  savePump=(async()=>{
   let revision;
@@ -1368,19 +1383,82 @@ async function saveLocal(){
  syncActiveText();const snapshot=JSON.stringify(libraryState);const epoch=++saveEpoch,revision=editRevision;
  saveNeeded=true;
  saveQueue=saveQueue.catch(()=>{}).then(async()=>{
-   const response=await writeLibrary(snapshot);
+   const payload=await prepareMembershipSave(snapshot,revision);
+   if(revision!==editRevision)return null;
+   const response=await writeLibrary(payload);
    return {cloudResult:response.headers.get('X-Cine-Cloud'),txtPending:response.headers.get('X-Cine-Legacy')==='pending'};
  });
- try{const {cloudResult,txtPending}=await saveQueue;
+ try{const result=await saveQueue;if(!result)return;
+ const {cloudResult,txtPending}=result;
  if(epoch===saveEpoch&&revision===editRevision)saveNeeded=false;
  await cineLoadRevisions();
  if(epoch===saveEpoch&&revision===editRevision){cineRecentIntents.clear();$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + carpeta de nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':cloudResult==='review'?'✓ Guardado local · Revisar sincronización':'✓ Guardado';
  if(txtPending)$('saveState').textContent+=' · ⚠ Copia TXT pendiente';
- void cloudRefresh();setTimeout(()=>{if(!document.hidden)void cloudAutoReceive();},3500);}}
+ void cloudRefresh();}}
  catch(err){
   if(err.recoverySaved){recoverySavedRevision=revision;void cineRefreshRecovery();}
   if(epoch===saveEpoch&&revision===editRevision)$('saveState').textContent=err.message||'⚠ Guardado no confirmado';
  }
+}
+// Only replay exact film removals. Any other local edit keeps the normal revision guard.
+function membershipRemovals(base,local){
+ const {lists:before,...beforeMeta}=base,{lists:after,...afterMeta}=local;
+ if(before.length!==after.length)return null;
+ // The list selector materializes an empty comparison array that Go omits.
+ if(!beforeMeta.comparison_ids?.length)delete beforeMeta.comparison_ids;
+ if(!afterMeta.comparison_ids?.length)delete afterMeta.comparison_ids;
+ if(JSON.stringify(beforeMeta)!==JSON.stringify(afterMeta))return null;
+ const removals=[];
+ for(let i=0;i<before.length;i++){
+  const {text:oldText,...oldList}=before[i],{text:newText,...newList}=after[i];
+  if(JSON.stringify(oldList)!==JSON.stringify(newList))return null;
+  if(oldText===newText)continue;
+  const old=parse(oldText),remaining=newText?newText.split('\n'):[];
+  const films=new Set(old.entries.map(f=>f.idx)),removed=new Set();
+  let next=0;
+  for(const [index,line] of old.lines.entries()){
+   if(next<remaining.length&&line===remaining[next])next++;
+   else if(films.has(index)&&old.lines.indexOf(line)===old.lines.lastIndexOf(line))removed.add(line);
+   else return null;
+  }
+  if(next!==remaining.length||!removed.size)return null;
+  removals.push({id:oldList.id,removed});
+ }
+ return removals.length?removals:null;
+}
+function mergeMembershipRemovals(latest,removals){
+ for(const {id,removed} of removals){
+  const list=latest.lists.find(item=>item.id===id);
+  if(!list)return false;
+  const lines=parse(list.text).lines;
+  for(const line of removed){
+   const first=lines.indexOf(line);
+   if(first<0||first!==lines.lastIndexOf(line))return false;
+  }
+  list.text=lines.filter(line=>!removed.has(line)).join('\n');
+ }
+ return true;
+}
+async function prepareMembershipSave(snapshot,revision){
+ if(!libraryBase||revision!==editRevision||revision!==membershipEditRevision)return snapshot;
+ const removals=membershipRemovals(JSON.parse(libraryBase),JSON.parse(snapshot));
+ if(!removals)return snapshot;
+ let latest,etag;
+ try{
+  const response=await fetch('/api/library',{headers:{'X-Atlas-Token':token},cache:'no-store'});
+  etag=response.headers.get('ETag');
+  if(!response.ok||!etag||etag===libraryETag)return snapshot;
+  latest=await response.json();
+ }catch{return snapshot;}
+ if(revision!==editRevision||!validLibrary(latest))return snapshot;
+ const latestBase=JSON.stringify(latest);
+ if(!mergeMembershipRemovals(latest,removals))return snapshot;
+ const activeID=libraryState.active_id;
+ if(latest.lists.some(list=>list.id===activeID))latest.active_id=activeID;
+ libraryState=latest;libraryETag=etag;libraryBase=latestBase;
+ rawText=virtualMode?buildIntersection():activeCollection().text||'';
+ resetChoice();update();renderCollectionControls();renderStats();
+ return JSON.stringify(latest);
 }
 async function writeLibrary(payload){
  if(!libraryETag)throw new Error('⚠ No se pudo cargar la biblioteca. Exporta tus cambios antes de recargar.');
@@ -1388,10 +1466,11 @@ async function writeLibrary(payload){
  const recovered=response.headers.get('X-Cine-Recovery')==='saved';
  if(response.status===412){
   $('reloadLibraryAfterConflict').hidden=false;
-  throw Object.assign(new Error(recovered?'⚠ La biblioteca cambió. Tus cambios están en una copia local de recuperación.':'⚠ La biblioteca cambió. Puedes exportar tus cambios en Mis listas antes de cargar la versión guardada.'),{recoverySaved:recovered});
+  throw Object.assign(new Error(recovered?'⚠ No se guardó la última edición. Carga la biblioteca actual y repite el cambio si falta. Hay una copia local de recuperación en Mantenimiento.':'⚠ La biblioteca cambió. Puedes exportar tus cambios en Mis listas antes de cargar la versión guardada.'),{recoverySaved:recovered});
  }
- if(!response.ok)throw Object.assign(new Error(recovered?'⚠ El guardado falló. Tus cambios están en una copia local de recuperación.':'⚠ Guardado no confirmado · comprueba la lista antes de cerrar. '+(await response.text()).trim()),{recoverySaved:recovered});
+ if(!response.ok)throw Object.assign(new Error(recovered?'⚠ No se guardó la última edición en la biblioteca. Puedes recuperarla desde la copia local de recuperación en Mantenimiento.':'⚠ Guardado no confirmado · comprueba la lista antes de cerrar. '+(await response.text()).trim()),{recoverySaved:recovered});
  libraryETag=response.headers.get('ETag')||libraryETag;
+ libraryBase=payload;
  $('reloadLibraryAfterConflict').hidden=true;
  return response;
 }
@@ -1557,7 +1636,7 @@ function saveFilmMemberships(chosen){
  const edits=applyFilmMembershipLists(libraryState.lists,membershipFilm,chosen,groups);
  closeMembershipModal();if(!edits)return;
  membershipCache=null;if(virtualMode)refreshVirtualContent();else rawText=activeCollection().text||'';
- resetChoice();update();renderStats();renderCollectionControls();scheduleSave();
+ resetChoice();update();renderStats();renderCollectionControls();scheduleSave(true);
  notify('Listas actualizadas: '+edits+' '+(edits===1?'registro':'registros')+'.');
 }
 $('applyMembership').addEventListener('click',()=>{
@@ -1671,6 +1750,7 @@ function queueIdentityReconcile(){
  if(identityRefreshTimer)return;
  identityRefreshTimer=setTimeout(()=>{
    identityRefreshTimer=null;
+   if(cloudManualBusy){identityReconcileDeferred=true;return;}
    const changed=reconcileWatched();
    if(virtualMode)rawText=buildIntersection();else rawText=activeCollection().text||'';
    update();renderStats();renderCollectionControls();
@@ -1814,6 +1894,7 @@ async function initLibrary({preserveNavigation=false}={}){
   }
  }catch(e){}
  if(!canApply()||(!libraryReady&&(!incoming||!etag)))return false;
+ const loadedBase=incoming&&JSON.stringify(incoming);
  const metadataChanged=await reconcileTMDBLibrary(incoming||libraryState,canApply);
  if(!canApply())return false;
  const loaded=incoming!==null,wasComparing=virtualMode;
@@ -1823,6 +1904,7 @@ async function initLibrary({preserveNavigation=false}={}){
   if(preserveNavigation&&sameList)incoming.active_id=currentID;
   libraryState=incoming;
   libraryETag=etag;
+  libraryBase=loadedBase;
  }
  sanitizeComparisonIDs();
  const reconciled=reconcileWatched();
@@ -2117,7 +2199,7 @@ $('downloadBackup').addEventListener('click',()=>{
 $('restoreBackup').addEventListener('click',()=>$('backupFile').click());
 let restoringBackup=false;
 $('reloadLibraryAfterConflict').addEventListener('click',async()=>{
- if(restoringBackup||!confirm('¿Cargar la biblioteca guardada? Se perderán los cambios de esta ventana que aún no hayas exportado.'))return;
+ if(restoringBackup||!confirm('¿Cargar la biblioteca guardada? Se descartarán las ediciones de esta ventana que no estén guardadas. Si falta algún cambio, podrás repetirlo después.'))return;
  restoringBackup=true;document.body.inert=true;
  if(savePump)await savePump;
  try{
@@ -2162,7 +2244,7 @@ async function cloudRequest(path,method='GET',payload){
  if(!r.ok)throw new Error('OneDrive: '+(data.error||'HTTP '+r.status));
  return data;
 }
-let cineGraphConnected=false;
+let cineGraphConnected=false,cloudHeaderState=null,cloudIncomingState=null,cloudIncomingChecked=0,cloudIncomingBusy=false,cloudHeaderError='';
 function updateCloudGuide(s){
  const connected=Boolean(s.enabled),paired=connected&&Boolean(s.sync_paired);
  const review=connected&&(!paired||Boolean(s.needs_review));
@@ -2189,11 +2271,13 @@ function updateCloudGuide(s){
  $('cloudSyncHint').textContent=!connected?'Todavía no hay una nube conectada.':
    !paired?'Se activará cuando confirmes el paso 2.':
    !canSync?'Hay conflictos pendientes: revisa el paso 2.':
-   'Disponible. También puedes activar la actualización automática.';
+   'Envía y recibe los cambios cuando pulses el botón.';
  // La carpeta sincronizada local y la conexión directa Microsoft son alternativas.
  if(!cineGraphConnected)$('cloudGraphConnect').disabled=connected;
 }
 function cloudShow(s){
+ if(cloudHeaderState?.folder!==s.folder||cloudHeaderState?.sync_paired!==s.sync_paired){cloudIncomingState=null;cloudIncomingChecked=0;cloudHeaderError='';}
+ cloudHeaderState=s;renderCloudHeader();void checkCloudIncoming();
  cineGraphConnected=s.provider==='onedrive-direct';
  updateCloudGuide(s);
  const box=$('cloudStatus');box.classList.toggle('warn',Boolean(s.last_error));
@@ -2229,7 +2313,7 @@ async function desktopGraphStatus(){
   if(s.connected){
    $('cloudGraphStatus').textContent=s.persistence_warning
     ?'⚠ Cuenta conectada, pero no se pudo conservar la sesión: '+s.persistence_warning
-    :s.session_restored?'✓ Cuenta Microsoft recuperada automáticamente desde Windows. No necesitas iniciar sesión otra vez.'
+    :s.session_restored?'✓ Cuenta Microsoft recuperada en este equipo. No necesitas iniciar sesión otra vez.'
     :s.session_remembered?'✓ Cuenta Microsoft conectada y sesión guardada cifrada en Windows. Se recuperará al abrir o actualizar la aplicación.'
     :'✓ Cuenta Microsoft conectada. Continúa con el paso 2; el almacenamiento seguro de sesión no está disponible en esta plataforma.';
    await cloudRefresh();
@@ -2239,7 +2323,7 @@ async function desktopGraphStatus(){
   }else{
    $('cloudGraphStatus').textContent=s.persistence_warning
     ?'⚠ '+s.persistence_warning+' · Conecta la cuenta Microsoft para guardar una nueva sesión.'
-    :'Sin cuenta Microsoft conectada. En Windows se recordará automáticamente después de conectar.';
+    :'Sin cuenta Microsoft conectada. La aplicación recordará la sesión después de conectar.';
    await cloudRefresh();
   }
  }
@@ -2256,25 +2340,6 @@ $('cloudGraphDisconnect').addEventListener('click',async()=>{
  catch(e){$('cloudGraphStatus').textContent='⚠ '+e.message;}
 });
 void desktopGraphStatus().catch(()=>{});
-async function refreshDesktopSyncMode(){
- try{
-  const data=await cloudRequest('/api/cloud/mode');
-  $('cloudSyncMode').value=data.auto_sync?'automatic':'manual';
- }catch(e){$('cloudGraphStatus').textContent='⚠ Modo de sincronización: '+e.message;}
-}
-$('cloudSyncMode').addEventListener('change',async()=>{
- const field=$('cloudSyncMode');
- field.disabled=true;
- try{
-  await cloudRequest('/api/cloud/mode','POST',{auto_sync:field.value==='automatic'});
-  $('cloudAutoStatus').textContent=field.value==='manual'
-   ?'Modo manual seleccionado: después de confirmar el paso 2, pulsa «Sincronizar ahora» para enviar y recibir cambios.'
-   :'Modo automático seleccionado: después de confirmar el paso 2, la aplicación buscará cambios periódicamente.';
- }catch(e){$('cloudGraphStatus').textContent='⚠ '+e.message;await refreshDesktopSyncMode();}
- finally{field.disabled=false;}
-});
-void refreshDesktopSyncMode();
-
 $('cloudAutoFolder').addEventListener('click',async()=>{
  const button=$('cloudAutoFolder');button.disabled=true;
  try {
@@ -2298,7 +2363,7 @@ $('cloudBrowse').addEventListener('click',async()=>{
 $('cloudActivate').addEventListener('click',async()=>{
  const folder=$('cloudFolder').value.trim();if(!folder){$('cloudStatus').textContent='Selecciona primero una carpeta';return;}
  const btn=$('cloudActivate');btn.disabled=true;$('cloudStatus').textContent='Conectando una carpeta compartida sin sobrescribir otros dispositivos…';
- try{await saveLocal();cloudShow(await cloudRequest('/api/cloud/config','POST',{folder}));}
+ try{if(!await flushLibrary())throw new Error('Resuelve el guardado local antes de configurar la nube.');cloudShow(await cloudRequest('/api/cloud/config','POST',{folder}));}
  catch(e){$('cloudStatus').textContent='⚠ '+e.message;$('cloudStatus').classList.add('warn');}
  finally{btn.disabled=false;}
 });
@@ -2356,7 +2421,7 @@ async function cineRefreshRecovery(){
   notice.dataset.recoveryId=pending?.id||'';
   selector.replaceChildren(new Option('Selecciona una copia guardada',''));
   for(const item of data.copies||[]){
-   const label=item.id.endsWith('_cambios_pendientes.json')?'Cambios pendientes al cerrar':item.id.startsWith('rec:')?'Antes de sincronizar':'Copia diaria';
+   const label=item.id.endsWith('_cambios_pendientes.json')?'Ediciones de un guardado fallido':item.id.startsWith('rec:')?'Antes de sincronizar':'Copia diaria';
    selector.append(new Option(cineSyncAt(item.when_ms)+' · '+label+' · '+Math.round(item.bytes/1024)+' KB',item.id));
   }
   $('cloudRecoveryRestore').disabled=true;
@@ -2364,7 +2429,7 @@ async function cineRefreshRecovery(){
  }catch(e){$('cloudRecoveryStatus').textContent='⚠ '+e.message;}
 }
 $('pendingCloseRecovery').addEventListener('click',()=>{
- showView('instructions');
+ showView('collections');
  const selector=$('cloudRecoveryList');
  for(let parent=selector.parentElement;parent;parent=parent.parentElement){if(parent.tagName==='DETAILS')parent.open=true;}
  selector.value=$('pendingCloseRecovery').dataset.recoveryId;
@@ -2377,7 +2442,7 @@ $('cloudRecoveryList').addEventListener('change',()=>{$('cloudRecoveryRestore').
 $('cloudRecoveryRestore').addEventListener('click',async()=>{
  const selector=$('cloudRecoveryList'),id=selector.value;
  if(!id)return;
- if(!confirm('¿Restaurar esta copia local? Se guardará una copia del estado actual antes de restaurar. Los cambios restaurados se compartirán con los demás dispositivos cuando OneDrive esté conectado.'))return;
+ if(!confirm('¿Restaurar esta copia local? Se guardará una copia del estado actual antes de restaurar. Los cambios restaurados se compartirán cuando pulses «Sincronizar con la nube».'))return;
  const button=$('cloudRecoveryRestore');button.disabled=true;
  restoringBackup=true;document.body.inert=true;
  try{
@@ -2392,20 +2457,10 @@ $('cloudRecoveryRestore').addEventListener('click',async()=>{
  }catch(e){$('cloudRecoveryStatus').textContent='⚠ No se ha restaurado: '+e.message;button.disabled=false;}
  finally{restoringBackup=false;document.body.inert=false;}
 });
-$('cloudSyncNowFast').addEventListener('click',async()=>{
- const button=$('cloudSyncNowFast');button.disabled=true;
- $('cloudSyncManualResult').textContent='Comprobando OneDrive: leyendo y enviando cambios si corresponde…';
- try{
-  await cloudAutoReceive(true);
-  await cloudRefresh();await cineRefreshHistory();
-  $('cloudSyncManualResult').textContent=$('cloudAutoStatus').textContent;
- }finally{button.disabled=false;}
-});
-
 let syncPreviewToken='',syncPreviewEdit=0,cloudManualBusy=false;
-$('cloudSyncReview').addEventListener('click',async()=>{
+async function reviewCloudSync(){
  if(cloudManualBusy)return;
- cloudManualBusy=true;syncPreviewToken='';
+ cloudManualBusy=true;syncPreviewToken='';openCloudDialog('Comprobando las listas de OneDrive…');
  const button=$('cloudSyncReview');button.disabled=true;$('cloudSyncPanel').hidden=true;
  try{
   if(!await flushLibrary())throw new Error('Hay cambios pendientes de guardar. Resuélvelos antes de revisar la sincronización.');
@@ -2429,9 +2484,11 @@ $('cloudSyncReview').addEventListener('click',async()=>{
    select.append(pending,local,remote);label.append(name,select);target.appendChild(label);
   }
   $('cloudSyncPanel').hidden=false;
- }catch(e){syncPreviewToken='';$('cloudStatus').textContent='⚠ '+e.message;}
- finally{cloudManualBusy=false;button.disabled=false;}
-});
+  $('cloudSyncPanel').scrollIntoView({block:'nearest'});
+ }catch(e){syncPreviewToken='';showCloudSyncError(e.message);}
+ finally{closeCloudDialog();cloudManualBusy=false;button.disabled=false;}
+}
+$('cloudSyncReview').addEventListener('click',()=>void reviewCloudSync());
 $('cloudSyncCancel').addEventListener('click',()=>{syncPreviewToken='';$('cloudSyncPanel').hidden=true;});
 $('cloudSyncConfirm').addEventListener('click',async()=>{
  if(!syncPreviewToken||cloudManualBusy)return;
@@ -2440,7 +2497,7 @@ $('cloudSyncConfirm').addEventListener('click',async()=>{
   if(select.value===''){select.focus();return;}
   decisions[select.dataset.key]=select.value==='true';
  }
- const button=$('cloudSyncConfirm');button.disabled=true;cloudManualBusy=true;
+ const button=$('cloudSyncConfirm');button.disabled=true;cloudManualBusy=true;openCloudDialog('Guardando los cambios en este equipo…');
  try{
   if(!await flushLibrary())throw new Error('Hay cambios pendientes de guardar. Resuélvelos antes de sincronizar.');
   if(!syncPreviewToken||syncPreviewEdit!==editRevision){
@@ -2450,12 +2507,14 @@ $('cloudSyncConfirm').addEventListener('click',async()=>{
   }
   const revision=editRevision;
   $('cloudSyncSummary').textContent='Combinando y creando copia de recuperación…';
+  $('cloudSyncDialogMessage').textContent='Enviando y recibiendo cambios…';
   const data=await cloudRequest('/api/cloud/sync','POST',{token:syncPreviewToken,decisions});
   syncPreviewToken='';$('cloudSyncPanel').hidden=true;
   const loaded=revision===editRevision&&!saveNeeded&&!restoringBackup&&!preparingClose&&
    await initLibrary({preserveNavigation:true});
+  cloudIncomingState=false;cloudIncomingChecked=Date.now();cloudHeaderError=data.warning||'';
   await cloudRefresh();void cineRefreshHistory();void cineRefreshRecovery();
-  const publication=data.warning?'⚠ '+data.warning:'Copia enviada y verificada en OneDrive.';
+  const publication=data.warning?'⚠ '+data.warning:(cineGraphConnected?'Copia enviada y verificada en OneDrive.':'Copia guardada en la carpeta de sincronización.');
   $('cloudAutoStatus').textContent='✓ Biblioteca combinada en este equipo. '+publication;
   $('cloudSyncManualResult').textContent=loaded
    ?(data.warning?'Biblioteca actualizada. '+publication:'Primera sincronización completada. Puedes seguir con el paso 3.')
@@ -2467,52 +2526,86 @@ $('cloudSyncConfirm').addEventListener('click',async()=>{
    $('cloudSyncSummary').textContent=timeout
     ?'⚠ Se agotó el tiempo de espera. La copia podría haberse enviado igualmente. Consulta la carpeta de OneDrive y el estado de sincronización antes de repetir la operación.'
     :'⚠ '+e.message+' No se ha confirmado la subida; tus listas siguen guardadas localmente.';
-   await cloudRefresh().catch(()=>{});
- }finally{cloudManualBusy=false;button.disabled=false;}
+   showCloudSyncError(e.message);await cloudRefresh().catch(()=>{});
+ }finally{closeCloudDialog();cloudManualBusy=false;button.disabled=false;}
 });
-// Se activa solo tras la primera revisión manual. No consulta TMDB ni sube fichas.
-let cloudAutoBusy=false,cloudAutoCheckedAt=0;
-async function cloudAutoReceive(force=false){
- if(!libraryReady||cloudAutoBusy||cloudManualBusy||syncPreviewToken||!$('cloudSyncPanel').hidden)return;
- if(!force&&Date.now()-cloudAutoCheckedAt<20000)return;
- if(document.querySelector('.overlay:not([hidden])'))return;
- if(document.activeElement?.matches('input,textarea,select,[contenteditable="true"]'))return;
- if(savePump||saveNeeded||restoringBackup||preparingClose)return;
- cloudAutoBusy=true;
- const beforeEpoch=saveEpoch,beforeEdit=editRevision;
- try{
-   await saveQueue.catch(()=>{});
-   if(beforeEpoch!==saveEpoch||beforeEdit!==editRevision||saveNeeded)return;
-   cloudAutoCheckedAt=Date.now();
-   try{
-     const result=await cloudRequest('/api/cloud/auto','POST',{force});
-     if(result.needs_review){
-       $('cloudAutoStatus').textContent=result.skipped==='not_paired'
-         ?'Primera vinculación pendiente: pulsa «Revisar sincronización».'
-         :'⚠ Se han encontrado cambios incompatibles. Pulsa «Revisar sincronización» para decidir.';
-     }else if(result.changed){
-       const loaded=beforeEdit===editRevision&&!saveNeeded&&!restoringBackup&&!preparingClose&&
-        await initLibrary({preserveNavigation:true});
-       const message=loaded?'✓ Cambios recibidos automáticamente de otro dispositivo.':
-        '✓ Cambios recibidos y guardados. La vista actual se conserva.';
-       $('cloudAutoStatus').textContent=message+(result.warning?' ⚠ '+result.warning:'');
-       void cineRefreshHistory();
-     }else if(result.warning){
-       $('cloudAutoStatus').textContent='⚠ '+result.warning;
-     }else if(!result.skipped){
-       $('cloudAutoStatus').textContent='✓ Sincronización automática al día.';
-     }
-   await cloudRefresh(); // Un GET local: actualiza la hora incluso sin cambios.
-   }finally{/* La recepción automática NUNCA bloquea la interfaz. */}
- }catch(error){
-   $('cloudAutoStatus').textContent=/deadline|timeout|tiempo de espera|context canceled/i.test(error.message)
-     ?'⚠ OneDrive tardó demasiado en responder. La copia puede existir igualmente; comprueba la carpeta y vuelve a revisar el estado.'
-     :'⚠ No se pudo comprobar OneDrive: '+error.message+' · Puedes usar «Revisar cambios o conflictos».';
- }finally{cloudAutoBusy=false;}
+function renderCloudHeader(){
+ const controls=$('cloudHeaderControls'),s=cloudHeaderState;
+ controls.hidden=!s?.enabled||s.provider!=='onedrive-direct';
+ if(controls.hidden)return;
+ const box=$('cloudHeaderPending'),message=$('cloudHeaderMessage');
+ message.textContent=cloudHeaderError;message.hidden=!cloudHeaderError;
+ if(!s.sync_paired){box.textContent='Primera sincronización pendiente';return;}
+ const outgoing=s.upload_pending?'Subida pendiente':'Sin cambios por subir';
+ const incoming=cloudIncomingBusy?'Comprobando recepción…':cloudIncomingState===true?'Recepción pendiente':
+  cloudIncomingState===false?'Sin cambios por recibir':'Recepción sin comprobar';
+ box.textContent=outgoing+' · '+incoming;
 }
-window.addEventListener('focus',()=>void cloudAutoReceive());
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)void cloudAutoReceive();});
-setInterval(()=>{if(!document.hidden)void cloudAutoReceive();},25000);
+async function checkCloudIncoming(){
+ if(cloudManualBusy||cloudIncomingBusy||!cloudHeaderState?.enabled||cloudHeaderState.provider!=='onedrive-direct'||!cloudHeaderState.sync_paired||Date.now()-cloudIncomingChecked<120000)return;
+ cloudIncomingBusy=true;cloudIncomingChecked=Date.now();renderCloudHeader();
+ const folder=cloudHeaderState.folder,checked=cloudIncomingChecked;
+ try{
+  const status=await cloudRequest('/api/cloud/pending');
+  if(folder===cloudHeaderState?.folder&&checked===cloudIncomingChecked)cloudIncomingState=status.incoming_pending;
+ }catch{if(folder===cloudHeaderState?.folder)cloudIncomingState=null;}
+ finally{cloudIncomingBusy=false;renderCloudHeader();}
+}
+const cloudDialog=$('cloudSyncDialog');
+cloudDialog.addEventListener('cancel',event=>event.preventDefault());
+function openCloudDialog(message){
+ $('cloudSyncDialogMessage').textContent=message;
+ cloudDialog.hidden=false;
+ if(typeof cloudDialog.showModal==='function')cloudDialog.showModal();
+ else{document.body.classList.add('cloud-dialog-fallback');cloudDialog.setAttribute('open','');}
+ $('cloudSyncDialogMessage').focus();
+}
+function closeCloudDialog(){
+ if(typeof cloudDialog.close==='function')cloudDialog.close();
+ else{cloudDialog.removeAttribute('open');document.body.classList.remove('cloud-dialog-fallback');}
+ cloudDialog.hidden=true;
+ if(identityReconcileDeferred){identityReconcileDeferred=false;queueIdentityReconcile();}
+}
+for(const type of ['click','keydown','focusin'])document.addEventListener(type,event=>{
+ if(!document.body.classList.contains('cloud-dialog-fallback')||cloudDialog.contains(event.target)&&type!=='keydown')return;
+ event.preventDefault();event.stopImmediatePropagation();$('cloudSyncDialogMessage').focus();
+},true);
+function showCloudSyncError(message){
+ cloudHeaderError='⚠ '+message;
+ $('cloudSyncManualResult').textContent=cloudHeaderError;
+ renderCloudHeader();
+}
+async function syncCloudNow(){
+ if(cloudManualBusy||restoringBackup||preparingClose)return;
+ cloudHeaderError='';renderCloudHeader();
+ if(!cloudHeaderState?.enabled){
+  showView('collections');$('cloudStepConnect').scrollIntoView({block:'nearest'});return;
+ }
+ if(!cloudHeaderState.sync_paired||cloudHeaderState.needs_review){
+  showView('collections');await reviewCloudSync();return;
+ }
+ cloudManualBusy=true;
+ let review=false;
+ openCloudDialog('Guardando los cambios en este equipo…');
+ try{
+  if(!await flushLibrary())throw new Error('Resuelve el guardado local antes de sincronizar.');
+  $('cloudSyncDialogMessage').textContent='Enviando y recibiendo cambios…';
+  const result=await cloudRequest('/api/cloud/auto','POST',{force:true});
+  review=Boolean(result.needs_review);
+  if(result.skipped==='local_changed')throw new Error('La biblioteca cambió. Pulsa el botón para volver a sincronizar.');
+  if(result.changed&&!await initLibrary({preserveNavigation:true}))throw new Error('Los cambios recibidos se guardaron. Recarga la biblioteca para verlos.');
+  cloudIncomingState=review;cloudIncomingChecked=Date.now();
+  $('cloudSyncManualResult').textContent=result.warning||(!review?'Sincronización completada.':'Hay cambios que requieren revisión.');
+  if(result.warning)showCloudSyncError(result.warning);
+  await cloudRefresh();void cineRefreshHistory();void cineRefreshRecovery();
+ }catch(error){showCloudSyncError(error.message);}
+ finally{closeCloudDialog();cloudManualBusy=false;renderCloudHeader();}
+ if(review){showView('collections');await reviewCloudSync();}
+}
+$('cloudHeaderSync').addEventListener('click',()=>void syncCloudNow());
+$('cloudSyncNowFast').addEventListener('click',()=>void syncCloudNow());
+window.addEventListener('focus',()=>void checkCloudIncoming());
+setInterval(()=>{if(!document.hidden)void checkCloudIncoming();},120000);
 void cloudRefresh();
 void cineRefreshHistory();
 void cineRefreshRecovery();
@@ -2819,7 +2912,7 @@ fetch('/api/ping',{cache:'no-store'}).catch(()=>{});
 setInterval(()=>{fetch('/api/ping',{cache:'no-store'}).catch(()=>{});},12000);
 let preparingClose=false;
 window.cinePrepareClose=async()=>{
- if(restoringBackup||preparingClose)return false;
+ if(restoringBackup||preparingClose||cloudManualBusy)return false;
  preparingClose=true;document.body.inert=true;
  try{
   if(savePump)await savePump;
@@ -2856,7 +2949,7 @@ async function finishLibraryStartup(loaded){
  update();renderCollectionControls();updatePlatformProgress();
  await initIdentities();
  await initPlatforms();
- void cloudAutoReceive();
+ void checkCloudIncoming();
  /* CINE_DESKTOP_READY */
 }
 $('libraryStartupRetry').addEventListener('click',async()=>{

@@ -101,8 +101,8 @@ func makeHTML(initial, token string) (string, error) {
 	out = injectLabMaintenance(out)
 	if desktopFeatures && !appIsLab {
 		out = strings.NewReplacer(
-			"<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.13</title>",
-			"🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.13",
+			"<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.14</title>",
+			"🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.14",
 			` <span class="lab-nav-tag">LAB</span>`, "",
 			`<span class="lab-smart-caption">LAB</span>`, "",
 			"SELECTOR CINE 365 · LAB WINDOWS", "SELECTOR CINE 365",
@@ -212,7 +212,7 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		a.serveLibraryHTTP(w, r)
 	case "/api/sync/history", "/api/sync/revisions", "/api/sync/recovery/list", "/api/sync/recovery/pending", "/api/sync/recovery/preview", "/api/sync/recovery/restore":
 		a.serveSyncSupport(w, r)
-	case "/api/cloud/status", "/api/cloud/config", "/api/cloud/backup", "/api/cloud/browse", "/api/cloud/preview", "/api/cloud/sync", "/api/cloud/auto", "/api/cloud/auto-folder", "/api/cloud/mode":
+	case "/api/cloud/status", "/api/cloud/pending", "/api/cloud/config", "/api/cloud/backup", "/api/cloud/browse", "/api/cloud/preview", "/api/cloud/sync", "/api/cloud/auto", "/api/cloud/auto-folder", "/api/cloud/mode":
 		a.serveCloudHTTP(w, r)
 	case "/api/onedrive-desktop/status", "/api/onedrive-desktop/start", "/api/onedrive-desktop/disconnect":
 		a.serveGraphAuthHTTP(w, r)
@@ -335,7 +335,9 @@ func serve() error {
 	app := &runningApp{libraryRecovered: recovered, html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath), appCacheRoot(filepath.Dir(savePath))), cloud: newCloudBackups(filepath.Dir(savePath)), graph: newDesktopGraph(filepath.Dir(savePath)), graphUploadCh: make(chan struct{}, 1), syncStore: syncStore, token: token, stopCh: make(chan struct{})}
 	defer func() { app.stop(); app.flushLabCatalog(); app.platforms.flushProviderCache() }()
 	app.touch()
-	go app.graphPublisher()
+	if !desktopFeatures {
+		go app.graphPublisher()
+	}
 	listener, err := net.Listen("tcp4", "127.0.0.1:0")
 	if err != nil {
 		return fmt.Errorf("no se ha podido iniciar la aplicación local: %w", err)

@@ -20,7 +20,7 @@ for(const label of labels)assert.ok(html.includes(label),'Falta texto o sección
 for(const id of [
  'cloudWizardStatus','cloudStepConnect','cloudStepReview','cloudStepSync',
  'cloudGraphConnect','cloudGraphStatus','cloudGraphDisconnect',
- 'cloudSyncReview','cloudSyncNowFast','cloudSyncMode','cloudGraphLogin',
+ 'cloudSyncReview','cloudSyncNowFast','cloudHeaderSync','cloudHeaderPending','cloudSyncDialog','cloudGraphLogin',
  'cloudAutoFolder','cloudFolder','cloudBrowse','cloudActivate','cloudBackupNow','cloudDisable',
  'cloudStatus','cloudAutoStatus','cloudLastCheck','cloudLastReceive','cloudSyncManualResult',
  'cloudHistory','cloudHistoryRefresh','cloudHistoryChecked','cloudRecoveryList','cloudRecoveryRestore',
@@ -45,11 +45,11 @@ const ids=[
 const elements=Object.fromEntries(ids.map(id=>[id,new Fake()]));
 const $=id=>{assert.ok(elements[id],'Missing UI mock: '+id);return elements[id];};
 const document={activeElement:null};
-const from=script.indexOf('let cineGraphConnected=false;');
+const from=script.indexOf('let cineGraphConnected=false,');
 const to=script.indexOf('async function cloudRefresh()',from);
 assert.ok(from>=0&&to>from);
-const handlers=new Function('$','document',script.slice(from,to)+
- '\nreturn {cloudShow,updateCloudGuide};')($,document);
+const handlers=new Function('$','document','renderCloudHeader','checkCloudIncoming',script.slice(from,to)+
+ '\nreturn {cloudShow,updateCloudGuide};')($,document,()=>{},()=>{});
 
 handlers.cloudShow({provider:'',enabled:false,auto_sync:true});
 assert.match(elements.cloudWizardStatus.textContent,/Paso 1 de 3/);
@@ -81,7 +81,7 @@ assert.match(elements.cloudSyncHint.textContent,/conflictos/);
 handlers.cloudShow({provider:'folder',enabled:true,sync_paired:false,needs_review:true,folder:'C:\\Users\\Una\\OneDrive\\Selector_Cine_365',last_check_ms:0});
 assert.equal(elements.cloudGraphConnect.disabled,true,'No mezclar carpeta local y cuenta Graph');
 
-const confirmation=script.slice(script.indexOf("$('cloudSyncConfirm').addEventListener("),script.indexOf('// Se activa solo tras la primera revisión manual.'));
+const confirmation=script.slice(script.indexOf("$('cloudSyncConfirm').addEventListener("),script.indexOf('function renderCloudHeader(){'));
 assert.ok(!confirmation.includes('location.reload()'),'Sin recargar después de una sincronización confirmada');
 assert.ok(confirmation.includes('await initLibrary({preserveNavigation:true})'),'Refrescar biblioteca sin terminar la sesión');
 assert.ok(confirmation.indexOf('await flushLibrary()')<confirmation.indexOf("cloudRequest('/api/cloud/sync'"),'Guardar los cambios antes de confirmar');
@@ -93,3 +93,18 @@ assert.ok(script.includes('Se agotó el tiempo de espera'));
 assert.ok(script.includes('La carpeta puede seguir vacía'));
 
 console.log('OK: guía de 3 pasos, estados desconectado/pendiente/vinculado/conflicto, controles, historial y actualización sin recarga.');
+
+assert.match(html, /<header class="header">[\s\S]*?<h1>[^<]+<\/h1>[\s\S]*?<div id="cloudHeaderControls" hidden>[\s\S]*?<\/header>/);
+assert.match(html, /#cloudHeaderControls:not\(\[hidden\]\)\{grid-column:1\/-1;/, "La sincronización comienza en el borde izquierdo");
+const headerStart = script.indexOf('function renderCloudHeader(){');
+const headerEnd = script.indexOf('async function checkCloudIncoming()',headerStart);
+const headerElements = Object.fromEntries(['cloudHeaderControls','cloudHeaderPending','cloudHeaderMessage'].map(id=>[id,new Fake()]));
+const renderHeader = new Function('$','cloudHeaderState','cloudHeaderError','cloudIncomingBusy','cloudIncomingState',
+  script.slice(headerStart,headerEnd)+'\nrenderCloudHeader();');
+for(const state of [null,{enabled:false,provider:'onedrive-direct'},{enabled:true,provider:'folder'}]){
+ renderHeader(id=>headerElements[id],state,'',false,null);
+ assert.equal(headerElements.cloudHeaderControls.hidden,true);
+}
+renderHeader(id=>headerElements[id],{enabled:true,provider:'onedrive-direct',sync_paired:true,upload_pending:true},'',false,true);
+assert.equal(headerElements.cloudHeaderControls.hidden,false);
+assert.equal(headerElements.cloudHeaderPending.textContent,'Subida pendiente · Recepción pendiente');

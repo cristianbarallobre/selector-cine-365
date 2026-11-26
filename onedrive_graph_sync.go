@@ -252,7 +252,8 @@ func (a *runningApp) graphSyncPreview() (map[string]any, error) {
 	a.mu.Lock()
 	local, revision := a.library, a.libraryRevision
 	a.mu.Unlock()
-	op := a.graph.operation()
+	op, cancel := a.graph.operation().bounded()
+	defer cancel()
 	p, err := a.graphPlanFor(local, op)
 	if err != nil {
 		return nil, err
@@ -286,7 +287,8 @@ func (a *runningApp) graphSyncConfirm(token string, decisions map[string]bool) (
 	}
 	local, revision := a.library, a.libraryRevision
 	a.mu.Unlock()
-	op := a.graph.operation()
+	op, cancel := a.graph.operation().bounded()
+	defer cancel()
 	p, err := a.graphPlanFor(local, op)
 	if err != nil {
 		return nil, err
@@ -329,7 +331,9 @@ func (a *runningApp) graphPublishSnapshot() error {
 	if a.graph == nil {
 		return errors.New("OneDrive no está conectado")
 	}
-	return a.publishGraphOperation(a.graph.operation())
+	op, cancel := a.graph.operation().bounded()
+	defer cancel()
+	return a.publishGraphOperation(op)
 }
 func (a *runningApp) publishGraphOperation(op graphOperation) (err error) {
 	g := op.graph
@@ -441,7 +445,8 @@ func (a *runningApp) graphAutoSync(force bool) (map[string]any, error) {
 	if a.graph == nil || !a.graph.active() || a.syncStore == nil {
 		return map[string]any{"changed": false, "skipped": "disconnected"}, nil
 	}
-	op := a.graph.operation()
+	op, cancel := a.graph.operation().bounded()
+	defer cancel()
 	pairing := op.pairingID()
 	if !a.syncStore.isPaired(pairing) {
 		return map[string]any{"changed": false, "skipped": "not_paired", "needs_review": true}, nil

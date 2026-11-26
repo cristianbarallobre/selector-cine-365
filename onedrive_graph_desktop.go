@@ -78,6 +78,12 @@ func (g *desktopGraph) changeSessionLocked() {
 	g.generation++
 }
 
+func (op graphOperation) bounded() (graphOperation, context.CancelFunc) {
+	ctx, cancel := context.WithTimeout(op.context, 90*time.Second)
+	op.context = ctx
+	return op, cancel
+}
+
 func (op graphOperation) current() bool {
 	g := op.graph
 	g.mu.Lock()

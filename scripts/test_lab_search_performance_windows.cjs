@@ -80,6 +80,7 @@ assert.equal(scans,40);
 
 const changed=lists[12];
 changed.text+='\n☑ Película nueva (2026)';
+run('buildIdentityGroups()'); // La recarga puede analizar el TXT antes de pintar las pertenencias.
 let updated=run('filmMembershipIndex()');
 assert.equal(scans,41,'Editar una lista solo debe analizar su TXT');
 assert.equal(updated.rows.length,10001);

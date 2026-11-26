@@ -238,12 +238,15 @@ func (a *runningApp) restoreLocalRecovery(id, etag string) (map[string]any, erro
 			logDiagnostic("Biblioteca restaurada, pero falló el guardado de sus revisiones: " + err.Error())
 		}
 	}
+	if desktopFeatures && a.markManualCloudUpload() != nil {
+		warnings = append(warnings, "No se pudo guardar el estado de subida pendiente")
+	}
 	a.mu.Unlock()
-	if syncReady && a.syncStore != nil && a.graph != nil && a.graph.active() {
+	if !desktopFeatures && syncReady && a.syncStore != nil && a.graph != nil && a.graph.active() {
 		if a.syncStore.isPaired(a.graph.pairingID()) {
 			a.queueGraphUpload()
 		}
-	} else if syncReady && a.cloud != nil && a.syncStore != nil {
+	} else if !desktopFeatures && syncReady && a.cloud != nil && a.syncStore != nil {
 		folder := a.cloud.status().Folder
 		if a.syncStore.isPaired(folder) {
 			saved := a.cloud.backup()

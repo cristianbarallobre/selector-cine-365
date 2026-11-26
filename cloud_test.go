@@ -137,10 +137,18 @@ func TestCloudAPIAndLocalSave(t *testing.T) {
 	state.Lists[0].Text = "☑ 001. Casablanca (1942)"
 	b, _ = json.Marshal(state)
 	got := request("/api/library", "POST", string(b), true)
-	if got.Code != 204 || got.Header().Get("X-Cine-Cloud") != "ok" {
+	if got.Code != 204 || (!desktopFeatures && got.Header().Get("X-Cine-Cloud") != "ok") {
 		t.Fatalf("save response %d %v", got.Code, got.Header())
 	}
 	copyPath := filepath.Join(dest, cloudDirectoryName, "actual", "colecciones.json")
+	if desktopFeatures {
+		if _, err := os.Stat(copyPath); !os.IsNotExist(err) {
+			t.Fatalf("Guardado o configuración publicaron sin pedirlo: %v", err)
+		}
+		if got := request("/api/cloud/backup", "POST", "", true); got.Code != 200 {
+			t.Fatalf("manual backup: %d %s", got.Code, got.Body.String())
+		}
+	}
 	bytes, e := os.ReadFile(copyPath)
 	if e != nil || !strings.Contains(string(bytes), "☑ 001.") {
 		t.Fatalf("cloud save failed %v", e)
@@ -149,7 +157,7 @@ func TestCloudAPIAndLocalSave(t *testing.T) {
 	state.Lists[0].Text = "☐ 001. Casablanca (1942)"
 	b, _ = json.Marshal(state)
 	got = request("/api/library", "POST", string(b), true)
-	if got.Code != 204 || got.Header().Get("X-Cine-Cloud") != "error" {
+	if got.Code != 204 || (!desktopFeatures && got.Header().Get("X-Cine-Cloud") != "error") {
 		t.Fatalf("local save should succeed even when cloud fails: %d %v", got.Code, got.Header())
 	}
 	if file, e := os.ReadFile(a.libraryPath); e != nil || !strings.Contains(string(file), "☐ 001.") {

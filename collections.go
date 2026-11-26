@@ -293,6 +293,9 @@ func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 					w.Header().Set("X-Cine-Cloud", "error")
 				}
 			}
+			if desktopFeatures && a.markManualCloudUpload() != nil {
+				w.Header().Set("X-Cine-Cloud", "error")
+			}
 			a.syncPreviewToken = "" // una vista previa anterior ya no es válida
 		} else if desktopFeatures {
 			a.preservePendingSave(w, state)
@@ -302,7 +305,7 @@ func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), 500)
 			return
 		}
-		if w.Header().Get("X-Cine-Cloud") == "error" {
+		if desktopFeatures || w.Header().Get("X-Cine-Cloud") == "error" {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}

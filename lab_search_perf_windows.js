@@ -23,6 +23,7 @@ let labGlobalIndexCache=null;
 let labGlobalIndexOrder='';
 let labGlobalIndexIdentityRevision=-1;
 let labGlobalIndexGeneration=0;
+let labListParseGeneration=0,labGlobalIndexListGeneration=-1;
 let labIdentityVersion=0;
 let labMetadataVersion=0;
 let labFilterChoicesCache=null;
@@ -31,6 +32,7 @@ function labIndexedEntries(list){
  if(cached&&cached.text===list.text)return cached.entries;
  const entries=parse(list.text||'').entries;
  labListParseCache.set(list.id,{text:list.text,entries});
+ labListParseGeneration++;
  return entries;
 }
 function labTrackMapChanges(map,kind){
@@ -86,7 +88,8 @@ function labGlobalMembershipIndex(){
  for(const key of labListParseCache.keys()){
   if(!currentIDs.has(key)){labListParseCache.delete(key);changed=true;}
  }
- if(labGlobalIndexIdentityRevision!==labIdentityVersion)changed=true;
+ // Identity reconciliation can parse a changed list before this index is queried.
+ if(labGlobalIndexListGeneration!==labListParseGeneration||labGlobalIndexIdentityRevision!==labIdentityVersion)changed=true;
  // Renombrar una lista no altera su TXT, pero sí las etiquetas de pertenencia.
  if(!changed&&labGlobalIndexCache){
   const names=labGlobalIndexCache.listNames;
@@ -122,6 +125,7 @@ function labGlobalMembershipIndex(){
  };
  labGlobalIndexOrder=order;
  labGlobalIndexIdentityRevision=labIdentityVersion;
+ labGlobalIndexListGeneration=labListParseGeneration;
  labGlobalIndexGeneration++;
  membershipCache=labGlobalIndexCache;
  return labGlobalIndexCache;

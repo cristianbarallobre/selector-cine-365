@@ -400,7 +400,7 @@ func (s *desktopSyncStore) accept(p syncPlan, decisions map[string]bool, folder 
 	s.state.Known = snapshot.Known
 	s.state.Revisions = snapshot.Revisions
 	s.state.PairedFolder = filepath.Clean(folder)
-	s.state.GraphUploadPending = strings.HasPrefix(folder, "onedrive://item/")
+	s.state.GraphUploadPending = desktopFeatures || strings.HasPrefix(folder, "onedrive://item/")
 	s.graphUploadVersion++
 	return s.saveLocked()
 }
@@ -974,7 +974,10 @@ func (a *runningApp) publishDeviceSnapshot() error {
 	if !a.syncStore.isPaired(folder) {
 		return nil
 	}
-	snapshot, _ := a.captureSyncSnapshot()
+	a.mu.Lock()
+	snapshot := a.syncStore.snapshot(a.library)
+	revision, version := a.libraryRevision, a.syncStore.graphPublicationVersion()
+	a.mu.Unlock()
 	data, err := encodeSyncSnapshot(snapshot)
 	if err != nil {
 		return err
@@ -990,6 +993,11 @@ func (a *runningApp) publishDeviceSnapshot() error {
 	}
 	if sha256.Sum256(readBack) != sha256.Sum256(data) {
 		return errors.New("el proveedor no confirmó el archivo de este dispositivo")
+	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if revision == a.libraryRevision && folder == a.cloud.status().Folder {
+		return a.syncStore.acknowledgeGraphUpload(version)
 	}
 	return nil
 }
