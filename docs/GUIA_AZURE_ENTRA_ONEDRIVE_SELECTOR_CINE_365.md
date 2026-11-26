@@ -1,6 +1,6 @@
 # Configuración de OneDrive y Microsoft Entra
 
-Guía para Windows y macOS 9.2.15 y la APK estable de Android. La app incluye una configuración pública de Microsoft. Puedes conectar tu cuenta desde la app y consultar esta guía si administras el registro o tienes un problema de autorización.
+Guía para Windows y macOS 9.2.19 y la APK estable de Android. La app incluye una configuración pública de Microsoft. Puedes conectar tu cuenta desde la app y consultar esta guía si administras el registro o tienes un problema de autorización.
 
 ## Conectar una cuenta personal
 

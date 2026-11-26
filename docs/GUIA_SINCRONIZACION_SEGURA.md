@@ -26,7 +26,7 @@ Windows y Mac guardan tus ediciones automáticamente en el equipo. Para intercam
 - Con una carpeta local configurada, usa **Sincronizar ahora** dentro de **Mis listas → OneDrive y copias de seguridad**. La app escribe la copia en esa carpeta y el cliente de nube se encarga de enviarla.
 - En Android estable, usa el control de sincronización y la revisión de su propia interfaz.
 
-Si la operación falla, los cambios que ya guardaste siguen en el equipo. Revisa el aviso y prueba de nuevo cuando recuperes la conexión.
+Si la operación falla, los cambios que ya guardaste siguen en el equipo. Revisa el aviso y prueba de nuevo cuando recuperes la conexión. Si el guardado local no está confirmado, resuélvelo antes de sincronizar: revisa los cambios pendientes, reintenta o exporta un JSON de emergencia. En escritorio puedes cerrar voluntariamente tras aceptar el aviso de posible pérdida. Para investigar incidencias, usa Mis listas → Mantenimiento → Exportar registro de diagnóstico.
 
 ## Qué viaja entre equipos
 

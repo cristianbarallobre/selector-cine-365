@@ -33,7 +33,7 @@ El sorteo normal selecciona películas pendientes de la lista activa. En **Sorte
 
 ## TMDB y Descubrir
 
-Configura una clave de TMDB en la app si quieres carteles, disponibilidad en España y fichas. **Descubrir** permite buscar películas y personas, explorar el catálogo y abrir las fichas. Al pasar el puntero por un actor o director puedes ver su retrato. Pulsa su nombre para abrir la biografía y las películas en las que actuó o que dirigió. Los carteles grandes y retratos tienen una caché local de hasta 32 MiB o 640 imágenes. La disponibilidad puede cambiar y conviene comprobarla en el servicio.
+Configura una clave de TMDB en la app si quieres carteles, disponibilidad en España y fichas. **Descubrir** permite buscar películas y personas, explorar el catálogo y abrir las fichas. Al pasar el puntero por un actor o director puedes ver su retrato. Pulsa su nombre para abrir la biografía y las películas en las que actuó o que dirigió. Los carteles grandes y retratos tienen una caché local de hasta 32 MiB o 640 imágenes. La disponibilidad puede cambiar. Pulsa **Actualizar** en Biblioteca para volver a consultar las fichas y plataformas de la lista activa; los datos en caché no caducan automáticamente. Conviene comprobar la disponibilidad en el servicio.
 
 Al añadir una película desde Descubrir, Biblioteca reutiliza la ficha y el cartel de TMDB guardados localmente. Al borrar una búsqueda de Descubrir, se recuperan la categoría, la página y el filtro de género anteriores.
 
@@ -54,10 +54,12 @@ Si una edición no se guardó por un conflicto local, carga la biblioteca guarda
 
 ## Android
 
-La edición pública se identifica como **Beta 13.13 Limpia**. Tiene biblioteca, navegación táctil, estadísticas, sorteo, copias y sincronización mediante revisión manual. La candidata Android 9.2.4 añade cambios de interfaz y funciones de escritorio adaptadas al móvil. Se instala como una app de pruebas separada.
-
-Autor: Cristian Barallobre Rúa.
+La edición pública se identifica como **Beta 13.13 Limpia**. Tiene biblioteca, navegación táctil, estadísticas, sorteo, copias y sincronización mediante revisión manual. La edición Android 9.2.5 es una versión de pruebas para Android 8 o posterior. Se instala en paralelo con la estable. Una instalación de pruebas con firma distinta requiere reinstalar esa copia. [Descarga de Android 9.2.5](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.5-android).
 
 ## Diagnóstico y cierre seguro (escritorio 9.2.18–9.2.19)
 
-Si el guardado no se confirma, revisa los cambios pendientes, reintenta o exporta una copia JSON de emergencia. Es posible cerrar voluntariamente con advertencia de pérdida de cambios. En Mis listas → Mantenimiento → Exportar registro de diagnóstico puedes guardar los registros técnicos locales para revisar incidencias.
+Si el guardado no se confirma, revisa los cambios pendientes, reintenta o exporta una copia JSON de emergencia. Es posible cerrar voluntariamente con advertencia de pérdida de cambios. En Mis listas → Mantenimiento → Exportar registro de diagnóstico puedes guardar los registros técnicos locales para revisar incidencias. No se envían automáticamente ni incluyen claves de acceso o contenido de listas.
+
+Los archivos originales se conservan en `logs` dentro de la carpeta de datos: `%APPDATA%/Selector_Cine_365/logs` en Windows y `~/Library/Application Support/Selector_Cine_365/logs` en macOS. El registro del motor y el de la ventana nativa de Windows rotan al alcanzar 2 MiB; se mantienen hasta dos copias anteriores por archivo.
+
+Autor: Cristian Barallobre Rúa.
