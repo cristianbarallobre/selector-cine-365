@@ -2,8 +2,8 @@
 
 | Sistema | Biblioteca | Caché y sesión |
 | --- | --- | --- |
-| Windows 9.2.15 | %APPDATA%\Selector_Cine_365\ | Cachés de la aplicación en su carpeta de datos de escritorio. Sesión OneDrive protegida por DPAPI |
-| macOS 9.2.15 | ~/Library/Application Support/Selector_Cine_365/ | ~/Library/Caches/Selector_Cine_365/. Sesión OneDrive en el llavero |
+| Windows 9.2.17 | %APPDATA%\Selector_Cine_365\ | Cachés de la aplicación en su carpeta de datos de escritorio. Sesión OneDrive protegida por DPAPI |
+| macOS 9.2.17 | ~/Library/Application Support/Selector_Cine_365/ | ~/Library/Caches/Selector_Cine_365/. Sesión OneDrive en el llavero |
 | Android estable | Almacenamiento privado de es.cine365.app.limpia | Las otras ediciones usan almacenamiento independiente |
 | OneDrive | Carpeta lógica Selector_Cine_365 cuando se usa Graph | Las copias y revisiones dependen de la configuración y la vinculación |
 

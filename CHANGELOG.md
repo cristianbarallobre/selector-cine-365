@@ -1,5 +1,14 @@
 # Historial de cambios — Selector Cine 365
 
+## 9.2.17 de escritorio
+
+- Al añadir una película desde Descubrir, Biblioteca reutiliza el cartel y la ficha de TMDB guardados localmente.
+- Al borrar una búsqueda, Descubrir recupera la categoría, la página y el filtro de género anteriores.
+- Se conservan los carteles disponibles en caché al actualizar las fichas de Biblioteca.
+- Compilaciones de Windows x64 y macOS Intel y Apple Silicon verificadas mediante GitHub Actions.
+
+[Publicación 9.2.17](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.17-desktop)
+
 ## 9.2.16 de escritorio
 
 - La sincronización conserva las retiradas de películas aunque una copia anterior todavía las incluya. La película sigue en sus otras listas y puede añadirse de nuevo después.

@@ -1,6 +1,6 @@
 # Manual de Selector Cine 365
 
-Windows y macOS 9.2.15. Android estable de la publicación v9.0.0.
+Windows y macOS 9.2.17. Android estable de la publicación v9.0.0.
 
 ## Instalar y proteger la biblioteca
 
@@ -10,7 +10,7 @@ Windows y macOS 9.2.15. Android estable de la publicación v9.0.0.
 4. Si Windows o Mac avisan sobre el editor, verifica primero que el archivo procede de la publicación oficial y comprueba su SHA-256. Los paquetes Mac llevan firma ad hoc y carecen de notarización.
 5. En Android instala la APK Limpia con el mismo identificador y la misma firma que tu instalación compatible. Para cambiar de edición, importa una copia JSON en la nueva.
 
-[Descargas de escritorio](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.15-desktop) · [APK oficial de Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0)
+[Descargas de escritorio](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.17-desktop) · [APK oficial de Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0)
 
 ## Biblioteca y listas
 
@@ -34,6 +34,8 @@ El sorteo normal selecciona películas pendientes de la lista activa. En **Sorte
 ## TMDB y Descubrir
 
 Configura una clave de TMDB en la app si quieres carteles, disponibilidad en España y fichas. **Descubrir** permite buscar películas y personas, explorar el catálogo y abrir las fichas. Al pasar el puntero por un actor o director puedes ver su retrato. Pulsa su nombre para abrir la biografía y las películas en las que actuó o que dirigió. Los carteles grandes y retratos tienen una caché local de hasta 32 MiB o 640 imágenes. La disponibilidad puede cambiar y conviene comprobarla en el servicio.
+
+Al añadir una película desde Descubrir, Biblioteca reutiliza la ficha y el cartel de TMDB guardados localmente. Al borrar una búsqueda de Descubrir, se recuperan la categoría, la página y el filtro de género anteriores.
 
 Si la app ha elegido otra película, abre **Identificar película en TMDB** y pega su ID numérico o su enlace. Si los años difieren, verifica el título y pulsa **Guardar de todos modos** si la ficha es correcta. El año de tu lista se conserva. **Volver a búsqueda automática** retira la identificación manual.
 

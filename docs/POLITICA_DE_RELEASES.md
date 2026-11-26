@@ -7,7 +7,7 @@
 
 ## Compilaciones y manuales
 
-Las publicaciones de escritorio incluyen SHA256SUMS.txt. Los paquetes macOS 9.2.15 usan firma ad hoc y carecen de notarización de Apple. Las guías vigentes se publican en la rama principal, en Markdown y en los formatos descargables indicados en el índice. Las notas de publicación detallan las comprobaciones de cada compilación.
+Las publicaciones de escritorio incluyen SHA256SUMS.txt. Los paquetes macOS 9.2.17 usan firma ad hoc y carecen de notarización de Apple. Las guías vigentes se publican en la rama principal, en Markdown y en los formatos descargables indicados en el índice. Las notas de publicación detallan las comprobaciones de cada compilación.
 
 Las notas de betas y las guías con un número antiguo documentan sus lanzamientos. Android 9.2.5 se identifica como edición de pruebas.
 

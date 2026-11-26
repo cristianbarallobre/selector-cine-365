@@ -1,6 +1,6 @@
 # Sincronización segura de Selector Cine 365
 
-Windows y macOS 9.2.15. Android estable de la publicación v9.0.0.
+Windows y macOS 9.2.17. Android estable de la publicación v9.0.0.
 
 ## Preparar la primera conexión
 
@@ -30,7 +30,7 @@ Si la operación falla, los cambios que ya guardaste siguen en el equipo. Revisa
 
 ## Qué viaja entre equipos
 
-Se comparten los datos de biblioteca compatibles con cada versión. El escritorio 9.2.15 guarda marcas, favoritos, valoraciones y orden de Favoritos. Las identificaciones corregidas viajan como IDs de TMDB. La APK estable de Android pertenece a una etapa anterior.
+Se comparten los datos de biblioteca compatibles con cada versión. El escritorio 9.2.17 guarda marcas, favoritos, valoraciones y orden de Favoritos. Las identificaciones corregidas viajan como IDs de TMDB. La APK estable de Android pertenece a una etapa anterior. En escritorio se conservan las retiradas de películas de una lista aunque una copia anterior todavía las incluya; las demás listas se mantienen y puedes volver a añadir la película.
 
 Las claves de TMDB, los carteles, la caché y las sesiones Microsoft se guardan en cada dispositivo. Windows protege la autorización con DPAPI y Mac con el llavero. También puedes usar la app sin conectar OneDrive.
 

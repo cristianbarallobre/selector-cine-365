@@ -1,10 +1,10 @@
 # Selector Cine 365 para macOS
 
-La versión estable es 9.2.16. Requiere macOS 12 o posterior. En ** → Acerca de este Mac** comprueba si tu equipo indica un chip Apple o un procesador Intel.
+La versión estable es 9.2.17. Requiere macOS 12 o posterior. En ** → Acerca de este Mac** comprueba si tu equipo indica un chip Apple o un procesador Intel.
 
-- [Descargar para Apple Silicon](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.2.16-desktop/Selector_Cine_365_Mac_Apple_Silicon_9.2.16.zip)
-- [Descargar para Intel](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.2.16-desktop/Selector_Cine_365_Mac_Intel_9.2.16.zip)
-- [Comprobar las sumas SHA-256](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.2.16-desktop/SHA256SUMS.txt)
+- [Descargar para Apple Silicon](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.2.17-desktop/Selector_Cine_365_Mac_Apple_Silicon_9.2.17.zip)
+- [Descargar para Intel](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.2.17-desktop/Selector_Cine_365_Mac_Intel_9.2.17.zip)
+- [Comprobar las sumas SHA-256](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.2.17-desktop/SHA256SUMS.txt)
 
 ## Instalación y actualización
 
