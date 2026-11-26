@@ -6,9 +6,9 @@ Aplicación de uso personal para organizar colecciones de cine. Puedes marcar pe
 
 | Equipo | Versión estable | Requisitos |
 | --- | --- | --- |
-| Windows | [9.2.15 para Windows](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.2.15-desktop/Selector_Cine_365_Windows_9.2.15.exe) | Windows 10 u 11 de 64 bits y Microsoft Edge WebView2 Runtime |
-| Mac con chip de Apple | [9.2.15 para Apple Silicon](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.2.15-desktop/Selector_Cine_365_Mac_Apple_Silicon_9.2.15.zip) | macOS 12 o posterior |
-| Mac con procesador Intel | [9.2.15 para Intel](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.2.15-desktop/Selector_Cine_365_Mac_Intel_9.2.15.zip) | macOS 12 o posterior |
+| Windows | [9.2.16 para Windows](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.2.16-desktop/Selector_Cine_365_Windows_9.2.16.exe) | Windows 10 u 11 de 64 bits y Microsoft Edge WebView2 Runtime |
+| Mac con chip de Apple | [9.2.16 para Apple Silicon](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.2.16-desktop/Selector_Cine_365_Mac_Apple_Silicon_9.2.16.zip) | macOS 12 o posterior |
+| Mac con procesador Intel | [9.2.16 para Intel](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.2.16-desktop/Selector_Cine_365_Mac_Intel_9.2.16.zip) | macOS 12 o posterior |
 | Android | [APK estable de la publicación v9.0.0](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0) | Android 8 o posterior. Compilación Beta 13.13 Limpia |
 
 Windows y Mac comparten la interfaz y las funciones de escritorio. Android tiene interfaz táctil propia. La [compilación de prueba de Android 9.2.5](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.5-android) se instala en paralelo con la versión estable.
@@ -19,7 +19,7 @@ Windows y Mac comparten la interfaz y las funciones de escritorio. Android tiene
 - **Mac.** Descomprime el ZIP de tu procesador y mueve la aplicación a **Aplicaciones**. Los paquetes tienen firma ad hoc y Apple no los ha notarizado. Verifica su origen antes de autorizar la apertura en **Privacidad y seguridad**.
 - **Android.** La APK pública usa el identificador es.cine365.app.limpia. Actualiza la instalación Limpia cuando coinciden el identificador y el certificado. Exporta un JSON antes de sustituir cualquier edición.
 
-[Última versión de escritorio](https://github.com/cristianbarallobre/selector-cine-365/releases/latest) · [Sumas SHA-256](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.2.15-desktop/SHA256SUMS.txt) · [Todas las publicaciones](https://github.com/cristianbarallobre/selector-cine-365/releases)
+[Última versión de escritorio](https://github.com/cristianbarallobre/selector-cine-365/releases/latest) · [Sumas SHA-256](https://github.com/cristianbarallobre/selector-cine-365/releases/download/v9.2.16-desktop/SHA256SUMS.txt) · [Todas las publicaciones](https://github.com/cristianbarallobre/selector-cine-365/releases)
 
 ## Sincronizar con OneDrive
 
@@ -34,6 +34,6 @@ Windows y macOS guardan tus listas y marcas automáticamente en el equipo. Con u
 
 ## Código y versiones anteriores
 
-El tag de escritorio identifica el código que se compiló para Windows y macOS 9.2.15. La rama principal centraliza la documentación. La APK pública de Android tiene su propia publicación. [Fuente 9.2.15](https://github.com/cristianbarallobre/selector-cine-365/tree/v9.2.15-desktop) · [Publicación Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0)
+El tag de escritorio identifica el código que se compiló para Windows y macOS 9.2.16. La rama principal centraliza la documentación. La APK pública de Android tiene su propia publicación. [Fuente 9.2.16](https://github.com/cristianbarallobre/selector-cine-365/tree/v9.2.16-desktop) · [Publicación Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0)
 
 Autor: Cristian Barallobre Rúa.

@@ -1,5 +1,13 @@
 # Historial de cambios — Selector Cine 365
 
+## 9.2.16 de escritorio
+
+- La sincronización conserva las retiradas de películas aunque una copia anterior todavía las incluya. La película sigue en sus otras listas y puede añadirse de nuevo después.
+- Si una versión anterior ya volvió a añadir la película, quítala de nuevo en la 9.2.16 y sincroniza.
+- El estado de la nube aparece junto al botón de sincronizar.
+
+[Publicación 9.2.16](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.16-desktop)
+
 ## 9.2.15 de escritorio
 
 - Sincronización manual con OneDrive en Windows y macOS. El botón de la cabecera muestra subida y recepción pendientes cuando hay una cuenta Microsoft conectada.
