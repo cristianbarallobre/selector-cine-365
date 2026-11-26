@@ -1,6 +1,6 @@
 # Configuración de OneDrive y Microsoft Entra
 
-Guía para Windows y macOS 9.2.7 y la APK estable de Android. La app incluye una configuración pública de Microsoft. Puedes conectar tu cuenta desde la app y consultar esta guía si administras el registro o tienes un problema de autorización.
+Guía para Windows y macOS 9.2.15 y la APK estable de Android. La app incluye una configuración pública de Microsoft. Puedes conectar tu cuenta desde la app y consultar esta guía si administras el registro o tienes un problema de autorización.
 
 ## Conectar una cuenta personal
 
@@ -10,6 +10,7 @@ En Windows y Mac abre **Mis listas** y busca el apartado de sincronización con 
 2. Autoriza el acceso en el navegador. Al terminar, vuelve a Selector Cine 365.
 3. Usa la misma cuenta en todos los equipos que deban compartir la biblioteca.
 4. Revisa la primera sincronización y confirma después de comprobar los recuentos.
+5. En escritorio, pulsa **Sincronizar con la nube** bajo el título cada vez que quieras enviar o recibir cambios. Una cuenta autorizada permite usar el botón. Los cambios se guardan localmente mientras tanto.
 
 Windows usa DPAPI para proteger la autorización, macOS usa el llavero y Android su almacenamiento protegido. Si Microsoft revoca la autorización, conecta la cuenta de nuevo.
 
