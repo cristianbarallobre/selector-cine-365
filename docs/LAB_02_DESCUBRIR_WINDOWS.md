@@ -4,7 +4,6 @@
 
 ## Alcance
 
-Esta prueba funciona **únicamente en la versión Windows compilada con `-tags lab`**. Los archivos `lab_discover_windows.go` y `lab_discover_windows.html` se activan exclusivamente en Windows; el archivo `lab_discover_other.go` desactiva explícitamente esta función en macOS y Linux. **No se ha modificado ningún archivo del proyecto Android para LAB-02**. Apple y Android se abordarán por separado cuando apruebes las pruebas de Windows.
 
 ## Qué se ha añadido
 
@@ -61,7 +60,6 @@ Descarga **`Selector_Cine_365_LAB-02_3_Windows`** de la última ejecución satis
 - La búsqueda y las categorías paginan los resultados que publica TMDB: 20 títulos por página es el tamaño de una página, **no el total de películas**. Se muestra el total de resultados devuelto por TMDB y controles Anterior/Siguiente tanto **arriba** como **debajo** de las tarjetas, hasta 500 páginas (límite del API de TMDB).
 - En **Biblioteca**, los controles a la derecha de cada fila se ordenan: **Pendiente/Vista → Detalles → Lápiz**. La flecha externa sigue eliminada; al pulsar el resto de la fila no se abre la ficha.
 - Si TMDB aún no ha anunciado la fecha de estreno, la película se puede añadir como pendiente sin año, conservando su ID para futuras consultas.
-- Correcciones restringidas a Windows LAB. Ninguna publicación nueva ni cambio de `main`, Android o macOS.
 - **Por validar manualmente** en Windows: vista a distintos tamaños, scroll de 20 tarjetas, cambio a página 2 y posteriores, apertura desde foto/título/Detalles y guardado en una lista existente.
 
 Descarga el artefacto `Selector_Cine_365_LAB-02_2_Windows` de la ejecución correcta más reciente de [Actions LAB](https://github.com/cristianbarallobre/selector-cine-365/actions/workflows/ci-lab.yml?query=branch%3Aexperimental). No utilices el EXE LAB-02.1 para probar estas correcciones.
@@ -79,7 +77,6 @@ Descarga el artefacto `Selector_Cine_365_LAB-02_2_Windows` de la ejecución corr
 - La caché no copia claves TMDB ni tokens; utiliza la cuenta TMDB ya configurada localmente en LAB. Ni las listas ni los datos compartidos de OneDrive se transforman para esta precarga.
 - **Pendiente de validación manual en Windows:** comprobar primeras 365 fichas, rendimiento real de TMDB, conexión lenta, duplicados, sinopsis y disponibilidad de España. La compilación CI por sí sola no prueba el comportamiento en tu PC.
 
-Descarga el artefacto **`Selector_Cine_365_LAB-02_1_Windows`** desde [GitHub Actions / rama experimental](https://github.com/cristianbarallobre/selector-cine-365/actions/workflows/ci-lab.yml?query=branch%3Aexperimental). No sustituye ni altera `main`, Android o macOS.
 
 ## Validación
 
