@@ -18,7 +18,7 @@ func TestDiagnosticPrivacy(t *testing.T) {
  }
  if validDiagnosticUIEvent("save_failed:private title"){t.Fatal("arbitrary UI messages must be rejected")}
  if !validDiagnosticUIEvent("js_error:123:4"){t.Fatal("safe numeric location rejected")}
- if got:=diagnosticErrorKind(errors.New("OneDrive respondió 503: confidential"));got!="http_503"{t.Fatal(got)}
+ if got:=diagnosticErrorKind(errors.New("HTTP 503: confidential"));got!="http_503"{t.Fatal(got)}
 }
 
 func TestDiagnosticHTTPAndRotation(t *testing.T){

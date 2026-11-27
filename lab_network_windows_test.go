@@ -19,10 +19,10 @@ func labNetworkTestRequest(a *runningApp,method,token string,data []byte) *httpt
  return w
 }
 func TestLabNetworkEventValidation(t *testing.T){
- good:=labNetworkEvent{Route:"/api/cloud/sync",Method:"POST",Kind:"network",Status:0,Attempts:1}
+ good:=labNetworkEvent{Route:"/api/extra-backup/now",Method:"POST",Kind:"network",Status:0,Attempts:1}
  if !labNetEventValid(good){t.Fatal("un fallo de red legítimo debe registrarse")}
  cases:=[]labNetworkEvent{
-  {Route:"/api/cloud/sync?token=secret",Method:"POST",Kind:"network",Attempts:1},
+  {Route:"/api/extra-backup/now?token=secret",Method:"POST",Kind:"network",Attempts:1},
   {Route:"https://tmdb.org/api",Method:"GET",Kind:"network",Attempts:1},
   {Route:"/api/lab/network-log",Method:"POST",Kind:"network",Attempts:1},
   {Route:"/api/ping",Method:"GET",Kind:"network",Attempts:1},
@@ -35,8 +35,8 @@ func TestLabNetworkEventValidation(t *testing.T){
  for _,test:=range []struct{path,want string}{
   {"/api/discover/detail","tmdb"},
   {"/api/platforms/cache","tmdb"},
-  {"/api/onedrive-desktop/status","onedrive"},
-  {"/api/cloud/sync","onedrive"},
+  {"/api/extra-backup/status","backup"},
+  {"/api/extra-backup/now","backup"},
   {"/api/library","local"},
  }{if got:=labNetSource(test.path);got!=test.want{t.Errorf("%s: %s, esperado %s",test.path,got,test.want)}}
 }
@@ -45,7 +45,7 @@ func TestLabNetworkLogIsPrivateAndBounded(t *testing.T){
  local:=t.TempDir()
  t.Setenv("LOCALAPPDATA",local)
  a:=&runningApp{savePath:filepath.Join(root,appDataDirectoryName,"lista.txt"),token:"session-secret"}
- e:=labNetworkEvent{Route:"/api/cloud/sync",Method:"POST",Kind:"network",Status:0,Attempts:1}
+ e:=labNetworkEvent{Route:"/api/extra-backup/now",Method:"POST",Kind:"network",Status:0,Attempts:1}
  b,err:=json.Marshal(e);if err!=nil{t.Fatal(err)}
  if got:=labNetworkTestRequest(a,"POST","",b).Code;got!=403{t.Fatalf("token obligatorio: %d",got)}
  if got:=labNetworkTestRequest(a,"GET","session-secret",b).Code;got!=405{t.Fatalf("solo POST: %d",got)}
@@ -53,7 +53,7 @@ func TestLabNetworkLogIsPrivateAndBounded(t *testing.T){
  logPath:=a.labNetworkLogPath()
  if filepath.Dir(logPath)!=filepath.Join(local,appDataDirectoryName,"cache_lab"){t.Fatalf("archivo fuera de caché local LAB: %s",logPath)}
  data,err:=os.ReadFile(logPath);if err!=nil{t.Fatal(err)}
- if !strings.Contains(string(data),"onedrive | /api/cloud/sync | POST | network | HTTP 0 | intentos 1"){t.Fatal("registro de diagnóstico incompleto")}
+ if !strings.Contains(string(data),"backup | /api/extra-backup/now | POST | network | HTTP 0 | intentos 1"){t.Fatal("registro de diagnóstico incompleto")}
  if strings.Contains(string(data),"session-secret")||strings.Contains(string(data),"token="){t.Fatal("el diagnóstico reveló credenciales")}
  // En Windows los permisos se expresan mediante ACL, no mediante bits POSIX 0600.
  // La privacidad se verifica por carpeta LAB separada, token de API y ausencia de secretos.
@@ -84,7 +84,7 @@ func TestLabNetworkIsInjectedInFinalHTML(t *testing.T){
   "labNetworkReport(info,'network',0,attempt);",
   "Conexión interrumpida al guardar o cambiar datos",
   "Guardado no confirmado · comprueba la lista",
-  "OneDrive: ",
+  "Guardado: ",
  } {
   if !strings.Contains(page,s){t.Errorf("no se inyectó la protección: %s",s)}
  }

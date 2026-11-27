@@ -36,7 +36,7 @@ var diagnosticURL = regexp.MustCompile("(?i)https?://[^\\s]+")
 var diagnosticWindowsPath = regexp.MustCompile("(?i)[a-z]:\\\\[^\\r\\n]+")
 var diagnosticUnixPath = regexp.MustCompile("/(?:Users|home|var|private|tmp)/[^\\r\\n]+")
 var diagnosticSecret = regexp.MustCompile("(?i)(?:bearer\\s+|(?:api_key|access_token|refresh_token|client_secret|authorization|code|token)\\s*[:=]\\s*)[^\\s,;]+")
-var diagnosticHTTPCode = regexp.MustCompile(`(?i)(?:HTTP |OneDrive respondió |Microsoft temporalmente no disponible \()([1-5][0-9]{2})`)
+var diagnosticHTTPCode = regexp.MustCompile(`(?i)(?:HTTP )([1-5][0-9]{2})`)
 var diagnosticEmail = regexp.MustCompile("[A-Za-z0-9._%+\\-]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,}")
 func sanitizeDiagnostic(s string) string {
  s=diagnosticURL.ReplaceAllString(s,"[URL omitida]")
@@ -160,7 +160,7 @@ var diagnosticUIEvents=map[string]bool{
  "ui_started":true,"local_connection_lost":true,"local_connection_restored":true,"js_error":true,
  "unhandled_rejection":true,"save_failed":true,"save_confirmed":true,"retry_save":true,
  "emergency_export":true,"close_failed":true,"close_ready":true,"sync_started":true,"sync_failed":true,
- "sync_finished":true,"cloud_check_failed":true,"close_forced":true,"close_cancelled":true,"renderer_terminated":true,
+ "close_forced":true,"close_cancelled":true,"renderer_terminated":true,
 }
 var diagnosticJSLocation=regexp.MustCompile("^js_error:[0-9]{1,6}:[0-9]{1,6}$")
 func validDiagnosticUIEvent(event string) bool {return diagnosticUIEvents[event]||diagnosticJSLocation.MatchString(event)}

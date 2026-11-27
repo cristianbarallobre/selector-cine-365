@@ -36,9 +36,8 @@ func labNetSource(route string) string {
       strings.HasPrefix(route,"/api/platforms/"),
       strings.HasPrefix(route,"/api/identities"):
   return "tmdb"
- case strings.HasPrefix(route,"/api/cloud/"),
-      strings.HasPrefix(route,"/api/onedrive-desktop/"):
-  return "onedrive"
+ case strings.HasPrefix(route,"/api/extra-backup/"):
+  return "backup"
  default:
   return "local"
  }
