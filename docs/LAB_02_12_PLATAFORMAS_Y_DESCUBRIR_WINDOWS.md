@@ -2,7 +2,7 @@
 
 **Fecha:** 23 de noviembre de 2026  
 **Plataforma:** Windows LAB · Rama **`experimental`** exclusivamente.  
-No se han modificado la versión estable `main`, Android ni macOS.
+No se han modificado la versión estable `main` ni macOS.
 
 ## 1. Plataforma sin desplegable en el filtro de Biblioteca
 

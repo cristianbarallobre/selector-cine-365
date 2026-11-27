@@ -1,6 +1,6 @@
 # LAB-02.6 · Ajustes del sorteo inteligente y ficha del resultado (Windows)
 
-**Rama:** `experimental`. **Plataforma:** exclusivamente Windows LAB. No afecta a `main`, Android ni macOS. LAB-03 Apariencia sigue eliminada.
+**Rama:** `experimental`. **Plataforma:** exclusivamente Windows LAB. No afecta a `main` ni macOS. LAB-03 Apariencia sigue eliminada.
 
 ## Correcciones y novedades
 

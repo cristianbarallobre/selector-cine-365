@@ -1,6 +1,6 @@
 # Selector Cine 365 · Windows LAB-02.15
 
-**Rama:** `experimental`. No se publican instaladores ni releases estables. Android y macOS no cambian.
+**Rama:** `experimental`. No se publican instaladores ni releases estables. macOS no cambia.
 
 ## 1. Biografías de intérpretes y fechas
 
@@ -51,4 +51,3 @@ Se ejecutan las regresiones previas de navegación, filtros, búsqueda (40 lista
 - Validación de copias antes de mostrar una restauración.
 - Autenticación del panel de mantenimiento y limpieza únicamente de imágenes autorizadas.
 
-**Pendiente de una fase de distribución:** firma del EXE y creación de instalador. No se simula una firma sin certificado. **Pendiente de pruebas reales:** cierres forzados, red inestable, semanas de uso y revisión de la recuperación antes de enviar cambios a otros dispositivos. Primero probar Windows LAB; después portar los cambios aprobados a Android y Mac.

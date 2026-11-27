@@ -1,6 +1,6 @@
 # Selector Cine 365 — LAB-02.10 · Biblioteca, Estadísticas y Descubrir (Windows)
 
-**Rama:** `experimental` · **Plataforma:** Windows LAB exclusivamente. La versión estable (`main`), Android y macOS **no se modifican**.
+**Rama:** `experimental` · **Plataforma:** Windows LAB exclusivamente. La versión estable (`main`) y macOS **no se modifican**.
 
 ## Biblioteca: botón único «Filtros»
 

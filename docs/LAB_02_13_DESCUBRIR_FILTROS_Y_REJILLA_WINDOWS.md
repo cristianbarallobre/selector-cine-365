@@ -2,7 +2,7 @@
 
 **Fecha:** 23 de noviembre de 2026  
 **Rama:** `experimental` · **Plataforma:** Windows LAB exclusivamente.  
-La rama `main`, Android y macOS permanecen intactos.
+La rama `main` y macOS permanecen intactos.
 
 ## 1. Descubrir: rellenar las filas disponibles
 

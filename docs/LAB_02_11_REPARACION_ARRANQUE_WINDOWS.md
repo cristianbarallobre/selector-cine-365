@@ -1,6 +1,6 @@
 # LAB-02.11 · Corrección de arranque y navegación (Windows)
 
-**Rama:** `experimental`. **Sin cambios en:** `main`, Android, macOS.
+**Rama:** `experimental`. **Sin cambios en:** `main`, macOS.
 
 ## Error detectado en LAB-02.10
 

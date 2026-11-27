@@ -2,7 +2,7 @@
 
 **Fecha:** 23 de noviembre de 2026  
 **Rama:** `experimental` · **Plataforma:** Windows LAB solamente.  
-**Sin cambios en:** `main`, Android ni macOS.
+**Sin cambios en:** `main` ni macOS.
 
 ## Ficha de película: reparto más claro
 

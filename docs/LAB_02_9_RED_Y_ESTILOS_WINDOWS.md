@@ -2,7 +2,7 @@
 
 **Fecha:** 23 de noviembre de 2026  
 **Rama:** `experimental`  
-**Plataforma:** Windows LAB exclusivamente. La versión estable (`main`), Android y macOS no reciben estos cambios.
+**Plataforma:** Windows LAB exclusivamente. La versión estable (`main`) y macOS no reciben estos cambios.
 
 ## 1. Recuperación de fallos de red
 
