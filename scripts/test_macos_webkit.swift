@@ -21,7 +21,9 @@ final class Check: NSObject, WKNavigationDelegate {
     }
 }
 let app = NSApplication.shared
-let window = NSWindow(contentRect:NSRect(x:0,y:0,width:1200,height:820), styleMask:[.titled], backing:.buffered, defer:false)
+let width = CommandLine.arguments.count > 3 ? (Double(CommandLine.arguments[3]) ?? 1200) : 1200
+let height = CommandLine.arguments.count > 4 ? (Double(CommandLine.arguments[4]) ?? 820) : 820
+let window = NSWindow(contentRect:NSRect(x:0,y:0,width:width,height:height), styleMask:[.titled], backing:.buffered, defer:false)
 let browser = WKWebView(frame:window.contentView!.bounds)
 let check = Check(try String(contentsOfFile:CommandLine.arguments[2],encoding:.utf8))
 browser.navigationDelegate = check

@@ -6,6 +6,7 @@ package main
 #include <Security/SecBase.h>
 int cineTMDBKeyRead(const char *, void **, int *);
 int cineTMDBKeySave(const char *, const void *, int);
+int cineTMDBKeyDelete(const char *);
 */
 import "C"
 import("fmt";"unsafe";"crypto/sha256";"path/filepath")
@@ -26,7 +27,13 @@ func readTMDBKey(path string)(string,error){
  return s.Key,nil
 }
 func writeTMDBKey(path,key string)error{
- if key==""{return writeTMDBSettings(path,platformSettings{})}
+ if key==""{
+  // Disabling TMDB must remove the protected credential, not just its pointer.
+  account:=C.CString(tmdbKeyAccount(path));defer C.free(unsafe.Pointer(account))
+  status:=C.cineTMDBKeyDelete(account)
+  if status!=0{return fmt.Errorf("No se pudo retirar la clave del llavero: %d",status)}
+  return writeTMDBSettings(path,platformSettings{})
+ }
  raw:=[]byte(key);defer zeroBytes(raw)
  account:=C.CString(tmdbKeyAccount(path));defer C.free(unsafe.Pointer(account))
  status:=C.cineTMDBKeySave(account,unsafe.Pointer(&raw[0]),C.int(len(raw)))

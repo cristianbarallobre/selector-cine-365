@@ -9,4 +9,9 @@ func TestTMDBNativeCredentialMigration(t *testing.T){
  raw,e:=os.ReadFile(path);if e!=nil{t.Fatal(e)}
  if strings.Contains(string(raw),key){t.Fatal("plaintext remained in settings on "+runtime.GOOS)}
  got,e=readTMDBKey(path);if e!=nil||got!=key{t.Fatal("native key did not reopen",e)}
+ if e=writeTMDBKey(path,"");e!=nil{t.Fatal("disconnect",e)}
+ got,e=readTMDBKey(path);if e!=nil||got!=""{t.Fatal("credential remained configured",e)}
+ fresh:=strings.Repeat("b",32);if e=writeTMDBKey(path,fresh);e!=nil{t.Fatal(e)}
+ got,e=readTMDBKey(path);if e!=nil||got!=fresh{t.Fatal("reconnect failed",e)}
+ if e=writeTMDBKey(path,"");e!=nil{t.Fatal(e)}
 }
