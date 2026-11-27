@@ -34,13 +34,12 @@ func TestDurableCheckpointSurvivesFailedMetadataWrite(t *testing.T){
  _,revisions,_:=reopened.parts()
  if !revisions["origen|2010"].Checked{t.Fatal("lost revision after restart")}
  if !strings.Contains(loadLibrary(a.libraryPath,"").Lists[0].Text,"☑"){t.Fatal("lost library")}
- // The checkpoint is local-only, including in the legacy folder backup.
- folder:=t.TempDir()
- cloud:=newCloudBackups(filepath.Dir(a.libraryPath))
- if err=cloud.configure(folder);err!=nil{t.Fatal(err)}
- if status:=cloud.backup();status.LastError!=""{t.Fatal(status.LastError)}
- shared,err:=os.ReadFile(filepath.Join(cloudSyncRoot(folder),"actual","colecciones.json"))
- if err!=nil||strings.Contains(string(shared),"_local_sync"){t.Fatal("private checkpoint leaked",err)}
+ // The portable local backup must not expose internal revision metadata.
+ a.extraBackup=newExtraBackup(filepath.Dir(a.libraryPath))
+ if err=a.extraBackup.configure(t.TempDir());err!=nil{t.Fatal(err)}
+ a.extraBackup.copy(a)
+ shared,err:=os.ReadFile(a.extraBackup.target(a.extraBackup.config))
+ if err!=nil||strings.Contains(string(shared),"_local_sync")||strings.Contains(string(shared),"_local_activity_ref"){t.Fatal("private checkpoint leaked",err)}
 }
 func TestDurableExternalChangeAndMissingLibrary(t *testing.T){
  if !protectedLibraryEnabled{t.Skip("desktop")}
