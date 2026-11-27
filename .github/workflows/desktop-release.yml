@@ -37,7 +37,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {runner: macos-15-intel, arch: arm64, label: Apple_Silicon}
+          - {runner: macos-15, arch: arm64, label: Apple_Silicon}
           - {runner: macos-15-intel, arch: amd64, label: Intel}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
@@ -59,7 +59,6 @@ jobs:
       - run: bash scripts/build_macos_app.sh
         env: { CC: clang }
       - run: bash scripts/test_macos_package.sh "dist/Selector_Cine_365_Mac_${MAC_LABEL}_9.2.26.zip"
-        if: matrix.arch == 'amd64'
       - uses: actions/upload-artifact@v4
         with:
           name: Mac_${{ matrix.label }}

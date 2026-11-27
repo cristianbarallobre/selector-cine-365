@@ -56,6 +56,7 @@ async function labMaintenanceRefresh(){
   metrics.replaceChildren();
   const items=[
    ['Biblioteca',labMiB(data.library?.bytes),data.library?.files||0],
+    ['Memoria del motor',labMiB(data.go_heap_bytes),'Heap Go (no incluye WebView)'],
    ['Fichas TMDB',labMiB(data.tmdb_details?.bytes),data.tmdb_details?.files||0],
    ['Plataformas',labMiB(data.platform_cache?.bytes),data.platform_cache?.files||0],
    ['Carteles de Biblioteca',labMiB(data.posters?.bytes),data.posters?.files||0],
