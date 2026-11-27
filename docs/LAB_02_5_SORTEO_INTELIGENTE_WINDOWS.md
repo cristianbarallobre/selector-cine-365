@@ -44,7 +44,7 @@ La lista de últimas ocho elecciones se mantiene **únicamente en memoria durant
 
 - Solo la rama `experimental`; la rama `main` no se modifica.
 - El menú de Apariencia de LAB-03 **no vuelve a introducirse**.
-- Solo Windows compilado con `-tags lab`, sin cambios en Android/macOS.
+- Solo Windows compilado con `-tags lab`, sin cambios en macOS.
 - `plantilla.html` permanece intacta y el código se inyecta con `//go:build windows`.
 - Pruebas de regresión del sorteo y del JavaScript, y pruebas Windows Go para autorización de caché, resumen de metadatos e integración HTML.
 - El resultado visual y el comportamiento real en el PC requieren revisión manual antes de considerar la función estable.

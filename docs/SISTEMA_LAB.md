@@ -30,11 +30,8 @@
 | macOS datos | `~/Library/Application Support/Selector_Cine_365` | `~/Library/Application Support/Selector_Cine_365_LAB` |
 | OneDrive directo escritorio | `Selector_Cine_365` | `Selector_Cine_365_LAB` |
 | Copias de nube | `Selector_Cine_365_Copias` | `Selector_Cine_365_LAB_Copias` |
-| Android paquete | `es.cine365.app.limpia` | `es.cine365.app.lab` |
-| Android datos | Almacenamiento privado estable | Almacenamiento privado LAB |
 | macOS app y bundle ID | Selector Cine 365 | Selector Cine 365 LAB (`es.cristianbarallobre.selectorcine365.lab`) |
 
-**Android LAB:** el acceso Microsoft/OneDrive permanece **desactivado intencionadamente**. No se puede reutilizar el callback Microsoft del APK estable sin posibles conflictos al tener ambas apps instaladas. Para habilitar OneDrive en Android LAB más adelante debe configurarse y probarse un registro OAuth LAB independiente. No usar un APK LAB para probar sincronización cruzada Android-escritorio hasta entonces. La sincronización mediante carpetas elegidas manualmente tampoco debe apuntar nunca a la carpeta estable.
 
 **Windows/macOS LAB:** el cliente Microsoft Graph utiliza la carpeta remota `Selector_Cine_365_LAB` y sesiones locales separadas. Cuando se use copia a carpeta, el subdirectorio de LAB queda diferenciado; **no seleccionar ni reutilizar la carpeta de datos estable como destino**.
 
@@ -49,20 +46,16 @@ git switch experimental
 # Windows (desde Windows o mediante compilación cruzada)
 GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -tags lab -ldflags="-H windowsgui -s -w" -o Selector_Cine_365_LAB.exe .
 
-# Android, desde android/
-gradle assembleDebug -PcineLab
 
 # macOS, en un equipo Mac con Xcode CLI Tools
 MAC_ARCH=arm64 MAC_LABEL=Apple_Silicon CC="clang -arch arm64" bash scripts/build_macos_lab.sh
 ```
 
-**GitHub Actions:** `Actions → LAB - pruebas y compilaciones independientes` ejecuta pruebas y compila Windows, Android y macOS (Intel y Apple Silicon) tras cada push a `experimental`. Los artefactos están en la ejecución de Actions, no en Releases oficiales. Los binarios Windows no tienen Authenticode, los de Mac van firmados ad hoc (sin notarización) y Android usa **firma de depuración** generada por el runner: para cambiar a otro APK LAB puede ser necesario desinstalar **solo LAB** y volverlo a instalar; jamás desinstalar la app estable para una prueba LAB. No se ha afirmado que la compilación esté validada hasta que el CI termine correctamente.
 
 ## Checklist antes de aceptar una funcionalidad
 
 - [ ] `main` y `v9.0.0` continúan inalterados.
 - [ ] LAB se abre con identidad visual LAB y sus datos locales no aparecen en producción.
-- [ ] Android LAB puede convivir con `es.cine365.app.limpia` sin reemplazarla.
 - [ ] Windows/macOS LAB no usan `Selector_Cine_365` en AppData ni OneDrive.
 - [ ] No se reutilizan cuentas/sesiones/archivos de pruebas en la biblioteca oficial.
 - [ ] Pruebas automáticas verdes en las plataformas afectadas.

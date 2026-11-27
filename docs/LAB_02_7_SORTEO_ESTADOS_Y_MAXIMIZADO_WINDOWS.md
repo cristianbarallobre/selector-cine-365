@@ -1,6 +1,6 @@
 # LAB-02.7 — Sorteo por estado de visionado y arranque maximizado (Windows)
 
-**Canal:** `experimental` — Windows LAB. No modifica `main`, Android ni macOS. No incorpora Apariencia.
+**Canal:** `experimental` — Windows LAB. No modifica `main` ni macOS. No incorpora Apariencia.
 
 ## Pantalla de la aplicación
 
