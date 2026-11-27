@@ -39,9 +39,10 @@ func TestExtraBackupUsesIndependentLocalCopy(t *testing.T){
  if b.target(b.config)==other.target(other.config){t.Fatal("two installations share a destination")}
  if err:=os.WriteFile(target,[]byte("damaged backup"),0600);err!=nil{t.Fatal(err)}
  b.request();b.copy(a)
- if b.lastError==""||!b.pending{t.Fatal("backup error not visible")}
- damaged,_:=os.ReadFile(target)
- if string(damaged)!="damaged backup"{t.Fatal("overwrote unexpected file")}
+ if b.lastError!=""||b.pending{t.Fatal("backup not repaired",b.lastError)}
+ repaired,_:=os.ReadFile(target);if !bytes.Equal(repaired,second){t.Fatal("backup not rebuilt")}
+ damaged,_:=os.ReadFile(filepath.Join(filepath.Dir(target),"colecciones_danada_"+libraryBytesFingerprint([]byte("damaged backup"))+".json"))
+ if string(damaged)!="damaged backup"{t.Fatal("damaged copy not preserved")}
  if a.library.Lists[0].Text!="☑ Origen (2010)"{t.Fatal("backup failure modified local library")}
 }
 func TestLocalOnlyDesktopSurface(t *testing.T){
@@ -92,4 +93,16 @@ func TestExtraBackupScheduledOnlyAfterLocalCommit(t *testing.T){
  a.extraBackup.copy(a)
  data,err:=os.ReadFile(a.extraBackup.target(a.extraBackup.config))
  if err!=nil||!bytes.Contains(data,[]byte("☑")){t.Fatal("copy did not follow committed library",err)}
+}
+
+func TestExtraBackupIgnoresNavigationOnly(t *testing.T){
+ a:=durableTestApp(t);a.extraBackup=newExtraBackup(filepath.Dir(a.libraryPath));b:=a.extraBackup
+ a.library.Lists=append(a.library.Lists,filmCollection{ID:"other",Name:"Otra",Text:"☐ Prueba (2011)"})
+ if e:=b.configure(t.TempDir());e!=nil{t.Fatal(e)};b.copy(a)
+ path:=b.target(b.config);before,e:=os.ReadFile(path);if e!=nil{t.Fatal(e)}
+ a.library.ActiveID="other";b.request();b.copy(a)
+ after,e:=os.ReadFile(path);if e!=nil||!bytes.Equal(before,after){t.Fatal("navigation rewrote backup",e)}
+ if _,e=os.Stat(filepath.Join(filepath.Dir(path),"colecciones_anterior.json"));!os.IsNotExist(e){t.Fatal("navigation generated previous copy")}
+ a.library.Lists[1].Text="☑ Prueba (2011)";b.request();b.copy(a)
+ after,e=os.ReadFile(path);if e!=nil||bytes.Equal(before,after){t.Fatal("real edit not copied",e)}
 }

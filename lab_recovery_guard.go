@@ -90,7 +90,14 @@ func labLoadLibraryProtected(path,legacy string) (libraryState,bool,error) {
  if labValidBackup(data) {
   var state libraryState
   if err:=json.Unmarshal(data,&state);err==nil{
-   if _,e:=expandActivityReference(filepath.Dir(path),data);e!=nil{return libraryState{},false,fmt.Errorf("La biblioteca es válida pero su historial no está disponible. No se ha modificado ningún archivo: %w",e)}
+   if _,e:=expandActivityReference(filepath.Dir(path),data);e!=nil{
+    var disk libraryDisk
+    if json.Unmarshal(data,&disk)!=nil||restoreExactActivitySnapshot(filepath.Dir(path),disk.ActivityRef)!=nil{
+     return libraryState{},false,fmt.Errorf("La biblioteca sigue intacta, pero falta su historial íntegro. Conserva colecciones.json y la carpeta de datos. Revisa las copias completas JSON de Mis listas o de la carpeta adicional antes de intentar una recuperación. No se ha sustituido la biblioteca: %w",e)
+    }
+    if _,e=expandActivityReference(filepath.Dir(path),data);e!=nil{return libraryState{},false,e}
+    diagnosticEvent("INFO","historial","historial exacto recuperado de copia verificada")
+   }
    return state,false,nil
   }
  }

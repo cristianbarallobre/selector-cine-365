@@ -163,7 +163,7 @@ var nativeDesktopWindowActive atomic.Bool
 func (a *runningApp) touch() { a.lastActivity.Store(time.Now().Unix()) }
 func (a *runningApp) stop()  { a.stopOnce.Do(func() { close(a.stopCh) }) }
 func (a *runningApp) auth(r *http.Request) bool {
-	return a.token!=""&&(r.Header.Get("X-Atlas-Token")==a.token||r.URL.Query().Get("token")==a.token)
+	return a.token!=""&&(r.Header.Get("X-Atlas-Token")==a.token||(r.Method==http.MethodGet&&r.URL.Query().Get("token")==a.token))
 }
 func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	a.touch()
@@ -351,7 +351,7 @@ func serve() error {
 		return fmt.Errorf("no se ha podido iniciar la aplicación local: %w", err)
 	}
 
-	server := &http.Server{Handler: diagnosticHTTP(http.HandlerFunc(app.serveHTTP)), ReadHeaderTimeout: 6 * time.Second}
+	server := &http.Server{Handler: diagnosticHTTP(localHTTPGuard(listener.Addr().String(),http.HandlerFunc(app.serveHTTP))), ReadHeaderTimeout: 6 * time.Second}
 	go func() {
 		if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			diagnosticError("motor", "servidor detenido inesperadamente", err)

@@ -5,6 +5,8 @@ import (
  "encoding/json"
  "errors"
  "net/http"
+ "io"
+ "slices"
  "os"
  "path/filepath"
  "strings"
@@ -101,6 +103,33 @@ func(b *extraBackup) copy(a *runningApp){
  b.lastError="";b.last=time.Now().Format(time.RFC3339)
  if generation==b.generation{b.pending=false}else{b.signalLocked()}
 }
+// Unlike ordinary recovery reads, a zero-byte damaged copy is eligible for
+// quarantine. Do not follow symlinks or read unbounded files.
+func readExtraBackupFile(path string)([]byte,error){
+ expected,e:=os.Lstat(path);if e!=nil{return nil,e}
+ if !expected.Mode().IsRegular()||expected.Size()>libraryFileLimit{return nil,errors.New("Archivo de copia no seguro o demasiado grande")}
+ f,e:=os.Open(path);if e!=nil{return nil,e};defer f.Close()
+ st,e:=f.Stat();if e!=nil{return nil,e}
+ if !st.Mode().IsRegular()||!os.SameFile(expected,st)||st.Size()>libraryFileLimit{return nil,errors.New("Archivo de copia cambiado")}
+ data,e:=io.ReadAll(io.LimitReader(f,libraryFileLimit+1));if e!=nil{return nil,e}
+ if len(data)>libraryFileLimit{return nil,errors.New("Archivo de copia demasiado grande")}
+ return data,nil
+}
+// Name by content so repeated failures cannot create duplicate quarantines.
+func preserveDamagedCopy(dir,prefix string,data []byte)error{
+ path:=filepath.Join(dir,prefix+"_danada_"+libraryBytesFingerprint(data)+".json")
+ prior,e:=readExtraBackupFile(path)
+ if e==nil{if bytes.Equal(prior,data){return nil};return errors.New("La cuarentena existente no coincide")}
+ if !os.IsNotExist(e){return e}
+ if e=replaceLibraryFile(path,data);e!=nil{return e}
+ saved,e:=readExtraBackupFile(path);if e!=nil||!bytes.Equal(saved,data){return errors.New("No se pudo verificar el archivo dañado conservado")}
+ return nil
+}
+func sameExtraBackupContent(a,b libraryState,ah,bh *[]activityEntry)bool{
+ if (ah==nil)!=(bh==nil){return false}
+ if ah!=nil&&!slices.Equal(*ah,*bh){return false}
+ return sameShareableLibrary(a,b)
+}
 func(b *extraBackup) write(c extraBackupConfig,data []byte)error{
  if !uiDraftSession.MatchString(c.ID){return errors.New("identificador de copia inválido")}
  root,err:=filepath.EvalSymlinks(c.Folder);if err!=nil{return err}
@@ -115,17 +144,22 @@ func(b *extraBackup) write(c extraBackupConfig,data []byte)error{
   info,err=os.Lstat(dir);if err!=nil||!info.IsDir()||info.Mode()&os.ModeSymlink!=0{return errors.New("carpeta de copia no segura")}
   real,e:=filepath.EvalSymlinks(dir);if e!=nil||!withinFolder(root,real)||withinFolder(source,real){return errors.New("destino de copia no seguro")}
  }
- if _,_,err:=decodeRecoveryBackup(data);err!=nil{return errors.New("biblioteca no válida")}
+ next,nextHistory,err:=decodeRecoveryBackup(data);if err!=nil{return errors.New("biblioteca no válida")}
  target:=filepath.Join(dir,"colecciones.json")
  previous:=filepath.Join(dir,"colecciones_anterior.json")
  for _,name:=range []string{target,previous}{
   if info,e:=os.Lstat(name);e==nil{if !info.Mode().IsRegular()||info.Mode()&os.ModeSymlink!=0{return errors.New("archivo de copia no seguro")}}else if !os.IsNotExist(e){return e}
  }
- old,err:=readRecoveryFile(target)
+ old,err:=readExtraBackupFile(target)
  if err==nil{
   if bytes.Equal(old,data){return nil}
-  if _,_,err:=decodeRecoveryBackup(old);err!=nil{return errors.New("la copia anterior no es válida; no se ha sobrescrito")}
-  if err=replaceLibraryFile(previous,old);err!=nil{return err}
+  prior,priorHistory,decodeErr:=decodeRecoveryBackup(old)
+  if decodeErr!=nil{
+   if err=preserveDamagedCopy(dir,"colecciones",old);err!=nil{return err}
+   diagnosticEvent("WARN","copia","copia adicional dañada conservada; reconstruyendo desde el guardado principal")
+  }else{
+   if sameExtraBackupContent(prior,next,priorHistory,nextHistory){return nil}
+   if err=replaceLibraryFile(previous,old);err!=nil{return err}
    daily:=filepath.Join(dir,"copia_"+time.Now().UTC().Format("2006-01-02")+".json")
    if _,e:=os.Lstat(daily);os.IsNotExist(e){if e=replaceLibraryFile(daily,old);e!=nil{return e}}else if e!=nil{return e}
    entries,e:=os.ReadDir(dir);if e!=nil{return e}
@@ -133,6 +167,8 @@ func(b *extraBackup) write(c extraBackupConfig,data []byte)error{
    for _,entry:=range entries{if entry.Type().IsRegular()&&strings.HasPrefix(entry.Name(),"copia_")&&labDailyBackupName.MatchString(strings.TrimPrefix(entry.Name(),"copia_")){names=append(names,entry.Name())}}
    var bytes int64;kept:=0
    for i:=len(names)-1;i>=0;i--{file:=filepath.Join(dir,names[i]);info,e:=os.Lstat(file);if e!=nil||!info.Mode().IsRegular(){continue};if kept>0&&(kept>=14||bytes+info.Size()>512<<20){if e=os.Remove(file);e!=nil{return e};continue};kept++;bytes+=info.Size()}
+  }
+  latest,e:=readExtraBackupFile(target);if e!=nil||!bytes.Equal(latest,old){return errors.New("La copia adicional cambió durante la operación; se reintentará")}
  }else if !os.IsNotExist(err){return err}
  if err=replaceLibraryFile(target,data);err!=nil{return err}
  actual,err:=readRecoveryFile(target)
