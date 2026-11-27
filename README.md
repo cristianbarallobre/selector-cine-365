@@ -25,9 +25,9 @@ En Windows y macOS los datos se guardan automáticamente en el equipo. En **Mis 
 
 ## Manuales
 
-- [Manual completo](docs/MANUAL_COMPLETO_SELECTOR_CINE_365.md)
+- [Manual completo](docs/MANUAL_COMPLETO_SELECTOR_CINE_365.md) · [PDF](docs/MANUAL_COMPLETO_SELECTOR_CINE_365.pdf) · [Word](docs/MANUAL_COMPLETO_SELECTOR_CINE_365.docx)
 - [Guía de Mac](MACOS.md)
-- [Guardado y recuperación](docs/GUIA_SINCRONIZACION_SEGURA.md)
+- [Guardado y recuperación](docs/GUIA_SINCRONIZACION_SEGURA.md) · [PDF](docs/GUIA_SINCRONIZACION_SEGURA.pdf) · [Word](docs/GUIA_SINCRONIZACION_SEGURA.docx)
 - [Rutas de datos](docs/UBICACIONES_DATOS_SELECTOR_CINE_365.md) · [Índice de documentación](docs/README.md) · [Historial](CHANGELOG.md)
 
 ## Código y versiones anteriores
