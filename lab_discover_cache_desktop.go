@@ -265,7 +265,7 @@ func labFreshDetail(ctx context.Context,id int,key string,prior labDetailRecord)
    rec.Data["free"]=labProviderNames(es.Free);rec.Data["ads"]=labProviderNames(es.Ads)
    rec.Data["rent"]=labProviderNames(es.Rent);rec.Data["buy"]=labProviderNames(es.Buy)
    rec.Data["watch_link"]=es.Link;rec.Data["availability_note"]=""
-   rec.ProvidersAt=now
+   rec.ProvidersAt=time.Now().Unix()
   }else if prior.ProvidersAt==0 {
    rec.Data["availability_note"]="Plataformas temporalmente no disponibles."
   }

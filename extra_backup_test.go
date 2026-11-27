@@ -106,3 +106,26 @@ func TestExtraBackupIgnoresNavigationOnly(t *testing.T){
  a.library.Lists[1].Text="☑ Prueba (2011)";b.request();b.copy(a)
  after,e=os.ReadFile(path);if e!=nil||bytes.Equal(before,after){t.Fatal("real edit not copied",e)}
 }
+
+func TestExtraBackupRetriesUnavailableFolderAndRepairsEmptyFile(t *testing.T){
+ a:=durableTestApp(t);a.extraBackup=newExtraBackup(filepath.Dir(a.libraryPath));b:=a.extraBackup
+ parent:=t.TempDir();folder:=filepath.Join(parent,"secondary")
+ if e:=os.Mkdir(folder,0700);e!=nil{t.Fatal(e)}
+ if e:=b.configure(folder);e!=nil{t.Fatal(e)};b.copy(a)
+ path:=b.target(b.config);if b.pending||b.lastError!=""{t.Fatal("initial backup failed",b.lastError)}
+ moved:=filepath.Join(parent,"unavailable")
+ if e:=os.Rename(folder,moved);e!=nil{t.Fatal(e)}
+ a.library.Lists[0].Text="☑ Origen (2010)"
+ b.request();b.copy(a)
+ if !b.pending||b.lastError==""{t.Fatal("retry not pending")}
+ if a.library.Lists[0].Text!="☑ Origen (2010)"{t.Fatal("main library changed")}
+ if e:=os.Rename(moved,folder);e!=nil{t.Fatal(e)}
+ b.copy(a);if b.pending||b.lastError!=""{t.Fatal("retry failed",b.lastError)}
+ good,e:=os.ReadFile(path);if e!=nil||!bytes.Contains(good,[]byte("☑")){t.Fatal("retry lost latest change",e)}
+ if e=os.WriteFile(path,nil,0600);e!=nil{t.Fatal(e)}
+ b.request();b.copy(a)
+ if b.pending||b.lastError!=""{t.Fatal("empty copy not repaired",b.lastError)}
+ repaired,e:=os.ReadFile(path);if e!=nil||!bytes.Equal(repaired,good){t.Fatal("repaired copy differs",e)}
+ quarantine:=filepath.Join(filepath.Dir(path),"colecciones_danada_"+libraryBytesFingerprint(nil)+".json")
+ if st,e:=os.Stat(quarantine);e!=nil||st.Size()!=0{t.Fatal("empty original not preserved",e)}
+}

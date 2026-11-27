@@ -761,6 +761,7 @@ func (p *availabilityServer) fetchFilmWithID(ctx context.Context, title string, 
 		r.Note = e.Error()
 		return finish(r)
 	}
+	r.Date = time.Now().Format(time.RFC3339)
 	es, ok := all.Results["ES"]
 	r.FilmURL = es.Link
 	if !ok {

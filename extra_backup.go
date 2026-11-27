@@ -96,11 +96,15 @@ func(b *extraBackup) copy(a *runningApp){
  if hasHistory{history=a.syncStore.localActivity();data,err=json.MarshalIndent(completeLibraryBackup{libraryState:a.library,CompleteVersion:1,Activity:history},"","  ")}
  a.mu.Unlock()
  if err==nil{if len(data)>libraryFileLimit{err=errors.New("la biblioteca excede el límite de copia")}else{err=b.write(c,data);}}
+ // The reported time is the file's actual modification time, not the
+ // time of an unchanged verification or navigation-only save.
+ savedAt:=""
+ if err==nil{if st,e:=os.Lstat(b.target(c));e==nil&&st.Mode().IsRegular(){savedAt=st.ModTime().Format(time.RFC3339)}else{err=errors.New("No se pudo comprobar la fecha de la copia adicional")}}
  b.mu.Lock();defer b.mu.Unlock()
  b.busy=false
  if b.config!=c{return}
  if err!=nil{b.lastError="No se pudo actualizar la copia adicional. Se conserva el guardado principal.";diagnosticError("copia","escribir copia adicional",err);return}
- b.lastError="";b.last=time.Now().Format(time.RFC3339)
+ b.lastError="";b.last=savedAt
  if generation==b.generation{b.pending=false}else{b.signalLocked()}
 }
 // Unlike ordinary recovery reads, a zero-byte damaged copy is eligible for

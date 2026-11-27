@@ -1026,7 +1026,15 @@ async function labShowDetail(id,record=true){
 function labHydrateAddedMovie(movie,film){
  const key=providerKey(film);
  const old=platformData.get(key)||{};
- const data={
+ const keepAvailability=(prior,next)=>{
+  if(Number(prior?.tmdb_id)!==Number(next.tmdb_id)||!['ok','no-data'].includes(prior.state))return next;
+  const before=Date.parse(prior.date||''),after=Date.parse(next.date||'');
+  if(!Number.isFinite(before)||(['ok','no-data'].includes(next.state)&&Number.isFinite(after)&&after>=before))return next;
+  const result={...next};
+  for(const kind of ['state','date','subscriptions','free','ads','rent','buy','film_url','note'])result[kind]=prior[kind];
+  return result;
+ };
+ const data=keepAvailability(old,{
   ...old,state:movie.availability_note?'partial':'ok',tmdb_id:Number(movie.id)||0,
   metadata_version:2,date:movie.providers_checked_at||'',poster_path:movie.poster_path||'',
   vote_average:Number(movie.vote_average)||0,vote_count:Number(movie.vote_count)||0,
@@ -1037,7 +1045,7 @@ function labHydrateAddedMovie(movie,film){
   rent:Array.isArray(movie.rent)?movie.rent:[],
   buy:Array.isArray(movie.buy)?movie.buy:[],
   film_url:movie.watch_link||movie.tmdb_url||''
- };
+ });
  platformData.set(key,data);
  // Compartir la ficha existente con la caché persistente de Biblioteca.
  // No bloquear el guardado de la lista ni perder el contenido ya visible
@@ -1047,14 +1055,16 @@ function labHydrateAddedMovie(movie,film){
    if(info?.tmdb_id===Number(movie.id)){
     // La consulta de plataformas puede no incluir todos los metadatos:
     // conservar la ficha ya obtenida si llegan campos vacíos o parciales.
-    platformData.set(key,{
+    const current=platformData.get(key)||data;
+    if(current.tmdb_id&&Number(current.tmdb_id)!==Number(movie.id))return;
+    platformData.set(key,keepAvailability(current,{
      ...data,...info,
      poster_path:info.poster_path||data.poster_path,
      runtime:Number(info.runtime)>0?Number(info.runtime):data.runtime,
      genres:Array.isArray(info.genres)&&info.genres.length?info.genres:data.genres,
      vote_count:Number(info.vote_count)>0?Number(info.vote_count):data.vote_count,
      vote_average:Number(info.vote_count)>0?Number(info.vote_average)||0:data.vote_average
-    });
+    }));
     scheduledPlatformRender();
    }
   }).catch(()=>{});

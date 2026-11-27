@@ -12,7 +12,7 @@ func localHTTPGuard(host string,next http.Handler) http.Handler {
  return http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
   w.Header().Set("Referrer-Policy","no-referrer")
   w.Header().Set("X-Frame-Options","DENY")
-  w.Header().Set("Content-Security-Policy","frame-ancestors 'none'; base-uri 'none'; object-src 'none'; form-action 'self'")
+  w.Header().Set("Content-Security-Policy","frame-ancestors 'none'; frame-src 'none'; base-uri 'none'; object-src 'none'; form-action 'self'; connect-src 'self'; script-src 'self' 'unsafe-inline'")
   if r.Host!=host {http.Error(w,"Dirección local no autorizada",http.StatusForbidden);return}
   if o:=r.Header.Get("Origin");o!=""&&o!=origin{http.Error(w,"Origen no autorizado",http.StatusForbidden);return}
   if site:=strings.ToLower(r.Header.Get("Sec-Fetch-Site"));site!=""&&site!="same-origin"&&site!="none"{http.Error(w,"Origen no autorizado",http.StatusForbidden);return}
