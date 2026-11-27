@@ -85,7 +85,7 @@ $('extraBackupDisable').addEventListener('click',()=>{
  if(confirm('¿Desactivar la copia adicional? Los archivos ya guardados se conservarán.'))void extraBackupAction('config',{folder:''});
 });
 setInterval(()=>{if(!document.hidden&&activeView==='collections'&&!extraBackupBusy)void cloudRefresh();},2500);
- const cineRefreshStalePlatforms=()=>{if(!document.hidden&&libraryReady&&platformConfigured&&!platformStatusUnavailable&&!platformActive&&activeView==='library')void loadPlatforms(false,true);};
+ const cineRefreshStalePlatforms=()=>{if(!document.hidden&&libraryReady&&platformConfigured&&!platformStatusUnavailable&&!platformActive&&activeView==='library'&&parsed.entries.some(f=>{const e=platformData.get(providerKey(f));return !!e&&cinePlatformExpired(e);}))void loadPlatforms(false,true);};
  setInterval(cineRefreshStalePlatforms,60000);
  setTimeout(cineRefreshStalePlatforms,5000);
 `)
@@ -159,5 +159,5 @@ void cineRefreshRecovery();
   "if(current===platformRun)storePlatformLookup(providerKey(f),{state:'error',note:err.message});","if(current===platformRun){const old=platformData.get(providerKey(f));if(old)old.cine_retry_at=Date.now()+900000;else storePlatformLookup(providerKey(f),{state:'error',note:err.message,date:new Date().toISOString()});}",
   "No se tocarán las listas, fichas personales ni OneDrive.","No se tocarán las listas ni fichas personales.",
  ).Replace(page)
- return page,nil
+ return completeBackupHTML(page),nil
 }

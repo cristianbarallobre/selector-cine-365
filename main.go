@@ -101,8 +101,8 @@ func makeHTML(initial, token string) (string, error) {
 	out = injectLabMaintenance(out)
 	if desktopFeatures && !appIsLab {
 		out = strings.NewReplacer(
-			"<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.25</title>",
-			"🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.25",
+			"<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.26</title>",
+			"🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.26",
 			` <span class="lab-nav-tag">LAB</span>`, "",
 			`<span class="lab-smart-caption">LAB</span>`, "",
 			"SELECTOR CINE 365 · LAB WINDOWS", "SELECTOR CINE 365",
@@ -217,7 +217,9 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write(data)
 	case "/api/library":
 		a.serveLibraryHTTP(w, r)
-	case "/api/extra-backup/status","/api/extra-backup/config","/api/extra-backup/browse","/api/extra-backup/now":
+	case "/api/extra-backup/export","/api/extra-backup/restore":
+        a.serveCompleteBackup(w,r)
+    case "/api/extra-backup/status","/api/extra-backup/config","/api/extra-backup/browse","/api/extra-backup/now":
 		a.serveExtraBackup(w,r)
 	case "/api/library/draft":
 		a.serveUIDraft(w,r)

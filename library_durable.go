@@ -84,6 +84,9 @@ func recoverSyncCheckpoint(dir string, checkpoint *syncDeviceState, recovered ..
 // Caller holds a.mu. Prepare all sync metadata in memory, then commit it
 // together with the library. A failed sidecar write cannot lose revisions.
 func (a *runningApp) commitProtectedLibrary(next libraryState, plan *syncPlan, decisions map[string]bool, folder string, activityAction ...string) (mirrorPending bool, metadataErr error, err error) {
+ return a.commitProtectedLibraryWithHistory(next,plan,decisions,folder,nil,activityAction...)
+}
+func (a *runningApp) commitProtectedLibraryWithHistory(next libraryState, plan *syncPlan, decisions map[string]bool, folder string, history *[]activityEntry, activityAction ...string) (mirrorPending bool, metadataErr error, err error) {
  if a.libraryDigest!=""{
   current,e:=libraryFingerprint(a.libraryPath)
   if e!=nil{return false,nil,e}
@@ -98,6 +101,11 @@ func (a *runningApp) commitProtectedLibrary(next libraryState, plan *syncPlan, d
   data,e:=json.Marshal(s.state);if e!=nil{return false,nil,e}
   clone:=&desktopSyncStore{graphUploadVersion:s.graphUploadVersion}
   if e=json.Unmarshal(data,&clone.state);e!=nil{return false,nil,e}
+  if history!=nil{
+   clone.state.Activity=append([]activityEntry(nil),(*history)...)
+   for i,j:=0,len(clone.state.Activity)-1;i<j;i,j=i+1,j-1{clone.state.Activity[i],clone.state.Activity[j]=clone.state.Activity[j],clone.state.Activity[i]}
+   clone.state.ActivityMigrated=true
+  }
   if a.extraBackup!=nil{appendLocalActivity(&clone.state,a.library,next);if len(activityAction)>0&&activityAction[0]=="restore"{appendActivityEvent(&clone.state,activityEntry{At:time.Now().UnixMilli(),Kind:"restore",Detail:"Copia local restaurada"})}}
   if plan!=nil{e=clone.accept(*plan,decisions,folder)}else{
    e=clone.observe(a.library,next)
