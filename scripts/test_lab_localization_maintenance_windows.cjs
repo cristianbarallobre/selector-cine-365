@@ -54,7 +54,7 @@ assert.match(maintenance,/id="labMaintenanceRefresh"/);
 assert.match(maintenance,/id="labMaintenanceClear"/);
 assert.match(maintenance,/id="labRecoveryPreview"/);
 assert.match(maintJS,/labPreviewRecovery/);
-assert.match(maintJS,/sync_pending_review/);
+assert.match(maintJS,/Guardado local/);
 assert.match(maintJS,/clear_posters/);
 assert.match(maintJS,/confirm\(/,'La limpieza manual debe confirmarse');
 assert.match(maintenance,/Versiones estables en GitHub/);

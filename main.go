@@ -132,6 +132,8 @@ func makeHTML(initial, token string) (string, error) {
 			"este PC", "este Mac",
 		).Replace(out)
 	}
+	out,err=localOnlyHTML(out)
+	if err!=nil{return "",err}
 	return strings.ReplaceAll(out, "__ATLAS_LISTA_INICIAL__", html.EscapeString(initial)), nil
 }
 
@@ -272,7 +274,6 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 }
 func (a *runningApp) save(data string) error {
 	page, err := makeHTML(data, a.token)
-	if err == nil&&a.extraBackup!=nil{page,err=localOnlyHTML(page)}
 	if err != nil {
 		return err
 	}
@@ -313,7 +314,6 @@ func serve() error {
 		return err
 	}
 	page, err := makeHTML(state, token)
-	if err==nil{page,err=localOnlyHTML(page)}
 	if err != nil {
 		return err
 	}

@@ -80,9 +80,9 @@ async function labMaintenanceRefresh(){
    tile.append(name,large,small);metrics.appendChild(tile);
   }
   $('labMaintenancePaths').textContent='Datos y listas: '+data.library_path+' · Caché temporal: '+data.cache_path;
-  const sync=data.onedrive_connected?'OneDrive conectado':data.cloud_connected?'Carpeta de nube configurada':'Sin nube conectada';
+  const sync='Guardado local';
   info.textContent=(data.library_recovered?'⚠ Se recuperó una copia válida de la biblioteca. Comprueba tus listas y guarda otra copia. ':'')+
-   (data.sync_pending_review?'⚠ Sincronización pendiente de revisión. ':'')+
+   
    (data.backup_warning?'⚠ Falló alguna copia automática durante esta sesión; exporta una copia JSON y revisa el registro. ':'')+
    'TMDB: '+(data.tmdb_connected?'conectado':'sin conectar')+' · '+sync+'.';
  }catch(e){info.textContent='⚠ '+e.message;}
@@ -110,7 +110,7 @@ $('labMaintenancePrune').addEventListener('click',async()=>{
  }catch(e){$('labMaintenanceStatus').textContent='⚠ '+e.message;}
 });
 $('labMaintenanceClear').addEventListener('click',async()=>{
- if(!confirm('¿Limpiar las imágenes descargadas de Biblioteca y Descubrir? Se volverán a descargar cuando se necesiten. No se tocarán las listas, fichas personales ni OneDrive.'))return;
+ if(!confirm('¿Limpiar las imágenes descargadas de Biblioteca y Descubrir? Se volverán a descargar cuando se necesiten. No se tocarán las listas ni fichas personales.'))return;
  const button=$('labMaintenanceClear');button.disabled=true;
  try{
   const data=await cloudRequest('/api/lab/maintenance','POST',{action:'clear_posters'});

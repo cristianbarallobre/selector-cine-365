@@ -18,29 +18,17 @@ var localActivityScript string
 // Produce the local-only desktop surface after the existing desktop panels
 // have been injected. Retain the local recovery and history tools.
 func localOnlyHTML(page string)(string,error){
- var err error
- cut:=func(start,end,replacement string){
-  if err!=nil{return}
-  i:=strings.Index(page,start)
-  if i<0{err=fmt.Errorf("no se pudo preparar la interfaz local: %s",start);return}
-  j:=strings.Index(page[i+len(start):],end)
-  if j<0{err=fmt.Errorf("no se pudo preparar la interfaz local: %s",end);return}
-  page=page[:i]+replacement+page[i+len(start)+j:]
+ // The base template now contains only local features. Expand explicit
+ // module slots instead of deleting historical markup at runtime.
+ if !strings.Contains(page,"__CINE_LOCAL_BACKUP_MARKUP__")&&strings.Contains(page,"id=\"extraBackupFolder\""){return page,nil}
+ for _,slot:=range []struct{marker,body string}{
+  {"__CINE_LOCAL_BACKUP_MARKUP__",localBackupMarkup},
+  {"__CINE_LOCAL_BACKUP_SCRIPT__",localBackupScript},
+  {"__CINE_LOCAL_ACTIVITY_SCRIPT__",localActivityScript},
+ }{
+  if strings.Count(page,slot.marker)!=1{return "",fmt.Errorf("Módulo de interfaz ausente o duplicado: %s",slot.marker)}
+  page=strings.Replace(page,slot.marker,slot.body,1)
  }
- cut("    <div id=\"cloudHeaderControls\" hidden>","  </header>","")
- cut("      <div class=\"cloud-box\" aria-label=\"Configuración de sincronización y copias de seguridad\">","        <details class=\"cloud-guide-extra\">\n          <summary>Actividad reciente, historial y copias de recuperación</summary>",localBackupMarkup)
- cut("        <div class=\"sync-desktop-panel\" id=\"cloudSyncPanel\" hidden>","      </div>\n    </div>\n  </section>","")
- cut("<dialog id=\"cloudSyncDialog\"","<script>\n(() => {","")
- cut("let cineGraphConnected=false,","const cineSyncDeviceLabel=",localBackupScript)
- cut("async function cineRefreshHistory(){","async function cineRefreshRecovery(){",localActivityScript)
- cut("let syncPreviewToken='',syncPreviewEdit=0,cloudManualBusy=false;","// Subscription/free/ad-supported services only;",`void cloudRefresh();
-void cineRefreshHistory();
-void cineRefreshRecovery();
-
-`)
- cut("<article><h3>5. OneDrive y sincronización</h3>","<article><h3>6. Copias y seguridad</h3>",`<article><h3>5. Copia adicional</h3><p>En <strong>Mis listas → Guardado y copia adicional</strong> puedes elegir una segunda ubicación para tus datos. La biblioteca principal permanece en el equipo. La copia se actualiza automáticamente y no se importa ni se combina con otras bibliotecas.</p></article>
-        `)
- if err!=nil{return "",err}
  page=strings.NewReplacer(
   "Actividad reciente de películas","Historial de actividad",
   "<div id=\"cloudHistory\"","<div style=\"display:flex;gap:8px;flex-wrap:wrap;margin:8px 0\"><input class=\"cloud-path\" style=\"flex:1;min-width:160px\" id=\"activitySearch\" placeholder=\"Buscar película, lista o acción\" aria-label=\"Buscar actividad\"><select id=\"activityFilter\" aria-label=\"Tipo de movimiento\"><option value=\"\">Todos los movimientos</option></select></div><div style=\"display:flex;align-items:center;gap:8px;margin-bottom:8px\"><button class=\"tool\" id=\"activityPrev\">Anterior</button><span id=\"activityPage\"></span><button class=\"tool\" id=\"activityNext\">Siguiente</button></div><div id=\"cloudHistory\"",

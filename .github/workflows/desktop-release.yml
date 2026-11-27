@@ -28,7 +28,7 @@ jobs:
       - run: go test -run '^$' -bench 'Benchmark(LibraryActivity|DesktopCommit|ProviderCacheHit)' -benchmem -benchtime=100ms
       - shell: pwsh
         run: |
-          foreach ($f in @(Get-ChildItem scripts/test_lab*.cjs) + @(Get-Item scripts/test_beta14_desktop_dropdowns.cjs,scripts/test_windows_restore.cjs,scripts/test_txt_import_creates_list_beta14.cjs,scripts/test_desktop_save_recovery.cjs,scripts/test_durable_save.cjs,scripts/test_sync_header.cjs)) {
+          foreach ($f in @(Get-ChildItem scripts/test_lab*.cjs) + @(Get-Item scripts/test_beta14_desktop_dropdowns.cjs,scripts/test_windows_restore.cjs,scripts/test_txt_import_creates_list_beta14.cjs,scripts/test_desktop_save_recovery.cjs,scripts/test_durable_save.cjs,scripts/test_local_modules.cjs)) {
             node $f.FullName
             if ($LASTEXITCODE) { exit $LASTEXITCODE }
           }
