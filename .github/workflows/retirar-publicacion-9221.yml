@@ -1,0 +1,29 @@
+name: Retirar publicación de escritorio sustituida
+on:
+  push:
+    branches: [maintenance/retirar-publicacion-9221]
+permissions:
+  contents: write
+  actions: write
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Retirar solo la publicación y referencias autorizadas
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          test "$GH_REPO" = "cristianbarallobre/selector-cine-365"
+          test "$(gh api "repos/$GH_REPO" --jq .private)" = false
+          # Original files were independently copied and checked in the private repository.
+          test "$(gh api "repos/$GH_REPO/releases/tags/v9.2.21-desktop" --jq '.assets[] | select(.name=="SHA256SUMS.txt") | .digest')" = "sha256:b5a4f14f50645e33990afd01b1d0be5337796cb0fc1c8464e5e57b86792e6d1e"
+          test "$(gh api "repos/$GH_REPO/git/ref/heads/release/desktop-9.2.21" --jq .object.sha)" = "27d360c8544e2b2326336073f10ecd30e0dda689"
+          gh release delete v9.2.21-desktop --cleanup-tag --yes
+          gh api --method DELETE "repos/$GH_REPO/git/refs/heads/release/desktop-9.2.21"
+          gh api --method DELETE "repos/$GH_REPO/actions/runs/45988893431"
+          if gh release view v9.2.21-desktop >/dev/null 2>&1; then exit 1; fi
+          if gh api "repos/$GH_REPO/git/ref/heads/release/desktop-9.2.21" >/dev/null 2>&1; then exit 1; fi
+          if gh api "repos/$GH_REPO/git/ref/tags/v9.2.21-desktop" >/dev/null 2>&1; then exit 1; fi
+          echo "Publicación, etiqueta, rama y artefactos retirados."
