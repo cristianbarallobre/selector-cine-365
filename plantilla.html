@@ -222,7 +222,13 @@ h2{font-size:19px}
 @media(max-width:760px){main{padding:10px;--library-columns:minmax(0,1fr);--library-gap:8px}.columns{grid-template-rows:60% 40%}.header{margin-bottom:8px}.top-nav{margin-bottom:8px}.panel{padding:10px}.manager-tools{grid-template-columns:repeat(2,minmax(0,1fr))}.manager-tools .tool:last-child{grid-column:span 2}}
 @media(max-height:690px){.header{min-height:46px;margin-bottom:6px}.brand{width:43px;height:43px}.brand svg{width:31px;height:31px}h1{font-size:23px}.top-nav{margin-bottom:6px}.nav-btn{padding:6px 9px}#view-library .pick{min-height:70px}.stats-hero .stat-value{font-size:20px}#view-collections .cloud-box{padding:8px;margin-top:5px}#view-collections .cloud-title{margin-bottom:4px}#view-collections .cloud-buttons{margin-top:4px}}
 /* En ventanas muy pequeñas, preservar la accesibilidad antes que recortar controles. */
-@media(max-height:590px){html,body{overflow:auto}main{height:auto;min-height:590px;overflow:visible}.view{overflow:visible}.panel{height:auto;overflow:visible}}
+@media(max-height:590px){
+ html{height:auto;min-height:100%;overflow-x:hidden;overflow-y:auto}
+ body{height:auto;min-height:100vh;overflow:visible}
+ main{height:auto;min-height:590px;overflow:visible}
+ .view{overflow:visible}
+ .panel{height:auto;overflow:visible}
+}
 /* v7.8: paginación numerada ampliada, saltos de 10 y acceso directo. */
 #filmPaging{gap:8px}
 .film-page-center{display:flex;flex:1;min-width:0;justify-content:center;align-items:center;flex-direction:column;gap:2px}

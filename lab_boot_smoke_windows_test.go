@@ -162,12 +162,16 @@ func TestLabStartupHeadlessBrowser(t *testing.T){
        const extra=document.createElement('div');extra.style.height='1300px';
        collectionsPanel?.appendChild(extra);
        const compactWindow=window.innerHeight<=590;
+       // In compact windows the document itself must scroll, not a nested
+       // fixed-height body. In taller windows keep the navigation fixed.
        const scrolling=compactWindow?document.scrollingElement:collectionsView;
        if(scrolling)scrolling.scrollTop=300;
        const scrollInfo={top:scrolling?.scrollTop||0,
          full:scrolling?.scrollHeight||0,viewport:scrolling?.clientHeight||0,innerHeight:window.innerHeight,
          navBefore:navTop,navAfter:document.querySelector('.top-nav')?.getBoundingClientRect().top||0,
-         panelHeight:collectionsPanel?.getBoundingClientRect().height||0};
+         panelHeight:collectionsPanel?.getBoundingClientRect().height||0,
+         bodyHeight:document.body.scrollHeight,documentHeight:document.documentElement.scrollHeight,
+         compactWindow};
        const collectionsMoves=!!collectionsView&&scrollInfo.top>50&&
          (compactWindow||Math.abs(scrollInfo.navAfter-scrollInfo.navBefore)<1);
        extra.remove();if(scrolling)scrolling.scrollTop=0;
