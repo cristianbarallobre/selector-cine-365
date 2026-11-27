@@ -225,7 +225,7 @@ func (a *runningApp) restoreLocalRecovery(id, etag string) (map[string]any, erro
 		a.mu.Unlock()
 		return nil, err
 	}
-	mirrorPending, metadataErr, err := a.commitProtectedLibrary(restored,nil,nil,"")
+	mirrorPending, metadataErr, err := a.commitProtectedLibrary(restored,nil,nil,"","restore")
 	if err != nil {
 		a.mu.Unlock()
 		return nil, err
@@ -284,6 +284,10 @@ func (a *runningApp) serveSyncSupport(w http.ResponseWriter, r *http.Request) {
 		_, revisions, _ := a.syncStore.parts()
 		respond(200, map[string]any{"revisions": revisions})
 	case "/api/sync/history":
+        if a.extraBackup!=nil && r.Method==http.MethodGet {
+            if a.syncStore==nil {respond(503,map[string]string{"error":"Historial local no disponible"});return}
+            respond(200,map[string]any{"events":a.syncStore.localActivity()});return
+        }
 		if r.Method != http.MethodGet {
 			respond(405, map[string]string{"error": "Método incorrecto"})
 			return

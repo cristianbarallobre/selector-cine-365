@@ -9,6 +9,7 @@ import (
  "path/filepath"
  "bytes"
  "sync/atomic"
+ "time"
 )
 
 // The local checkpoint is never part of API responses or cloud snapshots.
@@ -82,7 +83,7 @@ func recoverSyncCheckpoint(dir string, checkpoint *syncDeviceState, recovered ..
 
 // Caller holds a.mu. Prepare all sync metadata in memory, then commit it
 // together with the library. A failed sidecar write cannot lose revisions.
-func (a *runningApp) commitProtectedLibrary(next libraryState, plan *syncPlan, decisions map[string]bool, folder string) (mirrorPending bool, metadataErr error, err error) {
+func (a *runningApp) commitProtectedLibrary(next libraryState, plan *syncPlan, decisions map[string]bool, folder string, activityAction ...string) (mirrorPending bool, metadataErr error, err error) {
  if a.libraryDigest!=""{
   current,e:=libraryFingerprint(a.libraryPath)
   if e!=nil{return false,nil,e}
@@ -97,6 +98,7 @@ func (a *runningApp) commitProtectedLibrary(next libraryState, plan *syncPlan, d
   data,e:=json.Marshal(s.state);if e!=nil{return false,nil,e}
   clone:=&desktopSyncStore{graphUploadVersion:s.graphUploadVersion}
   if e=json.Unmarshal(data,&clone.state);e!=nil{return false,nil,e}
+  if a.extraBackup!=nil{appendLocalActivity(&clone.state,a.library,next);if len(activityAction)>0&&activityAction[0]=="restore"{appendActivityEvent(&clone.state,activityEntry{At:time.Now().UnixMilli(),Kind:"restore",Detail:"Copia local restaurada"})}}
   if plan!=nil{e=clone.accept(*plan,decisions,folder)}else{
    e=clone.observe(a.library,next)
    if e==nil&&!sameShareableLibrary(a.library,next)&&a.cloud!=nil&&(a.cloud.status().Enabled||a.graph!=nil&&a.graph.active()){e=clone.markGraphUploadPending()}

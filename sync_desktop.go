@@ -39,6 +39,8 @@ type syncHistoryEntry struct {
 	Origin    string `json:"origin"`
 }
 type syncDeviceState struct {
+ Activity []activityEntry `json:"activity,omitempty"`
+ ActivityMigrated bool `json:"activity_migrated,omitempty"`
 	History            []syncHistoryEntry      `json:"history,omitempty"`
 	Protocol           int                     `json:"protocol"`
 	DeviceID           string                  `json:"device_id"`
@@ -454,7 +456,7 @@ func syncOrderedFilmRows(current, remote string) string {
 }
 
 // Reject unrelated libraries which happen to reuse a legacy list ID. A new
-// Remote installation always starts with "atlas" and can otherwise append
+// Android installation always starts with "atlas" and can otherwise append
 // hundreds of unrelated film lines into the selected Windows list.
 func syncListFilmKeys(list filmCollection) map[string]bool {
 	keys := map[string]bool{}

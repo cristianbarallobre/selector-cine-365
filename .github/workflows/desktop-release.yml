@@ -76,4 +76,4 @@ jobs:
           if gh release view v9.2.25-desktop >/dev/null 2>&1; then exit 0; fi
           test "$(gh api "repos/$GH_REPO/git/ref/heads/release/desktop-9.2.25" --jq .object.sha)" = "$GITHUB_SHA"
           sha256sum Selector_Cine_365_* > SHA256SUMS.txt
-          gh release create v9.2.25-desktop --target "$GITHUB_SHA" --latest --title "Selector Cine 365 · Mac y Windows 9.2.25" --notes "Edición exclusiva para Windows y macOS. Limpieza del código, las pruebas y la documentación obsoletos. Conserva el guardado local, las copias adicionales y la recuperación de la biblioteca." Selector_Cine_365_* SHA256SUMS.txt
+          gh release create v9.2.25-desktop --target "$GITHUB_SHA" --latest --title "Selector Cine 365 · Mac y Windows 9.2.25" --notes "Edición exclusiva de escritorio. Historial de actividad de biblioteca con búsqueda, filtros y paginación. Conserva hasta 10.000 movimientos." Selector_Cine_365_* SHA256SUMS.txt

@@ -86,6 +86,36 @@ $('extraBackupDisable').addEventListener('click',()=>{
 });
 setInterval(()=>{if(!document.hidden&&activeView==='collections'&&!extraBackupBusy)void cloudRefresh();},2500);
 `)
+ cut("async function cineRefreshHistory(){","async function cineRefreshRecovery(){",`let activityItems=[],activityPage=0,activityLoading=false;
+const activityLabels={seen:'Vista',unseen:'Pendiente',film_add:'Película añadida',film_remove:'Película retirada',film_edit:'Título modificado',list_create:'Lista creada',list_delete:'Lista eliminada',list_rename:'Lista renombrada',favorite_add:'Favorito añadido',favorite_remove:'Favorito retirado',rating:'Valoración personal',identity:'Identificación TMDB',order:'Orden modificado',comparison:'Comparación modificada',restore:'Copia restaurada',bulk:'Modificación masiva'};
+function renderActivity(){
+ const q=$('activitySearch').value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ const type=$('activityFilter').value;
+ const matches=activityItems.filter(e=>(!type||e.kind===type)&&[e.film,e.list,e.detail,activityLabels[e.kind]].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(q));
+ const pages=Math.max(1,Math.ceil(matches.length/20));activityPage=Math.min(activityPage,pages-1);
+ const target=$('cloudHistory');target.replaceChildren();target.classList.toggle('is-empty',!matches.length);
+ if(!matches.length)target.textContent='No hay movimientos que coincidan.';
+ for(const e of matches.slice(activityPage*20,activityPage*20+20)){
+  const row=document.createElement('div');row.className='cine-sync-history-row';
+  const title=document.createElement('strong');title.textContent=[activityLabels[e.kind]||e.kind,e.film].filter(Boolean).join(' · ');
+  const info=document.createElement('span');info.textContent=[e.list,e.detail,cineSyncAt(e.at)].filter(Boolean).join(' · ');
+  row.append(title,info);target.append(row);
+ }
+ $('activityPage').textContent=(activityPage+1)+' / '+pages+' · '+matches.length+' movimientos';
+ $('activityPrev').disabled=activityPage===0;$('activityNext').disabled=activityPage+1>=pages;
+}
+async function cineRefreshHistory(){
+ if(activityLoading)return;
+ activityLoading=true;const button=$('cloudHistoryRefresh');button.disabled=true;
+ try{const data=await cloudRequest('/api/sync/history');activityItems=data.events||[];renderActivity();$('cloudHistoryChecked').textContent='Historial actualizado · '+activityItems.length+' movimientos conservados (máximo 10.000).';}
+ catch(e){$('cloudHistoryChecked').textContent='⚠ '+e.message;}finally{button.disabled=false;activityLoading=false;}
+}
+$('activitySearch').addEventListener('input',()=>{activityPage=0;renderActivity();});
+$('activityFilter').addEventListener('change',()=>{activityPage=0;renderActivity();});
+$('activityPrev').addEventListener('click',()=>{activityPage--;renderActivity();});
+$('activityNext').addEventListener('click',()=>{activityPage++;renderActivity();});
+for(const [value,label] of Object.entries(activityLabels))$('activityFilter').append(new Option(label,value));
+`)
  cut("let syncPreviewToken='',syncPreviewEdit=0,cloudManualBusy=false;","// Subscription/free/ad-supported services only;",`void cloudRefresh();
 void cineRefreshHistory();
 void cineRefreshRecovery();
@@ -95,6 +125,12 @@ void cineRefreshRecovery();
         `)
  if err!=nil{return "",err}
  page=strings.NewReplacer(
+  "Actividad reciente de películas","Historial de actividad",
+  "<div id=\"cloudHistory\"","<div style=\"display:flex;gap:8px;flex-wrap:wrap;margin:8px 0\"><input class=\"cloud-path\" style=\"flex:1;min-width:160px\" id=\"activitySearch\" placeholder=\"Buscar película, lista o acción\" aria-label=\"Buscar actividad\"><select id=\"activityFilter\" aria-label=\"Tipo de movimiento\"><option value=\"\">Todos los movimientos</option></select></div><div style=\"display:flex;align-items:center;gap:8px;margin-bottom:8px\"><button class=\"tool\" id=\"activityPrev\">Anterior</button><span id=\"activityPage\"></span><button class=\"tool\" id=\"activityNext\">Siguiente</button></div><div id=\"cloudHistory\"",
+  "if(name===\'collections\')renderCollectionControls();","if(name===\'collections\'){renderCollectionControls();void cineRefreshHistory();}",
+  "await cineRefreshRecovery();\n  $(\'cloudRecoveryStatus\').textContent=data.warning","await cineRefreshRecovery();void cineRefreshHistory();\n  $(\'cloudRecoveryStatus\').textContent=data.warning",
+  ".cine-sync-history{max-height:220px;",".cine-sync-history{max-height:560px;",
+  "Las horas son orientativas.","Las horas corresponden al guardado confirmado.",
   "La nube y la clave TMDB son opcionales.","La copia adicional y la clave TMDB son opcionales.",
   "Mis listas → OneDrive y copias de seguridad → Actividad reciente, historial y copias de recuperación","Mis listas → Guardado y copia adicional → Actividad reciente, historial y copias de recuperación",
   "procedimientos paso a paso, sincronización, solución de problemas y recuperación","procedimientos paso a paso, guardado, solución de problemas y recuperación",
