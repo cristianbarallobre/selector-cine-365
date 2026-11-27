@@ -108,6 +108,7 @@ void cineRefreshRecovery();
   "const longRequest=/^\\/api\\/cloud\\/(?:auto|sync|preview|backup)(?:\\?|$)/.test(path);","const longRequest=false;",
   "path!=='/api/cloud/browse'","path!=='/api/extra-backup/browse'",
   "'OneDrive: '","'Guardado: '",
+  "if(path.startsWith('/api/cloud/')||path.startsWith('/api/onedrive-desktop/'))return 'OneDrive';","if(path.startsWith('/api/extra-backup/'))return 'Copia adicional';",
   "✓ Guardado local + carpeta de nube","✓ Guardado",
   "✓ Local · ⚠ Copia en nube","✓ Local · ⚠ Historial local",
   "✓ Guardado local · Revisar sincronización","✓ Guardado",
