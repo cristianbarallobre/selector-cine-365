@@ -15,7 +15,7 @@ func cineDirectoryUsage(root string)labFileUsage{
 }
 func cineLegacyCacheNames(root,cache string)[]string{
  if root==cache{return nil}
- names:=[]string{"plataformas_cache.json","tmdb_fichas_lab.json","imdb_title_ratings.tsv.gz","imdb_ids.json"}
+ names:=[]string{"plataformas_cache.json","tmdb_fichas_lab.json"}
  for _,dir:=range []string{"carteles","imagenes_descubrir"}{
   entries,_:=os.ReadDir(filepath.Join(root,dir));for _,e:=range entries{if e.Type().IsRegular()&&validPosterPath("/"+e.Name()){names=append(names,filepath.Join(dir,e.Name()))}}
  }
@@ -30,7 +30,7 @@ func cineIdenticalFiles(old,new string)bool{
  for _,path:=range []string{old,new}{info,e:=os.Lstat(path);if e!=nil||!info.Mode().IsRegular()||info.Size()>64<<20{return false};real,e:=filepath.EvalSymlinks(path);if e!=nil||real!=path{return false}}
  a,e:=os.Open(old);if e!=nil{return false};defer a.Close()
  b,e:=os.Open(new);if e!=nil{return false};defer b.Close()
- ai,e:=a.Stat();if e!=nil{return false};bi,e:=b.Stat();if e!=nil||ai.Size()!=bi.Size(){return false}
+ ai,e:=a.Stat();if e!=nil{return false};bi,e:=b.Stat();if e!=nil||os.SameFile(ai,bi)||ai.Size()!=bi.Size(){return false}
  x,y:=make([]byte,64<<10),make([]byte,64<<10)
  for{n,e1:=io.ReadFull(a,x);m,e2:=io.ReadFull(b,y);if n!=m||!bytes.Equal(x[:n],y[:m]){return false};if e1==io.EOF||e1==io.ErrUnexpectedEOF{return e1==e2};if e1!=nil||e2!=nil{return false}}
 }

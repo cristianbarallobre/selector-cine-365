@@ -27,8 +27,9 @@ var labDailyBackupName=regexp.MustCompile(`^\d{4}-\d{2}-\d{2}\.json$`)
 
 func labValidBackup(data []byte) bool {
  if len(data)==0||len(data)>libraryFileLimit {return false}
- _,_,err:=decodeRecoveryBackup(data)
- return err==nil
+ var b completeLibraryBackup
+ if json.Unmarshal(data,&b)!=nil||validateLibrary(b.libraryState)!=nil{return false}
+ return b.CompleteVersion==0||validateCompleteBackup(b)==nil
 }
 func labBackupCandidates(dir string, pattern *regexp.Regexp) ([]string,error) {
  entries,err:=os.ReadDir(dir)

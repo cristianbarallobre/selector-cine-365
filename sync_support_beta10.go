@@ -70,6 +70,9 @@ func (a *runningApp) preservePendingSave(w http.ResponseWriter, state librarySta
 }
 
 func readRecoveryFile(path string) ([]byte, error) {
+	expected,err:=os.Lstat(path)
+	if err!=nil{return nil,err}
+	if !expected.Mode().IsRegular(){return nil,errors.New("Archivo de recuperación no seguro")}
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -79,7 +82,7 @@ func readRecoveryFile(path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !stat.Mode().IsRegular() || stat.Size() == 0 || stat.Size() > libraryFileLimit {
+	if !os.SameFile(expected,stat)||!stat.Mode().IsRegular() || stat.Size() == 0 || stat.Size() > libraryFileLimit {
 		return nil, errors.New("Tamaño de copia de recuperación no válido")
 	}
 	data, err := io.ReadAll(io.LimitReader(f, libraryFileLimit+1))

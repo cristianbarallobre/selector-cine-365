@@ -32,7 +32,17 @@ func libraryBytesFingerprint(data []byte) string{
 func readLibraryCheckpoint(path string) *syncDeviceState {
  data,err:=readRecoveryFile(path);if err!=nil{return nil}
  var disk libraryDisk
- if json.Unmarshal(data,&disk)!=nil||disk.LocalSync==nil{return nil}
+ if json.Unmarshal(data,&disk)!=nil{return nil}
+ if disk.LocalSync==nil{
+  // Portable rescue snapshots contain no device identity. A fresh local
+  // checkpoint restores their activity without importing external clocks.
+  var portable completeLibraryBackup
+  if json.Unmarshal(data,&portable)!=nil||validateCompleteBackup(portable)!=nil{return nil}
+  id,err:=randomToken();if err!=nil{return nil}
+  s:=&syncDeviceState{Protocol:syncProtocol,DeviceID:"desktop-"+id,Known:map[string]int64{},Revisions:map[string]syncRevision{},Checkpoint:id,ActivityMigrated:true,Activity:append([]activityEntry(nil),portable.Activity...)}
+  for i,j:=0,len(s.Activity)-1;i<j;i,j=i+1,j-1{s.Activity[i],s.Activity[j]=s.Activity[j],s.Activity[i]}
+  return s
+ }
  s:=disk.LocalSync
  if s.Checkpoint==""||s.DeviceID==""||s.Protocol!=syncProtocol||s.Known==nil||s.Revisions==nil{return nil}
  return s
