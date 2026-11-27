@@ -36,6 +36,10 @@ func cineIdenticalFiles(old,new string)bool{
 }
 func cineCleanVerifiedLegacyCache(root,cache string)(int,error){
  n:=0
+ source,e:=filepath.EvalSymlinks(root);if e!=nil{return 0,e}
+ target,e:=filepath.EvalSymlinks(cache);if os.IsNotExist(e){return 0,nil};if e!=nil{return 0,e}
+ if source==target{return 0,nil}
+ root,cache=source,target
  for _,name:=range cineLegacyCacheNames(root,cache){
   old,new:=filepath.Join(root,name),filepath.Join(cache,name)
   if cineIdenticalFiles(old,new){if e:=os.Remove(old);e!=nil{return n,e};n++}

@@ -110,7 +110,7 @@ func makeHTML(initial, token string) (string, error) {
 	out = injectLabMaintenance(out)
 	if desktopFeatures && !appIsLab {
 		out = strings.NewReplacer(
-			"<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.26</title>",
+			"<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · "+appVersion+"</title>",
 			"🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · "+appVersion,
 			` <span class="lab-nav-tag">LAB</span>`, "",
 			`<span class="lab-smart-caption">LAB</span>`, "",

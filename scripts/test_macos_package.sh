@@ -22,4 +22,8 @@ port=$(lsof -nP -a -p "$pid" -iTCP -sTCP:LISTEN -Fn | sed -n 's/^n127\.0\.0\.1:\
 test -n "$port"
 url="http://127.0.0.1:$port/"
 test -n "$url"
-"$work/probar-webkit" "$url" scripts/test_desktop_picker.js
+expected=$(sed -n 's/^const appVersion = "\(.*\)"$/\1/p' version.go)
+ test -n "$expected"
+ test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$bundle/Contents/Info.plist")" = "$expected"
+ sed "s/__CINE_EXPECTED_VERSION__/$expected/g" scripts/test_desktop_picker.js > "$work/test_desktop_picker.js"
+ "$work/probar-webkit" "$url" "$work/test_desktop_picker.js"
