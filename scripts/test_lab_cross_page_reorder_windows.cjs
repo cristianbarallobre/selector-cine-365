@@ -65,7 +65,7 @@ const doc={
  },
  addEventListener:(name,cb)=>{docEvents[name]=cb;}
 };
-const win={CineAndroid:false,innerWidth:1024,innerHeight:720,addEventListener:(name,cb)=>{winEvents[name]=cb;}};
+const win={innerWidth:1024,innerHeight:720,addEventListener:(name,cb)=>{winEvents[name]=cb;}};
 const ctx={
  document:doc,window:win,$:id=>{assert.ok(dom[id],id);return dom[id]},
  libraryState:{active_id:'list-1'},filmPage:0,parsed:{entries},

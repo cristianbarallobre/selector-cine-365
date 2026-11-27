@@ -24,13 +24,13 @@ func TestCloudAutoSyncImportsPairedChangesWithoutOverwritingPeer(t *testing.T){
  if first["skipped"]!="not_paired"{t.Fatalf("auto synced before pairing: %+v",first)}
  preview,err:=app.cloudSyncPreview();if err!=nil{t.Fatal(err)}
  if _,err=app.cloudSyncConfirm(preview["token"].(string),map[string]bool{});err!=nil{t.Fatal(err)}
- peer:=syncSnapshot{Protocol:2,DeviceID:"android-example",Library:initialLibrary("☑ 001. Ciudadano Kane (1941)"),
-  Known:map[string]int64{"android-example":1},Revisions:map[string]syncRevision{"ciudadano kane|1941":{
-   Checked:true,Device:"android-example",Seq:1,Clock:map[string]int64{"android-example":1},
+ peer:=syncSnapshot{Protocol:2,DeviceID:"peer-example",Library:initialLibrary("☑ 001. Ciudadano Kane (1941)"),
+  Known:map[string]int64{"peer-example":1},Revisions:map[string]syncRevision{"ciudadano kane|1941":{
+   Checked:true,Device:"peer-example",Seq:1,Clock:map[string]int64{"peer-example":1},
   }},
  }
  b,_:=json.Marshal(peer)
- remote:=filepath.Join(cloudSyncRoot(cloudDir),"sincronizacion","dispositivos","android-example.json")
+ remote:=filepath.Join(cloudSyncRoot(cloudDir),"sincronizacion","dispositivos","peer-example.json")
  if err=cloudWriteFile(remote,b);err!=nil{t.Fatal(err)}
  result,err:=app.cloudAutoSync();if err!=nil{t.Fatal(err)}
  if result["changed"]!=true{t.Fatalf("remote change not imported: %+v",result)}
@@ -55,12 +55,12 @@ func TestCloudAutoSyncStopsAtConcurrentConflict(t *testing.T){
  id,revs,known:=store.parts()
  if err=store.accept(syncPlan{Revisions:revs,Known:known},nil,shared);err!=nil{t.Fatal(err)}
  cloud:=newCloudBackups(localDir);if err=cloud.configure(shared);err!=nil{t.Fatal(err)}
- remote:=syncSnapshot{Protocol:2,DeviceID:"android-second",Library:pending,
-  Known:map[string]int64{"android-second":1},Revisions:map[string]syncRevision{
-   "casablanca|1942":{Checked:false,Device:"android-second",Seq:1,Clock:map[string]int64{"android-second":1}},
+ remote:=syncSnapshot{Protocol:2,DeviceID:"peer-second",Library:pending,
+  Known:map[string]int64{"peer-second":1},Revisions:map[string]syncRevision{
+   "casablanca|1942":{Checked:false,Device:"peer-second",Seq:1,Clock:map[string]int64{"peer-second":1}},
   }}
  b,_:=json.Marshal(remote)
- if err=cloudWriteFile(filepath.Join(cloudSyncRoot(shared),"sincronizacion","dispositivos","android-second.json"),b);err!=nil{t.Fatal(err)}
+ if err=cloudWriteFile(filepath.Join(cloudSyncRoot(shared),"sincronizacion","dispositivos","peer-second.json"),b);err!=nil{t.Fatal(err)}
  app:=&runningApp{syncStore:store,cloud:cloud,library:viewed,libraryPath:path,savePath:savePath}
  result,err:=app.cloudAutoSync();if err!=nil{t.Fatal(err)}
  if result["needs_review"]!=true{t.Fatalf("expected manual review: %+v",result)}

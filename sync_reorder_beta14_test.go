@@ -17,7 +17,7 @@ func TestFilmOrderSyncMergesNewerRemoteOrder(t *testing.T){
  local.Lists[0].OrderChangedAt=100
  remote:=initialLibrary("☐ Tres (2003)\n☐ Uno (2001)\n☐ Dos (2002)")
  remote.Lists[0].OrderChangedAt=200
- merged,_,_,_,err:=syncMerge(local,nil,nil,syncSnapshot{Protocol:syncProtocol,DeviceID:"android",Library:remote})
+ merged,_,_,_,err:=syncMerge(local,nil,nil,syncSnapshot{Protocol:syncProtocol,DeviceID:"peer",Library:remote})
  if err!=nil{t.Fatal(err)}
  if merged.Lists[0].Text!=remote.Lists[0].Text{t.Fatalf("newer order not accepted: %q",merged.Lists[0].Text)}
  if merged.Lists[0].OrderChangedAt!=200{t.Fatalf("lost order timestamp")}

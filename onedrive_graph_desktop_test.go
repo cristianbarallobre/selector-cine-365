@@ -65,9 +65,9 @@ func TestDesktopGraphRejectsUntrustedPagination(t *testing.T){
  if err==nil||!strings.Contains(err.Error(),"no reconocida"){t.Fatalf("unsafe pagination should fail: %v",err)}
 }
 
-func TestGraphPreviewConfirmAndroidSnapshotWithoutOverwritingPeer(t *testing.T){
+func TestGraphPreviewConfirmPeerSnapshotWithoutOverwritingPeer(t *testing.T){
  remote:=initialLibrary("☑ Película compartida (2024)")
- remoteJSON,err:=json.Marshal(syncSnapshot{Protocol:2,DeviceID:"android-peer",Library:remote,Known:map[string]int64{},Revisions:map[string]syncRevision{}})
+ remoteJSON,err:=json.Marshal(syncSnapshot{Protocol:2,DeviceID:"peer-peer",Library:remote,Known:map[string]int64{},Revisions:map[string]syncRevision{}})
  if err!=nil{t.Fatal(err)}
  var guard sync.Mutex
  var ownBytes []byte
@@ -81,13 +81,13 @@ func TestGraphPreviewConfirmAndroidSnapshotWithoutOverwritingPeer(t *testing.T){
   case r.Method=="GET"&&r.URL.Path=="/me/drive/items/sync/children":
    _,_=w.Write([]byte("{\"value\":[{\"id\":\"dev\",\"name\":\"dispositivos\",\"folder\":{}}]}"))
   case r.Method=="GET"&&r.URL.Path=="/me/drive/items/dev/children":
-   items:=[]map[string]any{{"id":"remote","name":"android-peer.json","file":map[string]any{}}}
+   items:=[]map[string]any{{"id":"remote","name":"peer-peer.json","file":map[string]any{}}}
    if ownBytes!=nil{items=append(items,map[string]any{"id":"own","name":ownName,"file":map[string]any{}})}
    _=json.NewEncoder(w).Encode(map[string]any{"value":items})
   case r.Method=="GET"&&r.URL.Path=="/me/drive/items/remote/content":
    _,_=w.Write(remoteJSON)
   case r.Method=="PUT"&&strings.HasPrefix(r.URL.Path,"/me/drive/items/dev:/")&&strings.HasSuffix(r.URL.Path,":/content"):
-   // This test refuses any write to the Android peer snapshot.
+   // This test refuses any write to the Peer peer snapshot.
    ownName=strings.TrimSuffix(strings.TrimPrefix(r.URL.Path,"/me/drive/items/dev:/"),":/content")
    ownBytes,_=io.ReadAll(r.Body)
    _,_=w.Write([]byte("{\"id\":\"own\"}"))
@@ -108,13 +108,13 @@ func TestGraphPreviewConfirmAndroidSnapshotWithoutOverwritingPeer(t *testing.T){
  app:=&runningApp{graph:g,syncStore:store,library:lib,libraryPath:filepath.Join(dir,"colecciones.json"),savePath:filepath.Join(dir,"peliculas.txt")}
  if err=saveLibrary(app.libraryPath,app.savePath,lib);err!=nil{t.Fatal(err)}
  preview,err:=app.graphSyncPreview();if err!=nil{t.Fatal(err)}
- if n,ok:=preview["sources"].(int);!ok||n!=1{t.Fatalf("expected one Android snapshot, got %v",preview["sources"])}
+ if n,ok:=preview["sources"].(int);!ok||n!=1{t.Fatalf("expected one Peer snapshot, got %v",preview["sources"])}
  if ownBytes!=nil{t.Fatal("preview must not upload")}
  _,err=app.graphSyncConfirm(preview["token"].(string),map[string]bool{})
  if err!=nil{t.Fatal(err)}
  if ownBytes==nil{t.Fatal("confirmation did not publish own-device snapshot")}
- if ownName=="android-peer.json"{t.Fatal("must never replace another device snapshot")}
- if syncWatched(app.library)!=1{t.Fatalf("Android watched flag not merged: %+v",app.library)}
+ if ownName=="peer-peer.json"{t.Fatal("must never replace another device snapshot")}
+ if syncWatched(app.library)!=1{t.Fatalf("Peer watched flag not merged: %+v",app.library)}
 }
 
 func TestPKCEBrowserAuthorizationValidatesStateAndUsesVerifier(t *testing.T){

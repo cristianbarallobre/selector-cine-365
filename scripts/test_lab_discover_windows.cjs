@@ -30,7 +30,6 @@ assert.doesNotMatch(ui,/card\.addEventListener\('click'/,'La tarjeta completa de
 assert.doesNotMatch(ui,/\$\('filmList'\)\.addEventListener\('click'/,'Clicar la fila de Biblioteca no abre la ficha');
 assert.match(ui,/#labDetailPlaceholder\[hidden\]\{display:none!important\}/,'El cartel de reserva debe ocultarse si se cargó la carátula');
 assert.ok(fs.readFileSync('plantilla.html','utf8').includes('titleLine.appendChild(title);'),'El canal oficial mantiene el código original');
-assert.ok(!fs.readFileSync('android/app/src/main/assets/index.html','utf8').includes('labDiscoverView'),'Android no debe heredar Descubrir');
 
 const cache=fs.readFileSync('lab_discover_cache_windows.go','utf8');
 assert.match(cache,/\/\/go:build windows/,'La caché sólo debe compilarse en Windows');
