@@ -1,5 +1,13 @@
 # Historial de cambios — Selector Cine 365
 
+## 9.2.24 de escritorio
+
+- Se retira la conexión directa a OneDrive y la sincronización entre dispositivos en escritorio.
+- Guardado principal local protegido y segunda copia opcional en una carpeta elegida por el usuario, con copia anterior, verificación y reintento.
+- Restauración manual sin fusionar bibliotecas. Las copias anteriores se conservan.
+
+[Publicación 9.2.24](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.24-desktop)
+
 ## 9.2.22 de escritorio
 
 - Cambiar de lista conserva la selección en el equipo, sin activar una subida a OneDrive si no cambian los datos compartidos.

@@ -1,6 +1,6 @@
 # Manual de Selector Cine 365
 
-Windows y macOS 9.2.22. Android estable de la publicación v9.0.0.
+Windows y macOS 9.2.24. Android estable de la publicación v9.0.0.
 
 ## Instalar y proteger la biblioteca
 
@@ -10,13 +10,13 @@ Windows y macOS 9.2.22. Android estable de la publicación v9.0.0.
 4. Si Windows o Mac avisan sobre el editor, verifica primero que el archivo procede de la publicación oficial y comprueba su SHA-256. Los paquetes Mac llevan firma ad hoc y carecen de notarización.
 5. En Android instala la APK Limpia con el mismo identificador y la misma firma que tu instalación compatible. Para cambiar de edición, importa una copia JSON en la nueva.
 
-[Descargas de escritorio](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.22-desktop) · [APK oficial de Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0)
+[Descargas de escritorio](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.24-desktop) · [APK oficial de Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0)
 
 ## Biblioteca y listas
 
 - Abre el selector superior para elegir una lista. Puedes cambiar de lista desde Estadísticas y mantener abierta la sección.
 - Usa Buscar y elige **Lista actual** o **Todas las listas**. Los filtros de escritorio permiten combinar el estado vista o pendiente con plataformas, década, género y duración, y elegir el orden.
-- Usa la paginación o el campo **Página** para saltar. Al sincronizar manualmente con OneDrive, la app conserva la sección, la búsqueda y la página si la lista activa sigue disponible.
+- Usa la paginación o el campo **Página** para saltar.
 - Marca el estado desde la casilla. El indicador **Listas** muestra las colecciones que contienen la película. Pulsa un número para ir a esa lista o el lápiz para editar la pertenencia.
 - Si quitas todas las listas numeradas y la película permanece en Favoritos, puedes guardar directamente. Si va a desaparecer de todas las listas, la app pide confirmación.
 - Desde **Mis listas** puedes importar o añadir películas, gestionar colecciones y configurar la comparación de listas. En escritorio puedes reordenar arrastrando el tirador cuando estás viendo el orden original de la lista.
@@ -39,24 +39,24 @@ Al añadir una película desde Descubrir, Biblioteca reutiliza la ficha y el car
 
 Si la app ha elegido otra película, abre **Identificar película en TMDB** y pega su ID numérico o su enlace. Si los años difieren, verifica el título y pulsa **Guardar de todos modos** si la ficha es correcta. El año de tu lista se conserva. **Volver a búsqueda automática** retira la identificación manual.
 
-## Copias y OneDrive
+## Guardado y copia adicional
 
-La biblioteca se guarda automáticamente en el equipo. Desde **Mis listas → Copia de seguridad** en escritorio o **Ajustes** en Android, exporta un JSON para conservar todas las listas. Una exportación TXT corresponde a la lista seleccionada.
+La biblioteca se guarda automáticamente en el equipo. Desde **Mis listas → Copia de seguridad** exporta un JSON para conservar todas las listas, favoritos, valoraciones e identificaciones. Una exportación TXT corresponde a la lista seleccionada.
 
-1. En escritorio abre **Mis listas → OneDrive y copias de seguridad → Conectar cuenta Microsoft**. Revisa los recuentos y confirma la primera vinculación.
-2. Pulsa **Sincronizar con la nube**, debajo del título, para enviar y recibir cambios. La ventana de progreso bloquea la edición hasta terminar.
-3. **Subida pendiente** indica que quedan cambios locales por enviar. **Recepción pendiente** indica que la app encontró cambios remotos por aplicar. **Recepción sin comprobar** indica que todavía no pudo verificar si hay cambios remotos. Los estados pendientes se destacan en amarillo con un reloj; una flecha circular indica actividad. Abrir otra lista no crea una subida pendiente por sí solo.
-4. Si surge un conflicto, revisa los cambios y elige qué estado conservar. Con una carpeta local de sincronización, usa **Mis listas → OneDrive y copias de seguridad → Sincronizar ahora**.
+1. Abre **Mis listas → Guardado y copia adicional** y pulsa **Elegir carpeta**.
+2. Pulsa **Guardar ubicación**. Cada instalación conserva su propio archivo `colecciones.json` y una versión anterior dentro de `Selector_Cine_365_Copias`. La interfaz muestra la ruta completa.
+3. La copia se actualiza tras el guardado principal y puedes pulsar **Copiar ahora**. Si la ubicación no está disponible, los datos principales se conservan y la app reintenta la copia. Desactivar no borra los archivos.
+4. Si necesitas recuperar una copia, utiliza **Restaurar copia** y elige su JSON. Restaurar sustituye la biblioteca completa; exporta antes los datos actuales.
 
-Si una edición no se guardó por un conflicto local, carga la biblioteca guardada y repite solo el cambio que falte. Las copias de recuperación están en **Mis listas → OneDrive y copias de seguridad → Actividad reciente, historial y copias de recuperación**. Restaurar una copia sustituye la biblioteca completa. Las claves TMDB y la caché permanecen en cada dispositivo.
+No se conectan cuentas ni se combinan bibliotecas automáticamente. Una carpeta gestionada por un servicio externo queda bajo responsabilidad de ese servicio. Las claves TMDB y la caché permanecen en cada dispositivo. Las copias locales de recuperación siguen en **Mis listas → Guardado y copia adicional → Actividad reciente, historial y copias de recuperación**.
 
-[Guía de sincronización](https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/GUIA_SINCRONIZACION_SEGURA.md) · [Rutas de datos](https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/UBICACIONES_DATOS_SELECTOR_CINE_365.md)
+[Guía de guardado y recuperación](https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/GUIA_SINCRONIZACION_SEGURA.md) · [Rutas de datos](https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/UBICACIONES_DATOS_SELECTOR_CINE_365.md)
 
 ## Android
 
 La edición pública se identifica como **Beta 13.13 Limpia**. Tiene biblioteca, navegación táctil, estadísticas, sorteo, copias y sincronización mediante revisión manual. La edición Android 9.2.5 es una versión de pruebas para Android 8 o posterior. Se instala en paralelo con la estable. Una instalación de pruebas con firma distinta requiere reinstalar esa copia. [Descarga de Android 9.2.5](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.5-android).
 
-## Diagnóstico y cierre seguro (escritorio 9.2.18–9.2.22)
+## Diagnóstico y cierre seguro (escritorio 9.2.18–9.2.24)
 
 Desde 9.2.20 se conserva un borrador local de los cambios pendientes cuando puede escribirse; se ofrece recuperar copias válidas si falta o se daña la biblioteca principal. Si el guardado no se confirma, revisa los cambios pendientes, reintenta o exporta una copia JSON de emergencia. Es posible cerrar voluntariamente con advertencia de pérdida de cambios. En Mis listas → Mantenimiento → Exportar registro de diagnóstico puedes guardar los registros técnicos locales para revisar incidencias. No se envían automáticamente ni incluyen claves de acceso o contenido de listas.
 

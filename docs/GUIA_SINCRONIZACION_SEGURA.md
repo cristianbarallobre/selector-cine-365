@@ -1,45 +1,28 @@
-# Sincronización segura de Selector Cine 365
+# Guardado y recuperación de Selector Cine 365
 
-Windows y macOS 9.2.22. Android estable de la publicación v9.0.0.
+Windows y macOS 9.2.24. Android conserva el funcionamiento de su publicación v9.0.0.
 
-## Preparar la primera conexión
+## Guardado principal y copia opcional
 
-1. Abre la app en el equipo que tiene la biblioteca más completa. Anota los recuentos de las listas importantes.
-2. Exporta una copia JSON en **Mis listas** en escritorio o **Ajustes** en Android. Guarda una copia fuera de la carpeta sincronizada.
-3. En escritorio, abre **Mis listas → OneDrive y copias de seguridad** y pulsa **Conectar cuenta Microsoft**. Autoriza en el navegador y vuelve a la app.
-4. En el otro equipo, autoriza la misma cuenta. Revisa la sincronización y comprueba que aparecen las listas esperadas.
+La biblioteca de escritorio se guarda automáticamente en el equipo. No necesita conectar una cuenta ni consultar archivos remotos. En **Mis listas → Guardado y copia adicional**, elige una carpeta y pulsa **Guardar ubicación**. Puedes elegir un disco externo o una carpeta gestionada por otro programa. La aplicación crea una carpeta propia por instalación, con `colecciones.json` y, tras una modificación, `colecciones_anterior.json`.
 
-La carpeta habitual se llama **Selector_Cine_365**. Si antes usabas una carpeta distinta, revisa la configuración avanzada y las copias existentes antes de cambiarla.
+El archivo contiene listas, estados de visionado, favoritos, valoraciones e identificaciones de películas. No incluye sesiones, claves ni cachés. **Copiar ahora** solicita una copia del estado principal. Si la carpeta no está disponible, el guardado local sigue funcionando y la app reintenta. Desactivar la copia conserva los archivos existentes.
 
-## Revisar y confirmar
+## Trasladar una biblioteca
 
-- Comprueba el nombre y los recuentos de **cada lista** en la vista previa.
-- Si dos equipos tomaron decisiones opuestas sobre una película, elige cuál conservar antes de confirmar.
-- Cancela si aparecen películas de muestra mezcladas con una lista real o si el número de películas resulta inesperado. Conserva las copias de ambos equipos.
-## Sincronizar después de vincular
+Exporta un JSON desde **Mis listas → Copia de seguridad**. En el equipo de destino, exporta primero su biblioteca actual y usa **Restaurar copia** para seleccionar el JSON de origen. No se fusionan bibliotecas ni se aplican cambios automáticamente. La copia de un equipo no sustituye la copia de otro.
 
-Windows y Mac guardan tus ediciones automáticamente en el equipo. Para intercambiar los cambios, pulsa **Sincronizar con la nube** bajo el título una vez conectada la cuenta Microsoft. La aplicación termina el guardado local, abre una ventana de progreso y bloquea la edición mientras envía y recibe. Si los dispositivos tomaron decisiones incompatibles, se abre una revisión antes de aplicar el cambio.
+## Resolver fallos de guardado
 
-- **Subida pendiente** significa que hay cambios de biblioteca guardados en este equipo que todavía no se enviaron. Cambiar únicamente la lista activa no genera una subida. El reloj amarillo indica espera; la flecha circular amarilla indica actividad.
-- **Recepción pendiente** significa que la comprobación encontró cambios de otro dispositivo que todavía no se aplicaron. **Recepción sin comprobar** indica que no se pudo verificar el estado remoto.
-- **Sin cambios por subir o por recibir** muestra el resultado de la última comprobación. Antes de pasar a otro equipo, sincroniza en el primero y luego en el segundo.
-- Con una carpeta local configurada, usa **Sincronizar ahora** dentro de **Mis listas → OneDrive y copias de seguridad**. La app escribe la copia en esa carpeta y el cliente de nube se encarga de enviarla.
-- En Android estable, usa el control de sincronización y la revisión de su propia interfaz.
-
-Si la operación falla, los cambios que ya guardaste siguen en el equipo. Revisa el aviso y prueba de nuevo cuando recuperes la conexión. Si el guardado local no está confirmado, resuélvelo antes de sincronizar. Desde 9.2.20 se intenta conservar un borrador recuperable de las ediciones antes del guardado principal: revisa los cambios pendientes, reintenta o exporta un JSON de emergencia. En escritorio puedes cerrar voluntariamente tras aceptar el aviso de posible pérdida. Para investigar incidencias, usa Mis listas → Mantenimiento → Exportar registro de diagnóstico.
-
-## Qué viaja entre equipos
-
-Se comparten los datos de biblioteca compatibles con cada versión. El escritorio 9.2.22 guarda marcas, favoritos, valoraciones y orden de Favoritos. Las identificaciones corregidas viajan como IDs de TMDB. La APK estable de Android pertenece a una etapa anterior. En escritorio se conservan las retiradas de películas de una lista aunque una copia anterior todavía las incluya; las demás listas se mantienen y puedes volver a añadir la película.
-
-Las claves de TMDB, los carteles, la caché y las sesiones Microsoft se guardan en cada dispositivo. Windows protege la autorización con DPAPI y Mac con el llavero. También puedes usar la app sin conectar OneDrive.
+Si el guardado local no está confirmado, reintenta o exporta un JSON de emergencia. Desde 9.2.20 se intenta conservar un borrador recuperable de las ediciones antes del guardado principal. En Mis listas → Mantenimiento → Exportar registro de diagnóstico puedes exportar el registro técnico local.
 
 ## Volver a una copia anterior
 
-1. Si ves una biblioteca equivocada, evita confirmar nuevos cambios en OneDrive.
-2. Exporta la biblioteca actual para conservar el estado antes de recuperar.
-3. Elige un JSON verificado o consulta **Mis listas → OneDrive y copias de seguridad → Actividad reciente, historial y copias de recuperación**. Si solo falta una edición, repítela en la biblioteca actual. Recuperar una copia sustituye toda la biblioteca local.
-4. Abre las listas importantes y comprueba los recuentos. Revisa la vista previa antes de volver a sincronizar.
+1. Exporta la biblioteca actual antes de sustituirla.
+2. Elige un JSON verificado o consulta **Mis listas → Guardado y copia adicional → Actividad reciente, historial y copias de recuperación**.
+3. Revisa las cantidades y confirma la restauración. Se conserva una copia local anterior. Comprueba tus listas.
+
+La nueva edición no borra archivos existentes de OneDrive ni utiliza sus conexiones antiguas. Las versiones anteriores de Android mantienen su comportamiento de sincronización; utiliza la exportación manual para mover bibliotecas a la nueva edición de escritorio.
 
 [Manual completo](https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/MANUAL_COMPLETO_SELECTOR_CINE_365.md) · [Rutas de datos](https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/UBICACIONES_DATOS_SELECTOR_CINE_365.md)
 
