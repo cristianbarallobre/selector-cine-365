@@ -147,12 +147,7 @@ func (c *labCatalogCache) fileSaveLocked() error {
  if err:=os.MkdirAll(filepath.Dir(c.file),0700);err!=nil{return err}
  data,err:=json.Marshal(c.disk);if err!=nil{return err}
  if len(data)>labCacheMaxBytes{return errors.New("Caché de fichas excede el presupuesto tras limpieza")}
- f,err:=os.CreateTemp(filepath.Dir(c.file),".fichas-lab-*");if err!=nil{return err}
- defer os.Remove(f.Name())
- if err=f.Chmod(0600);err!=nil{_ =f.Close();return err}
- if _,err=f.Write(data);err!=nil{_ =f.Close();return err}
- if err=f.Close();err!=nil{return err}
- return os.Rename(f.Name(),c.file)
+ return replaceLibraryFile(c.file,data)
 }
 func (c *labCatalogCache) record(id int) (labDetailRecord,bool) {
  c.mu.Lock();defer c.mu.Unlock()

@@ -137,7 +137,7 @@ func (p *availabilityServer) saveKey(key string) error {
 	if e != nil {
 		return e
 	}
-	if e = os.WriteFile(p.settingsPath, b, 0600); e != nil {
+	if e = replaceLibraryFile(p.settingsPath, b); e != nil {
 		return e
 	}
 	p.apiKey = key
@@ -226,7 +226,7 @@ func (p *availabilityServer) getCached(k string, force bool) (providerResult, bo
 	if manual := p.overrides[k]; manual > 0 && manual != r.TMDBID {
 		return providerResult{}, false
 	}
-	// Sin caducidad automática: solo se descarga una ficha nueva o se pulsa Actualizar.
+	// Los datos se conservan para uso offline; la consulta comprueba su caducidad.
 	if r.MetadataVersion < 3 {
 		return providerResult{}, false
 	}
@@ -302,6 +302,8 @@ func (p *availabilityServer) finishAvailability(key string, revision uint64, res
 		}
 		return providerResult{State: "superseded"}
 	}
+	if prior := p.cache[key]; prior.TMDBID > 0 && (prior.State=="ok"||prior.State=="no-data") &&
+       (p.overrides[key]==0||p.overrides[key]==prior.TMDBID) && (result.TMDBID==0||result.TMDBID==prior.TMDBID) && (result.State=="error"||result.State=="not-found") {return prior}
 	if prior := p.cache[key]; prior.TMDBID > 0 && prior.PosterPath != "" &&
 		(p.overrides[key] == 0 || p.overrides[key] == prior.TMDBID) {
 		if result.TMDBID == 0 && (result.State == "error" || result.State == "not-found") {
@@ -597,6 +599,13 @@ func (p *availabilityServer) fetchFilm(ctx context.Context, title string, year i
 	return p.fetchFilmWithID(ctx, title, year, force, 0)
 }
 
+func providerCacheExpired(r providerResult, now time.Time) bool {
+ at,err:=time.Parse(time.RFC3339,r.Date)
+ if err!=nil{return true}
+ ttl:=24*time.Hour
+ if r.State=="error"{ttl=15*time.Minute}
+ return !now.Before(at.Add(ttl))
+}
 func (p *availabilityServer) fetchFilmWithID(ctx context.Context, title string, year int, force bool, preferredID int) providerResult {
 	cacheKey := movieCacheKey(title, year)
 	p.mu.Lock()
@@ -607,7 +616,8 @@ func (p *availabilityServer) fetchFilmWithID(ctx context.Context, title string, 
 	}
 	finish := func(result providerResult) providerResult { return p.finishAvailability(cacheKey, revision, result) }
 	if c, ok := p.getCached(cacheKey, force); ok && (preferredID == 0 || c.State == "error" || c.TMDBID == preferredID) {
-		return c
+        if !providerCacheExpired(c,time.Now()) || p.getKey()=="" {return c}
+        if c.TMDBID>0 {preferredID=c.TMDBID}
 	}
 	apiKey := p.getKey()
 	if apiKey == "" {

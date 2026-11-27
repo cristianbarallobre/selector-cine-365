@@ -88,8 +88,11 @@ func(b *extraBackup) copy(a *runningApp){
  b.mu.Lock()
  if !b.pending||b.busy||b.config.Folder==""{b.mu.Unlock();return}
  c,generation:=b.config,b.generation;b.busy=true;b.mu.Unlock()
- a.mu.Lock();data,err:=json.MarshalIndent(a.library,"","  ");a.mu.Unlock()
- if err==nil{if len(data)>libraryFileLimit{err=errors.New("la biblioteca excede el límite de copia")}else{err=b.write(c,data)}}
+ a.mu.Lock();data,err:=json.MarshalIndent(a.library,"","  ")
+ var history []activityEntry
+ if a.syncStore!=nil{history=a.syncStore.localActivity()}
+ a.mu.Unlock()
+ if err==nil{if len(data)>libraryFileLimit{err=errors.New("la biblioteca excede el límite de copia")}else{err=b.write(c,data);if err==nil{err=b.writeActivity(c,history)}}}
  b.mu.Lock();defer b.mu.Unlock()
  b.busy=false
  if b.config!=c{return}
@@ -124,11 +127,35 @@ func(b *extraBackup) write(c extraBackupConfig,data []byte)error{
   var prior libraryState
   if json.Unmarshal(old,&prior)!=nil||validateLibrary(prior)!=nil{return errors.New("la copia anterior no es válida; no se ha sobrescrito")}
   if err=replaceLibraryFile(previous,old);err!=nil{return err}
+   daily:=filepath.Join(dir,"copia_"+time.Now().UTC().Format("2006-01-02")+".json")
+   if _,e:=os.Lstat(daily);os.IsNotExist(e){if e=replaceLibraryFile(daily,old);e!=nil{return e}}else if e!=nil{return e}
+   entries,e:=os.ReadDir(dir);if e!=nil{return e}
+   var names []string
+   for _,entry:=range entries{if entry.Type().IsRegular()&&strings.HasPrefix(entry.Name(),"copia_")&&labDailyBackupName.MatchString(strings.TrimPrefix(entry.Name(),"copia_")){names=append(names,entry.Name())}}
+   for len(names)>14 {if e=os.Remove(filepath.Join(dir,names[0]));e!=nil{return e};names=names[1:]}
  }else if !os.IsNotExist(err){return err}
  if err=replaceLibraryFile(target,data);err!=nil{return err}
  actual,err:=readRecoveryFile(target)
  if err!=nil||!bytes.Equal(actual,data){return errors.New("no se pudo verificar la copia adicional")}
  return nil
+}
+func(b *extraBackup) writeActivity(c extraBackupConfig,events []activityEntry)error{
+ path:=filepath.Join(filepath.Dir(b.target(c)),"historial_actividad.json")
+ if info,e:=os.Lstat(path);e==nil{if !info.Mode().IsRegular()||info.Mode()&os.ModeSymlink!=0{return errors.New("archivo de historial no seguro")}}else if !os.IsNotExist(e){return e}
+ data,e:=json.MarshalIndent(struct{Version int `json:"version"`; Events []activityEntry `json:"events"`}{1,events},"","  ");if e!=nil{return e}
+ if prior,e:=os.ReadFile(path);e==nil&&bytes.Equal(prior,data){return nil}
+ return replaceLibraryFile(path,data)
+}
+func(b *extraBackup) finish(a *runningApp,limit time.Duration){
+ if b==nil{return}
+ done:=make(chan struct{});deadline:=time.Now().Add(limit)
+ go func(){defer close(done);for{
+  b.mu.Lock();pending,busy:=b.pending,b.busy;b.mu.Unlock()
+  if !pending&&!busy||time.Now().After(deadline){return}
+  if !busy{b.copy(a);return}
+  time.Sleep(50*time.Millisecond)
+ }}()
+ select{case <-done:case <-time.After(limit):diagnosticEvent("WARN","copia","copia adicional pendiente al cerrar")}
 }
 func(a *runningApp) serveExtraBackup(w http.ResponseWriter,r *http.Request){
  if !a.auth(r)||a.extraBackup==nil{http.Error(w,"No autorizado",403);return}

@@ -85,6 +85,9 @@ $('extraBackupDisable').addEventListener('click',()=>{
  if(confirm('¿Desactivar la copia adicional? Los archivos ya guardados se conservarán.'))void extraBackupAction('config',{folder:''});
 });
 setInterval(()=>{if(!document.hidden&&activeView==='collections'&&!extraBackupBusy)void cloudRefresh();},2500);
+ const cineRefreshStalePlatforms=()=>{if(!document.hidden&&libraryReady&&platformConfigured&&!platformStatusUnavailable&&!platformActive&&activeView==='library')void loadPlatforms(false,true);};
+ setInterval(cineRefreshStalePlatforms,60000);
+ setTimeout(cineRefreshStalePlatforms,5000);
 `)
  cut("async function cineRefreshHistory(){","async function cineRefreshRecovery(){",`let activityItems=[],activityPage=0,activityLoading=false;
 const activityLabels={seen:'Vista',unseen:'Pendiente',film_add:'Película añadida',film_remove:'Película retirada',film_edit:'Título modificado',list_create:'Lista creada',list_delete:'Lista eliminada',list_rename:'Lista renombrada',favorite_add:'Favorito añadido',favorite_remove:'Favorito retirado',rating:'Valoración personal',identity:'Identificación TMDB',order:'Orden modificado',comparison:'Comparación modificada',restore:'Copia restaurada',bulk:'Modificación masiva'};
@@ -150,6 +153,10 @@ void cineRefreshRecovery();
   "✓ Guardado local · Revisar sincronización","✓ Guardado",
   "const sync=data.onedrive_connected?'OneDrive conectado':data.cloud_connected?'Carpeta de nube configurada':'Sin nube conectada';","const sync='Guardado local';",
   "(data.sync_pending_review?'⚠ Sincronización pendiente de revisión. ':'')+","",
+  "async function loadPlatforms(force){","function cinePlatformExpired(entry){const at=Date.parse(entry?.date||'');return (!entry?.cine_retry_at||Date.now()>=entry.cine_retry_at)&&(!Number.isFinite(at)||Date.now()-at>=(entry.state==='error'?900000:86400000));}\\nasync function loadPlatforms(force,staleOnly=false){",
+  "const entries=force?all:all.filter(f=>{const cached=platformData.get(providerKey(f));return !cached||cached.state==='partial';});","const entries=force?all:all.filter(f=>{const cached=platformData.get(providerKey(f));return staleOnly?!!cached&&cinePlatformExpired(cached):!cached||cached.state==='partial'||cinePlatformExpired(cached);}).slice(0,staleOnly?24:all.length);",
+  "storePlatformLookup(providerKey(f),r);if(r.tmdb_id>0)","if(cinePlatformExpired(r))r.cine_retry_at=Date.now()+900000;storePlatformLookup(providerKey(f),r);if(r.tmdb_id>0)",
+  "if(current===platformRun)storePlatformLookup(providerKey(f),{state:'error',note:err.message});","if(current===platformRun){const old=platformData.get(providerKey(f));if(old)old.cine_retry_at=Date.now()+900000;else storePlatformLookup(providerKey(f),{state:'error',note:err.message,date:new Date().toISOString()});}",
   "No se tocarán las listas, fichas personales ni OneDrive.","No se tocarán las listas ni fichas personales.",
  ).Replace(page)
  return page,nil

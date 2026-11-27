@@ -354,7 +354,7 @@ func serve() error {
 	}
 	app := &runningApp{libraryDigest:digest,libraryRecovered: recovered, html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath), appCacheRoot(filepath.Dir(savePath))), extraBackup: newExtraBackup(filepath.Dir(savePath)), syncStore: syncStore, token: token, stopCh: make(chan struct{})}
 	if desktopFeatures {app.resolvePendingCopies(lib,true)}
-	defer func() { app.stop(); app.flushLabCatalog(); app.platforms.flushProviderCache() }()
+	defer func() { app.stop(); app.extraBackup.finish(app,2*time.Second); app.flushLabCatalog(); app.platforms.flushProviderCache() }()
 	app.touch()
 	go app.extraBackup.run(app)
 	listener, err := net.Listen("tcp4", "127.0.0.1:0")
