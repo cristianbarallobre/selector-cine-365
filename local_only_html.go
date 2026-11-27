@@ -127,8 +127,8 @@ void cineRefreshRecovery();
  page=strings.NewReplacer(
   "Actividad reciente de películas","Historial de actividad",
   "<div id=\"cloudHistory\"","<div style=\"display:flex;gap:8px;flex-wrap:wrap;margin:8px 0\"><input class=\"cloud-path\" style=\"flex:1;min-width:160px\" id=\"activitySearch\" placeholder=\"Buscar película, lista o acción\" aria-label=\"Buscar actividad\"><select id=\"activityFilter\" aria-label=\"Tipo de movimiento\"><option value=\"\">Todos los movimientos</option></select></div><div style=\"display:flex;align-items:center;gap:8px;margin-bottom:8px\"><button class=\"tool\" id=\"activityPrev\">Anterior</button><span id=\"activityPage\"></span><button class=\"tool\" id=\"activityNext\">Siguiente</button></div><div id=\"cloudHistory\"",
-  "if(name===\'collections\')renderCollectionControls();","if(name===\'collections\'){renderCollectionControls();void cineRefreshHistory();}",
-  "await cineRefreshRecovery();\n  $(\'cloudRecoveryStatus\').textContent=data.warning","await cineRefreshRecovery();void cineRefreshHistory();\n  $(\'cloudRecoveryStatus\').textContent=data.warning",
+  "if(name==='collections')renderCollectionControls();","if(name==='collections'){renderCollectionControls();void cineRefreshHistory();}",
+  "await cineRefreshRecovery();\n  $('cloudRecoveryStatus').textContent=data.warning","await cineRefreshRecovery();void cineRefreshHistory();\n  $('cloudRecoveryStatus').textContent=data.warning",
   ".cine-sync-history{max-height:220px;",".cine-sync-history{max-height:560px;",
   "Las horas son orientativas.","Las horas corresponden al guardado confirmado.",
   "La nube y la clave TMDB son opcionales.","La copia adicional y la clave TMDB son opcionales.",
