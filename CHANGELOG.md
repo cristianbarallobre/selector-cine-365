@@ -1,5 +1,14 @@
 # Historial de cambios — Selector Cine 365
 
+## 9.2.25 de escritorio
+
+- Historial de actividad local con hasta 10.000 movimientos: altas y bajas de películas, cambios de estado, listas, favoritos, valoraciones, orden, identificaciones y restauración.
+- Búsqueda por película, lista o acción, filtros por tipo y páginas de 20 movimientos.
+- Se conservan los movimientos antiguos disponibles. Solo se registran cambios confirmados en el guardado principal.
+- Edición exclusiva para Windows y macOS.
+
+[Publicación 9.2.25](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.25-desktop)
+
 ## 9.2.24 de escritorio
 
 - Se retira la conexión directa a OneDrive y la sincronización entre dispositivos en escritorio.

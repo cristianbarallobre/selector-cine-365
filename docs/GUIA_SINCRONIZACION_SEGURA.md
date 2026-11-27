@@ -1,6 +1,6 @@
 # Guardado y recuperación de Selector Cine 365
 
-Windows y macOS 9.2.24.
+Windows y macOS 9.2.25.
 
 ## Guardado principal y copia opcional
 
@@ -15,6 +15,10 @@ Exporta un JSON desde **Mis listas → Copia de seguridad**. En el equipo de des
 ## Resolver fallos de guardado
 
 Si el guardado local no está confirmado, reintenta o exporta un JSON de emergencia. Desde 9.2.20 se intenta conservar un borrador recuperable de las ediciones antes del guardado principal. En Mis listas → Mantenimiento → Exportar registro de diagnóstico puedes exportar el registro técnico local.
+
+## Historial de actividad
+
+Consulta las modificaciones confirmadas desde **Mis listas → Guardado y copia adicional → Actividad reciente, historial y copias de recuperación**. Hay búsqueda, filtros y páginas de 20 movimientos, con un máximo de 10.000 registros locales. Las exportaciones JSON ordinarias y la copia adicional no contienen el historial técnico local.
 
 ## Volver a una copia anterior
 
