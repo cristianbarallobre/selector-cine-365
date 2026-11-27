@@ -29,7 +29,7 @@ assert.equal(ctx.cinePlatformStamp({},true).textContent,'?');
 assert.match(ctx.cinePlatformStamp({date:new Date().toISOString()}).textContent,/Comprobado/);
 const help=page.slice(page.indexOf('<section id="view-instructions"'),page.indexOf('</section>',page.indexOf('<section id="view-instructions"')));
 for(const state of ['fresh','stale','error','unknown'])assert.ok(help.includes('data-status="'+state+'"'));
-assert.match(help,/24 h o más/);assert.match(help,/no sincroniza ni combina bibliotecas/);
+assert.match(help,/24 h o más/);assert.match(help,/Descubrir<\/strong>, explora títulos, filtra por género,/);assert.match(help,/no sincroniza ni combina bibliotecas/);
 assert.match(page,/el\.appendChild\(cinePlatformStamp\(r\)\)/);
 const detail=fs.readFileSync('lab_discover_windows.html','utf8');
 assert.match(detail,/cinePlatformStamp\(\{date:m\.providers_checked_at/);
