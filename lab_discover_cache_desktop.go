@@ -157,11 +157,15 @@ func (c *labCatalogCache) record(id int) (labDetailRecord,bool) {
 }
 func (c *labCatalogCache) remember(id int,rec labDetailRecord,identity string) {
  if id<=0||len(rec.Data)==0{return}
- c.mu.Lock();defer c.mu.Unlock()
+ rec=c.mergeLibraryAvailability(id,rec)
+ c.mu.Lock()
+ rec=cineKeepNewerDetailAvailability(id,rec,c.disk.Items[labID(id)])
  rec.LastUsedAt=time.Now().Unix()
  c.disk.Items[labID(id)]=rec
  if identity!=""{c.disk.Resolved[identity]=id}
  c.scheduleFlushLocked()
+ c.mu.Unlock()
+ c.publishLibraryAvailability(id,rec)
 }
 func (c *labCatalogCache) scheduleFlushLocked(){
  c.dirty=true
@@ -339,6 +343,9 @@ func (c *labCatalogCache) runWorker() {
    if j.ID==0 {j.ID,err=labResolveMovie(ctx,j,key)}
    if err==nil {
     prior,_:=c.record(j.ID)
+    merged:=c.mergeLibraryAvailability(j.ID,prior)
+    if merged.ProvidersAt>prior.ProvidersAt&&len(prior.Data)>0{c.remember(j.ID,merged,"")}
+    prior=merged
     if labNeedsRefresh(prior){
      var fresh labDetailRecord
      fresh,err=labFreshDetail(ctx,j.ID,key,prior)
@@ -431,6 +438,13 @@ func (a *runningApp) labDetailFromCache(w http.ResponseWriter,r *http.Request) {
  if err!=nil||id<=0||id>999999999{http.Error(w,"ID de película no válido",400);return}
  c:=a.labCatalog()
  if prior,ok:=c.record(id);ok{
+  merged:=c.mergeLibraryAvailability(id,prior)
+  if merged.ProvidersAt>prior.ProvidersAt{c.remember(id,merged,"");prior=merged}
+  // A local-only poll must not enqueue new TMDB work.
+  if r.URL.Query().Get("cached")=="1"{
+   data:=labDetailWithAvailabilityDate(prior);data["cache_state"]="guardada"
+   _=json.NewEncoder(w).Encode(data);return
+  }
   legacyDirector,_:=prior.Data["director"].(string)
   if labCastWithoutIDs(prior.Data)||(legacyDirector!=""&&prior.Data["directors"]==nil){
    if key:=a.platforms.getKey();key!=""{
@@ -443,19 +457,21 @@ func (a *runningApp) labDetailFromCache(w http.ResponseWriter,r *http.Request) {
   }
   data:=labDetailWithAvailabilityDate(prior)
   data["cache_state"]="guardada"
-  if labNeedsRefresh(prior){
+  if labNeedsRefresh(prior)&&a.platforms.getKey()!=""{
    data["cache_state"]="actualizando"
-   if a.platforms.getKey()!=""{c.queueRefresh(id)}
+   c.queueRefresh(id)
   }
   _=json.NewEncoder(w).Encode(data)
   return
  }
+ if r.URL.Query().Get("cached")=="1"{http.Error(w,"Ficha aún no disponible localmente",404);return}
  key:=a.platforms.getKey()
  if key==""{http.Error(w,"Conecta TMDB; esta ficha aún no está en caché.",412);return}
  ctx,cancel:=context.WithTimeout(r.Context(),25*time.Second);defer cancel()
- rec,err:=labFreshDetail(ctx,id,key,labDetailRecord{})
+ rec,err:=labFreshDetail(ctx,id,key,c.mergeLibraryAvailability(id,labDetailRecord{}))
  if err!=nil{http.Error(w,err.Error(),502);return}
  c.remember(id,rec,"")
+ if latest,ok:=c.record(id);ok{rec=latest}
  data:=labDetailWithAvailabilityDate(rec);data["cache_state"]="descargada"
  _=json.NewEncoder(w).Encode(data)
 }
@@ -508,7 +524,7 @@ func (a *runningApp) labCacheLibraryDetails(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "La Biblioteca tiene otra identificación manual para este título", http.StatusConflict)
 		return
 	}
-	if prior := p.cache[key]; prior.TMDBID == request.ID && prior.MetadataVersion >= 3 && prior.Date >= result.Date {
+	if prior := p.cache[key]; prior.TMDBID == request.ID && prior.MetadataVersion >= 3 && cineKeepLibraryProvider(prior,result) {
 		if prior.PosterPath == "" && result.PosterPath != "" {
 			prior.PosterPath = result.PosterPath
 			p.putCachedLocked(key, prior)

@@ -931,6 +931,54 @@ function labUpdateDetailAddState(){
  button.title=already?'Esta película ya está en la lista seleccionada.':'Añadir la película como pendiente a esta lista.';
 }
 $('labAddList').addEventListener('change',labUpdateDetailAddState);
+function labRenderAvailability(m){
+ const service=[];
+ for(const [kind,label] of [['subscriptions','Suscripción'],['free','Gratis'],['ads','Con anuncios'],['rent','Alquiler'],['buy','Compra']]){
+  for(const provider of m[kind]||[])service.push(label+': '+provider);
+ }
+ labTextChips($('labDetailPlatforms'),service.length?service:[m.availability_note||'Sin disponibilidad registrada para España']);
+ $('labDetailAvailabilityAge').replaceChildren();
+ if(typeof cinePlatformStamp==='function')$('labDetailAvailabilityAge').appendChild(cinePlatformStamp({date:m.providers_checked_at,state:m.availability_note&&!m.providers_checked_at?'error':''}));
+ const at=Date.parse(m.providers_checked_at||'');
+ if(!Number.isFinite(at))return;
+ let changed=false;
+ for(const [key,r] of platformData){
+  if(Number(r.tmdb_id)!==Number(m.id))continue;
+  const old=Date.parse(r.date||'');
+  if((r.state==='ok'||r.state==='no-data')&&Number.isFinite(old)&&old>=at)continue;
+  const next={...r,state:'ok',date:m.providers_checked_at,film_url:m.watch_link||'',note:''};
+  for(const kind of ['subscriptions','free','ads','rent','buy'])next[kind]=Array.isArray(m[kind])?m[kind]:[];
+  platformData.set(key,next);changed=true;
+ }
+ if(changed)scheduledPlatformRender();
+}
+function labWatchLink(m){
+ const links=$('labDetailLinks');
+ const old=links.querySelector('[data-platform-link]');
+ if(old)old.remove();
+ if(typeof m.watch_link!=='string'||!/^https:\/\//.test(m.watch_link))return;
+ const a=document.createElement('a');a.href=m.watch_link;a.target='_blank';a.rel='noopener noreferrer';a.textContent='↗ Ver plataformas';a.dataset.platformLink='1';links.appendChild(a);
+}
+// Only poll the local cache while the stale detail is still open; a poll
+// never initiates a new network request to TMDB.
+function labPollAvailability(id,serial,attempt=0){
+ if(attempt>=12||serial!==labDetailSerial||labDetailOverlay.hidden||!platformConfigured)return;
+ setTimeout(async()=>{
+  if(serial!==labDetailSerial||labDetailOverlay.hidden||!labCurrentMovie)return;
+  try{
+   const fresh=await labGet('/api/discover/detail?id='+encodeURIComponent(id)+'&cached=1');
+   if(serial!==labDetailSerial||labDetailOverlay.hidden||!labCurrentMovie)return;
+   const at=Date.parse(fresh.providers_checked_at||''),old=Date.parse(labCurrentMovie.providers_checked_at||'');
+   if(Number.isFinite(at)&&(!Number.isFinite(old)||at>old)){
+    for(const kind of ['subscriptions','free','ads','rent','buy','watch_link','availability_note','providers_checked_at'])labCurrentMovie[kind]=fresh[kind];
+    labRenderAvailability(labCurrentMovie);labWatchLink(labCurrentMovie);
+    $('labDetailNote').textContent='Disponibilidad actualizada · Puedes añadirla a una lista.';
+    return;
+   }
+  }catch(e){/* Cached data remains available. */}
+  labPollAvailability(id,serial,attempt+1);
+ },2500);
+}
 async function labShowDetail(id,record=true){
  labHideActorPhoto();
  labEnterDetail('movie',id,record);
@@ -952,14 +1000,9 @@ async function labShowDetail(id,record=true){
   $('labDetailOverview').textContent=m.overview||'TMDB no tiene una sinopsis en español para esta película.';
   labTextChips($('labDetailGenres'),m.genres||[]);
   labRenderCredits(m);
-  const service=[];
-  for(const [kind,label] of [['subscriptions','Suscripción'],['free','Gratis'],['ads','Con anuncios'],['rent','Alquiler'],['buy','Compra']]){
-   for(const provider of m[kind]||[])service.push(label+': '+provider);
-  }
-  labTextChips($('labDetailPlatforms'),service.length?service:[m.availability_note||'Sin disponibilidad registrada para España']);
-  if(typeof cinePlatformStamp==='function')$('labDetailAvailabilityAge').appendChild(cinePlatformStamp({date:m.providers_checked_at,state:m.availability_note&&!m.providers_checked_at?'error':''}));
+  labRenderAvailability(m);
   if(m.trailer)labDetailLink('▶ Ver tráiler',m.trailer);
-  if(m.watch_link)labDetailLink('↗ Ver plataformas',m.watch_link);
+  labWatchLink(m);
   labDetailLink('↗ Ficha de TMDB',m.tmdb_url);
   labDetailLink('↗ Buscar en FilmAffinity España',labFilmAffinitySearchURL(m));
   if(m.poster_path){
@@ -974,6 +1017,7 @@ async function labShowDetail(id,record=true){
     m.cache_state==='guardada'?'Ficha cargada de la caché local.':
     'Ficha descargada y guardada localmente.';
   $('labDetailNote').textContent=note+' Puedes añadirla a una lista.';
+  if(m.cache_state==='actualizando'&&(!m.providers_checked_at||Date.now()-Date.parse(m.providers_checked_at)>=86400000))labPollAvailability(id,serial);
   labDetailOverlay.scrollTop=labDetailCurrent()?.kind==='movie'?labDetailCurrent().scrollTop||0:0;
  }catch(e){if(serial===labDetailSerial){$('labDetailTitle').textContent='Ficha no disponible';$('labDetailNote').textContent='⚠ '+e.message;}}
 }
