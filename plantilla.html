@@ -884,7 +884,7 @@ function cinePlatformStamp(entry,compact=false){
 function cinePaintPlatformStamp(node){
  const status=cinePlatformStatus({date:node.dataset.platformDate,state:node.dataset.platformState});
  node.dataset.status=status.status;
- node.textContent=node.dataset.compact==='1'?({fresh:'✓',stale:'',error:'!',unknown:'?'}[status.status]||'?'):status.text;
+ node.textContent=node.dataset.compact==='1'?({fresh:'✓',stale:'',error:'!',unknown:'?'}[status.status]??'?'):status.text;
  node.title=status.text+' · '+status.title;
  if(node.dataset.compact==='1')node.setAttribute('aria-label',node.title);
 }
