@@ -2,7 +2,7 @@ package main
 
 import (
  "fmt"
- "reflect"
+ "slices"
  "sort"
  "strings"
  "time"
@@ -58,12 +58,12 @@ func activityDiff(before,after libraryState)[]activityEntry{
   var x,y []string
   for _,k:=range ao{if _,ok:=b[k];ok{x=append(x,k)}}
   for _,k:=range bo{if _,ok:=a[k];ok{y=append(y,k)}}
-  if !reflect.DeepEqual(x,y){add("order","",l.Name,"Orden de películas modificado")}
+  if !slices.Equal(x,y){add("order","",l.Name,"Orden de películas modificado")}
  }
  var x,y []string
  for _,l:=range before.Lists{if _,ok:=next[l.ID];ok{x=append(x,l.ID)}}
  for _,l:=range after.Lists{if _,ok:=old[l.ID];ok{y=append(y,l.ID)}}
- if !reflect.DeepEqual(x,y){add("order","","Orden de listas modificado")}
+ if !slices.Equal(x,y){add("order","","","Orden de listas modificado")}
  reactions:=map[string]bool{}
  for k:=range before.Reactions{reactions[k]=true};for k:=range after.Reactions{reactions[k]=true}
  for _,k:=range activityKeys(reactions){
@@ -73,10 +73,10 @@ func activityDiff(before,after libraryState)[]activityEntry{
  }
  var af,bf []string
  if before.FavoritesOrder!=nil{af=before.FavoritesOrder.Keys};if after.FavoritesOrder!=nil{bf=after.FavoritesOrder.Keys}
- if !reflect.DeepEqual(af,bf){add("order","","Orden de Favoritos modificado")}
+ if !slices.Equal(af,bf){add("order","","Favoritos","Orden de Favoritos modificado")}
  ids:=map[string]bool{};for k:=range before.TMDBOverrides{ids[k]=true};for k:=range after.TMDBOverrides{ids[k]=true}
  for _,k:=range activityKeys(ids){a,b:=before.TMDBOverrides[k],after.TMDBOverrides[k];if a!=b{add("identity",strings.ReplaceAll(k,"|"," · "),"","TMDB: "+identityActivity(a)+" → "+identityActivity(b))}}
- if !reflect.DeepEqual(before.ComparisonIDs,after.ComparisonIDs)&& (len(before.ComparisonIDs)>0||len(after.ComparisonIDs)>0){add("comparison","","","Selección de listas comparadas modificada")}
+ if !slices.Equal(before.ComparisonIDs,after.ComparisonIDs)&& (len(before.ComparisonIDs)>0||len(after.ComparisonIDs)>0){add("comparison","","","Selección de listas comparadas modificada")}
  if omitted>0{events=append(events,activityEntry{At:now,Kind:"bulk",Detail:fmt.Sprintf("%d modificaciones adicionales en el mismo guardado",omitted)})}
  return events
 }
