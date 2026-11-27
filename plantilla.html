@@ -29,6 +29,18 @@ main{max-width:1250px;padding:28px 28px 32px;margin:auto}.header{display:flex;al
 .mini-ctrl:hover{background:#34445a}.mini-ctrl:disabled{opacity:.45}
 .film-item{padding:0;gap:0;overflow:hidden;flex:0 0 auto;min-height:65px}.film-toggle{display:flex;flex:1;min-width:0;align-items:center;gap:11px;text-align:left;padding:12px 8px 12px 12px;border:0;color:inherit;background:transparent;cursor:pointer}.film-toggle:hover{background:#ffffff05}.film-toggle .film-main{min-width:0;flex:1}.film-item .pill{margin:0 8px 0 2px}
 .film-platforms{font-size:12px;color:#f0cc85;line-height:1.4;display:block;margin-top:5px;font-weight:600;white-space:normal}
+.cine-platform-stamp{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;line-height:1.35;white-space:nowrap;color:#aabed0}
+.cine-platform-stamp[data-status="fresh"]{color:#a6dcb9}
+.cine-platform-stamp[data-status="stale"]{color:#f3cb85}
+.cine-platform-stamp[data-status="error"]{color:#efb7a7}
+.cine-platform-stamp[data-status="fresh"]::before{content:'✓'}
+.cine-platform-stamp[data-status="stale"]::before{content:'◷'}
+.film-platforms{display:flex;align-items:center;gap:7px;min-width:0;max-width:100%}
+.film-platforms .cine-platform-names{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.film-platforms .cine-platform-stamp{flex:0 0 auto}
+@media(max-width:980px){.film-platforms{gap:5px}.cine-platform-stamp{font-size:9px}}
+.platform-detail .cine-platform-stamp,.lab-detail-platforms .cine-platform-stamp{font-size:11px}
+.lab-detail-availability-age{margin:5px 0 8px}
 .film-platforms.muted{color:#8fa1b5;font-weight:500}.film-platforms.offline{color:#c4b7a4}.film-platforms strong{color:#f8db9b}
 .wherelink{display:flex;justify-content:center;align-items:center;flex-shrink:0;margin:7px 8px 7px 0;min-width:31px;height:34px;color:#f0c16d;font-weight:800;border:1px solid #5c523e;border-radius:9px;text-decoration:none;background:#2d2b2b}.wherelink:hover{background:#433a2e}
 .platform-progress{color:#c9b47f;font-size:12px;min-height:17px;margin:5px 0 10px;display:flex;align-items:center;justify-content:space-between;gap:6px}
@@ -493,7 +505,7 @@ h2{font-size:19px}
   </nav>
   <div id="view-library" class="columns view">
     <section class="panel" aria-label="Biblioteca de películas">
-      <div class="panel-heading"><h2>Tu colección</h2><div class="platform-controls"><button class="mini-ctrl" id="platformSetup" type="button">⚙ Conectar TMDB</button><button class="mini-ctrl" id="platformRefresh" type="button" title="Actualizar disponibilidad en España">↻ Actualizar</button><span class="count-tag" id="libraryCount">365 películas</span></div></div>
+      <div class="panel-heading"><h2>Tu colección</h2><div class="platform-controls"><button class="mini-ctrl" id="platformSetup" type="button">⚙ Conectar TMDB</button><button class="mini-ctrl" id="platformRefresh" type="button" title="Volver a consultar todas las plataformas de la lista activa, incluso si los datos son recientes">↻ Actualizar</button><span class="count-tag" id="libraryCount">365 películas</span></div></div>
       <input type="search" id="search" class="search" placeholder="Buscar película..." autocomplete="off" aria-label="Buscar película">
 <div class="search-scope" role="group" aria-label="Ámbito de búsqueda"><button type="button" class="search-scope-btn active" data-search-scope="current" aria-pressed="true">Lista actual</button><button type="button" class="search-scope-btn" data-search-scope="all" aria-pressed="false">Todas las listas</button></div>
       <div class="filters" role="group" aria-label="Filtrar películas">
@@ -835,6 +847,29 @@ function platformBadge(f){
  if(r.buy?.length){return ['Solo compra digital','offline'];}
  return ['Sin streaming registrado','muted'];
 }
+function cinePlatformStatus(entry,now=Date.now()){
+ const raw=entry?.date||entry?.providers_checked_at||'';
+ const at=Date.parse(raw);
+ if(entry?.state==='error')return {status:'error',text:'No se pudo comprobar',title:'La última consulta de disponibilidad falló.'};
+ if(entry?.state==='not-found')return {status:'unknown',text:'Sin identificar',title:'Identifica la película en TMDB antes de consultar sus plataformas.'};
+ if(entry?.state==='partial'||!Number.isFinite(at)||at>now+300000)return {status:'unknown',text:'Sin comprobar',title:'No hay una comprobación válida de plataformas guardada.'};
+ const elapsed=Math.max(0,now-at),minutes=Math.floor(elapsed/60000),hours=Math.floor(elapsed/3600000),days=Math.floor(elapsed/86400000);
+ const age=minutes===0?'ahora':hours===0?'hace '+minutes+' min':days===0?'hace '+hours+' h':'hace '+days+(days===1?' día':' días');
+ const stale=elapsed>=86400000;
+ return {status:stale?'stale':'fresh',text:(stale?'Pendiente · ':'Comprobado ')+age,title:'Última comprobación correcta: '+new Date(at).toLocaleString('es-ES')+(stale?' · Datos guardados; pendientes de actualizar.':'')};
+}
+function cinePlatformAge(entry){return cinePlatformStatus(entry).title;}
+function cinePlatformStamp(entry){
+ const node=document.createElement('span');node.className='cine-platform-stamp';
+ node.dataset.platformDate=entry?.date||entry?.providers_checked_at||'';
+ node.dataset.platformState=entry?.state||'';
+ cinePaintPlatformStamp(node);return node;
+}
+function cinePaintPlatformStamp(node){
+ const status=cinePlatformStatus({date:node.dataset.platformDate,state:node.dataset.platformState});
+ node.dataset.status=status.status;node.textContent=status.text;node.title=status.title;
+}
+function cineUpdatePlatformStamps(){for(const node of document.querySelectorAll('.cine-platform-stamp'))cinePaintPlatformStamp(node);}
 function platformTitle(r){if(!r)return 'Consulta disponibilidad en JustWatch';let msg=[];
  if(r.subscriptions?.length)msg.push('Suscripción: '+r.subscriptions.join(', '));
  if(r.free?.length)msg.push('Gratis: '+r.free.join(', '));
@@ -853,7 +888,7 @@ function updateChoicePlatforms(){
  const el=$('resultPlatforms');el.replaceChildren();if(!chosen)return;
  const r=platformData.get(providerKey(chosen));const x=platformBadge(chosen);
    updateChoiceMedia();
- const label=document.createElement('span');label.textContent=x[0]+'  ';el.appendChild(label);
+ const label=document.createElement('span');label.textContent=x[0]+'  ';el.appendChild(label);if(platformConfigured||r)el.appendChild(cinePlatformStamp(r));
  const link=document.createElement('a');link.href=(r?.film_url||jwSearch(chosen));link.target='_blank';link.rel='noopener noreferrer';link.textContent='Ver dónde →';el.appendChild(link);
 }
 function scheduledPlatformRender(){if(scheduledPlatformRender.timer)return;scheduledPlatformRender.timer=setTimeout(()=>{scheduledPlatformRender.timer=null;renderList();updateChoicePlatforms();updatePlatformChoices();updateListPlatformOptions();renderStats();},260);}
@@ -1151,7 +1186,8 @@ function renderList(){
    membership.append(caption,nums,edit);meta.appendChild(membership);
 
    main.appendChild(meta);
-   const badge=document.createElement('span');badge.className='film-platforms';const [name,css]=platformBadge(f);if(css)badge.classList.add(css);badge.textContent=name;
+   const badge=document.createElement('span');badge.className='film-platforms';const [name,css]=platformBadge(f);if(css)badge.classList.add(css);const platformNames=document.createElement('span');platformNames.className='cine-platform-names';platformNames.textContent=name;badge.appendChild(platformNames);
+   if(platformConfigured||r)badge.appendChild(cinePlatformStamp(r));
    badge.title=platformTitle(r);main.appendChild(badge);
    togg.append(tick,poster,main);
    const pill=document.createElement('span');pill.className='pill';pill.textContent=f.checked?'Vista':'Pendiente';

@@ -48,5 +48,5 @@ $('extraBackupDisable').addEventListener('click',()=>{
 });
 setInterval(()=>{if(!document.hidden&&activeView==='collections'&&!extraBackupBusy)void cloudRefresh();},2500);
  const cineRefreshStalePlatforms=()=>{if(!document.hidden&&libraryReady&&platformConfigured&&!platformStatusUnavailable&&!platformActive&&activeView==='library'&&parsed.entries.some(f=>{const e=platformData.get(providerKey(f));return !!e&&cinePlatformExpired(e);}))void loadPlatforms(false,true);};
- setInterval(cineRefreshStalePlatforms,60000);
+ setInterval(()=>{cineUpdatePlatformStamps();cineRefreshStalePlatforms();},60000);
  setTimeout(cineRefreshStalePlatforms,5000);

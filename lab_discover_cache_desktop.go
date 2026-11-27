@@ -418,6 +418,13 @@ func labCastWithoutIDs(data map[string]any) bool {
  }
  return false
 }
+// The age belongs to the provider response, not the movie metadata.
+func labDetailWithAvailabilityDate(rec labDetailRecord) map[string]any {
+ data:=labCopyMap(rec.Data)
+ delete(data,"providers_checked_at")
+ if rec.ProvidersAt>0 {data["providers_checked_at"]=time.Unix(rec.ProvidersAt,0).UTC().Format(time.RFC3339)}
+ return data
+}
 func (a *runningApp) labDetailFromCache(w http.ResponseWriter,r *http.Request) {
  w.Header().Set("Content-Type","application/json; charset=utf-8")
  id,err:=strconv.Atoi(r.URL.Query().Get("id"))
@@ -434,7 +441,7 @@ func (a *runningApp) labDetailFromCache(w http.ResponseWriter,r *http.Request) {
     if err==nil{prior=fresh;c.remember(id,fresh,"")}
    }
   }
-  data:=labCopyMap(prior.Data)
+  data:=labDetailWithAvailabilityDate(prior)
   data["cache_state"]="guardada"
   if labNeedsRefresh(prior){
    data["cache_state"]="actualizando"
@@ -449,7 +456,7 @@ func (a *runningApp) labDetailFromCache(w http.ResponseWriter,r *http.Request) {
  rec,err:=labFreshDetail(ctx,id,key,labDetailRecord{})
  if err!=nil{http.Error(w,err.Error(),502);return}
  c.remember(id,rec,"")
- data:=labCopyMap(rec.Data);data["cache_state"]="descargada"
+ data:=labDetailWithAvailabilityDate(rec);data["cache_state"]="descargada"
  _=json.NewEncoder(w).Encode(data)
 }
 
