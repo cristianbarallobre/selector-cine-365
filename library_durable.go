@@ -98,9 +98,10 @@ func (a *runningApp) commitProtectedLibraryWithHistory(next libraryState, plan *
   s:=a.syncStore
   s.mu.Lock()
   defer s.mu.Unlock()
-  data,e:=json.Marshal(s.state);if e!=nil{return false,nil,e}
-  clone:=&desktopSyncStore{graphUploadVersion:s.graphUploadVersion}
-  if e=json.Unmarshal(data,&clone.state);e!=nil{return false,nil,e}
+  // Copy mutable containers directly instead of serializing all history
+  // merely to make a transactional working copy.
+  clone:=&desktopSyncStore{graphUploadVersion:s.graphUploadVersion,state:cloneLocalSyncState(s.state)}
+  var e error
   if history!=nil{
    clone.state.Activity=append([]activityEntry(nil),(*history)...)
    for i,j:=0,len(clone.state.Activity)-1;i<j;i,j=i+1,j-1{clone.state.Activity[i],clone.state.Activity[j]=clone.state.Activity[j],clone.state.Activity[i]}
@@ -166,4 +167,14 @@ func sameShareableLibrary(a,b libraryState) bool {
  a.ActiveID=""; b.ActiveID=""
  x,e:=json.Marshal(a); y,f:=json.Marshal(b)
  return e==nil&&f==nil&&bytes.Equal(x,y)
+}
+
+func cloneLocalSyncState(s syncDeviceState)syncDeviceState{
+ out:=s
+ out.Activity=append([]activityEntry(nil),s.Activity...)
+ out.History=append([]syncHistoryEntry(nil),s.History...)
+ out.Known=syncCopyMap(s.Known)
+ out.Revisions=make(map[string]syncRevision,len(s.Revisions))
+ for k,v:=range s.Revisions{v.Clock=syncCopyMap(v.Clock);out.Revisions[k]=v}
+ return out
 }

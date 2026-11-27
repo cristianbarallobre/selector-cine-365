@@ -8,6 +8,7 @@ import (
  "net/http"
  "os"
  "path/filepath"
+ "runtime"
  "strings"
 )
 
@@ -69,7 +70,9 @@ func (a *runningApp) serveLabMaintenance(w http.ResponseWriter,r *http.Request) 
  case http.MethodGet:
   daily,_:=labBackupCandidates(filepath.Join(root,"copias_automaticas"),labDailyBackupName)
   quick,_:=labBackupCandidates(filepath.Join(root,"copias_rapidas_lab"),labQuickBackupName)
+  var mem runtime.MemStats;runtime.ReadMemStats(&mem)
   info:=map[string]any{
+   "go_heap_bytes":mem.HeapAlloc,"go_reserved_bytes":mem.Sys,"go_workers":runtime.NumGoroutine(),
    "library_path":root,"cache_path":cacheRoot,
    "library":labLocalFileUsage(a.libraryPath),
    "tmdb_details":labLocalFileUsage(filepath.Join(cacheRoot,"tmdb_fichas_lab.json")),

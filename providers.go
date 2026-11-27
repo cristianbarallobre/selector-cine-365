@@ -26,7 +26,9 @@ import (
 var tmdbClient = &http.Client{Timeout: 15 * time.Second}
 
 type platformSettings struct {
-	Key string `json:"api_key"`
+	Key string `json:"api_key,omitempty"`
+ Protected []byte `json:"protected,omitempty"`
+ Keychain bool `json:"keychain,omitempty"`
 }
 type providerOffer struct {
 	Name string `json:"name"`
@@ -85,14 +87,8 @@ func newAvailabilityServer(base string, cacheDirs ...string) *availabilityServer
 		_ = copyLegacyCacheIfMissing(filepath.Join(base, "plataformas_cache.json"), p.cachePath, 12<<20)
 		_, _ = prunePosterCache(p.posterDir, appPosterMaxFiles, appPosterMaxBytes, appPosterMaxAge)
 	}
-	b, e := os.ReadFile(p.settingsPath)
-	if e == nil {
-		var s platformSettings
-		if json.Unmarshal(b, &s) == nil {
-			p.apiKey = s.Key
-		}
-	}
-	b, e = os.ReadFile(p.cachePath)
+	if key,e:=readTMDBKey(p.settingsPath);e==nil{p.apiKey=key}else if !os.IsNotExist(e){diagnosticError("tmdb","leer credencial local",e)}
+	b, e := os.ReadFile(p.cachePath)
 	if e == nil {
 		var c platformCache
 		if json.Unmarshal(b, &c) == nil && c.Entries != nil {
@@ -133,13 +129,7 @@ func (p *availabilityServer) saveKey(key string) error {
 	if err := os.MkdirAll(filepath.Dir(p.settingsPath), 0700); err != nil {
 		return err
 	}
-	b, e := json.Marshal(platformSettings{Key: key})
-	if e != nil {
-		return e
-	}
-	if e = replaceLibraryFile(p.settingsPath, b); e != nil {
-		return e
-	}
+	if e:=writeTMDBKey(p.settingsPath,key);e!=nil{return e}
 	p.apiKey = key
 	return nil
 }

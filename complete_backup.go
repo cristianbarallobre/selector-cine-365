@@ -77,6 +77,7 @@ func completeBackupHTML(page string)string{
 });`
  return strings.NewReplacer(
   old,next,
+  "Se sustituirán todas las listas actuales.","Se sustituirán todas las listas actuales y, si la copia contiene historial, se restaurará también.",
   "async function writeLibrary(payload){","async function writeLibrary(payload,complete=false){",
   "('/api/library',{method:'POST',headers,body:payload,cache:'no-store'},12000)","(complete?'/api/extra-backup/restore':'/api/library',{method:'POST',headers,body:payload,cache:'no-store'},12000)",
   "libraryBase=payload;","if(complete){const clean=JSON.parse(payload);delete clean.complete_backup_version;delete clean.activity;libraryBase=JSON.stringify(clean);}else libraryBase=payload;",

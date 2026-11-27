@@ -90,9 +90,10 @@ func(b *extraBackup) copy(a *runningApp){
  c,generation:=b.config,b.generation;b.busy=true;b.mu.Unlock()
  a.mu.Lock();data,err:=json.MarshalIndent(a.library,"","  ")
  var history []activityEntry
- if a.syncStore!=nil{history=a.syncStore.localActivity();data,err=json.MarshalIndent(completeLibraryBackup{libraryState:a.library,CompleteVersion:1,Activity:history},"","  ")}
+ hasHistory:=a.syncStore!=nil
+ if hasHistory{history=a.syncStore.localActivity();data,err=json.MarshalIndent(completeLibraryBackup{libraryState:a.library,CompleteVersion:1,Activity:history},"","  ")}
  a.mu.Unlock()
- if err==nil{if len(data)>libraryFileLimit{err=errors.New("la biblioteca excede el límite de copia")}else{err=b.write(c,data);if err==nil{err=b.writeActivity(c,history)}}}
+ if err==nil{if len(data)>libraryFileLimit{err=errors.New("la biblioteca excede el límite de copia")}else{err=b.write(c,data);if err==nil&&hasHistory{err=b.writeActivity(c,history)}}}
  b.mu.Lock();defer b.mu.Unlock()
  b.busy=false
  if b.config!=c{return}

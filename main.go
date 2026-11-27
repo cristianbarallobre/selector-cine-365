@@ -54,19 +54,28 @@ func appCacheRoot(dataDir string) string {
 		}
 		return dataDir
 	}
-	if !appIsLab || runtime.GOOS != "windows" {
+	if runtime.GOOS != "windows" {
 		return dataDir
 	}
 	root, err := os.UserCacheDir()
 	if err != nil || root == "" {
 		return dataDir
 	} // no bloquear la aplicación por un error de entorno
-	return filepath.Join(root, appDataDirectoryName, "cache_lab")
+	if appIsLab{return filepath.Join(root, appDataDirectoryName, "cache_lab")}
+	return filepath.Join(root, appDataDirectoryName, "cache")
 }
 
 const desktopFeatures = runtime.GOOS == "windows" || runtime.GOOS == "darwin"
 const protectedLibraryEnabled = appIsLab || desktopFeatures
 
+// Keep an existing WebView profile separate from disposable TMDB data.
+func appWindowProfile(dataDir string)string{
+ if runtime.GOOS=="windows"&&!appIsLab{
+  legacy:=filepath.Join(dataDir,"perfil_webview2_v7_3")
+  if info,e:=os.Stat(legacy);e==nil&&info.IsDir(){return legacy}
+ }
+ return filepath.Join(appCacheRoot(dataDir),"perfil_webview2_v7_3")
+}
 func getInitialState(savePath string) (string, error) {
 	defaultList, err := resources.ReadFile("lista_inicial.txt")
 	if err != nil {
@@ -372,7 +381,7 @@ func serve() error {
 	}()
 	url := "http://" + listener.Addr().String() + "/"
 	diagnosticEvent("INFO", "motor", "servidor local activo")
-	if err := launchVisualWindow(url, filepath.Join(appCacheRoot(filepath.Dir(savePath)), "perfil_webview2_v7_3"), app.stop, func() bool { return app.pageHeartbeat.Load() }); err != nil {
+	if err := launchVisualWindow(url, appWindowProfile(filepath.Dir(savePath)), app.stop, func() bool { return app.pageHeartbeat.Load() }); err != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 		server.Shutdown(ctx)
