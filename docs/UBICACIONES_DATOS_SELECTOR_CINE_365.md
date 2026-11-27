@@ -2,8 +2,8 @@
 
 | Sistema | Biblioteca | Caché y sesión |
 | --- | --- | --- |
-| Windows 9.2.19 | %APPDATA%\Selector_Cine_365\ | Cachés de la aplicación en su carpeta de datos de escritorio. Sesión OneDrive protegida por DPAPI |
-| macOS 9.2.19 | ~/Library/Application Support/Selector_Cine_365/ | ~/Library/Caches/Selector_Cine_365/. Sesión OneDrive en el llavero |
+| Windows 9.2.21 | %APPDATA%\Selector_Cine_365\ | Cachés de la aplicación en su carpeta de datos de escritorio. Sesión OneDrive protegida por DPAPI |
+| macOS 9.2.21 | ~/Library/Application Support/Selector_Cine_365/ | ~/Library/Caches/Selector_Cine_365/. Sesión OneDrive en el llavero |
 | Android estable | Almacenamiento privado de es.cine365.app.limpia | Las otras ediciones usan almacenamiento independiente |
 | OneDrive | Carpeta lógica Selector_Cine_365 cuando se usa Graph | Las copias y revisiones dependen de la configuración y la vinculación |
 
@@ -13,8 +13,12 @@ Los carteles y los datos de disponibilidad se pueden volver a descargar desde TM
 
 [Manual completo](MANUAL_COMPLETO_SELECTOR_CINE_365.md) · [Guía de recuperación](GUIA_SINCRONIZACION_SEGURA.md)
 
-## Registros de diagnóstico (escritorio 9.2.19)
+## Registros de diagnóstico (escritorio 9.2.21)
 
 - Windows: `%APPDATA%\Selector_Cine_365\logs`.
 - macOS: `~/Library/Application Support/Selector_Cine_365/logs`.
 - Exportación: Mis listas → Mantenimiento → Exportar registro de diagnóstico.
+
+## Puntuaciones IMDb (escritorio)
+
+La preferencia de uso personal se conserva en `imdb_ajustes.json` dentro de la carpeta de datos. `imdb_title_ratings.tsv.gz` e `imdb_ids.json` son cachés regenerables del equipo, no forman parte de las listas ni de las copias de OneDrive. Los borradores de guardado están en `sync_recuperacion`.

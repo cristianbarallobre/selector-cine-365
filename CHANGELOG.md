@@ -1,5 +1,21 @@
 # Historial de cambios — Selector Cine 365
 
+## 9.2.21 de escritorio
+
+- Cambiar de lista conserva la selección en el equipo, sin activar una subida a OneDrive si no cambian los datos compartidos.
+- Indicadores amarillos con reloj para operaciones pendientes y flecha circular para sincronización en curso.
+- Puntuaciones IMDb opcionales para uso individual, personal y no comercial: descarga local de la fuente oficial, actualización diaria, coincidencia por identificador exacto y alternativa TMDB. No se distribuye el dataset ni se sincroniza con OneDrive.
+
+[Publicación 9.2.21](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.21-desktop)
+
+## 9.2.20 de escritorio
+
+- Borrador persistente de la interfaz, tiempos límite para guardados y consultas, recuperación cuando falta la biblioteca principal y avisos de fallos de copias.
+- Biblioteca y revisiones guardadas juntas, huella de archivo para detectar cambios externos y retirada de borradores confirmados.
+- Conservación del historial de listas eliminadas sin el límite arbitrario de 1.000 registros.
+
+[Publicación 9.2.20](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.20-desktop)
+
 ## 9.2.19 de escritorio
 
 - Registro de diagnóstico local del motor y la ventana, con rotación y exportación desde Mantenimiento.

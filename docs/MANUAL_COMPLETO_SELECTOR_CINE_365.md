@@ -1,6 +1,6 @@
 # Manual de Selector Cine 365
 
-Windows y macOS 9.2.19. Android estable de la publicación v9.0.0.
+Windows y macOS 9.2.21. Android estable de la publicación v9.0.0.
 
 ## Instalar y proteger la biblioteca
 
@@ -10,7 +10,7 @@ Windows y macOS 9.2.19. Android estable de la publicación v9.0.0.
 4. Si Windows o Mac avisan sobre el editor, verifica primero que el archivo procede de la publicación oficial y comprueba su SHA-256. Los paquetes Mac llevan firma ad hoc y carecen de notarización.
 5. En Android instala la APK Limpia con el mismo identificador y la misma firma que tu instalación compatible. Para cambiar de edición, importa una copia JSON en la nueva.
 
-[Descargas de escritorio](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.19-desktop) · [APK oficial de Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0)
+[Descargas de escritorio](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.21-desktop) · [APK oficial de Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0)
 
 ## Biblioteca y listas
 
@@ -39,13 +39,21 @@ Al añadir una película desde Descubrir, Biblioteca reutiliza la ficha y el car
 
 Si la app ha elegido otra película, abre **Identificar película en TMDB** y pega su ID numérico o su enlace. Si los años difieren, verifica el título y pulsa **Guardar de todos modos** si la ficha es correcta. El año de tu lista se conserva. **Volver a búsqueda automática** retira la identificación manual.
 
+### Puntuaciones IMDb (escritorio, opcional)
+
+En **Mis listas → Mantenimiento → Puntuaciones IMDb**, confirma que los datos se utilizarán solo de forma individual, personal y no comercial. Cada equipo descarga la copia oficial de puntuaciones directamente y la comprueba antes de sustituir la anterior. La actualización se comprueba cada 24 horas mientras la app esté abierta; también puedes pulsar **Actualizar IMDb**. Si no existe coincidencia exacta o no se dispone de una copia válida, sigue apareciendo TMDB. Los listados de descubrimiento del catálogo siguen consultando las categorías de TMDB. La valoración personal no cambia. Las puntuaciones y sus identificadores se guardan en la caché regenerable, no en la biblioteca ni en OneDrive.
+
+[Condiciones de IMDb](https://help.imdb.com/article/imdb/general-information/can-i-use-imdb-data-in-my-software/G5JTRESSHJBBHTGX).
+
+Information courtesy of IMDb (https://www.imdb.com). Used with permission.
+
 ## Copias y OneDrive
 
 La biblioteca se guarda automáticamente en el equipo. Desde **Mis listas → Copia de seguridad** en escritorio o **Ajustes** en Android, exporta un JSON para conservar todas las listas. Una exportación TXT corresponde a la lista seleccionada.
 
 1. En escritorio abre **Mis listas → OneDrive y copias de seguridad → Conectar cuenta Microsoft**. Revisa los recuentos y confirma la primera vinculación.
 2. Pulsa **Sincronizar con la nube**, debajo del título, para enviar y recibir cambios. La ventana de progreso bloquea la edición hasta terminar.
-3. **Subida pendiente** indica que quedan cambios locales por enviar. **Recepción pendiente** indica que la app encontró cambios remotos por aplicar. **Recepción sin comprobar** indica que todavía no pudo verificar si hay cambios remotos.
+3. **Subida pendiente** indica que quedan cambios locales por enviar. **Recepción pendiente** indica que la app encontró cambios remotos por aplicar. **Recepción sin comprobar** indica que todavía no pudo verificar si hay cambios remotos. Los estados pendientes se destacan en amarillo con un reloj; una flecha circular indica actividad. Abrir otra lista no crea una subida pendiente por sí solo.
 4. Si surge un conflicto, revisa los cambios y elige qué estado conservar. Con una carpeta local de sincronización, usa **Mis listas → OneDrive y copias de seguridad → Sincronizar ahora**.
 
 Si una edición no se guardó por un conflicto local, carga la biblioteca guardada y repite solo el cambio que falte. Las copias de recuperación están en **Mis listas → OneDrive y copias de seguridad → Actividad reciente, historial y copias de recuperación**. Restaurar una copia sustituye la biblioteca completa. Las claves TMDB y la caché permanecen en cada dispositivo.
@@ -56,9 +64,9 @@ Si una edición no se guardó por un conflicto local, carga la biblioteca guarda
 
 La edición pública se identifica como **Beta 13.13 Limpia**. Tiene biblioteca, navegación táctil, estadísticas, sorteo, copias y sincronización mediante revisión manual. La edición Android 9.2.5 es una versión de pruebas para Android 8 o posterior. Se instala en paralelo con la estable. Una instalación de pruebas con firma distinta requiere reinstalar esa copia. [Descarga de Android 9.2.5](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.5-android).
 
-## Diagnóstico y cierre seguro (escritorio 9.2.18–9.2.19)
+## Diagnóstico y cierre seguro (escritorio 9.2.18–9.2.21)
 
-Si el guardado no se confirma, revisa los cambios pendientes, reintenta o exporta una copia JSON de emergencia. Es posible cerrar voluntariamente con advertencia de pérdida de cambios. En Mis listas → Mantenimiento → Exportar registro de diagnóstico puedes guardar los registros técnicos locales para revisar incidencias. No se envían automáticamente ni incluyen claves de acceso o contenido de listas.
+Desde 9.2.20 se conserva un borrador local de los cambios pendientes cuando puede escribirse; se ofrece recuperar copias válidas si falta o se daña la biblioteca principal. Si el guardado no se confirma, revisa los cambios pendientes, reintenta o exporta una copia JSON de emergencia. Es posible cerrar voluntariamente con advertencia de pérdida de cambios. En Mis listas → Mantenimiento → Exportar registro de diagnóstico puedes guardar los registros técnicos locales para revisar incidencias. No se envían automáticamente ni incluyen claves de acceso o contenido de listas.
 
 Los archivos originales se conservan en `logs` dentro de la carpeta de datos: `%APPDATA%/Selector_Cine_365/logs` en Windows y `~/Library/Application Support/Selector_Cine_365/logs` en macOS. El registro del motor y el de la ventana nativa de Windows rotan al alcanzar 2 MiB; se mantienen hasta dos copias anteriores por archivo.
 
