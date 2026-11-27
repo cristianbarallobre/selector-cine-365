@@ -9,7 +9,7 @@ import (
  "strings"
 )
 
-// discoverOneDriveFolder locates the same user-owned folder used by Android.
+// discoverOneDriveFolder locates the same user-owned folder used by other desktop installations.
 // This is the local OneDrive-client compatibility path, not a Graph login.
 // Never guess between several accounts: choosing the wrong root could fork sync.
 func discoverOneDriveFolder(home, platform string, getenv func(string) string) (string, error) {

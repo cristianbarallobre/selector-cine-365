@@ -290,7 +290,7 @@ func (a *runningApp) serveCloudHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		a.mu.Lock();a.syncPreviewToken="";a.mu.Unlock()
-        // Si hay un Android registrado, primero revisar: no publicar la
+        // Si hay otro equipo registrado, primero revisar: no publicar la
         // biblioteca local como una copia compartida por el simple hecho de conectar.
         if payload.Folder!="" && a.syncStore!=nil && !a.syncStore.isPaired(payload.Folder) && cloudHasDeviceSnapshots(payload.Folder) {
             respond(200,a.cloudDisplayStatus())
