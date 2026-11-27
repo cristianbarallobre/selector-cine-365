@@ -2,6 +2,9 @@
 set -euo pipefail
 : "$MAC_ARCH"
 : "$MAC_LABEL"
+version=$(sed -n 's/^const appVersion = "\(.*\)"$/\1/p' version.go)
+test -n "$version"
+build_number=${version//./}
 export CGO_ENABLED=1 GOOS=darwin GOARCH="$MAC_ARCH" MACOSX_DEPLOYMENT_TARGET=12.0
 if [ "$MAC_ARCH" = "arm64" ] && [ "$(uname -m)" = "x86_64" ]; then
   # Compilación cruzada: el test se ejecuta en la CPU Intel anfitriona.
@@ -19,7 +22,7 @@ if [ "$MAC_ARCH" = arm64 ]; then
 else
   file "$APP/Contents/MacOS/SelectorCine365" | grep -E 'x86_64|x86-64'
 fi
-cat > "$APP/Contents/Info.plist" <<'PLIST'
+cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
@@ -27,8 +30,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>CFBundleIdentifier</key><string>es.cristianbarallobre.selectorcine365</string>
   <key>CFBundleName</key><string>Selector Cine 365</string>
   <key>CFBundleDisplayName</key><string>Selector Cine 365</string>
-  <key>CFBundleShortVersionString</key><string>9.0.0-beta.13.1</string>
-  <key>CFBundleVersion</key><string>9016</string>
+  <key>CFBundleShortVersionString</key><string>${version}</string>
+  <key>CFBundleVersion</key><string>${build_number}</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>LSMinimumSystemVersion</key><string>12.0</string>
@@ -48,8 +51,8 @@ rm -rf dist/icon.iconset
 plutil -lint "$APP/Contents/Info.plist"
 codesign --force --deep --sign - "$APP"
 codesign --verify --deep --strict --verbose=2 "$APP"
-cat > dist/LEEME_MAC.txt <<'NOTE'
-Selector Cine 365 v9 Beta 13.1 (Mac Apple Silicon / Intel)
+cat > dist/LEEME_MAC.txt <<NOTE
+Selector Cine 365 ${version} (Mac Apple Silicon / Intel)
 Autor: Cristian Barallobre Rúa
 https://github.com/cristianbarallobre/selector-cine-365
 
@@ -57,10 +60,11 @@ Mueve «Selector Cine 365.app» a Aplicaciones.
 La app no está notarizada por Apple ni firmada con Developer ID.
 Si macOS la bloquea, verifica la procedencia y usa Ajustes del Sistema
 → Privacidad y seguridad → Abrir igualmente.
-Datos: ~/Library/Application Support/AtlasDelCine/
+Datos: ~/Library/Application Support/Selector_Cine_365/
+Caché regenerable: ~/Library/Caches/Selector_Cine_365/
 NOTE
 (
   cd dist
-  zip -qry "Selector_Cine_365_Mac_${MAC_LABEL}_v9_BETA13_1.zip" 'Selector Cine 365.app' LEEME_MAC.txt
-  unzip -t "Selector_Cine_365_Mac_${MAC_LABEL}_v9_BETA13_1.zip" | tail -1
+  zip -qry "Selector_Cine_365_Mac_${MAC_LABEL}_${version}.zip" 'Selector Cine 365.app' LEEME_MAC.txt
+  unzip -t "Selector_Cine_365_Mac_${MAC_LABEL}_${version}.zip" | tail -1
 )

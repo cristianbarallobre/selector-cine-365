@@ -1,0 +1,71 @@
+name: Windows 9.1 · pruebas y ejecutable
+on:
+  push:
+    branches: [release/windows-9.1.0, publish/windows-9.1.0]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    if: github.ref == 'refs/heads/release/windows-9.1.0'
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.4'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Pruebas Windows estable
+        run: go test ./... -count=1
+      - name: Pruebas del canal experimental
+        run: go test -tags lab ./... -count=1
+      - name: Regresiones de interfaz y restauración
+        shell: pwsh
+        run: |
+          foreach ($test in Get-ChildItem scripts/test_lab*.cjs) {
+            node $test.FullName
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          node scripts/test_windows_restore.cjs
+      - name: Compilar Windows x64
+        env:
+          CGO_ENABLED: '0'
+        run: go build -trimpath -ldflags="-H windowsgui -s -w" -o Selector_Cine_365_Windows_9.1.0.exe .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Selector_Cine_365_Windows_9.1.0
+          path: Selector_Cine_365_Windows_9.1.0.exe
+          if-no-files-found: error
+  prerelease:
+    needs: windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Selector_Cine_365_Windows_9.1.0
+      - name: Publicar candidato para verificación
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          sha256sum Selector_Cine_365_Windows_9.1.0.exe > SHA256SUMS.txt
+          gh release create v9.1.0-windows --target "$GITHUB_SHA" --prerelease --title "Selector Cine 365 · Windows 9.1.0" --notes "Versión para Windows x64. Incluye Descubrir, sorteo inteligente, filtros, favoritos y estadísticas; conserva la sección al cambiar de lista y los metadatos al restaurar copias. Mantiene los datos de Windows v9.0.0." Selector_Cine_365_Windows_9.1.0.exe SHA256SUMS.txt
+  publish-verified:
+    if: github.ref == 'refs/heads/publish/windows-9.1.0' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Promover la misma prerelease verificada
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          test "$(gh api "repos/$GH_REPO/commits/v9.1.0-windows" --jq .sha)" = "$GITHUB_SHA"
+          test "$(gh release view v9.1.0-windows --json isPrerelease --jq .isPrerelease)" = true
+          gh release edit v9.1.0-windows --prerelease=false --latest

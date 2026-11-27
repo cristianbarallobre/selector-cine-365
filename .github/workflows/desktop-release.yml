@@ -1,0 +1,127 @@
+name: Escritorio 9.2.29 · macOS y Windows
+on:
+  push:
+    branches: [integration/desktop-9.2.29-main, main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: selector-cine-desktop-9.2.29-integration
+  cancel-in-progress: true
+jobs:
+  windows:
+    if: github.ref == 'refs/heads/integration/desktop-9.2.29-main' || github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.27.4' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: Leer versión común
+        shell: pwsh
+        run: |
+          if ((Get-Content version.go -Raw) -notmatch 'const appVersion = "([^"]+)"') { throw "Falta appVersion" }
+          "CINE_VERSION=$($Matches[1])" >> $env:GITHUB_ENV
+      - run: go test -count=1 ./...
+      - run: go test -tags lab -count=1 ./...
+      - name: Comprobar interfaz Windows en dos tamaños adicionales
+        shell: pwsh
+        run: |
+          foreach ($size in @("960,820","960,680","1600,1000")) {
+            $env:CINE_TEST_VIEWPORT=$size
+            go test -count=1 -run '^TestLabStartupHeadlessBrowser$' .
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
+      - run: go test -run '^$' -bench 'Benchmark(LibraryActivity|DesktopCommit|ProviderCacheHit)' -benchmem -benchtime=100ms
+      - shell: pwsh
+        run: |
+          $failed = @()
+          foreach ($f in @(Get-ChildItem scripts/test_lab*.cjs) + @(Get-Item scripts/test_beta14_desktop_dropdowns.cjs,scripts/test_windows_restore.cjs,scripts/test_txt_import_creates_list_beta14.cjs,scripts/test_desktop_save_recovery.cjs,scripts/test_durable_save.cjs,scripts/test_local_modules.cjs)) {
+            Write-Host "Prueba: $($f.Name)"
+            node $f.FullName
+            if ($LASTEXITCODE) { $failed += $f.Name }
+          }
+          if ($failed.Count -gt 0) { throw "Pruebas fallidas: $($failed -join ', ')" }
+      - run: go build -trimpath -ldflags="-H windowsgui -s -w" -o "Selector_Cine_365_Windows_${env:CINE_VERSION}.exe" .
+        env: { CGO_ENABLED: '0' }
+      - uses: actions/upload-artifact@v4
+        with: { name: Windows, path: Selector_Cine_365_Windows_*.exe, if-no-files-found: error }
+  mac:
+    if: github.ref == 'refs/heads/integration/desktop-9.2.29-main' || github.ref == 'refs/heads/main'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {runner: macos-latest, arch: arm64, label: Apple_Silicon}
+          - {runner: macos-15-intel, arch: amd64, label: Intel}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    env:
+      MAC_ARCH: ${{ matrix.arch }}
+      MAC_LABEL: ${{ matrix.label }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.26.11' } # Compatible con macOS 12.
+      - name: Llavero temporal para las pruebas de credenciales TMDB
+        run: |
+          kc="$RUNNER_TEMP/cine-tests.keychain-db"
+          pw=$(uuidgen)
+          security create-keychain -p "$pw" "$kc"
+          security unlock-keychain -p "$pw" "$kc"
+          security default-keychain -d user -s "$kc"
+          security list-keychains -d user -s "$kc"
+      - run: bash scripts/build_macos_app.sh
+        env: { CC: clang }
+      - run: go test -run '^$' -bench 'Benchmark(LibraryActivity|DesktopCommit|ProviderCacheHit)' -benchmem -benchtime=100ms
+      - run: bash scripts/test_macos_package.sh dist/Selector_Cine_365_Mac_${MAC_LABEL}_*.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Mac_${{ matrix.label }}
+          path: dist/Selector_Cine_365_Mac_*.zip
+          if-no-files-found: error
+
+  manuals:
+    if: github.ref == 'refs/heads/integration/desktop-9.2.29-main' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar conversores de documentación
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends pandoc libreoffice-writer fonts-liberation poppler-utils
+      - run: bash scripts/build_desktop_manuals.sh "$RUNNER_TEMP/cine-manuals"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Manuals
+          path: |
+            ${{ runner.temp }}/cine-manuals/*.docx
+            ${{ runner.temp }}/cine-manuals/*.pdf
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Manual_Previews
+          path: ${{ runner.temp }}/cine-manuals/previews/*.png
+          if-no-files-found: error
+  publish:
+    needs: [windows, mac, manuals]
+    if: github.ref == 'refs/heads/integration/desktop-9.2.29-main' || (github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/download-artifact@v4
+        with: { path: "${{ runner.temp }}/cine-artifacts" }
+      - name: Integrar y publicar únicamente tras las pruebas
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: '20'
+          ARTIFACT_ROOT: ${{ runner.temp }}/cine-artifacts
+        run: bash scripts/publish_desktop_9_2_29.sh

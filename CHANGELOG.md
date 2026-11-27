@@ -1,5 +1,39 @@
 # Historial de cambios — Selector Cine 365
 
+## 9.2.29 de escritorio
+
+- Protección del origen HTTP local y bloqueo de conexiones de la interfaz a orígenes ajenos.
+- Reparación conservadora de copias adicionales, recuperación del historial exacto desde copias verificadas y ausencia de escrituras adicionales por navegación.
+- Disponibilidad TMDB coherente por ID entre Biblioteca y Descubrir; refresco de fichas abiertas desde caché.
+- Pruebas de fallos de almacenamiento y manuales actualizados.
+
+[Publicación 9.2.29](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.29-desktop)
+
+## 9.2.28 (candidata de escritorio)
+
+- Indicadores minimalistas de disponibilidad en Biblioteca y antigüedad visible en Sorteo y fichas.
+- Ayuda del interrogante revisada y manuales actualizados.
+- Conserva las comprobaciones automáticas y manuales de plataformas.
+
+Cambios incorporados en 9.2.29; la candidata pública no se publicó como estable.
+
+## 9.2.27 (pruebas)
+
+- Primera versión del indicador de última comprobación, con fecha exacta y distinción entre datos antiguos, errores y datos sin consultar.
+
+## 9.2.26 de escritorio
+
+- Historial de actividad separado del archivo principal, con referencia de integridad, respaldo local y recuperación protegida.
+- Exportación y restauración conjunta de biblioteca e historial; copia adicional actual, anterior y hasta 14 diarias. Las copias anteriores sin historial siguen siendo compatibles.
+- Retirada del motor y de los controles de conexión a cuentas externas: solo guardado local y carpeta adicional opcional.
+- Disponibilidad TMDB con actualización en segundo plano, caducidad de 24 horas, conservación del último dato válido y control de saturación de consultas.
+- Credenciales TMDB protegidas mediante DPAPI en Windows y llavero en macOS. Separación de caché regenerable en Windows.
+- Mantenimiento: uso de disco, memoria del motor, historial y copias; limpieza opcional de archivos de caché antiguos con duplicado idéntico.
+- Pruebas automatizadas de guardado, restauración, caché, interfaz en diferentes tamaños y compilación para Windows, macOS Intel y macOS Apple Silicon.
+- Uso personal: sin firma comercial ni notarización de Apple; los paquetes Mac conservan la firma ad hoc técnica.
+
+Cambios de la candidata 9.2.26 incorporados a la 9.2.28.
+
 ## 9.2.25 de escritorio
 
 - Historial de actividad local con hasta 10.000 movimientos: altas y bajas de películas, cambios de estado, listas, favoritos, valoraciones, orden, identificaciones y restauración.

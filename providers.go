@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -25,7 +26,9 @@ import (
 var tmdbClient = &http.Client{Timeout: 15 * time.Second}
 
 type platformSettings struct {
-	Key string `json:"api_key"`
+	Key string `json:"api_key,omitempty"`
+ Protected []byte `json:"protected,omitempty"`
+ Keychain bool `json:"keychain,omitempty"`
 }
 type providerOffer struct {
 	Name string `json:"name"`
@@ -56,32 +59,48 @@ type platformCache struct {
 	Entries map[string]providerResult `json:"entries"`
 }
 type availabilityServer struct {
-	mu            sync.Mutex
-	settingsPath  string
-	cachePath     string
-	posterDir     string
-	overridesPath string
-	overrides     map[string]int
-	identityPath  string
-	identities    map[string]filmIdentityRecord
-	apiKey        string
-	cache         map[string]providerResult
+	mu               sync.Mutex
+	settingsPath     string
+	cachePath        string
+	posterDir        string
+	legacyPosterDir  string
+	overridesPath    string
+	overrides        map[string]int
+	identityPath     string
+	identities       map[string]filmIdentityRecord
+	apiKey           string
+	cache            map[string]providerResult
+	cacheDirty       bool
+	identityDirty    bool
+	cacheTimer       *time.Timer
+	overrideRevision map[string]uint64
 }
 
-func newAvailabilityServer(base string) *availabilityServer {
-	p := &availabilityServer{settingsPath: filepath.Join(base, "plataformas_ajustes.json"), cachePath: filepath.Join(base, "plataformas_cache.json"), posterDir: filepath.Join(base, "carteles"), overridesPath: filepath.Join(base, "identificaciones_tmdb.json"), overrides: make(map[string]int), identityPath: filepath.Join(base, "identidades_cine.json"), identities: make(map[string]filmIdentityRecord), cache: make(map[string]providerResult)}
-	b, e := os.ReadFile(p.settingsPath)
-	if e == nil {
-		var s platformSettings
-		if json.Unmarshal(b, &s) == nil {
-			p.apiKey = s.Key
-		}
+func newAvailabilityServer(base string, cacheDirs ...string) *availabilityServer {
+	cacheDir := base
+	if len(cacheDirs) > 0 && cacheDirs[0] != "" {
+		cacheDir = cacheDirs[0]
 	}
-	b, e = os.ReadFile(p.cachePath)
+	p := &availabilityServer{settingsPath: filepath.Join(base, "plataformas_ajustes.json"), cachePath: filepath.Join(cacheDir, "plataformas_cache.json"), posterDir: filepath.Join(cacheDir, "carteles"), overridesPath: filepath.Join(base, "identificaciones_tmdb.json"), overrides: make(map[string]int), identityPath: filepath.Join(base, "identidades_cine.json"), identities: make(map[string]filmIdentityRecord), cache: make(map[string]providerResult)}
+	if cacheDir != base {
+		p.legacyPosterDir = filepath.Join(base, "carteles")
+		_ = copyLegacyCacheIfMissing(filepath.Join(base, "plataformas_cache.json"), p.cachePath, 12<<20)
+		_, _ = prunePosterCache(p.posterDir, appPosterMaxFiles, appPosterMaxBytes, appPosterMaxAge)
+	}
+	if key,e:=readTMDBKey(p.settingsPath);e==nil{p.apiKey=key}else if !os.IsNotExist(e){diagnosticError("tmdb","leer credencial local",e)}
+	b, e := os.ReadFile(p.cachePath)
 	if e == nil {
 		var c platformCache
 		if json.Unmarshal(b, &c) == nil && c.Entries != nil {
 			p.cache = c.Entries
+			if trimmed, err := p.encodeProviderCacheLocked(); err == nil {
+				// Mantener la copia local ajustada incluso antes de recibir nuevas fichas.
+				if len(trimmed) < len(b) {
+					if err := os.MkdirAll(filepath.Dir(p.cachePath), 0700); err == nil {
+						_ = replaceLibraryFile(p.cachePath, trimmed)
+					}
+				}
+			}
 		}
 	}
 	if data, e := os.ReadFile(p.overridesPath); e == nil {
@@ -110,54 +129,79 @@ func (p *availabilityServer) saveKey(key string) error {
 	if err := os.MkdirAll(filepath.Dir(p.settingsPath), 0700); err != nil {
 		return err
 	}
-	b, e := json.Marshal(platformSettings{Key: key})
-	if e != nil {
-		return e
-	}
-	if e = os.WriteFile(p.settingsPath, b, 0600); e != nil {
-		return e
-	}
+	if e:=writeTMDBKey(p.settingsPath,key);e!=nil{return e}
 	p.apiKey = key
 	return nil
 }
+
 // No se comparten las credenciales API; solo IDs confirmados por el usuario.
 func (p *availabilityServer) manualOverrides() map[string]int {
- p.mu.Lock();defer p.mu.Unlock()
- result:=make(map[string]int,len(p.overrides))
- for k,id:=range p.overrides{result[k]=id}
- return result
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	result := make(map[string]int, len(p.overrides))
+	for k, id := range p.overrides {
+		result[k] = id
+	}
+	return result
 }
 func (p *availabilityServer) importManualOverrides(mappings map[string]int) error {
- if len(mappings)>10000{return errors.New("Demasiadas identificaciones")}
- p.mu.Lock();defer p.mu.Unlock()
- next:=make(map[string]int,len(p.overrides)+len(mappings))
- for k,id:=range p.overrides{next[k]=id}
- changed:=false
- for key,id:=range mappings {
-  if len(key)<3||len(key)>275||!strings.Contains(key,"|")||id<0||id>999999999{return errors.New("Identificación TMDB incorrecta")}
-  old,exists:=next[key]
-  if id==0{
-   if exists{delete(next,key);changed=true}
-   if _,ok:=p.identities[key];ok{changed=true};if _,ok:=p.cache[key];ok{changed=true}
-   delete(p.identities,key);delete(p.cache,key)
-  }else if !exists||old!=id{
-   next[key]=id;changed=true
-   p.identities[key]=filmIdentityRecord{TMDBID:id,State:"ok",Updated:time.Now().Format(time.RFC3339)}
-   delete(p.cache,key)
-  }
- }
- if !changed{return nil}
- bytes,e:=json.MarshalIndent(next,"","  ");if e!=nil{return e}
- if e=os.MkdirAll(filepath.Dir(p.overridesPath),0700);e!=nil{return e}
- temp:=p.overridesPath+".tmp"
- if e=os.WriteFile(temp,bytes,0600);e!=nil{return e}
- if e=os.Rename(temp,p.overridesPath);e!=nil{return e}
- p.overrides=next
- p.saveIdentityCacheLocked()
- if cacheBytes,e:=json.Marshal(platformCache{Entries:p.cache});e==nil{
-  _=os.WriteFile(p.cachePath,cacheBytes,0600)
- }
- return nil
+	if len(mappings) > 10000 {
+		return errors.New("Demasiadas identificaciones")
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	next := make(map[string]int, len(p.overrides)+len(mappings))
+	for k, id := range p.overrides {
+		next[k] = id
+	}
+	changed := make(map[string]int)
+	for key, id := range mappings {
+		if len(key) < 3 || len(key) > 275 || !strings.Contains(key, "|") || id < 0 || id > 999999999 {
+			return errors.New("Identificación TMDB incorrecta")
+		}
+		old, exists := next[key]
+		if id == 0 {
+			_, hasIdentity := p.identities[key]
+			_, hasAvailability := p.cache[key]
+			if exists || hasIdentity || hasAvailability {
+				delete(next, key)
+				changed[key] = 0
+			}
+		} else if !exists || old != id {
+			next[key] = id
+			changed[key] = id
+		}
+	}
+	if len(changed) == 0 {
+		return nil
+	}
+	bytes, e := json.MarshalIndent(next, "", "  ")
+	if e != nil {
+		return e
+	}
+	if e = os.MkdirAll(filepath.Dir(p.overridesPath), 0700); e != nil {
+		return e
+	}
+	if e = replaceLibraryFile(p.overridesPath, bytes); e != nil {
+		return e
+	}
+	p.overrides = next
+	stamp := time.Now().Format(time.RFC3339)
+	for key, id := range changed {
+		p.bumpOverrideRevisionLocked(key)
+		if id == 0 {
+			delete(p.identities, key)
+		} else {
+			p.identities[key] = filmIdentityRecord{TMDBID: id, State: "ok", Updated: stamp}
+		}
+		if id == 0 || p.cache[key].TMDBID != id {
+			delete(p.cache, key)
+		}
+	}
+	p.identityDirty = true
+	p.cacheDirty = true
+	p.flushProviderCacheLocked()
+	return nil
 }
 func (p *availabilityServer) getCached(k string, force bool) (providerResult, bool) {
 	if force {
@@ -169,40 +213,151 @@ func (p *availabilityServer) getCached(k string, force bool) (providerResult, bo
 	if !ok {
 		return r, false
 	}
-	// Sin caducidad automática: solo se descarga una ficha nueva o se pulsa Actualizar.
-    if r.MetadataVersion < 3{return providerResult{},false}
-    return r,true
+	if manual := p.overrides[k]; manual > 0 && manual != r.TMDBID {
+		return providerResult{}, false
+	}
+	// Los datos se conservan para uso offline; la consulta comprueba su caducidad.
+	if r.MetadataVersion < 3 {
+		return providerResult{}, false
+	}
+	return r, true
 }
-func (p *availabilityServer) cachedFailure(k,reason string) providerResult {
-    r:=newAvailabilityError(reason)
-    r.Date=time.Now().Format(time.RFC3339)
-    r.MetadataVersion=3
-    p.putCached(k,r)
-    return r
+func (p *availabilityServer) bumpOverrideRevisionLocked(key string) {
+	if p.overrideRevision == nil {
+		p.overrideRevision = make(map[string]uint64)
+	}
+	p.overrideRevision[key]++
 }
 func (p *availabilityServer) cachedEntries() map[string]providerResult {
-    p.mu.Lock();defer p.mu.Unlock()
-    result:=make(map[string]providerResult,len(p.cache))
-    for k,v:=range p.cache{result[k]=v}
-    return result
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	result := make(map[string]providerResult, len(p.cache))
+	for k, v := range p.cache {
+		if manual := p.overrides[k]; manual > 0 && manual != v.TMDBID {
+			continue
+		}
+		result[k] = v
+	}
+	return result
+}
+
+// Mantener un catálogo acotado. Las identificaciones confirmadas viven en
+// identidades_cine.json, separado de esta caché regenerable.
+func (p *availabilityServer) encodeProviderCacheLocked() ([]byte, error) {
+	const maxEntries = 3200
+	const maxJSONBytes = 10 << 20
+	data, err := json.Marshal(platformCache{Entries: p.cache})
+	if err != nil || (len(p.cache) <= maxEntries && len(data) <= maxJSONBytes) {
+		return data, err
+	}
+	type entry struct {
+		key  string
+		date time.Time
+	}
+	rows := make([]entry, 0, len(p.cache))
+	for key, record := range p.cache {
+		date, _ := time.Parse(time.RFC3339, record.Date)
+		rows = append(rows, entry{key, date})
+	}
+	sort.Slice(rows, func(i, j int) bool {
+		if rows[i].date.Equal(rows[j].date) {
+			return rows[i].key < rows[j].key
+		}
+		return rows[i].date.Before(rows[j].date)
+	})
+	size := len(data)
+	for _, row := range rows {
+		if len(p.cache) <= maxEntries && size <= maxJSONBytes {
+			break
+		}
+		key, _ := json.Marshal(row.key)
+		record, _ := json.Marshal(p.cache[row.key])
+		size -= len(key) + len(record) + 1 // Un separador adicional puede sobrar.
+		delete(p.cache, row.key)
+	}
+	return json.Marshal(platformCache{Entries: p.cache})
 }
 func (p *availabilityServer) putCached(k string, r providerResult) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.cache[k] = r
-	if r.TMDBID > 0 {
-		p.identities[k] = filmIdentityRecord{TMDBID: r.TMDBID, State: "ok", Updated: time.Now().Format(time.RFC3339)}
-		p.saveIdentityCacheLocked()
+	p.putCachedLocked(k, r)
+}
+
+func (p *availabilityServer) finishAvailability(key string, revision uint64, result providerResult) providerResult {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.overrideRevision[key] != revision {
+		if current, ok := p.cache[key]; ok && current.MetadataVersion >= 3 && (p.overrides[key] == 0 || p.overrides[key] == current.TMDBID) {
+			return current
+		}
+		return providerResult{State: "superseded"}
 	}
-	b, e := json.Marshal(platformCache{Entries: p.cache})
-	if e != nil {
+	if prior := p.cache[key]; prior.TMDBID > 0 && (prior.State=="ok"||prior.State=="no-data") &&
+       (p.overrides[key]==0||p.overrides[key]==prior.TMDBID) && (result.TMDBID==0||result.TMDBID==prior.TMDBID) && (result.State=="error"||result.State=="not-found") {return prior}
+	if prior := p.cache[key]; prior.TMDBID > 0 && prior.PosterPath != "" &&
+		(p.overrides[key] == 0 || p.overrides[key] == prior.TMDBID) {
+		if result.TMDBID == 0 && (result.State == "error" || result.State == "not-found") {
+			return prior
+		}
+		if result.TMDBID == prior.TMDBID && result.PosterPath == "" {
+			result.PosterPath = prior.PosterPath
+		}
+        if result.TMDBID==prior.TMDBID&&result.Note!=""&&result.Runtime==0{
+         result.Runtime=prior.Runtime;result.Director=prior.Director;result.Genres=prior.Genres;result.Countries=prior.Countries
+         if result.VoteCount==0{result.VoteAverage=prior.VoteAverage;result.VoteCount=prior.VoteCount}
+         if result.Title==""{result.Title=prior.Title}
+        }
+	}
+	p.putCachedLocked(key, result)
+	return result
+}
+
+func (p *availabilityServer) putCachedLocked(k string, r providerResult) {
+	p.cache[k] = r
+	p.cacheDirty = true
+	if r.TMDBID > 0 {
+		if p.identities == nil {
+			p.identities = make(map[string]filmIdentityRecord)
+		}
+		p.identities[k] = filmIdentityRecord{TMDBID: r.TMDBID, State: "ok", Updated: time.Now().Format(time.RFC3339)}
+		p.identityDirty = true
+	}
+	if p.cacheTimer == nil {
+		p.cacheTimer = time.AfterFunc(3*time.Second, p.flushProviderCache)
+	}
+}
+
+func (p *availabilityServer) flushProviderCache() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.flushProviderCacheLocked()
+}
+
+func (p *availabilityServer) flushProviderCacheLocked() {
+	if p.cacheTimer != nil {
+		p.cacheTimer.Stop()
+		p.cacheTimer = nil
+	}
+	if p.identityDirty {
+		if err := p.saveIdentityCacheLocked(); err != nil {
+			logDiagnostic("Caché de identificaciones pendiente: " + err.Error())
+		}
+	}
+	if !p.cacheDirty || p.cachePath == "" {
 		return
 	}
-	_ = os.MkdirAll(filepath.Dir(p.cachePath), 0700)
-	tmp := p.cachePath + ".tmp"
-	if os.WriteFile(tmp, b, 0600) == nil {
-		_ = os.Rename(tmp, p.cachePath)
+	data, err := p.encodeProviderCacheLocked()
+	if err == nil {
+		err = os.MkdirAll(filepath.Dir(p.cachePath), 0700)
 	}
+	if err == nil {
+		err = replaceLibraryFile(p.cachePath, data)
+	}
+	if err != nil {
+		logDiagnostic("Caché de disponibilidad pendiente: " + err.Error())
+		return
+	}
+	p.cacheDirty = false
 }
 
 // A confirmed TMDB ID takes precedence over fuzzy title matches. Keys include
@@ -246,6 +401,7 @@ func (p *availabilityServer) saveOverride(title string, year, id int) error {
 		_ = os.Remove(temp)
 	}
 	p.overrides = next
+	p.bumpOverrideRevisionLocked(key)
 	if id > 0 {
 		p.identities[key] = filmIdentityRecord{TMDBID: id, State: "ok", Updated: time.Now().Format(time.RFC3339)}
 	} else {
@@ -255,9 +411,8 @@ func (p *availabilityServer) saveOverride(title string, year, id int) error {
 	delete(p.cache, key)
 	// Invalidating on disk too prevents a stale result if the app exits before
 	// the next lookup writes a fresh entry.
-	if b, err := json.Marshal(platformCache{Entries: p.cache}); err == nil {
-		_ = os.WriteFile(p.cachePath, b, 0600)
-	}
+	p.cacheDirty = true
+	p.flushProviderCacheLocked()
 	return nil
 }
 
@@ -299,7 +454,12 @@ func titleSearchVariants(title string) []string {
 }
 
 func newAvailabilityError(s string) providerResult { return providerResult{State: "error", Note: s} }
-func requestTMDB(ctx context.Context, path string, params url.Values, key string, v any) error {
+func requestTMDB(ctx context.Context, path string, params url.Values, key string, v any) (resultErr error) {
+	started := time.Now()
+	release,err:=acquireTMDBRequest(ctx,tmdbClient)
+	if err!=nil{return err}
+	defer release()
+	defer func() { if resultErr != nil { diagnosticEvent("WARN", "tmdb", fmt.Sprintf("consulta fallida cause=%s ms=%d", diagnosticErrorKind(resultErr), time.Since(started).Milliseconds())) } }()
 	if !strings.HasPrefix(key, "eyJ") && !strings.Contains(key, ".") {
 		params.Set("api_key", key)
 	}
@@ -314,13 +474,15 @@ func requestTMDB(ctx context.Context, path string, params url.Values, key string
 	}
 	res, e := tmdbClient.Do(req)
 	if e != nil {
-		return fmt.Errorf("Conexión no disponible: %w", e)
+		return fmt.Errorf("Conexión TMDB no disponible: %s", diagnosticErrorKind(e))
 	}
 	defer res.Body.Close()
+	if res.StatusCode != 200 { diagnosticEvent("WARN", "tmdb", fmt.Sprintf("TMDB status=%d", res.StatusCode)) }
 	if res.StatusCode == 401 || res.StatusCode == 403 {
 		return errors.New("Clave TMDB incorrecta o sin autorización")
 	}
 	if res.StatusCode == 429 {
+		deferTMDBRequests(tmdbClient,res.Header.Get("Retry-After"))
 		return errors.New("Límite temporal de TMDB. Prueba a actualizar más tarde")
 	}
 	if res.StatusCode != 200 {
@@ -433,9 +595,28 @@ func names(a []struct {
 	return ret
 }
 func (p *availabilityServer) fetchFilm(ctx context.Context, title string, year int, force bool) providerResult {
+	return p.fetchFilmWithID(ctx, title, year, force, 0)
+}
+
+func providerCacheExpired(r providerResult, now time.Time) bool {
+ at,err:=time.Parse(time.RFC3339,r.Date)
+ if err!=nil{return true}
+ ttl:=24*time.Hour
+ if r.State=="error"{ttl=15*time.Minute}
+ return !now.Before(at.Add(ttl))
+}
+func (p *availabilityServer) fetchFilmWithID(ctx context.Context, title string, year int, force bool, preferredID int) providerResult {
 	cacheKey := movieCacheKey(title, year)
-	if c, ok := p.getCached(cacheKey, force); ok {
-		return c
+	p.mu.Lock()
+	id, revision := p.overrides[cacheKey], p.overrideRevision[cacheKey]
+	p.mu.Unlock()
+	if id > 0 {
+		preferredID = id
+	}
+	finish := func(result providerResult) providerResult { return p.finishAvailability(cacheKey, revision, result) }
+	if c, ok := p.getCached(cacheKey, force); ok && (preferredID == 0 || c.State == "error" || c.TMDBID == preferredID) {
+        if !providerCacheExpired(c,time.Now()) || p.getKey()=="" {return c}
+        if c.TMDBID>0 {preferredID=c.TMDBID}
 	}
 	apiKey := p.getKey()
 	if apiKey == "" {
@@ -453,7 +634,10 @@ func (p *availabilityServer) fetchFilm(ctx context.Context, title string, year i
 	var found struct {
 		Results []movie `json:"results"`
 	}
-	id, matched := p.overrideFor(title, year), ""
+	matched := ""
+	if id == 0 {
+		id = preferredID
+	}
 	if id == 0 {
 		// First try the full title, then its likely shorter/original aliases.
 		for _, query := range titleSearchVariants(title) {
@@ -462,7 +646,10 @@ func (p *availabilityServer) fetchFilm(ctx context.Context, title string, year i
 			}
 			params := url.Values{"language": {"es-ES"}, "query": {query}, "include_adult": {"false"}}
 			if err := requestTMDB(ctx, "/search/movie", params, apiKey, &search); err != nil {
-				return p.cachedFailure(cacheKey,err.Error())
+				r := newAvailabilityError(err.Error())
+				r.Date = time.Now().Format(time.RFC3339)
+				r.MetadataVersion = 3
+				return finish(r)
 			}
 			choices := make([]struct {
 				ID       int    `json:"id"`
@@ -487,8 +674,7 @@ func (p *availabilityServer) fetchFilm(ctx context.Context, title string, year i
 	}
 	if id == 0 {
 		r := providerResult{State: "not-found", Date: time.Now().Format(time.RFC3339), MetadataVersion: 3}
-		p.putCached(cacheKey, r)
-		return r
+		return finish(r)
 	}
 	type off struct {
 		Name string `json:"provider_name"`
@@ -564,8 +750,8 @@ func (p *availabilityServer) fetchFilm(ctx context.Context, title string, year i
 			}
 		}
 	} else {
-        // Conservar la ficha parcial y permitir actualización manual posterior.
-        r.Note = "Ficha parcial; pulsa Actualizar para reintentar los datos incompletos"
+		// Conservar la ficha parcial y permitir actualización manual posterior.
+		r.Note = "Ficha parcial; pulsa Actualizar para reintentar los datos incompletos"
 	}
 	if !validPosterPath(r.PosterPath) {
 		r.PosterPath = ""
@@ -573,9 +759,9 @@ func (p *availabilityServer) fetchFilm(ctx context.Context, title string, year i
 	if e := requestTMDB(ctx, "/movie/"+strconv.Itoa(id)+"/watch/providers", url.Values{}, apiKey, &all); e != nil {
 		r.State = "error"
 		r.Note = e.Error()
-        p.putCached(cacheKey,r)
-		return r
+		return finish(r)
 	}
+	r.Date = time.Now().Format(time.RFC3339)
 	es, ok := all.Results["ES"]
 	r.FilmURL = es.Link
 	if !ok {
@@ -598,8 +784,7 @@ func (p *availabilityServer) fetchFilm(ctx context.Context, title string, year i
 		r.Rent = convert(es.Rent)
 		r.Buy = convert(es.Buy)
 	}
-	p.putCached(cacheKey, r)
-	return r
+	return finish(r)
 }
 func (a *runningApp) servePlatformHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -608,22 +793,35 @@ func (a *runningApp) servePlatformHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch r.URL.Path {
-    case "/api/platforms/overrides":
-        if r.Method!="GET"{http.Error(w,"Método no permitido",405);return}
-        _=json.NewEncoder(w).Encode(map[string]any{"overrides":a.platforms.manualOverrides()})
-    case "/api/platforms/overrides/import":
-        if r.Method!="POST"{http.Error(w,"Método no permitido",405);return}
-        var payload struct{Overrides map[string]int `json:"overrides"`}
-        if e:=json.NewDecoder(http.MaxBytesReader(w,r.Body,1<<20)).Decode(&payload);e!=nil{
-            http.Error(w,"Identificaciones inválidas",400);return
-        }
-        if e:=a.platforms.importManualOverrides(payload.Overrides);e!=nil{
-            http.Error(w,e.Error(),400);return
-        }
-        _=json.NewEncoder(w).Encode(map[string]bool{"saved":true})
-    case "/api/platforms/cache":
-        if r.Method!="GET"{http.Error(w,"Método no permitido",405);return}
-        _=json.NewEncoder(w).Encode(map[string]any{"entries":a.platforms.cachedEntries()})
+	case "/api/platforms/overrides":
+		if r.Method != "GET" {
+			http.Error(w, "Método no permitido", 405)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"overrides": a.platforms.manualOverrides()})
+	case "/api/platforms/overrides/import":
+		if r.Method != "POST" {
+			http.Error(w, "Método no permitido", 405)
+			return
+		}
+		var payload struct {
+			Overrides map[string]int `json:"overrides"`
+		}
+		if e := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&payload); e != nil {
+			http.Error(w, "Identificaciones inválidas", 400)
+			return
+		}
+		if e := a.platforms.importManualOverrides(payload.Overrides); e != nil {
+			http.Error(w, e.Error(), 400)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]bool{"saved": true})
+	case "/api/platforms/cache":
+		if r.Method != "GET" {
+			http.Error(w, "Método no permitido", 405)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"entries": a.platforms.cachedEntries()})
 	case "/api/platforms/status":
 		if r.Method != "GET" {
 			http.Error(w, "Método no permitido", 405)
@@ -666,9 +864,10 @@ func (a *runningApp) servePlatformHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var body struct {
-			Title string `json:"title"`
-			Year  int    `json:"year"`
-			ID    int    `json:"id"`
+			Title              string `json:"title"`
+			Year               int    `json:"year"`
+			ID                 int    `json:"id"`
+			AcceptYearMismatch bool   `json:"accept_year_mismatch"`
 		}
 		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&body); err != nil {
 			http.Error(w, "JSON inválido", 400)
@@ -695,10 +894,10 @@ func (a *runningApp) servePlatformHTTP(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "El ID no corresponde a una película", 400)
 				return
 			}
-			if body.Year > 0 && yearFromDate(film.Released) > 0 {
-				delta := body.Year - yearFromDate(film.Released)
+			if year := yearFromDate(film.Released); body.Year > 0 && year > 0 && !body.AcceptYearMismatch {
+				delta := body.Year - year
 				if delta < -2 || delta > 2 {
-					http.Error(w, fmt.Sprintf("La película encontrada es de %d, no de %d", yearFromDate(film.Released), body.Year), 400)
+					_ = json.NewEncoder(w).Encode(map[string]any{"saved": false, "year_mismatch": year})
 					return
 				}
 			}
@@ -707,9 +906,6 @@ func (a *runningApp) servePlatformHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), 500)
 			return
 		}
-		if a.cloud != nil {
-			_ = a.cloud.backup()
-		}
 		_ = json.NewEncoder(w).Encode(map[string]bool{"saved": true})
 	case "/api/platforms/lookup":
 		if r.Method != "POST" {
@@ -717,22 +913,23 @@ func (a *runningApp) servePlatformHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var body struct {
-			Title string `json:"title"`
-			Year  int    `json:"year"`
-			Force bool   `json:"force"`
+			Title  string `json:"title"`
+			Year   int    `json:"year"`
+			Force  bool   `json:"force"`
+			TMDBID int    `json:"tmdb_id"`
 		}
 		if json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&body) != nil {
 			http.Error(w, "JSON inválido", 400)
 			return
 		}
 		body.Title = strings.TrimSpace(body.Title)
-		if body.Title == "" || len(body.Title) > 250 || body.Year < 0 || body.Year > 2200 {
+		if body.Title == "" || len(body.Title) > 250 || body.Year < 0 || body.Year > 2200 || body.TMDBID < 0 || body.TMDBID > 999999999 {
 			http.Error(w, "Película no válida", 400)
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 35*time.Second)
 		defer cancel()
-		result := a.platforms.fetchFilm(ctx, body.Title, body.Year, body.Force)
+		result := a.platforms.fetchFilmWithID(ctx, body.Title, body.Year, body.Force, body.TMDBID)
 		_ = json.NewEncoder(w).Encode(result)
 	default:
 		http.NotFound(w, r)
@@ -760,6 +957,30 @@ func (a *runningApp) servePosterHTTP(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write(b)
 		return
 	}
+	if desktopFeatures {
+		if data := a.discoveryImages.get(discoveryImageDir(a.libraryPath), filepath.Base(path)); len(data) > 0 {
+			w.Header().Set("Content-Type", discoveryImageType(data))
+			w.Header().Set("Cache-Control", "private, max-age=604800")
+			_, _ = w.Write(data)
+			return
+		}
+	}
+	// Copia bajo demanda el cartel de Roaming si existe; otra versión puede
+	// seguir usando ese directorio, por eso no se borra su copia.
+	if a.platforms.legacyPosterDir != "" {
+		old := filepath.Join(a.platforms.legacyPosterDir, strings.TrimPrefix(path, "/"))
+		if b, err := os.ReadFile(old); err == nil && len(b) > 100 && len(b) <= 1<<20 {
+			_ = os.MkdirAll(a.platforms.posterDir, 0700)
+			_ = os.WriteFile(file, b, 0600)
+			if protectedLibraryEnabled {
+				_, _ = prunePosterCache(a.platforms.posterDir, appPosterMaxFiles, appPosterMaxBytes, appPosterMaxAge)
+			}
+			w.Header().Set("Content-Type", mime.TypeByExtension(filepath.Ext(file)))
+			w.Header().Set("Cache-Control", "private, max-age=604800")
+			_, _ = w.Write(b)
+			return
+		}
+	}
 	ctx, cancel := context.WithTimeout(r.Context(), 12*time.Second)
 	defer cancel()
 	req, e := http.NewRequestWithContext(ctx, "GET", "https://image.tmdb.org/t/p/w92"+path, nil)
@@ -784,6 +1005,9 @@ func (a *runningApp) servePosterHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = os.MkdirAll(a.platforms.posterDir, 0700)
 	_ = os.WriteFile(file, body, 0600)
+	if protectedLibraryEnabled {
+		_, _ = prunePosterCache(a.platforms.posterDir, appPosterMaxFiles, appPosterMaxBytes, appPosterMaxAge)
+	}
 	w.Header().Set("Content-Type", mime.TypeByExtension(filepath.Ext(file)))
 	_, _ = w.Write(body)
 }

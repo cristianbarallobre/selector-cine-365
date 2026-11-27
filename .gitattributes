@@ -1,0 +1,4 @@
+# El HTML y el JavaScript se incrustan y se prueban con los mismos saltos de línea en Windows y en CI.
+/*.html text eol=lf
+/*.js text eol=lf
+/*.go text eol=lf

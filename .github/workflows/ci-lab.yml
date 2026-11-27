@@ -1,0 +1,110 @@
+name: LAB - pruebas y compilaciones independientes
+
+on:
+  push:
+    branches: [experimental]
+  workflow_dispatch:
+
+# JAMÁS crea releases, tags ni escribe en main.
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Windows LAB / regresión Go
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Probar comportamiento normal y rutas LAB
+        run: |
+          go test ./... -count=1
+          go test -tags lab ./... -run TestAppChannelIsolation -count=1
+          node scripts/test_beta14_desktop_dropdowns.cjs
+          node scripts/test_lab_discover_windows.cjs
+          node scripts/test_lab_smart_sort_windows.cjs
+          node scripts/test_lab_network_windows.cjs
+          node scripts/test_lab_visual_polish_windows.cjs
+          node scripts/test_lab_filters_windows.cjs
+          node scripts/test_lab_discover_fill_windows.cjs
+          node scripts/test_lab_discover_filters_windows.cjs
+          node scripts/test_lab_discover_add_windows.cjs
+          node scripts/test_lab_cast_collections_scroll_windows.cjs
+          node scripts/test_lab_person_windows.cjs
+          node scripts/test_lab_localization_maintenance_windows.cjs
+          node scripts/test_lab_person_sort_windows.cjs
+          node scripts/test_lab_actor_hover_windows.cjs
+          node scripts/test_lab_list_number_jump_windows.cjs
+          node scripts/test_lab_cross_page_reorder_windows.cjs
+          node scripts/test_lab_reactions_windows.cjs
+          node scripts/test_lab_favorites_statistics_windows.cjs
+          node scripts/test_lab_search_performance_windows.cjs
+          node scripts/test_lab_detail_history_windows.cjs
+          node scripts/test_lab_filmaffinity_windows.cjs
+          node scripts/test_lab_delete_list_confirm_windows.cjs
+      - name: Compilar Windows LAB (sin firma)
+        run: |
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -tags lab -trimpath -ldflags='-H windowsgui -s -w' -o Selector_Cine_365_LAB-02_15_Windows.exe .
+          test -s Selector_Cine_365_LAB-02_15_Windows.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Selector_Cine_365_LAB-02_15_Windows
+          path: Selector_Cine_365_LAB-02_15_Windows.exe
+          retention-days: 14
+          if-no-files-found: error
+
+
+  windows-native-tests:
+    name: Windows LAB / caché y precarga nativas
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - name: Probar TTL, persistencia, aislación y cola en Windows
+        shell: pwsh
+        run: |
+          go test -tags lab -run 'TestLab' -count=1 -v .
+
+
+  macos:
+    # Mac conserva su versión LAB anterior hasta aprobar la función de Windows.
+    if: github.event_name == 'workflow_dispatch'
+    name: macOS LAB (Intel y Apple Silicon)
+    runs-on: macos-15-intel
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            label: Intel
+            cc: clang
+          - arch: arm64
+            label: Apple_Silicon
+            cc: 'clang -arch arm64'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - name: Compilar app LAB con identificador diferente
+        env:
+          MAC_ARCH: ${{ matrix.arch }}
+          MAC_LABEL: ${{ matrix.label }}
+          CC: ${{ matrix.cc }}
+        run: bash scripts/build_macos_lab.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Selector_Cine_365_LAB-01_Mac_${{ matrix.label }}
+          path: dist/Selector_Cine_365_LAB_${{ matrix.label }}_01.zip
+          retention-days: 14
+          if-no-files-found: error
