@@ -1,11 +1,11 @@
 # Historial de cambios — Selector Cine 365
 
-## 9.2.21 de escritorio
+## 9.2.22 de escritorio
 
 - Cambiar de lista conserva la selección en el equipo, sin activar una subida a OneDrive si no cambian los datos compartidos.
 - Indicadores amarillos con reloj para operaciones pendientes y flecha circular para sincronización en curso.
 
-[Publicación 9.2.21](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.21-desktop)
+[Publicación 9.2.22](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.22-desktop)
 
 ## 9.2.20 de escritorio
 

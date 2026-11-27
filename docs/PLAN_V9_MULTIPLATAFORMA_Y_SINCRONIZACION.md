@@ -1,8 +1,8 @@
 # Estado de Selector Cine 365
 
-Windows y macOS 9.2.21 comparten el código Go y la interfaz web de escritorio. Las ventanas nativas usan WebView2 y WKWebView respectivamente. Android mantiene una interfaz táctil y un backend Java propios.
+Windows y macOS 9.2.22 comparten el código Go y la interfaz web de escritorio. Las ventanas nativas usan WebView2 y WKWebView respectivamente. Android mantiene una interfaz táctil y un backend Java propios.
 
-- **Escritorio vigente.** Biblioteca, búsqueda global, favoritos con orden manual, filtros, Descubrir, selección múltiple de plataformas, estadísticas y sincronización manual opcional con OneDrive. [Publicación 9.2.21](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.21-desktop)
+- **Escritorio vigente.** Biblioteca, búsqueda global, favoritos con orden manual, filtros, Descubrir, selección múltiple de plataformas, estadísticas y sincronización manual opcional con OneDrive. [Publicación 9.2.22](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.22-desktop)
 - **Android vigente.** APK Limpia de la publicación v9.0.0. [Descarga](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0)
 - **Android de pruebas.** La edición de pruebas 9.2.5 usa un paquete separado y requiere Android 8 o posterior. [Publicación de pruebas](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.5-android). No sustituye a la APK estable.
 
