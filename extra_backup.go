@@ -93,7 +93,7 @@ func(b *extraBackup) copy(a *runningApp){
  hasHistory:=a.syncStore!=nil
  if hasHistory{history=a.syncStore.localActivity();data,err=json.MarshalIndent(completeLibraryBackup{libraryState:a.library,CompleteVersion:1,Activity:history},"","  ")}
  a.mu.Unlock()
- if err==nil{if len(data)>libraryFileLimit{err=errors.New("la biblioteca excede el límite de copia")}else{err=b.write(c,data);if err==nil&&hasHistory{err=b.writeActivity(c,history)}}}
+ if err==nil{if len(data)>libraryFileLimit{err=errors.New("la biblioteca excede el límite de copia")}else{err=b.write(c,data);}}
  b.mu.Lock();defer b.mu.Unlock()
  b.busy=false
  if b.config!=c{return}
@@ -115,8 +115,7 @@ func(b *extraBackup) write(c extraBackupConfig,data []byte)error{
   info,err=os.Lstat(dir);if err!=nil||!info.IsDir()||info.Mode()&os.ModeSymlink!=0{return errors.New("carpeta de copia no segura")}
   real,e:=filepath.EvalSymlinks(dir);if e!=nil||!withinFolder(root,real)||withinFolder(source,real){return errors.New("destino de copia no seguro")}
  }
- var current libraryState
- if json.Unmarshal(data,&current)!=nil||validateLibrary(current)!=nil{return errors.New("biblioteca no válida")}
+ if _,_,err:=decodeRecoveryBackup(data);err!=nil{return errors.New("biblioteca no válida")}
  target:=filepath.Join(dir,"colecciones.json")
  previous:=filepath.Join(dir,"colecciones_anterior.json")
  for _,name:=range []string{target,previous}{
@@ -125,27 +124,20 @@ func(b *extraBackup) write(c extraBackupConfig,data []byte)error{
  old,err:=readRecoveryFile(target)
  if err==nil{
   if bytes.Equal(old,data){return nil}
-  var prior libraryState
-  if json.Unmarshal(old,&prior)!=nil||validateLibrary(prior)!=nil{return errors.New("la copia anterior no es válida; no se ha sobrescrito")}
+  if _,_,err:=decodeRecoveryBackup(old);err!=nil{return errors.New("la copia anterior no es válida; no se ha sobrescrito")}
   if err=replaceLibraryFile(previous,old);err!=nil{return err}
    daily:=filepath.Join(dir,"copia_"+time.Now().UTC().Format("2006-01-02")+".json")
    if _,e:=os.Lstat(daily);os.IsNotExist(e){if e=replaceLibraryFile(daily,old);e!=nil{return e}}else if e!=nil{return e}
    entries,e:=os.ReadDir(dir);if e!=nil{return e}
    var names []string
    for _,entry:=range entries{if entry.Type().IsRegular()&&strings.HasPrefix(entry.Name(),"copia_")&&labDailyBackupName.MatchString(strings.TrimPrefix(entry.Name(),"copia_")){names=append(names,entry.Name())}}
-   for len(names)>14 {if e=os.Remove(filepath.Join(dir,names[0]));e!=nil{return e};names=names[1:]}
+   var bytes int64;kept:=0
+   for i:=len(names)-1;i>=0;i--{file:=filepath.Join(dir,names[i]);info,e:=os.Lstat(file);if e!=nil||!info.Mode().IsRegular(){continue};if kept>0&&(kept>=14||bytes+info.Size()>512<<20){if e=os.Remove(file);e!=nil{return e};continue};kept++;bytes+=info.Size()}
  }else if !os.IsNotExist(err){return err}
  if err=replaceLibraryFile(target,data);err!=nil{return err}
  actual,err:=readRecoveryFile(target)
  if err!=nil||!bytes.Equal(actual,data){return errors.New("no se pudo verificar la copia adicional")}
  return nil
-}
-func(b *extraBackup) writeActivity(c extraBackupConfig,events []activityEntry)error{
- path:=filepath.Join(filepath.Dir(b.target(c)),"historial_actividad.json")
- if info,e:=os.Lstat(path);e==nil{if !info.Mode().IsRegular()||info.Mode()&os.ModeSymlink!=0{return errors.New("archivo de historial no seguro")}}else if !os.IsNotExist(e){return e}
- data,e:=json.MarshalIndent(struct{Version int `json:"version"`; Events []activityEntry `json:"events"`}{1,events},"","  ");if e!=nil{return e}
- if prior,e:=os.ReadFile(path);e==nil&&bytes.Equal(prior,data){return nil}
- return replaceLibraryFile(path,data)
 }
 func(b *extraBackup) finish(a *runningApp,limit time.Duration){
  if b==nil{return}

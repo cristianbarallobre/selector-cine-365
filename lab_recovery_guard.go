@@ -27,8 +27,8 @@ var labDailyBackupName=regexp.MustCompile(`^\d{4}-\d{2}-\d{2}\.json$`)
 
 func labValidBackup(data []byte) bool {
  if len(data)==0||len(data)>libraryFileLimit {return false}
- var state libraryState
- return json.Unmarshal(data,&state)==nil&&validateLibrary(state)==nil
+ _,_,err:=decodeRecoveryBackup(data)
+ return err==nil
 }
 func labBackupCandidates(dir string, pattern *regexp.Regexp) ([]string,error) {
  entries,err:=os.ReadDir(dir)
@@ -44,9 +44,15 @@ func labBackupCandidates(dir string, pattern *regexp.Regexp) ([]string,error) {
 }
 func labPruneNamedBackups(dir string,pattern *regexp.Regexp,keep int) {
  names,err:=labBackupCandidates(dir,pattern)
- if err!=nil||len(names)<=keep{return}
- for _,name:=range names[:len(names)-keep]{
-  _=os.Remove(filepath.Join(dir,name))
+ if err!=nil{return}
+ const budget=int64(512<<20)
+ var bytes int64
+ kept:=0
+ for i:=len(names)-1;i>=0;i--{
+  file:=filepath.Join(dir,names[i]);info,e:=os.Lstat(file)
+  if e!=nil||!info.Mode().IsRegular(){continue}
+  if kept>0&&(kept>=keep||bytes+info.Size()>budget){_ = os.Remove(file);continue}
+  kept++;bytes+=info.Size()
  }
 }
 func labQuickBackup(path string,previous []byte) {

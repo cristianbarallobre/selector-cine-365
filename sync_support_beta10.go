@@ -25,6 +25,7 @@ func (a *runningApp) saveSyncRecovery(state libraryState, suffix string) error {
 	dir := filepath.Join(filepath.Dir(a.libraryPath), "sync_recuperacion")
 	now := time.Now()
 	data, err := json.Marshal(state)
+	if suffix=="_antes_restaurar"&&a.extraBackup!=nil&&a.syncStore!=nil{data,err=json.Marshal(a.completeBackupLocked())}
 	if err != nil {
 		return err
 	}
@@ -50,7 +51,7 @@ func (a *runningApp) saveSyncRecovery(state libraryState, suffix string) error {
 		if err != nil {
 			continue
 		}
-		if names[i] != name && (kept >= 20 || bytes+info.Size() > 256<<20 || now.Sub(info.ModTime()) > 30*24*time.Hour) {
+		if names[i] != name && !stringsHasPendingSuffix(names[i]) && (kept >= 20 || bytes+info.Size() > 256<<20 || now.Sub(info.ModTime()) > 30*24*time.Hour) {
 			_ = os.Remove(file)
 			continue
 		}
@@ -163,8 +164,8 @@ func (a *runningApp) previewLocalRecovery(id string) (map[string]any, error) {
 	if err != nil {
 		return nil, err
 	}
-	var state libraryState
-	if json.Unmarshal(data, &state) != nil || validateLibrary(state) != nil {
+	state,history,decodeErr:=decodeRecoveryBackup(data)
+	if decodeErr!=nil {
 		return nil, errors.New("La copia no es válida. No es seguro restaurarla")
 	}
 	favorites := 0
@@ -175,7 +176,7 @@ func (a *runningApp) previewLocalRecovery(id string) (map[string]any, error) {
 	}
 	return map[string]any{
 		"lists": len(state.Lists), "seen": syncWatched(state), "favorites": favorites,
-		"valid": true, "message": "La copia ha superado la validación de la biblioteca",
+		"valid": true, "has_history":history!=nil,"activity_count":func()int{if history!=nil{return len(*history)};return 0}(), "message": "La copia ha superado la validación de la biblioteca",
 	}, nil
 }
 
@@ -205,13 +206,8 @@ func (a *runningApp) restoreLocalRecovery(id, etag string) (map[string]any, erro
 	if err != nil {
 		return nil, err
 	}
-	var restored libraryState
-	if err = json.Unmarshal(data, &restored); err != nil {
-		return nil, errors.New("la copia JSON no es válida")
-	}
-	if err = validateLibrary(restored); err != nil {
-		return nil, fmt.Errorf("no se ha restaurado: %w", err)
-	}
+	restored,history,err:=decodeRecoveryBackup(data)
+	if err!=nil{return nil,fmt.Errorf("no se ha restaurado: %w",err)}
 	a.mu.Lock()
 	if etag != a.libraryETag() {
 		a.mu.Unlock()
@@ -225,7 +221,8 @@ func (a *runningApp) restoreLocalRecovery(id, etag string) (map[string]any, erro
 		a.mu.Unlock()
 		return nil, err
 	}
-	mirrorPending, metadataErr, err := a.commitProtectedLibrary(restored,nil,nil,"","restore")
+	if history!=nil&&a.syncStore==nil{a.mu.Unlock();return nil,errors.New("Historial local no disponible; no se ha restaurado")}
+	mirrorPending, metadataErr, err := a.commitProtectedLibraryWithHistory(restored,nil,nil,"",history,"restore")
 	if err != nil {
 		a.mu.Unlock()
 		return nil, err

@@ -4,10 +4,7 @@ import (
  "encoding/json"
  "errors"
  "net/http"
- "os"
- "path/filepath"
  "strings"
- "time"
  "unicode/utf8"
 )
 
@@ -28,6 +25,26 @@ func validateCompleteBackup(b completeLibraryBackup)error{
  }
  return nil
 }
+// Accept old library-only files, complete portable files and local checkpoints.
+// Never import device clocks, tokens or cloud configuration from a backup.
+func decodeRecoveryBackup(data []byte)(libraryState,*[]activityEntry,error){
+ var b completeLibraryBackup
+ if err:=json.Unmarshal(data,&b);err!=nil{return libraryState{},nil,err}
+ if err:=validateLibrary(b.libraryState);err!=nil{return libraryState{},nil,err}
+ if b.CompleteVersion!=0{
+  if err:=validateCompleteBackup(b);err!=nil{return libraryState{},nil,err}
+  return b.libraryState,&b.Activity,nil
+ }
+ var disk libraryDisk
+ if err:=json.Unmarshal(data,&disk);err!=nil{return libraryState{},nil,err}
+ if disk.LocalSync!=nil{
+  s:=&desktopSyncStore{state:*disk.LocalSync}
+  b.CompleteVersion=1;b.Activity=s.localActivity()
+  if err:=validateCompleteBackup(b);err!=nil{return libraryState{},nil,err}
+  return b.libraryState,&b.Activity,nil
+ }
+ return b.libraryState,nil,nil
+}
 func(a *runningApp) completeBackupLocked()completeLibraryBackup{
  return completeLibraryBackup{libraryState:a.library,CompleteVersion:1,Activity:a.syncStore.localActivity()}
 }
@@ -46,12 +63,7 @@ func(a *runningApp) serveCompleteBackup(w http.ResponseWriter,r *http.Request){
  a.mu.Lock();defer a.mu.Unlock()
  if r.Header.Get("If-Match")!=a.libraryETag(){http.Error(w,"La biblioteca cambió; no se ha restaurado",412);return}
  // Keep a full rescue point before any mutation, including the current history.
- rescue,err:=json.MarshalIndent(a.completeBackupLocked(),"","  ")
- dir:=filepath.Join(filepath.Dir(a.libraryPath),"sync_recuperacion")
- if err==nil&&len(rescue)>libraryFileLimit{err=errors.New("Copia de rescate demasiado grande")}
- if err==nil{err=os.MkdirAll(dir,0700)}
- if err==nil{err=replaceLibraryFile(filepath.Join(dir,time.Now().UTC().Format("20060102T150405.000000000Z")+"_antes_restaurar.json"),rescue)}
- if err!=nil{http.Error(w,"No se pudo guardar la copia previa; no se ha restaurado",500);return}
+ if err:=a.saveSyncRecovery(a.library,"_antes_restaurar");err!=nil{http.Error(w,"No se pudo guardar la copia previa; no se ha restaurado",500);return}
  next:=b.libraryState;recordMembershipEdits(a.library,&next)
  mirror,metadata,err:=a.commitProtectedLibraryWithHistory(next,nil,nil,"",&b.Activity,"restore")
  if err!=nil{http.Error(w,err.Error(),500);return}

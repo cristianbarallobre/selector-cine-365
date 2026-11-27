@@ -107,7 +107,7 @@ func (a *runningApp) commitProtectedLibraryWithHistory(next libraryState, plan *
    for i,j:=0,len(clone.state.Activity)-1;i<j;i,j=i+1,j-1{clone.state.Activity[i],clone.state.Activity[j]=clone.state.Activity[j],clone.state.Activity[i]}
    clone.state.ActivityMigrated=true
   }
-  if a.extraBackup!=nil{appendLocalActivity(&clone.state,a.library,next);if len(activityAction)>0&&activityAction[0]=="restore"{appendActivityEvent(&clone.state,activityEntry{At:time.Now().UnixMilli(),Kind:"restore",Detail:"Copia local restaurada"})}}
+  if a.extraBackup!=nil{if history==nil{appendLocalActivity(&clone.state,a.library,next)};if len(activityAction)>0&&activityAction[0]=="restore"{appendActivityEvent(&clone.state,activityEntry{At:time.Now().UnixMilli(),Kind:"restore",Detail:"Copia local restaurada"})}}
   if plan!=nil{e=clone.accept(*plan,decisions,folder)}else{
    e=clone.observe(a.library,next)
    if e==nil&&!sameShareableLibrary(a.library,next)&&a.cloud!=nil&&(a.cloud.status().Enabled||a.graph!=nil&&a.graph.active()){e=clone.markGraphUploadPending()}
