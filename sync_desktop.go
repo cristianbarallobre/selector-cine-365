@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -47,8 +46,6 @@ type syncDeviceState struct {
 	Seq                int64                   `json:"seq"`
 	Known              map[string]int64        `json:"known"`
 	Revisions          map[string]syncRevision `json:"revisions"`
-	PairedFolder       string                  `json:"paired_folder,omitempty"`
-	GraphUploadPending bool                    `json:"graph_upload_pending,omitempty"`
 	Checkpoint string `json:"checkpoint,omitempty"`
 }
 type syncSnapshot struct {
@@ -80,7 +77,6 @@ type desktopSyncStore struct {
 	path               string
 	state              syncDeviceState
 	dirty              bool
-	graphUploadVersion uint64
 }
 
 func newDesktopSyncStore(dir string) (*desktopSyncStore, error) {
@@ -144,14 +140,6 @@ func (s *desktopSyncStore) history() []syncHistoryEntry {
 		events = append(events, s.state.History[i])
 	}
 	return events
-}
-func (s *desktopSyncStore) isPaired(folder string) bool {
-	if s == nil {
-		return false
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return folder != "" && s.state.PairedFolder == filepath.Clean(folder)
 }
 func (s *desktopSyncStore) parts() (string, map[string]syncRevision, map[string]int64) {
 	s.mu.Lock()
@@ -308,53 +296,12 @@ func (s *desktopSyncStore) snapshot(l libraryState) syncSnapshot {
 	return syncSnapshot{Protocol: syncProtocol, DeviceID: id, UpdatedAt: time.Now().UnixMilli(), Library: l, Known: known, Revisions: rev}
 }
 
-func (a *runningApp) captureSyncSnapshot() (syncSnapshot, uint64) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	return a.syncStore.snapshot(a.library), a.libraryRevision
-}
-
 func encodeSyncSnapshot(snapshot syncSnapshot) ([]byte, error) {
 	data, err := json.MarshalIndent(snapshot, "", "  ")
 	if err == nil && len(data) > syncSnapshotLimit {
 		return nil, errSyncSnapshotTooLarge
 	}
 	return data, err
-}
-
-func (s *desktopSyncStore) graphUploadPending() bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.state.GraphUploadPending
-}
-
-func (s *desktopSyncStore) markGraphUploadPending() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.graphUploadVersion++
-	if s.state.GraphUploadPending && !s.dirty {
-		return nil
-	}
-	s.state.GraphUploadPending = true
-	return s.saveLocked()
-}
-func (s *desktopSyncStore) graphPublicationVersion() uint64 {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.graphUploadVersion
-}
-func (s *desktopSyncStore) acknowledgeGraphUpload(version uint64) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if version != s.graphUploadVersion || !s.state.GraphUploadPending {
-		return nil
-	}
-	s.state.GraphUploadPending = false
-	if err := s.saveLocked(); err != nil {
-		s.state.GraphUploadPending = true
-		return err
-	}
-	return nil
 }
 
 func (s *desktopSyncStore) checkShareable(plan syncPlan, decisions map[string]bool) error {
@@ -404,9 +351,6 @@ func (s *desktopSyncStore) accept(p syncPlan, decisions map[string]bool, folder 
 	s.state.Seq = seq
 	s.state.Known = snapshot.Known
 	s.state.Revisions = snapshot.Revisions
-	s.state.PairedFolder = filepath.Clean(folder)
-	s.state.GraphUploadPending = desktopFeatures || strings.HasPrefix(folder, "onedrive://item/")
-	s.graphUploadVersion++
 	return s.saveLocked()
 }
 
@@ -751,267 +695,4 @@ func syncApplyDecisions(l libraryState, decisions map[string]bool) libraryState 
 		l.Lists[i].Text = strings.Join(lines, "\n")
 	}
 	return l
-}
-func cloudSyncRoot(folder string) string {
-	if appIsLab {
-		return filepath.Join(folder, cloudDirectoryName)
-	}
-	if _, err := os.Stat(filepath.Join(folder, "actual")); err == nil {
-		return folder
-	}
-	if _, err := os.Stat(filepath.Join(folder, "sincronizacion")); err == nil {
-		return folder
-	}
-	return filepath.Join(folder, cloudDirectoryName)
-}
-func readSyncFile(path string) ([]byte, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-	st, err := file.Stat()
-	if err != nil {
-		return nil, err
-	}
-	if !st.Mode().IsRegular() || st.Size() > syncSnapshotLimit {
-		return nil, fmt.Errorf("%w (%s)", errSyncSnapshotTooLarge, filepath.Base(path))
-	}
-	data, err := io.ReadAll(io.LimitReader(file, syncSnapshotLimit+1))
-	if len(data) > syncSnapshotLimit {
-		return nil, errSyncSnapshotTooLarge
-	}
-	return data, err
-}
-func (a *runningApp) cloudPlanFor(local libraryState, folder string) (syncPlan, error) {
-	if a.syncStore == nil {
-		return syncPlan{}, errors.New("falta inicializar la sincronización")
-	}
-	if folder == "" {
-		return syncPlan{}, errors.New("selecciona una carpeta compartida")
-	}
-	if err := validateLibrary(local); err != nil {
-		return syncPlan{}, err
-	}
-	id, revisions, known := a.syncStore.parts()
-	strict := a.syncStore.isPaired(folder)
-	p := syncPlan{Library: local, Revisions: revisions, Known: known, Conflicts: []syncConflict{}}
-	hash := sha256.New()
-	localBytes, _ := json.Marshal(local)
-	hash.Write(localBytes)
-	root := cloudSyncRoot(folder)
-	process := func(name string, b []byte, legacy bool) error {
-		sum := sha256.Sum256(b)
-		fmt.Fprintf(hash, "%s:%x|", name, sum)
-		var peer syncSnapshot
-		if legacy {
-			peer.Protocol = 1
-			peer.DeviceID = "windows-legacy"
-			if err := json.Unmarshal(b, &peer.Library); err != nil {
-				return fmt.Errorf("copia antigua corrupta: %w", err)
-			}
-			p.Legacy = true
-		} else {
-			if err := json.Unmarshal(b, &peer); err != nil {
-				return fmt.Errorf("archivo de dispositivo corrupto (%s): %w", name, err)
-			}
-			if peer.DeviceID == id {
-				return nil
-			}
-		}
-		merged, r, k, issues, err := syncMergeVersioned(p.Library, p.Revisions, p.Known, peer, strict)
-		if err != nil {
-			return err
-		}
-		p.Library = merged
-		p.Revisions = r
-		p.Known = k
-		p.Sources++
-		existing := map[string]bool{}
-		for _, c := range p.Conflicts {
-			existing[c.Key] = true
-		}
-		for _, c := range issues {
-			if !existing[c.Key] {
-				p.Conflicts = append(p.Conflicts, c)
-				existing[c.Key] = true
-			}
-		}
-		return nil
-	}
-	legacy := filepath.Join(root, "actual", "colecciones.json")
-	if !strict {
-		if b, e := readSyncFile(legacy); e == nil {
-			if err := process("actual/colecciones.json", b, true); err != nil {
-				return p, err
-			}
-		} else if !os.IsNotExist(e) {
-			return p, e
-		}
-	}
-	peersDir := filepath.Join(root, "sincronizacion", "dispositivos")
-	entries, err := os.ReadDir(peersDir)
-	if err != nil && !os.IsNotExist(err) {
-		return p, err
-	}
-	if len(entries) > 100 {
-		return p, errors.New("demasiados archivos de sincronización para validar")
-	}
-	for _, it := range entries {
-		if it.IsDir() || !strings.HasSuffix(it.Name(), ".json") {
-			continue
-		}
-		b, e := readSyncFile(filepath.Join(peersDir, it.Name()))
-		if e != nil {
-			return p, e
-		}
-		if e = process("sincronizacion/dispositivos/"+it.Name(), b, false); e != nil {
-			return p, e
-		}
-	}
-	p.Token = hex.EncodeToString(hash.Sum(nil))
-	return p, nil
-}
-func (a *runningApp) cloudSyncPreview() (map[string]any, error) {
-	if a.syncStore == nil {
-		return nil, errors.New("sincronización no inicializada")
-	}
-	a.syncPlanMu.Lock()
-	defer a.syncPlanMu.Unlock()
-	folder := a.cloud.status().Folder
-	a.mu.Lock()
-	local, revision := a.library, a.libraryRevision
-	a.mu.Unlock()
-	p, err := a.cloudPlanFor(local, folder)
-	if err != nil {
-		return nil, err
-	}
-	if err = a.syncStore.checkShareable(p, nil); err != nil {
-		return nil, err
-	}
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	if revision != a.libraryRevision || folder != a.cloud.status().Folder {
-		return nil, errors.New("La biblioteca o la carpeta ha cambiado. Vuelve a revisar la sincronización")
-	}
-	a.syncPreviewToken = p.Token
-	return map[string]any{"token": p.Token, "sources": p.Sources, "legacy": p.Legacy,
-		"local_lists": len(a.library.Lists), "local_seen": syncWatched(a.library),
-		"result_lists": len(p.Library.Lists), "result_seen": syncWatched(p.Library),
-		"conflicts": p.Conflicts, "requires_confirmation": true}, nil
-}
-func (a *runningApp) cloudSyncConfirm(token string, decisions map[string]bool) (map[string]any, error) {
-	if a.syncStore == nil {
-		return nil, errors.New("sincronización no inicializada")
-	}
-	a.syncPlanMu.Lock()
-	defer a.syncPlanMu.Unlock()
-	a.mu.Lock()
-	folder := a.cloud.status().Folder
-	if token == "" || token != a.syncPreviewToken {
-		a.mu.Unlock()
-		return nil, errors.New("revisa los datos antes de sincronizar")
-	}
-	local, revision := a.library, a.libraryRevision
-	a.mu.Unlock()
-	p, err := a.cloudPlanFor(local, folder)
-	if err != nil {
-		return nil, err
-	}
-	a.mu.Lock()
-	if p.Token != token || token != a.syncPreviewToken || revision != a.libraryRevision || folder != a.cloud.status().Folder {
-		a.mu.Unlock()
-		return nil, errors.New("la carpeta o la biblioteca ha cambiado: vuelve a revisar")
-	}
-	required := map[string]bool{}
-	for _, c := range p.Conflicts {
-		required[c.Key] = true
-	}
-	for key := range required {
-		if _, ok := decisions[key]; !ok {
-			a.mu.Unlock()
-			return nil, fmt.Errorf("falta resolver el conflicto: %s", key)
-		}
-	}
-	p.Library = syncApplyDecisions(p.Library, decisions)
-	if err := a.syncStore.checkShareable(p, decisions); err != nil {
-		a.mu.Unlock()
-		return nil, err
-	}
-	// Copia adicional inmediata, independiente de la copia diaria habitual.
-	if err := a.saveSyncRecovery(a.library, ""); err != nil {
-		a.mu.Unlock()
-		return nil, err
-	}
-	_,metadataErr,err:=a.commitProtectedLibrary(p.Library,&p,decisions,folder)
-	if err != nil {
-		a.mu.Unlock()
-		return nil, err
-	}
-	a.library = p.Library
-	a.libraryRevision++
-	if !desktopFeatures {metadataErr = a.syncStore.accept(p, decisions, folder)}
-	a.syncPreviewToken = ""
-	a.syncPendingConflict.Store(false)
-	a.syncLastCheck.Store(time.Now().UnixMilli())
-	a.syncLastReceived.Store(time.Now().UnixMilli())
-	a.mu.Unlock()
-	return syncResult(p, true, metadataErr, a.publishFolderSync), nil
-}
-
-// The library has already been committed when this is called. Keep its
-// result visible even if sync metadata or publication fails afterwards.
-func syncResult(plan syncPlan, changed bool, metadataErr error, publish func() error) map[string]any {
-	result := map[string]any{"changed": changed, "sources": plan.Sources, "lists": len(plan.Library.Lists), "seen": syncWatched(plan.Library)}
-	if metadataErr != nil {
-		diagnosticError("sincronizacion", "estado pendiente de guardar", metadataErr)
-		result["warning"] = "Estado de sincronización pendiente de guardar."
-	} else if err := publish(); err != nil {
-		result["warning"] = "Subida pendiente: " + err.Error()
-	}
-	return result
-}
-
-func (a *runningApp) publishFolderSync() error {
-	if saved := a.cloud.backup(); saved.LastError != "" {
-		return errors.New(saved.LastError)
-	}
-	return a.publishDeviceSnapshot()
-}
-func (a *runningApp) publishDeviceSnapshot() error {
-	if a.syncStore == nil || a.cloud == nil {
-		return nil
-	}
-	a.folderPublishMu.Lock()
-	defer a.folderPublishMu.Unlock()
-	folder := a.cloud.status().Folder
-	if !a.syncStore.isPaired(folder) {
-		return nil
-	}
-	a.mu.Lock()
-	snapshot := a.syncStore.snapshot(a.library)
-	revision, version := a.libraryRevision, a.syncStore.graphPublicationVersion()
-	a.mu.Unlock()
-	data, err := encodeSyncSnapshot(snapshot)
-	if err != nil {
-		return err
-	}
-	root := cloudSyncRoot(folder)
-	target := filepath.Join(root, "sincronizacion", "dispositivos", snapshot.DeviceID+".json")
-	if err := cloudWriteFile(target, data); err != nil {
-		return err
-	}
-	readBack, err := readSyncFile(target)
-	if err != nil {
-		return err
-	}
-	if sha256.Sum256(readBack) != sha256.Sum256(data) {
-		return errors.New("el proveedor no confirmó el archivo de este dispositivo")
-	}
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	if revision == a.libraryRevision && folder == a.cloud.status().Folder {
-		return a.syncStore.acknowledgeGraphUpload(version)
-	}
-	return nil
 }

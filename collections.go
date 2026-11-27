@@ -331,7 +331,6 @@ func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			if desktopFeatures {a.clearServerDraft(r);a.resolvePendingCopies(state,false)}
 			if libraryBackupIssue.Load(){w.Header().Set("X-Cine-Backup","error")}
-			a.syncPreviewToken = "" // una vista previa anterior ya no es válida
 		} else if desktopFeatures {
 			a.preservePendingRequest(w,r,state)
 		}
@@ -339,38 +338,6 @@ func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 			return
-		}
-		if desktopFeatures || w.Header().Get("X-Cine-Cloud") == "error" {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		if a.graph != nil && a.graph.active() {
-			if a.syncStore != nil && a.syncStore.isPaired(a.graph.pairingID()) {
-				a.queueGraphUpload()
-				w.Header().Set("X-Cine-Cloud", "pending")
-			} else {
-				w.Header().Set("X-Cine-Cloud", "review")
-			}
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		if a.cloud != nil {
-			folder := a.cloud.status().Folder
-			if a.syncStore != nil && !a.syncStore.isPaired(folder) && cloudHasDeviceSnapshots(folder) {
-				// Un PC nuevo no sobrescribe el respaldo de otro dispositivo.
-				w.Header().Set("X-Cine-Cloud", "review")
-			} else {
-				cloudState := a.cloud.backup()
-				if cloudState.Enabled {
-					if cloudState.LastError != "" {
-						w.Header().Set("X-Cine-Cloud", "error")
-					} else if pubErr := a.publishDeviceSnapshot(); pubErr != nil {
-						w.Header().Set("X-Cine-Cloud", "error")
-					} else {
-						w.Header().Set("X-Cine-Cloud", "ok")
-					}
-				}
-			}
 		}
 		w.WriteHeader(http.StatusNoContent)
 	default:

@@ -144,18 +144,9 @@ type runningApp struct {
 	platforms           *availabilityServer
 	discoveryImages     discoveryImageCache
 	extraBackup *extraBackup
-	cloud               *cloudBackups
-	graph               *desktopGraph
-	graphUploadCh       chan struct{}
 	syncStore           *desktopSyncStore
-	syncPreviewToken    string
 	libraryDigest string // last committed on-disk fingerprint, protected by mu
 	libraryRevision     uint64     // protected by mu
-	syncPlanMu          sync.Mutex // remote reads do not take the library mutex
-	folderPublishMu     sync.Mutex
-	syncLastCheck       atomic.Int64
-	syncLastReceived    atomic.Int64
-	syncPendingConflict atomic.Bool
 	html                []byte
 	token               string
 	lastActivity        atomic.Int64
@@ -170,17 +161,11 @@ var nativeDesktopWindowActive atomic.Bool
 func (a *runningApp) touch() { a.lastActivity.Store(time.Now().Unix()) }
 func (a *runningApp) stop()  { a.stopOnce.Do(func() { close(a.stopCh) }) }
 func (a *runningApp) auth(r *http.Request) bool {
-	return r.Header.Get("X-Atlas-Token") == a.token || (r.URL.Query().Get("token") == a.token && a.token != "")
+	return a.token!=""&&(r.Header.Get("X-Atlas-Token")==a.token||r.URL.Query().Get("token")==a.token)
 }
 func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	a.touch()
-	if a.extraBackup!=nil {
-	 if strings.HasPrefix(r.URL.Path,"/api/cloud/")||strings.HasPrefix(r.URL.Path,"/api/onedrive-desktop/")||(r.URL.Path=="/"&&(r.URL.Query().Has("code")||r.URL.Query().Has("error"))){http.NotFound(w,r);return}
-	}
-	if r.URL.Path == "/" && r.Method == http.MethodGet && (r.URL.Query().Has("code") || r.URL.Query().Has("error")) {
-		a.serveGraphCallback(w, r)
-		return
-	}
+	if r.URL.Path=="/"&&(r.URL.Query().Has("code")||r.URL.Query().Has("error")){http.NotFound(w,r);return}
 	if r.URL.Path == "/" || r.URL.Path == "/api/ping" {
 		traceHTTP(r.URL.Path, r.UserAgent())
 	}
@@ -234,10 +219,6 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		a.serveUIDraft(w,r)
 	case "/api/sync/history", "/api/sync/revisions", "/api/sync/recovery/list", "/api/sync/recovery/pending", "/api/sync/recovery/preview", "/api/sync/recovery/restore":
 		a.serveSyncSupport(w, r)
-	case "/api/cloud/status", "/api/cloud/pending", "/api/cloud/config", "/api/cloud/backup", "/api/cloud/browse", "/api/cloud/preview", "/api/cloud/sync", "/api/cloud/auto", "/api/cloud/auto-folder", "/api/cloud/mode":
-		a.serveCloudHTTP(w, r)
-	case "/api/onedrive-desktop/status", "/api/onedrive-desktop/start", "/api/onedrive-desktop/disconnect":
-		a.serveGraphAuthHTTP(w, r)
 	case "/api/diagnostics":
 		a.serveDiagnostics(w, r)
 	case "/api/lab/maintenance":
@@ -304,9 +285,6 @@ func (a *runningApp) save(data string) error {
 		return err
 	}
 	a.html = []byte(page)
-	if a.cloud != nil {
-		_ = a.cloud.backup()
-	}
 	return nil
 }
 

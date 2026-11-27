@@ -71,12 +71,10 @@ func recoverSyncCheckpoint(dir string, checkpoint *syncDeviceState, recovered ..
   store.state.Activity=checkpoint.Activity;store.state.ActivityMigrated=checkpoint.ActivityMigrated
  }else{
   store=&desktopSyncStore{path:path,state:*checkpoint}
-  store.state.GraphUploadPending=true
   // A rollback must never reuse causal sequence numbers from a newer save.
   if existingOK&&existing.DeviceID==store.state.DeviceID&&existing.Seq>store.state.Seq{
    store.state.Seq=existing.Seq
    store.state.Known=syncJoin(store.state.Known,existing.Known)
-   store.state.PairedFolder=""
   }
  }
  if len(recovered)>0{
@@ -86,8 +84,6 @@ func recoverSyncCheckpoint(dir string, checkpoint *syncDeviceState, recovered ..
   for key,revision:=range store.state.Revisions{
    if seen,ok:=statuses[key];!ok||seen!=revision.Checked{delete(store.state.Revisions,key)}
   }
-  store.state.PairedFolder=""
-  store.state.GraphUploadPending=true
  }
  if checkpoint!=nil||len(recovered)>0{
   if err:=store.saveLocked();err!=nil{
@@ -117,7 +113,7 @@ func (a *runningApp) commitProtectedLibraryWithHistory(next libraryState, plan *
   defer s.mu.Unlock()
   // Copy mutable containers directly instead of serializing all history
   // merely to make a transactional working copy.
-  clone:=&desktopSyncStore{graphUploadVersion:s.graphUploadVersion,state:cloneLocalSyncState(s.state)}
+  clone:=&desktopSyncStore{state:cloneLocalSyncState(s.state)}
   var e error
   if history!=nil{
    clone.state.Activity=append([]activityEntry(nil),(*history)...)
@@ -125,17 +121,13 @@ func (a *runningApp) commitProtectedLibraryWithHistory(next libraryState, plan *
    clone.state.ActivityMigrated=true
   }
   if a.extraBackup!=nil{if history==nil{appendLocalActivity(&clone.state,a.library,next)};if len(activityAction)>0&&activityAction[0]=="restore"{appendActivityEvent(&clone.state,activityEntry{At:time.Now().UnixMilli(),Kind:"restore",Detail:"Copia local restaurada"})}}
-  if plan!=nil{e=clone.accept(*plan,decisions,folder)}else{
-   e=clone.observe(a.library,next)
-   if e==nil&&!sameShareableLibrary(a.library,next)&&a.cloud!=nil&&(a.cloud.status().Enabled||a.graph!=nil&&a.graph.active()){e=clone.markGraphUploadPending()}
-  }
+  e=clone.observe(a.library,next)
   if e!=nil{return false,nil,e}
   checkpoint,e:=randomToken();if e!=nil{return false,nil,e}
   clone.state.Checkpoint=checkpoint
   mirrorPending,err=commitLibraryCheckpoint(a.libraryPath,a.savePath,next,&clone.state,a.libraryDigest)
   if err==nil{
    s.state=clone.state
-   s.graphUploadVersion=clone.graphUploadVersion
    metadataErr=s.saveLocked()
   }
  }

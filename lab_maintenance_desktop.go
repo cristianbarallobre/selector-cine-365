@@ -90,11 +90,6 @@ func (a *runningApp) serveLabMaintenance(w http.ResponseWriter,r *http.Request) 
    "backup_warning":libraryBackupIssue.Load(),
    "library_recovered":a.libraryRecovered,
    "tmdb_connected":a.platforms!=nil&&a.platforms.configured(),
-   "cloud_connected":a.cloud!=nil&&a.cloud.status().Enabled,
-   "onedrive_connected":a.graph!=nil&&a.graph.active(),
-   "sync_pending_review":a.syncPendingConflict.Load(),
-   "sync_last_check_ms":a.syncLastCheck.Load(),
-   "sync_last_received_ms":a.syncLastReceived.Load(),
    "webview_managed_separately":true,
   }
   respond(200,info)
