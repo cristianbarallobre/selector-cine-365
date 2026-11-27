@@ -38,6 +38,15 @@ main{max-width:1250px;padding:28px 28px 32px;margin:auto}.header{display:flex;al
 .film-platforms{display:flex;align-items:center;gap:7px;min-width:0;max-width:100%}
 .film-platforms .cine-platform-names{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .film-platforms .cine-platform-stamp{flex:0 0 auto}
+.cine-platform-icon{display:inline-flex;flex:0 0 14px;width:14px;height:14px;box-sizing:border-box;align-items:center;justify-content:center;position:relative;border:1.4px solid currentColor;border-radius:50%;font:700 10px/1 'Segoe UI',system-ui,sans-serif;white-space:nowrap;vertical-align:middle;cursor:default;color:#aabed0}
+.cine-platform-icon[data-status="fresh"]{color:#a6dcb9}
+.cine-platform-icon[data-status="stale"]{color:#f3cb85}
+.cine-platform-icon[data-status="error"]{color:#efb7a7}
+.cine-platform-icon.cine-platform-stamp::before{content:none}
+.cine-platform-icon[data-status="stale"]::after{content:'';position:absolute;left:calc(50% - 1px);top:2px;width:3px;height:4px;border-left:1.3px solid currentColor;border-bottom:1.3px solid currentColor}
+.cine-platform-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 12px;margin:9px 0 0;padding:0;list-style:none;font-size:12px;color:#d7e2ee}
+.cine-platform-legend li{display:flex;align-items:center;gap:7px}
+@media(max-width:850px){.cine-platform-legend{grid-template-columns:1fr}}
 @media(max-width:980px){.film-platforms{gap:5px}.cine-platform-stamp{font-size:9px}}
 .platform-detail .cine-platform-stamp,.lab-detail-platforms .cine-platform-stamp{font-size:11px}
 .lab-detail-availability-age{margin:5px 0 8px}
@@ -623,12 +632,18 @@ __CINE_LOCAL_BACKUP_MARKUP__
       <div class="panel-heading"><h2>Instrucciones de uso</h2><span class="count-tag">Ayuda</span></div>
       <p>Selector Cine 365 guarda tus listas y películas vistas en este ordenador. La copia adicional y la clave TMDB son opcionales.</p>
       <div class="cine-instructions-grid">
-        <article><h3>1. Biblioteca</h3><p>Escoge la lista superior. Busca títulos, filtra por Todas, Pendientes o Vistas, o selecciona plataformas. <strong>Para cambiar Vista/Pendiente pulsa únicamente la casilla del tick</strong>; el resto de la ficha no cambia su estado.</p></article>
-        <article><h3>2. Conectar TMDB</h3><p>Abre <strong>Conectar TMDB</strong>, escribe una clave personal de TMDB y guarda. Aparecerán carteles, puntuaciones y plataformas en España. Los datos ya consultados se guardan en caché; Actualizar vuelve a consultar cuando tú lo pidas.</p></article>
-        <article><h3>3. Sorteo y estadísticas</h3><p>En Sorteo eliges una película pendiente al azar. En Estadísticas encontrarás el progreso de tu colección, periodos, géneros, directores y otros datos disponibles.</p></article>
-        <article><h3>4. Mis listas</h3><p>Crea, renombra y abre listas. Utiliza los números de página para recorrerlas. Puedes comparar listas y consultar sus coincidencias en la biblioteca.</p></article>
-        <article><h3>5. Copia adicional</h3><p>En <strong>Mis listas → Guardado y copia adicional</strong> puedes elegir una segunda ubicación para tus datos. La biblioteca principal permanece en el equipo. La copia se actualiza automáticamente y no se importa ni se combina con otras bibliotecas.</p></article>
-        <article><h3>6. Copias y seguridad</h3><p>Exporta una copia JSON desde <strong>Mis listas → Copia de seguridad</strong>. Si una edición no se guardó, carga la biblioteca actual y repite solo el cambio que falte. Puedes consultar la copia del guardado fallido en <strong>Mis listas → Guardado y copia adicional → Actividad reciente, historial y copias de recuperación</strong>. Restaurar una copia sustituye la biblioteca completa.</p></article>
+        <article><h3>1. Biblioteca</h3><p>Elige una lista, busca en ella o en todas y abre <strong>Filtros</strong> para seleccionar estado, plataformas, década, género, duración u orden. Limpiar filtros restablece la vista. Pulsa solo la casilla del tick para marcar Vista/Pendiente. Abre la ficha para consultar detalles y gestionar sus listas; el corazón permite gestionar Favoritos.</p></article>
+        <article><h3>2. Conectar TMDB y disponibilidad</h3><p>Introduce tu clave personal en <strong>Conectar TMDB</strong>. Las plataformas se consultan para España. <strong>Actualizar</strong> vuelve a consultar toda la lista activa; los datos caducados se revisan también en segundo plano mientras estás en Biblioteca. Los iconos indican el estado:</p>
+          <ul class="cine-platform-legend" aria-label="Estados de disponibilidad">
+            <li><span class="cine-platform-icon" data-status="fresh" aria-hidden="true">✓</span> Comprobado: menos de 24 h</li>
+            <li><span class="cine-platform-icon" data-status="stale" aria-hidden="true"></span> Pendiente: 24 h o más</li>
+            <li><span class="cine-platform-icon" data-status="error" aria-hidden="true">!</span> Consulta fallida</li>
+            <li><span class="cine-platform-icon" data-status="unknown" aria-hidden="true">?</span> Sin comprobación válida</li>
+          </ul><p style="margin-top:8px">Pasa el ratón sobre el icono para ver la fecha exacta. Si falla una consulta, se conservan los datos válidos anteriores con su fecha original. La disponibilidad puede cambiar.</p></article>
+        <article><h3>3. Sorteo y Descubrir</h3><p>En el sorteo puedes elegir una película pendiente al azar y limitar las plataformas. En <strong>Descubrir</strong>, explora títulos, filtra por género y duración, abre fichas y añade películas directamente a tus listas.</p></article>
+        <article><h3>4. Mis listas y estadísticas</h3><p>Crea, renombra e importa listas desde TXT. Los números junto a cada película permiten abrir las listas a las que pertenece. Compara listas para ver coincidencias sin modificarlas. Estadísticas muestra los datos de la colección seleccionada, incluidos Favoritos.</p></article>
+        <article><h3>5. Guardado y copia adicional</h3><p>La biblioteca se guarda siempre en este equipo. En <strong>Mis listas → Guardado y copia adicional</strong> puedes elegir una segunda carpeta, incluso una gestionada por un servicio externo. La copia se actualiza automáticamente; no sincroniza ni combina bibliotecas. Incluye listas, estados, favoritos, valoraciones e historial, pero no claves ni cachés.</p></article>
+        <article><h3>6. Historial y recuperación</h3><p>En <strong>Mis listas</strong>, exporta una <strong>Copia de seguridad</strong> JSON completa o consulta el historial y las copias de recuperación. Restaurar sustituye la biblioteca y, cuando la copia lo incluye, su historial. Mantenimiento permite consultar almacenamiento, limpiar cachés y recuperar guardados fallidos.</p></article>
       </div>
       <p><strong>¿Necesitas todos los detalles?</strong> El manual extenso incluye ejemplos, procedimientos paso a paso, guardado, solución de problemas y recuperación.</p>
       <a class="tool cine-manual-link" href="https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/MANUAL_COMPLETO_SELECTOR_CINE_365.md" target="_blank" rel="noopener noreferrer">📖 Abrir manual completo (GitHub)</a>
@@ -859,15 +874,19 @@ function cinePlatformStatus(entry,now=Date.now()){
  return {status:stale?'stale':'fresh',text:(stale?'Pendiente · ':'Comprobado ')+age,title:'Última comprobación correcta: '+new Date(at).toLocaleString('es-ES')+(stale?' · Datos guardados; pendientes de actualizar.':'')};
 }
 function cinePlatformAge(entry){return cinePlatformStatus(entry).title;}
-function cinePlatformStamp(entry){
- const node=document.createElement('span');node.className='cine-platform-stamp';
+function cinePlatformStamp(entry,compact=false){
+ const node=document.createElement('span');node.className='cine-platform-stamp'+(compact?' cine-platform-icon':'');
+ if(compact){node.dataset.compact='1';node.setAttribute('role','img');}
  node.dataset.platformDate=entry?.date||entry?.providers_checked_at||'';
  node.dataset.platformState=entry?.state||'';
  cinePaintPlatformStamp(node);return node;
 }
 function cinePaintPlatformStamp(node){
  const status=cinePlatformStatus({date:node.dataset.platformDate,state:node.dataset.platformState});
- node.dataset.status=status.status;node.textContent=status.text;node.title=status.title;
+ node.dataset.status=status.status;
+ node.textContent=node.dataset.compact==='1'?({fresh:'✓',stale:'',error:'!',unknown:'?'}[status.status]||'?'):status.text;
+ node.title=status.text+' · '+status.title;
+ if(node.dataset.compact==='1')node.setAttribute('aria-label',node.title);
 }
 function cineUpdatePlatformStamps(){for(const node of document.querySelectorAll('.cine-platform-stamp'))cinePaintPlatformStamp(node);}
 function platformTitle(r){if(!r)return 'Consulta disponibilidad en JustWatch';let msg=[];
@@ -1187,7 +1206,7 @@ function renderList(){
 
    main.appendChild(meta);
    const badge=document.createElement('span');badge.className='film-platforms';const [name,css]=platformBadge(f);if(css)badge.classList.add(css);const platformNames=document.createElement('span');platformNames.className='cine-platform-names';platformNames.textContent=name;badge.appendChild(platformNames);
-   if(platformConfigured||r)badge.appendChild(cinePlatformStamp(r));
+   if(platformConfigured||r)badge.appendChild(cinePlatformStamp(r,true));
    badge.title=platformTitle(r);main.appendChild(badge);
    togg.append(tick,poster,main);
    const pill=document.createElement('span');pill.className='pill';pill.textContent=f.checked?'Vista':'Pendiente';
