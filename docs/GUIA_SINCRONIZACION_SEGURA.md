@@ -1,6 +1,6 @@
 # Guardado y recuperación de Selector Cine 365
 
-Windows y macOS 9.2.26.
+Windows y macOS 9.2.28.
 
 ## Guardado principal y copia opcional
 

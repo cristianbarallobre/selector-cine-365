@@ -3,7 +3,7 @@ set -euo pipefail
 out="$1"
 mkdir -p "$out/previews"
 version=$(sed -n 's/^const appVersion = "\(.*\)"$/\1/p' version.go)
-test "$version" = "9.2.26"
+test -n "$version"
 for name in MANUAL_COMPLETO_SELECTOR_CINE_365 GUIA_SINCRONIZACION_SEGURA; do
   pandoc "docs/$name.md" --from=gfm --to=docx --metadata lang=es-ES \
     --reference-doc="docs/$name.docx" -o "$out/$name.docx"

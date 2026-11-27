@@ -1,5 +1,17 @@
 # Historial de cambios — Selector Cine 365
 
+## 9.2.28 de escritorio
+
+- Indicadores minimalistas de disponibilidad en Biblioteca y antigüedad visible en Sorteo y fichas.
+- Ayuda del interrogante revisada y manuales actualizados.
+- Conserva las comprobaciones automáticas y manuales de plataformas.
+
+[Publicación 9.2.28](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.28-desktop)
+
+## 9.2.27 (pruebas)
+
+- Primera versión del indicador de última comprobación, con fecha exacta y distinción entre datos antiguos, errores y datos sin consultar.
+
 ## 9.2.26 de escritorio
 
 - Historial de actividad separado del archivo principal, con referencia de integridad, respaldo local y recuperación protegida.
@@ -11,7 +23,7 @@
 - Pruebas automatizadas de guardado, restauración, caché, interfaz en diferentes tamaños y compilación para Windows, macOS Intel y macOS Apple Silicon.
 - Uso personal: sin firma comercial ni notarización de Apple; los paquetes Mac conservan la firma ad hoc técnica.
 
-[Publicación 9.2.26](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.26-desktop)
+Cambios de la candidata 9.2.26 incorporados a la 9.2.28.
 
 ## 9.2.25 de escritorio
 
