@@ -2160,8 +2160,8 @@ async function cloudRequest(path,method='GET',payload){
  const opts={method,headers:{'X-Atlas-Token':token},cache:'no-store'};
  if(path==='/api/sync/recovery/restore')opts.headers['If-Match']=libraryETag;
  if(payload!==undefined){opts.headers['Content-Type']='application/json';opts.body=JSON.stringify(payload)}
- const longRequest=/^\/api\/cloud\/(?:auto|sync|preview|backup)(?:\?|$)/.test(path);
- const result=globalThis.cineLocalText&&path!=='/api/cloud/browse'?await globalThis.cineLocalText(path,opts,longRequest?150000:15000):await (async()=>{const response=await fetch(path,opts);return {response,raw:await response.text()};})();
+ const longRequest=false;
+ const result=globalThis.cineLocalText&&path!=='/api/extra-backup/browse'?await globalThis.cineLocalText(path,opts,longRequest?150000:15000):await (async()=>{const response=await fetch(path,opts);return {response,raw:await response.text()};})();
  const r=result.response,raw=result.raw;
  let data;
  try{data=raw?JSON.parse(raw):{};}

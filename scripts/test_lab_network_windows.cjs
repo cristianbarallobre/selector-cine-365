@@ -20,7 +20,7 @@ assert.match(main,/a\.serveLabNetworkLog\(w,\s*r\)/);
 assert.match(injector,/CINE_NETWORK_INTERCEPTOR/,'Insertar el interceptor en su marcador explícito');
 assert.ok(shared.indexOf('/* CINE_NETWORK_INTERCEPTOR */')>0&&shared.indexOf('/* CINE_NETWORK_INTERCEPTOR */')<shared.indexOf('void initLibrary()'));
 assert.match(shared,/Guardado no confirmado/,'No declarar que un guardado incierto ha fallado');
-assert.match(shared,/OneDrive: /,'Distinguir errores externos al leer el estado de OneDrive');
+assert.match(shared,/Guardado: /,'Distinguir errores externos al leer el estado de la copia adicional');
 assert.match(backend,/labNetMaxLogBytes=256\*1024/,'Limitar tamaño del registro');
 assert.match(backend,/DisallowUnknownFields/,'Validar campos del registro');
 assert.ok(!shared.includes('labOriginalFetch'),'La plantilla estable debe permanecer intacta');
@@ -63,7 +63,7 @@ async function flush(){await Promise.resolve();await Promise.resolve();await Pro
  assert.equal(test.calls.length,3,'Tres lecturas como máximo');
 
  test=build((url,opt,n)=>http(n<=2?503:200));
- r=await test.fetch('/api/cloud/status');
+ r=await test.fetch('/api/extra-backup/status');
  assert.equal(r.status,200,'Repetir HTTP 503 solo cuando es consulta GET');
  assert.equal(test.calls.length,3);
 
@@ -101,9 +101,9 @@ async function flush(){await Promise.resolve();await Promise.resolve();await Pro
  assert.ok(!JSON.stringify(postReport).includes('LISTA_SENSIBLE'),'No registrar el cuerpo guardado');
 
  test=build(()=>http(503));
- r=await test.fetch('/api/cloud/sync',{method:'POST',body:'TOKEN_PRIVADO'});
- assert.equal(r.status,503,'La app debe recibir el HTTP de OneDrive');
- assert.equal(test.calls.filter(x=>x.url==='/api/cloud/sync').length,1,'No repetir sincronizaciones');
+ r=await test.fetch('/api/extra-backup/now',{method:'POST',body:'TOKEN_PRIVADO'});
+ assert.equal(r.status,503,'La app debe recibir el HTTP de copia adicional');
+ assert.equal(test.calls.filter(x=>x.url==='/api/extra-backup/now').length,1,'No repetir copias');
  await flush();
  assert.equal(JSON.parse(test.calls.find(x=>x.url==='/api/lab/network-log').options.body).attempts,1);
 

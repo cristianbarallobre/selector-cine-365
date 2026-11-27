@@ -210,11 +210,13 @@ func TestLabStartupHeadlessBrowser(t *testing.T){
  }))
  defer srv.Close()
  ctx,cancel:=context.WithTimeout(context.Background(),35*time.Second);defer cancel()
+ size:=os.Getenv("CINE_TEST_VIEWPORT")
+ if size==""{size="1360,920"}
  args:=[]string{
   "--headless=new","--disable-gpu","--no-first-run","--no-default-browser-check",
   "--disable-background-networking","--disable-extensions","--no-sandbox",
   "--user-data-dir="+filepath.Join(t.TempDir(),"chrome-profile"),
-  "--window-size=1360,920", // evita el CSS especial para pantallas de menos de 590px
+  "--window-size="+size, // evita el CSS especial para pantallas de menos de 590px
   "--virtual-time-budget=4500","--dump-dom",srv.URL+"/",
  }
  cmd:=exec.CommandContext(ctx,browser,args...)

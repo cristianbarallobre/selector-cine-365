@@ -15,7 +15,7 @@ function labNetworkInfo(input,options){
 }
 function labNetworkSource(path){
  if(path.startsWith('/api/discover/')||path.startsWith('/api/platforms/')||path.startsWith('/api/identities'))return 'TMDB';
- if(path.startsWith('/api/cloud/')||path.startsWith('/api/onedrive-desktop/'))return 'OneDrive';
+ if(path.startsWith('/api/extra-backup/'))return 'Copia adicional';
  return 'la aplicación';
 }
 function labNetworkReport(info,kind,status,attempts){
