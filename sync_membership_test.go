@@ -74,12 +74,12 @@ func TestDesktopMembershipSaveAndManualSync(t *testing.T) {
 	if _, err := app.cloudSyncConfirm(preview["token"].(string), nil); err != nil {
 		t.Fatal(err)
 	}
-	peer := syncSnapshot{Protocol: 2, DeviceID: "android-old", Library: initial}
+	peer := syncSnapshot{Protocol: 2, DeviceID: "peer-old", Library: initial}
 	body, err := json.Marshal(peer)
 	if err != nil {
 		t.Fatal(err)
 	}
-	path := filepath.Join(cloudSyncRoot(folder), "sincronizacion", "dispositivos", "android-old.json")
+	path := filepath.Join(cloudSyncRoot(folder), "sincronizacion", "dispositivos", "peer-old.json")
 	if err := cloudWriteFile(path, body); err != nil {
 		t.Fatal(err)
 	}

@@ -18,7 +18,7 @@ func TestDeletedListNeverResurrectsFromOutdatedPeer(t *testing.T){
  deleted:=syncTestLists()
  deleted.Lists=deleted.Lists[:1]
  deleted.DeletedLists=map[string]bool{"b":true}
- peer:=syncSnapshot{Protocol:2,DeviceID:"android-old",Library:old}
+ peer:=syncSnapshot{Protocol:2,DeviceID:"peer-old",Library:old}
  got,_,_,conflicts,err:=syncMergeVersioned(deleted,nil,nil,peer,true)
  if err!=nil{t.Fatal(err)}
  if len(got.Lists)!=1||got.Lists[0].ID!="a"||!got.DeletedLists["b"]||len(conflicts)!=0{

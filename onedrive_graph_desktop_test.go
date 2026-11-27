@@ -245,14 +245,14 @@ func TestGraphPreviewAllowsLocalSaveAndRejectsStalePlan(t *testing.T) {
 	}
 }
 
-func TestGraphPreviewConfirmAndroidSnapshotWithoutOverwritingPeer(t *testing.T) {
-	t.Run("upload succeeds", func(t *testing.T) { testGraphPreviewConfirmAndroidSnapshot(t, "") })
-	t.Run("upload fails after commit", func(t *testing.T) { testGraphPreviewConfirmAndroidSnapshot(t, "upload") })
-	t.Run("metadata fails after commit", func(t *testing.T) { testGraphPreviewConfirmAndroidSnapshot(t, "metadata") })
+func TestGraphPreviewConfirmPeerSnapshotWithoutOverwritingPeer(t *testing.T) {
+	t.Run("upload succeeds", func(t *testing.T) { testGraphPreviewConfirmPeerSnapshot(t, "") })
+	t.Run("upload fails after commit", func(t *testing.T) { testGraphPreviewConfirmPeerSnapshot(t, "upload") })
+	t.Run("metadata fails after commit", func(t *testing.T) { testGraphPreviewConfirmPeerSnapshot(t, "metadata") })
 }
-func testGraphPreviewConfirmAndroidSnapshot(t *testing.T, failure string) {
+func testGraphPreviewConfirmPeerSnapshot(t *testing.T, failure string) {
 	remote := initialLibrary("☑ Película compartida (2024)")
-	remoteJSON, err := json.Marshal(syncSnapshot{Protocol: 2, DeviceID: "android-peer", Library: remote, Known: map[string]int64{}, Revisions: map[string]syncRevision{}})
+	remoteJSON, err := json.Marshal(syncSnapshot{Protocol: 2, DeviceID: "peer-peer", Library: remote, Known: map[string]int64{}, Revisions: map[string]syncRevision{}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -270,7 +270,7 @@ func testGraphPreviewConfirmAndroidSnapshot(t *testing.T, failure string) {
 		case r.Method == "GET" && r.URL.Path == "/me/drive/items/sync/children":
 			_, _ = w.Write([]byte("{\"value\":[{\"id\":\"dev\",\"name\":\"dispositivos\",\"folder\":{}}]}"))
 		case r.Method == "GET" && r.URL.Path == "/me/drive/items/dev/children":
-			items := []map[string]any{{"id": "remote", "name": "android-peer.json", "file": map[string]any{}}}
+			items := []map[string]any{{"id": "remote", "name": "peer-peer.json", "file": map[string]any{}}}
 			if ownBytes != nil {
 				items = append(items, map[string]any{"id": "own", "name": ownName, "file": map[string]any{}})
 			}
@@ -282,7 +282,7 @@ func testGraphPreviewConfirmAndroidSnapshot(t *testing.T, failure string) {
 				http.Error(w, `{"error":{"message":"fallo simulado"}}`, 503)
 				return
 			}
-			// This test refuses any write to the Android peer snapshot.
+			// This test refuses any write to the Peer peer snapshot.
 			ownName = strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/me/drive/items/dev:/"), ":/content")
 			ownBytes, _ = io.ReadAll(r.Body)
 			_, _ = w.Write([]byte("{\"id\":\"own\"}"))
@@ -315,7 +315,7 @@ func testGraphPreviewConfirmAndroidSnapshot(t *testing.T, failure string) {
 		t.Fatal(err)
 	}
 	if n, ok := preview["sources"].(int); !ok || n != 1 {
-		t.Fatalf("expected one Android snapshot, got %v", preview["sources"])
+		t.Fatalf("expected one Peer snapshot, got %v", preview["sources"])
 	}
 	if ownBytes != nil {
 		t.Fatal("preview must not upload")
@@ -370,11 +370,11 @@ func testGraphPreviewConfirmAndroidSnapshot(t *testing.T, failure string) {
 	if ownBytes == nil {
 		t.Fatal("confirmation did not publish own-device snapshot")
 	}
-	if ownName == "android-peer.json" {
+	if ownName == "peer-peer.json" {
 		t.Fatal("must never replace another device snapshot")
 	}
 	if syncWatched(app.library) != 1 {
-		t.Fatalf("Android watched flag not merged: %+v", app.library)
+		t.Fatalf("Peer watched flag not merged: %+v", app.library)
 	}
 }
 

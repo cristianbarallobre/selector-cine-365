@@ -1200,7 +1200,7 @@ function labCrossPageFinish(e,cancel=false){
  }
 }
 document.addEventListener('pointerdown',e=>{
- if(window.CineAndroid||e.button!==0||!filmOrderEditable())return;
+ if(e.button!==0||!filmOrderEditable())return;
  const grip=e.target.closest?.('#filmList .film-reorder-handle');
  if(!grip)return;
  const row=grip.closest('.film-item');
