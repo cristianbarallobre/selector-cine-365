@@ -48,7 +48,7 @@ func TestLocalOnlyDesktopSurface(t *testing.T){
  page,err:=makeHTML("☐ Origen (2010)","test")
  if err!=nil{t.Fatal(err)}
  page,err=localOnlyHTML(page);if err!=nil{t.Fatal(err)}
- for _,required:=range []string{"id=\"extraBackupFolder\"","/api/extra-backup/status","id=\"cloudRecoveryList\"","id=\"cloudRecoveryRestore\"","/api/sync/recovery/restore"}{
+ for _,required:=range []string{"id=\"extraBackupFolder\"","/api/extra-backup/status","/api/extra-backup/export","/api/extra-backup/restore","async function writeLibrary(payload,complete=false)","const saved=await writeLibrary(payload,state.complete_backup_version===1)","id=\"cloudRecoveryList\"","id=\"cloudRecoveryRestore\"","/api/sync/recovery/restore"}{
   if !strings.Contains(page,required){t.Fatalf("missing %s",required)}
  }
  for _,forbidden:=range []string{"id=\"cloudHeaderSync\"","id=\"cloudGraphConnect\"","id=\"cloudSyncPanel\"","/api/onedrive-desktop/","/api/cloud/auto","/api/cloud/config","/api/cloud/browse","Sincronizar con la nube"}{

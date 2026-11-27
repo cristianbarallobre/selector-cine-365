@@ -7,7 +7,7 @@ const page = fs.readFileSync('plantilla.html', 'utf8');
 const start = page.indexOf('let restoringBackup=false;');
 const writeStart = page.indexOf('async function writeLibrary(payload)');
 const writeEnd = page.indexOf('async function flushLibrary()', writeStart);
-const end = page.indexOf('// Copia adicional', start);
+const end = page.indexOf('// Operaciones de copia y recuperación local.', start);
 assert.ok(start >= 0 && end > start);
 
 async function restore(backup, accept) {
