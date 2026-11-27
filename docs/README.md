@@ -1,6 +1,6 @@
 # Documentación de Selector Cine 365
 
-Guías de Windows y macOS.
+Guías de Windows y macOS para 9.2.26. La publicación vigente se indica en [Releases/latest](https://github.com/cristianbarallobre/selector-cine-365/releases/latest).
 
 - [Manual completo](MANUAL_COMPLETO_SELECTOR_CINE_365.md) · [PDF](MANUAL_COMPLETO_SELECTOR_CINE_365.pdf) · [Word](MANUAL_COMPLETO_SELECTOR_CINE_365.docx)
 - [Guardado y recuperación](GUIA_SINCRONIZACION_SEGURA.md) · [PDF](GUIA_SINCRONIZACION_SEGURA.pdf) · [Word](GUIA_SINCRONIZACION_SEGURA.docx)
