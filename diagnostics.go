@@ -17,7 +17,7 @@ import (
  "time"
 )
 
-const diagnosticVersion = "9.2.19"
+const diagnosticVersion = "9.2.20"
 const diagnosticMaxBytes = 2 * 1024 * 1024
 var diagnosticEnabled atomic.Bool
 var diagnosticMu sync.Mutex
@@ -115,7 +115,7 @@ func diagnosticPanic() {
 
 // Avoid logging user-controlled paths and query strings.
 var diagnosticRoutes = map[string]bool{
- "/":true,"/api/library":true,"/api/save":true,"/api/beacon-save":true,"/api/quit":true,
+ "/":true,"/api/library":true,"/api/library/draft":true,"/api/save":true,"/api/beacon-save":true,"/api/quit":true,
  "/api/ping":true,"/api/sync/history":true,"/api/sync/revisions":true,"/api/sync/recovery/list":true,
  "/api/sync/recovery/pending":true,"/api/sync/recovery/preview":true,"/api/sync/recovery/restore":true,
  "/api/cloud/status":true,"/api/cloud/pending":true,"/api/cloud/config":true,"/api/cloud/backup":true,

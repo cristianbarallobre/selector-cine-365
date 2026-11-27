@@ -85,9 +85,8 @@ func validateLibrary(l libraryState) error {
 			return errors.New("Registro de listas borradas incompatible")
 		}
 	}
-	if len(l.DeletedLists) > 1000 {
-		return errors.New("Demasiadas eliminaciones registradas")
-	}
+	// Tombstones must not be discarded while an offline device may still hold
+	// an older snapshot. The library byte limit bounds their storage instead.
 	for _, it := range l.Lists {
 		if it.OrderChangedAt < 0 || it.OrderChangedAt > 4102444800000 {
 			return errors.New("Marca temporal del orden no válida")
@@ -161,7 +160,10 @@ func saveLibrary(path, legacyPath string, l libraryState) error {
 // A successful JSON replacement commits the library for every caller.
 // The next save retries a failed compatibility TXT using the latest state.
 func commitLibrary(path, legacyPath string, l libraryState) (mirrorPending bool, err error) {
-	if err := saveLibraryJSON(path, l); err != nil {
+	return commitLibraryCheckpoint(path, legacyPath, l, nil)
+}
+func commitLibraryCheckpoint(path, legacyPath string, l libraryState, checkpoint *syncDeviceState) (mirrorPending bool, err error) {
+	if err := saveLibraryJSONCheckpoint(path, l, checkpoint); err != nil {
 		return false, err
 	}
 	for _, list := range l.Lists {
@@ -177,13 +179,16 @@ func commitLibrary(path, legacyPath string, l libraryState) (mirrorPending bool,
 }
 
 func saveLibraryJSON(path string, l libraryState) error {
+	return saveLibraryJSONCheckpoint(path,l,nil)
+}
+func saveLibraryJSONCheckpoint(path string,l libraryState,checkpoint *syncDeviceState) error {
 	if err := validateLibrary(l); err != nil {
 		return err
 	}
 	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
 		return err
 	}
-	bytes, err := json.MarshalIndent(l, "", "  ")
+	bytes, err := json.MarshalIndent(libraryDisk{libraryState:l,LocalSync:checkpoint}, "", "  ")
 	if err != nil {
 		return err
 	}
@@ -207,14 +212,16 @@ func saveLibraryJSON(path string, l libraryState) error {
 		// Versiones rápidas solo de un estado anterior válido, con un número
 		// máximo de copias. No respaldar accidentalmente archivos corruptos.
 		labQuickBackup(path, before)
-		_ = os.MkdirAll(backupDir, 0700)
-		backup := filepath.Join(backupDir, time.Now().Format("2006-01-02")+".json")
-		if _, e := os.Stat(backup); os.IsNotExist(e) {
-			_ = os.WriteFile(backup, before, 0600)
+		if e:=os.MkdirAll(backupDir,0700);e!=nil{recordBackupIssue("crear carpeta de copias diarias",e)}else{
+			backup:=filepath.Join(backupDir,time.Now().Format("2006-01-02")+".json")
+			if _,e:=os.Stat(backup);os.IsNotExist(e){recordBackupIssue("guardar copia diaria",replaceLibraryFile(backup,before))}else if e!=nil{recordBackupIssue("comprobar copia diaria",e)}
 		}
 	}
 	if err := replaceLibraryFile(path, bytes); err != nil {
 		return err
+	}
+	if protectedLibraryEnabled && os.IsNotExist(readErr){
+		recordBackupIssue("guardar primera copia",replaceLibraryFile(filepath.Join(filepath.Dir(path),"biblioteca_guardada.json"),bytes))
 	}
 	labPruneLibraryBackups(path)
 	return nil
@@ -237,7 +244,7 @@ func replaceLibraryFile(path string, data []byte) error {
 	if closeErr != nil {
 		return closeErr
 	}
-	return os.Rename(tmp.Name(), path)
+	return replaceLibraryDestination(tmp.Name(), path)
 }
 func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -273,12 +280,13 @@ func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 			retry.MembershipChanges = a.library.MembershipChanges
 			if r.Header.Get("If-Match") != "" && reflect.DeepEqual(retry, a.library) {
 				w.Header().Set("ETag", a.libraryETag())
+				if desktopFeatures{a.clearServerDraft(r)}
 				a.mu.Unlock()
 				w.WriteHeader(http.StatusNoContent)
 				return
 			}
 			if desktopFeatures && r.Header.Get("If-Match") != "" {
-				a.preservePendingSave(w, state)
+				a.preservePendingRequest(w,r,state)
 			}
 			a.mu.Unlock()
 			http.Error(w, "La biblioteca cambió desde que se abrió esta ventana", http.StatusPreconditionFailed)
@@ -288,7 +296,7 @@ func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 		if desktopFeatures {
 			recordMembershipEdits(before, &state)
 		}
-		mirrorPending, err := commitLibrary(a.libraryPath, a.savePath, state)
+		mirrorPending, metadataErr, err := a.commitProtectedLibrary(state,nil,nil,"")
 		diagnosticError("guardado", "commit de biblioteca local", err)
 		if mirrorPending {
 			w.Header().Set("X-Cine-Legacy", "pending")
@@ -297,22 +305,18 @@ func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 			a.library = state
 			a.libraryRevision++
 			w.Header().Set("ETag", a.libraryETag())
-			// Registrar cambios del usuario, no solo el snapshot final.
-			if a.syncStore != nil {
-				if syncErr := a.syncStore.observe(before, state); syncErr != nil {
-					diagnosticError("sincronizacion", "registrar cambios locales", syncErr)
-					w.Header().Set("X-Cine-Cloud", "error")
-				}
+			if metadataErr!=nil{
+				diagnosticError("sincronizacion","guardar espejo de revisiones",metadataErr)
+				w.Header().Set("X-Cine-Cloud","error")
 			}
-			if desktopFeatures {
-				if err := a.markManualCloudUpload(); err != nil {
-					diagnosticError("sincronizacion", "marcar subida pendiente", err)
-					w.Header().Set("X-Cine-Cloud", "error")
-				}
+			if !desktopFeatures && a.syncStore!=nil{
+				if syncErr:=a.syncStore.observe(before,state);syncErr!=nil{w.Header().Set("X-Cine-Cloud","error")}
 			}
+			if desktopFeatures {a.clearServerDraft(r);a.resolvePendingCopies(state,false)}
+			if libraryBackupIssue.Load(){w.Header().Set("X-Cine-Backup","error")}
 			a.syncPreviewToken = "" // una vista previa anterior ya no es válida
 		} else if desktopFeatures {
-			a.preservePendingSave(w, state)
+			a.preservePendingRequest(w,r,state)
 		}
 		a.mu.Unlock()
 		if err != nil {

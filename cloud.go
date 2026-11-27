@@ -168,6 +168,17 @@ func (c *cloudBackups) backup() cloudStatus {
 			c.lastError = readErr.Error()
 			return c.statusLocked()
 		}
+		// The private local transaction checkpoint must not travel to another device.
+		if filename=="colecciones.json"{
+			var library libraryDisk
+			if json.Unmarshal(b,&library)!=nil||validateLibrary(library.libraryState)!=nil{
+				c.lastError="La biblioteca local no es válida";return c.statusLocked()
+			}
+			if library.LocalSync!=nil{
+				b,readErr=json.MarshalIndent(library.libraryState,"","  ")
+				if readErr!=nil{c.lastError=readErr.Error();return c.statusLocked()}
+			}
+		}
 		if writeErr := cloudWriteFile(filepath.Join(dest, "actual", filename), b); writeErr != nil {
 			c.lastError = writeErr.Error()
 			return c.statusLocked()

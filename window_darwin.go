@@ -12,6 +12,7 @@ import "C"
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"sync"
 	"unsafe"
@@ -48,4 +49,12 @@ func traceHTTP(path, _ string) {
 //export cine_log_ui_event
 func cine_log_ui_event(event *C.char) {
 	if event != nil { diagnosticUIEvent(C.GoString(event)) }
+}
+
+//export cine_store_draft
+func cine_store_draft(message *C.char) *C.char {
+	if message==nil{return nil}
+	ack:=nativeDraftMessage(filepath.Dir(getSavePath()),C.GoString(message))
+	if ack==""{return nil}
+	return C.CString(ack)
 }

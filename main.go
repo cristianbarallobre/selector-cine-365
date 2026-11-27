@@ -101,8 +101,8 @@ func makeHTML(initial, token string) (string, error) {
 	out = injectLabMaintenance(out)
 	if desktopFeatures && !appIsLab {
 		out = strings.NewReplacer(
-			"<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.19</title>",
-			"🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.19",
+			"<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.20</title>",
+			"🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.20",
 			` <span class="lab-nav-tag">LAB</span>`, "",
 			`<span class="lab-smart-caption">LAB</span>`, "",
 			"SELECTOR CINE 365 · LAB WINDOWS", "SELECTOR CINE 365",
@@ -140,6 +140,7 @@ type runningApp struct {
 	graphUploadCh       chan struct{}
 	syncStore           *desktopSyncStore
 	syncPreviewToken    string
+	libraryDigest string // last committed on-disk fingerprint, protected by mu
 	libraryRevision     uint64     // protected by mu
 	syncPlanMu          sync.Mutex // remote reads do not take the library mutex
 	folderPublishMu     sync.Mutex
@@ -213,6 +214,8 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write(data)
 	case "/api/library":
 		a.serveLibraryHTTP(w, r)
+	case "/api/library/draft":
+		a.serveUIDraft(w,r)
 	case "/api/sync/history", "/api/sync/revisions", "/api/sync/recovery/list", "/api/sync/recovery/pending", "/api/sync/recovery/preview", "/api/sync/recovery/restore":
 		a.serveSyncSupport(w, r)
 	case "/api/cloud/status", "/api/cloud/pending", "/api/cloud/config", "/api/cloud/backup", "/api/cloud/browse", "/api/cloud/preview", "/api/cloud/sync", "/api/cloud/auto", "/api/cloud/auto-folder", "/api/cloud/mode":
@@ -332,12 +335,15 @@ func serve() error {
 	} else {
 		lib = loadLibrary(libPath, state)
 	}
-	syncStore, syncErr := newDesktopSyncStore(filepath.Dir(savePath))
+	digest, digestErr:=libraryFingerprint(libPath)
+	if digestErr!=nil{return digestErr}
+	syncStore, syncErr := recoverSyncCheckpoint(filepath.Dir(savePath),readLibraryCheckpoint(libPath))
 	if syncErr != nil {
 		// Un fallo en el estado de sincronización no debe impedir usar datos locales.
 		diagnosticError("sincronizacion", "estado local no disponible", syncErr)
 	}
-	app := &runningApp{libraryRecovered: recovered, html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath), appCacheRoot(filepath.Dir(savePath))), cloud: newCloudBackups(filepath.Dir(savePath)), graph: newDesktopGraph(filepath.Dir(savePath)), graphUploadCh: make(chan struct{}, 1), syncStore: syncStore, token: token, stopCh: make(chan struct{})}
+	app := &runningApp{libraryDigest:digest,libraryRecovered: recovered, html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath), appCacheRoot(filepath.Dir(savePath))), cloud: newCloudBackups(filepath.Dir(savePath)), graph: newDesktopGraph(filepath.Dir(savePath)), graphUploadCh: make(chan struct{}, 1), syncStore: syncStore, token: token, stopCh: make(chan struct{})}
+	if desktopFeatures {app.resolvePendingCopies(lib,true)}
 	defer func() { app.stop(); app.flushLabCatalog(); app.platforms.flushProviderCache() }()
 	app.touch()
 	if !desktopFeatures {

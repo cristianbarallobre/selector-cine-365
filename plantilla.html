@@ -989,7 +989,13 @@ function updateChoicePlatforms(){
 }
 function scheduledPlatformRender(){if(scheduledPlatformRender.timer)return;scheduledPlatformRender.timer=setTimeout(()=>{scheduledPlatformRender.timer=null;renderList();updateChoicePlatforms();updatePlatformChoices();updateListPlatformOptions();renderStats();},260);}
 async function platformApi(path,body){
- const res=await fetch(path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json','X-Atlas-Token':token},body:body?JSON.stringify(body):undefined,cache:'no-store'});
+ const options={method:body?'POST':'GET',headers:{'Content-Type':'application/json','X-Atlas-Token':token},body:body?JSON.stringify(body):undefined,cache:'no-store'};
+ if(globalThis.cineLocalRead&&/^\/api\/platforms\/overrides(?:\/import)?$/.test(path)){
+  const {response,data}=await globalThis.cineLocalRead(path,options,5000);
+  if(!response.ok)throw new Error('Estado local TMDB no disponible · HTTP '+response.status);
+  return data;
+ }
+ const res=await fetch(path,options);
  if(!res.ok){const error=await res.text();throw new Error(error.replace(/<[^>]+>/g,'').slice(0,200));}
  return await res.json();
 }
@@ -1403,8 +1409,77 @@ $('filmPageGotoForm').addEventListener('submit',e=>{
  filmPage=page-1;renderList();input.value='';
 });
 function resetChoice(){chosen=null;$('resultPoster').hidden=true;$('resultPoster').removeAttribute('src');$('resultPlatforms').replaceChildren();$('resultTag').textContent='EL SORTEO TE ESPERA';$('resultTitle').textContent='Tu próxima película aparecerá aquí';$('resultDetails').textContent='';$('markWatched').disabled=true;$('copyChoice').disabled=true;}
+// Local requests have a bounded lifetime. A timeout is an uncertain result,
+// never permission to overwrite an older revision.
+globalThis.cineLocalFetch=async(input,options={},ms=12000)=>{
+ const controller=new AbortController();
+ const timer=setTimeout(()=>controller.abort(),ms);
+ try{return await fetch(input,{...options,signal:controller.signal});}
+ catch(error){if(controller.signal.aborted)throw new Error('Guardado o consulta local no confirmado: tiempo de espera agotado.');throw error;}
+ finally{clearTimeout(timer);}
+};
+globalThis.cineLocalRead=async(input,options={},ms=8000)=>{
+ const controller=new AbortController();
+ const timer=setTimeout(()=>controller.abort(),ms);
+ try{
+  const response=await fetch(input,{...options,signal:controller.signal});
+  return {response,data:response.ok?await response.json():null};
+ }finally{clearTimeout(timer);}
+};
+globalThis.cineLocalText=async(input,options={},ms=15000)=>{
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),ms);
+ try{const response=await fetch(input,{...options,signal:controller.signal});return {response,raw:await response.text()};}
+ finally{clearTimeout(timer);}
+};
+// A unique session avoids overwriting a previous session's unresolved edits.
+// Native message delivery does not require the loopback HTTP motor.
+const cineDraftSession=Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join('');
+let cineLatestDraft=null,cineDraftConfirmed=-1;
+const cineDraftAcks=new Map();
+globalThis.cineDraftAck=message=>{
+ const match=typeof message==='string'&&/^cine-draft-ack:([a-f0-9]{32}):(\d+):(ok|error)$/.exec(message);
+ if(!match||match[1]!==cineDraftSession)return;
+ const revision=Number(match[2]),resolve=cineDraftAcks.get(revision);
+ if(resolve)resolve(match[3]==='ok');
+};
+window.chrome?.webview?.addEventListener('message',event=>globalThis.cineDraftAck(event.data));
+function cineSendDraft(revision,action,payload=''){
+ const message='cine-draft:'+cineDraftSession+':'+revision+':'+action+':'+payload;
+ const native=window.chrome?.webview||window.webkit?.messageHandlers?.cineDraft;
+ if(native&&new Blob([message]).size<=64*1024*1024){
+  if(action==='clear'){try{native.postMessage(message);}catch{}return Promise.resolve(true);}
+  return new Promise(resolve=>{
+   let timer;
+   const finish=ok=>{clearTimeout(timer);cineDraftAcks.delete(revision);resolve(ok);};
+   cineDraftAcks.set(revision,finish);
+   timer=setTimeout(()=>finish(false),4000);
+   try{native.postMessage(message);}catch{finish(false);}
+  });
+ }
+ return globalThis.cineLocalFetch('/api/library/draft',{method:'POST',headers:{'X-Atlas-Token':token},body:message,cache:'no-store'},5000).then(r=>r.status===204,()=>false);
+}
+globalThis.cineDraftStage=(revision,payload)=>{
+ if(revision<=0)return Promise.resolve(false);
+ if(cineLatestDraft?.revision>revision)return Promise.resolve(false);
+ if(cineLatestDraft?.revision===revision&&cineLatestDraft.payload===payload&&!cineLatestDraft.failed)return cineLatestDraft.promise;
+ const promise=cineSendDraft(revision,'put',payload).then(ok=>{
+  if(ok)cineDraftConfirmed=Math.max(cineDraftConfirmed,revision);
+  else {if(cineLatestDraft?.revision===revision&&cineLatestDraft.payload===payload)cineLatestDraft.failed=true;globalThis.cineDiagnostic?.('save_failed');}
+  return ok;
+ });
+ cineLatestDraft={revision,payload,promise};
+ return promise;
+};
+globalThis.cineDraftHeader=payload=>cineLatestDraft?.payload===payload?cineDraftSession+':'+cineLatestDraft.revision:'';
+globalThis.cineDraftClear=revision=>{
+ if(revision>0)void cineSendDraft(revision,'clear');
+ if(cineLatestDraft?.revision<=revision)cineLatestDraft=null;
+};
+globalThis.cineDraftIsConfirmed=revision=>cineDraftConfirmed===revision;
+
 function scheduleSave(membershipEdit=false){
  membershipCache=null;saveNeeded=true;editRevision++;
+ syncActiveText();void globalThis.cineDraftStage?.(editRevision,JSON.stringify(libraryState));
  if(membershipEdit===true)membershipEditRevision=editRevision;
  $('saveState').textContent='Guardando…';
  if(savePump)return;
@@ -1417,23 +1492,27 @@ async function saveLocal(){
  syncActiveText();const snapshot=JSON.stringify(libraryState);const epoch=++saveEpoch,revision=editRevision;
  saveNeeded=true;
  saveQueue=saveQueue.catch(()=>{}).then(async()=>{
-   const payload=await prepareMembershipSave(snapshot,revision);
+   await globalThis.cineDraftStage?.(revision,snapshot);
+    if(revision!==editRevision)return null;
+    const payload=await prepareMembershipSave(snapshot,revision);
    if(revision!==editRevision)return null;
    const response=await writeLibrary(payload);
-   return {cloudResult:response.headers.get('X-Cine-Cloud'),txtPending:response.headers.get('X-Cine-Legacy')==='pending'};
+   return {cloudResult:response.headers.get('X-Cine-Cloud'),txtPending:response.headers.get('X-Cine-Legacy')==='pending',backupWarning:response.headers.get('X-Cine-Backup')==='error'};
  });
  try{const result=await saveQueue;if(!result)return;
- const {cloudResult,txtPending}=result;
+ const {cloudResult,txtPending,backupWarning}=result;
+  globalThis.cineDraftClear?.(revision);
  globalThis.cineDiagnostic?.('save_confirmed');
  if(epoch===saveEpoch&&revision===editRevision)saveNeeded=false;
- await cineLoadRevisions();
- if(epoch===saveEpoch&&revision===editRevision){cineRecentIntents.clear();$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + carpeta de nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':cloudResult==='review'?'✓ Guardado local · Revisar sincronización':'✓ Guardado';
+ void cineLoadRevisions().then(()=>{if(revision===editRevision&&globalThis.cineRevisionRefreshOK!==false)cineRecentIntents.clear();});
+ if(epoch===saveEpoch&&revision===editRevision){$('saveState').textContent=cloudResult==='ok'?'✓ Guardado local + carpeta de nube':cloudResult==='error'?'✓ Local · ⚠ Copia en nube':cloudResult==='review'?'✓ Guardado local · Revisar sincronización':'✓ Guardado';
  if(txtPending)$('saveState').textContent+=' · ⚠ Copia TXT pendiente';
+ if(backupWarning)$('saveState').textContent+=' · ⚠ Copias automáticas: revisa Mantenimiento';
  void cloudRefresh();}}
  catch(err){
   globalThis.cineDiagnostic?.('save_failed');
   if(err.recoverySaved){recoverySavedRevision=revision;void cineRefreshRecovery();}
-  if(epoch===saveEpoch&&revision===editRevision)$('saveState').textContent=err.message||'⚠ Guardado no confirmado';
+  if(epoch===saveEpoch&&revision===editRevision)$('saveState').textContent=(err.message||'⚠ Guardado no confirmado')+(globalThis.cineDraftIsConfirmed?.(revision)?' · Borrador local recuperable':'');
  }
 }
 // Only replay exact film removals. Any other local edit keeps the normal revision guard.
@@ -1481,10 +1560,16 @@ async function prepareMembershipSave(snapshot,revision){
  if(!removals)return snapshot;
  let latest,etag;
  try{
-  const response=await fetch('/api/library',{headers:{'X-Atlas-Token':token},cache:'no-store'});
-  etag=response.headers.get('ETag');
-  if(!response.ok||!etag||etag===libraryETag)return snapshot;
-  latest=await response.json();
+  const options={headers:{'X-Atlas-Token':token},cache:'no-store'};
+  if(globalThis.cineLocalRead){
+   const read=await globalThis.cineLocalRead('/api/library',options,8000);etag=read.response.headers.get('ETag');
+   if(!read.response.ok||!etag||etag===libraryETag)return snapshot;latest=read.data;
+  }else{
+   const response=await fetch('/api/library',options);
+   etag=response.headers.get('ETag');
+   if(!response.ok||!etag||etag===libraryETag)return snapshot;
+   latest=await response.json();
+  }
  }catch{return snapshot;}
  if(revision!==editRevision||!validLibrary(latest))return snapshot;
  const latestBase=JSON.stringify(latest);
@@ -1498,13 +1583,15 @@ async function prepareMembershipSave(snapshot,revision){
 }
 async function writeLibrary(payload){
  if(!libraryETag)throw new Error('⚠ No se pudo cargar la biblioteca. Exporta tus cambios antes de recargar.');
- const response=await fetch('/api/library',{method:'POST',headers:{'Content-Type':'application/json','X-Atlas-Token':token,'If-Match':libraryETag},body:payload,cache:'no-store'});
+ const headers={'Content-Type':'application/json','X-Atlas-Token':token,'If-Match':libraryETag};
+ const draftHeader=globalThis.cineDraftHeader?.(payload);if(draftHeader)headers['X-Cine-Draft']=draftHeader;
+ const response=await (globalThis.cineLocalFetch||fetch)('/api/library',{method:'POST',headers,body:payload,cache:'no-store'},12000);
  const recovered=response.headers.get('X-Cine-Recovery')==='saved';
  if(response.status===412){
   $('reloadLibraryAfterConflict').hidden=false;
   throw Object.assign(new Error(recovered?'⚠ No se guardó la última edición. Carga la biblioteca actual y repite el cambio si falta. Hay una copia local de recuperación en Mantenimiento.':'⚠ La biblioteca cambió. Puedes exportar tus cambios en Mis listas antes de cargar la versión guardada.'),{recoverySaved:recovered});
  }
- if(!response.ok)throw Object.assign(new Error(recovered?'⚠ No se guardó la última edición en la biblioteca. Puedes recuperarla desde la copia local de recuperación en Mantenimiento.':'⚠ Guardado no confirmado · comprueba la lista antes de cerrar. '+(await response.text()).trim()),{recoverySaved:recovered});
+ if(!response.ok)throw Object.assign(new Error(recovered?'⚠ No se guardó la última edición en la biblioteca. Puedes recuperarla desde la copia local de recuperación en Mantenimiento.':'⚠ Guardado no confirmado · comprueba la lista antes de cerrar. '+(globalThis.cineLocalFetch?'HTTP '+response.status:(await response.text()).trim())),{recoverySaved:recovered});
  libraryETag=response.headers.get('ETag')||libraryETag;
  libraryBase=payload;
  $('reloadLibraryAfterConflict').hidden=true;
@@ -1514,8 +1601,7 @@ async function flushLibrary(){
  if(savePump)await savePump;
  try{await saveQueue;}catch{}
  if(saveNeeded){
-  void saveLocal();
-  try{await saveQueue;}catch{return false;}
+  await saveLocal();
  }
  return !saveNeeded;
 }
@@ -1715,18 +1801,20 @@ function propagateSeen(f,newChecked){
 // y cambiar identificaciones. Basta una marca ☑ en CUALQUIER lista para que
 // todas las apariciones de esa misma película también estén vistas.
 // Se consulta exclusivamente el historial causal LOCAL; nunca se descarga TMDB.
-let cineRevisionCache=new Map(),cineRevisionsLoaded=false;
+let cineRevisionCache=new Map(),cineRevisionsLoaded=false,cineRevisionRequest=0;
 const cineRecentIntents=new Map();
 async function cineLoadRevisions(){
+ const request=++cineRevisionRequest,revision=typeof editRevision==='number'?editRevision:0;
+ cineRevisionsLoaded=false;globalThis.cineRevisionRefreshOK=false;
  try{
-  const response=await fetch('/api/sync/revisions',{headers:{'X-Atlas-Token':token},cache:'no-store'});
-  if(!response.ok)throw new Error('Estado local no disponible');
-  const data=await response.json();
-  cineRevisionCache=new Map(Object.entries(data.revisions||{}));
-  cineRevisionsLoaded=true;
+   const options={headers:{'X-Atlas-Token':token},cache:'no-store'};
+   const {response,data}=globalThis.cineLocalRead?await globalThis.cineLocalRead('/api/sync/revisions',options,5000):await (async()=>{const response=await fetch('/api/sync/revisions',options);return {response,data:response.ok?await response.json():null};})();
+   if(!response.ok)throw new Error('Estado local no disponible');
+   if(request!==cineRevisionRequest||(typeof editRevision==='number'&&revision!==editRevision))return;
+   cineRevisionCache=new Map(Object.entries(data.revisions||{}));
+   cineRevisionsLoaded=true;globalThis.cineRevisionRefreshOK=true;
  }catch(error){
-  // La opción segura es NO reconciliar, nunca volver a marcar por una copia.
-  cineRevisionsLoaded=false;
+   if(request===cineRevisionRequest)cineRevisionsLoaded=false;
  }
 }
 function cineRevisionKey(f){return filmIdentity(f)+'|'+String(f.year||'');}
@@ -1923,11 +2011,9 @@ async function initLibrary({preserveNavigation=false}={}){
  await cineLoadRevisions();
  let incoming=null,etag='',sameList=true;
  try{
-  const response=await fetch('/api/library',{headers:{'X-Atlas-Token':token},cache:'no-store'});
-  if(response.ok){
-   const state=await response.json();
-   if(validLibrary(state)){incoming=state;etag=response.headers.get('ETag')||'';}
-  }
+  const options={headers:{'X-Atlas-Token':token},cache:'no-store'};
+  const read=globalThis.cineLocalRead?await globalThis.cineLocalRead('/api/library',options,12000):await (async()=>{const response=await fetch('/api/library',options);return {response,data:response.ok?await response.json():null};})();
+  if(read.response.ok&&validLibrary(read.data)){incoming=read.data;etag=read.response.headers.get('ETag')||'';}
  }catch(e){}
  if(!canApply()||(!libraryReady&&(!incoming||!etag)))return false;
  const loadedBase=incoming&&JSON.stringify(incoming);
@@ -2242,7 +2328,7 @@ $('reloadLibraryAfterConflict').addEventListener('click',async()=>{
   await saveQueue.catch(()=>{});
   cineRecentIntents.clear();
   if(!await initLibrary())throw new Error('No se pudo cargar la biblioteca guardada');
-  if(!savePump){saveNeeded=false;$('saveState').textContent='✓ Biblioteca cargada';}
+  if(!savePump){saveNeeded=false;globalThis.cineDraftClear?.(editRevision);$('saveState').textContent='✓ Biblioteca cargada';}
   $('reloadLibraryAfterConflict').hidden=true;
  }catch(error){$('saveState').textContent='⚠ '+error.message;}
  finally{restoringBackup=false;document.body.inert=false;}
@@ -2273,7 +2359,9 @@ async function cloudRequest(path,method='GET',payload){
  const opts={method,headers:{'X-Atlas-Token':token},cache:'no-store'};
  if(path==='/api/sync/recovery/restore')opts.headers['If-Match']=libraryETag;
  if(payload!==undefined){opts.headers['Content-Type']='application/json';opts.body=JSON.stringify(payload)}
- const r=await fetch(path,opts);const raw=await r.text();
+ const longRequest=/^\/api\/cloud\/(?:auto|sync|preview|backup)(?:\?|$)/.test(path);
+ const result=globalThis.cineLocalText&&path!=='/api/cloud/browse'?await globalThis.cineLocalText(path,opts,longRequest?150000:15000):await (async()=>{const response=await fetch(path,opts);return {response,raw:await response.text()};})();
+ const r=result.response,raw=result.raw;
  let data;
  try{data=raw?JSON.parse(raw):{};}
  catch{throw new Error('OneDrive: '+(raw.slice(0,160)||'Respuesta no válida del servidor local'));}
@@ -2961,6 +3049,7 @@ async function checkLocalConnection(){
  }catch{
   if(state.hidden)globalThis.cineDiagnostic?.('local_connection_lost');
   state.hidden=false;state.textContent='⚠ Sin comunicación con el motor local. Si hay cambios pendientes, exporta una copia de emergencia.';
+   if(saveNeeded){$('saveState').textContent='⚠ Guardado no confirmado · motor inaccesible';updateSaveWarning();}
  }finally{clearTimeout(timer);localPingBusy=false;}
 }
 void checkLocalConnection();
@@ -3060,7 +3149,7 @@ window.cinePrepareClose=async()=>{
  try{
   if(savePump)await awaitCloseStep(savePump,deadline);
   if(!saveNeeded||recoverySavedRevision!==editRevision&&await awaitCloseStep(flushLibrary(),deadline))return true;
-  if(recoverySavedRevision===editRevision){saveNeeded=false;return true;}
+  if(recoverySavedRevision===editRevision||globalThis.cineDraftIsConfirmed?.(editRevision)){saveNeeded=false;return true;}
   syncActiveText();
   const revision=editRevision,controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),Math.max(0,deadline-Date.now()));
@@ -3072,6 +3161,7 @@ window.cinePrepareClose=async()=>{
   recoverySavedRevision=revision;saveNeeded=false;
   return true;
  }catch(error){
+  if(saveNeeded&&globalThis.cineDraftIsConfirmed?.(editRevision)){saveNeeded=false;return true;}
   globalThis.cineDiagnostic?.('close_failed');
   window.cineCloseFailureDetail=(describePendingChanges()+'\nMotivo: '+(error.message||'Guardado no confirmado.')).slice(0,1100);
   $('saveState').textContent='⚠ No se pudo confirmar el guardado local.';

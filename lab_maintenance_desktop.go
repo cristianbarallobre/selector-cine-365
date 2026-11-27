@@ -77,6 +77,7 @@ func (a *runningApp) serveLabMaintenance(w http.ResponseWriter,r *http.Request) 
    "posters":labLocalPosterUsage(posterDir),
    "discovery_images":labLocalPosterUsage(discoveryDir),
    "backup_daily":len(daily),"backup_quick":len(quick),
+   "backup_warning":libraryBackupIssue.Load(),
    "library_recovered":a.libraryRecovered,
    "tmdb_connected":a.platforms!=nil&&a.platforms.configured(),
    "cloud_connected":a.cloud!=nil&&a.cloud.status().Enabled,

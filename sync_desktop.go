@@ -47,6 +47,7 @@ type syncDeviceState struct {
 	Revisions          map[string]syncRevision `json:"revisions"`
 	PairedFolder       string                  `json:"paired_folder,omitempty"`
 	GraphUploadPending bool                    `json:"graph_upload_pending,omitempty"`
+	Checkpoint string `json:"checkpoint,omitempty"`
 }
 type syncSnapshot struct {
 	Protocol  int                     `json:"protocol"`
@@ -111,11 +112,12 @@ func newDesktopSyncStore(dir string) (*desktopSyncStore, error) {
 }
 func (s *desktopSyncStore) saveLocked() error {
 	s.dirty = true
+	if s.path==""{s.dirty=false;return nil}
 	b, e := json.MarshalIndent(s.state, "", "  ")
 	if e != nil {
 		return e
 	}
-	if e = cloudWriteFile(s.path, b); e != nil {
+	if e = replaceLibraryFile(s.path, b); e != nil {
 		return e
 	}
 	s.dirty = false
@@ -938,13 +940,14 @@ func (a *runningApp) cloudSyncConfirm(token string, decisions map[string]bool) (
 		a.mu.Unlock()
 		return nil, err
 	}
-	if err := saveLibrary(a.libraryPath, a.savePath, p.Library); err != nil {
+	_,metadataErr,err:=a.commitProtectedLibrary(p.Library,&p,decisions,folder)
+	if err != nil {
 		a.mu.Unlock()
 		return nil, err
 	}
 	a.library = p.Library
 	a.libraryRevision++
-	metadataErr := a.syncStore.accept(p, decisions, folder)
+	if !desktopFeatures {metadataErr = a.syncStore.accept(p, decisions, folder)}
 	a.syncPreviewToken = ""
 	a.syncPendingConflict.Store(false)
 	a.syncLastCheck.Store(time.Now().UnixMilli())

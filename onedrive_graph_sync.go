@@ -313,13 +313,14 @@ func (a *runningApp) graphSyncConfirm(token string, decisions map[string]bool) (
 		a.mu.Unlock()
 		return nil, err
 	}
-	if err = saveLibrary(a.libraryPath, a.savePath, p.Library); err != nil {
+	_,metadataErr,err:=a.commitProtectedLibrary(p.Library,&p,decisions,op.pairingID())
+	if err != nil {
 		a.mu.Unlock()
 		return nil, err
 	}
 	a.library = p.Library
 	a.libraryRevision++
-	metadataErr := a.syncStore.accept(p, decisions, op.pairingID())
+	if !desktopFeatures {metadataErr=a.syncStore.accept(p,decisions,op.pairingID())}
 	a.syncPreviewToken = ""
 	a.syncPendingConflict.Store(false)
 	a.syncLastCheck.Store(time.Now().UnixMilli())
@@ -496,12 +497,14 @@ func (a *runningApp) graphAutoSync(force bool) (map[string]any, error) {
 		a.mu.Unlock()
 		return nil, err
 	}
+	var metadataErr error
 	if libChanged {
 		if err = a.saveSyncRecovery(a.library, ""); err != nil {
 			a.mu.Unlock()
 			return nil, err
 		}
-		if err = saveLibrary(a.libraryPath, a.savePath, p.Library); err != nil {
+		_,metadataErr,err=a.commitProtectedLibrary(p.Library,&p,nil,pairing)
+		if err != nil {
 			a.mu.Unlock()
 			return nil, err
 		}
@@ -509,7 +512,10 @@ func (a *runningApp) graphAutoSync(force bool) (map[string]any, error) {
 		a.libraryRevision++
 		a.syncLastReceived.Store(time.Now().UnixMilli())
 	}
-	metadataErr := a.syncStore.accept(p, nil, pairing)
+	if !libChanged&&desktopFeatures{
+		_,metadataErr,err=a.commitProtectedLibrary(a.library,&p,nil,pairing)
+		if err!=nil{a.mu.Unlock();return nil,err}
+	}else if !desktopFeatures{metadataErr=a.syncStore.accept(p,nil,pairing)}
 	a.syncPreviewToken = ""
 	a.mu.Unlock()
 	result := syncResult(p, libChanged, metadataErr, func() error { return a.publishGraphOperation(op) })

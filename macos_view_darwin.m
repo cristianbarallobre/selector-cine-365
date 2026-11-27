@@ -4,7 +4,9 @@
 // de terceros. Autor: Cristian Barallobre Rúa.
 #import <Cocoa/Cocoa.h>
 #import <WebKit/WebKit.h>
+#include <stdlib.h>
 extern void cine_log_ui_event(char *event);
+extern char *cine_store_draft(char *message);
 
 @interface CineMacDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate, WKScriptMessageHandler>
 @property(retain) NSURL *appURL;
@@ -17,11 +19,22 @@ extern void cine_log_ui_event(char *event);
 @implementation CineMacDelegate
 - (void)userContentController:(WKUserContentController *)controller didReceiveScriptMessage:(WKScriptMessage *)message {
     WKSecurityOrigin *source = message.frameInfo.securityOrigin;
-    if (![message.name isEqualToString:@"cineDiagnostics"] || !message.frameInfo.isMainFrame ||
+    if (!message.frameInfo.isMainFrame ||
         ![source.protocol isEqualToString:self.appURL.scheme] || ![source.host isEqualToString:self.appURL.host] ||
         source.port != self.appURL.port.integerValue || ![message.body isKindOfClass:[NSString class]]) return;
     NSString *event = message.body;
-    if (event.length <= 128) cine_log_ui_event((char *)[event UTF8String]);
+    if ([message.name isEqualToString:@"cineDiagnostics"]) {
+        if (event.length <= 128) cine_log_ui_event((char *)[event UTF8String]);
+    } else if ([message.name isEqualToString:@"cineDraft"] && [event lengthOfBytesUsingEncoding:NSUTF8StringEncoding] <= 64 * 1024 * 1024 + 256) {
+        char *ack = cine_store_draft((char *)[event UTF8String]);
+        if (ack) {
+            NSString *reply = [NSString stringWithUTF8String:ack];
+            free(ack);
+            // Reply consists solely of validated ASCII protocol fields.
+            NSString *script = [NSString stringWithFormat:@"window.cineDraftAck?.('%@')", reply];
+            [message.webView evaluateJavaScript:script completionHandler:nil];
+        }
+    }
 }
 - (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView {
     cine_log_ui_event("renderer_terminated");
@@ -213,6 +226,7 @@ int cine_macos_run(const char *targetURL) {
         WKWebViewConfiguration *configuration = [[WKWebViewConfiguration alloc] init];
         configuration.websiteDataStore = [WKWebsiteDataStore nonPersistentDataStore];
         [configuration.userContentController addScriptMessageHandler:delegate name:@"cineDiagnostics"];
+        [configuration.userContentController addScriptMessageHandler:delegate name:@"cineDraft"];
         WKWebView *webView = [[WKWebView alloc] initWithFrame:[[window contentView] bounds]
                                                  configuration:configuration];
         delegate.appView = webView;
@@ -225,6 +239,7 @@ int cine_macos_run(const char *targetURL) {
         [app activateIgnoringOtherApps:YES];
         [app run];
         [configuration.userContentController removeScriptMessageHandlerForName:@"cineDiagnostics"];
+        [configuration.userContentController removeScriptMessageHandlerForName:@"cineDraft"];
         return 0;
     }
 }

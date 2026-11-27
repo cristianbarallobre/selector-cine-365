@@ -53,7 +53,7 @@ func labQuickBackup(path string,previous []byte) {
  if !protectedLibraryEnabled||!labValidBackup(previous){return}
  dir:=filepath.Join(filepath.Dir(path),"copias_rapidas_lab")
  names,err:=labBackupCandidates(dir,labQuickBackupName)
- if err!=nil{return}
+ if err!=nil{recordBackupIssue("listar copias rapidas",err);return}
  now:=time.Now().UTC()
  if len(names)>0 {
   // Los nombres usan UTC y precisión nanosegundo, ordenables alfabéticamente.
@@ -61,12 +61,12 @@ func labQuickBackup(path string,previous []byte) {
   stamp,err:=time.Parse("20060102T150405.000000000Z",last)
   if err==nil&&now.Sub(stamp)<labBackupMinInterval{return}
  }
- if err:=os.MkdirAll(dir,0700);err!=nil{return}
+ if err:=os.MkdirAll(dir,0700);err!=nil{recordBackupIssue("crear carpeta de copias rapidas",err);return}
  filename:=filepath.Join(dir,now.Format("20060102T150405.000000000Z")+".json")
  // No se copian API keys, tokens ni caché: solo el JSON válido de biblioteca.
- if err:=os.WriteFile(filename,previous,0600);err==nil{
+ if err:=replaceLibraryFile(filename,previous);err==nil{
   labPruneNamedBackups(dir,labQuickBackupName,labQuickBackupCount)
- }
+ }else{recordBackupIssue("guardar copia rapida",err)}
 }
 func labPruneLibraryBackups(path string) {
  if !protectedLibraryEnabled{return}
@@ -78,8 +78,8 @@ func labPruneLibraryBackups(path string) {
 // original intacto en un nombre de cuarentena.
 func labLoadLibraryProtected(path,legacy string) (libraryState,bool,error) {
  data,err:=os.ReadFile(path)
- if errors.Is(err,os.ErrNotExist){return initialLibrary(legacy),false,nil}
- if err!=nil{return libraryState{},false,fmt.Errorf("No se puede leer la biblioteca: %w",err)}
+ missing:=errors.Is(err,os.ErrNotExist)
+ if err!=nil&&!missing{return libraryState{},false,fmt.Errorf("No se puede leer la biblioteca: %w",err)}
  if labValidBackup(data) {
   var state libraryState
   if err:=json.Unmarshal(data,&state);err==nil{return state,false,nil}
@@ -88,19 +88,25 @@ func labLoadLibraryProtected(path,legacy string) (libraryState,bool,error) {
  candidates:=[]struct{dir string;pattern *regexp.Regexp}{
   {filepath.Join(root,"copias_rapidas_lab"),labQuickBackupName},
   {filepath.Join(root,"copias_automaticas"),labDailyBackupName},
+  {filepath.Join(root,"sync_recuperacion"),syncRecoveryName},
  }
  type backup struct{filename string;when time.Time}
  found:=[]backup{}
+ evidence:=false
  for _,c:=range candidates{
   names,e:=labBackupCandidates(c.dir,c.pattern)
-  if e!=nil{continue}
+  if e!=nil{evidence=true;recordBackupIssue("listar copias para recuperación",e);continue}
   for _,name:=range names{
+   if stringsHasPendingSuffix(name){continue}
+   evidence=true
    file:=filepath.Join(c.dir,name)
    info,e:=os.Stat(file);if e==nil&&info.Size()<=libraryFileLimit{
     found=append(found,backup{file,info.ModTime()})
    }
   }
  }
+ first:=filepath.Join(root,"biblioteca_guardada.json")
+ if info,e:=os.Stat(first);e==nil{evidence=true;if info.Mode().IsRegular()&&info.Size()<=libraryFileLimit{found=append(found,backup{first,info.ModTime()})}}else if !os.IsNotExist(e){evidence=true}
  sort.Slice(found,func(i,j int)bool{return found[i].when.After(found[j].when)})
  for _,candidate:=range found{
   restored,e:=os.ReadFile(candidate.filename)
@@ -108,15 +114,16 @@ func labLoadLibraryProtected(path,legacy string) (libraryState,bool,error) {
   var state libraryState
   if e=json.Unmarshal(restored,&state);e!=nil{continue}
   quarantine:=path+".corrupt_"+time.Now().UTC().Format("20060102T150405.000000000")+".json"
-  if e=os.Rename(path,quarantine);e!=nil{
+  if !missing {if e=os.Rename(path,quarantine);e!=nil{
    return libraryState{},false,fmt.Errorf("La biblioteca está dañada y no se pudo poner el original a salvo: %w",e)
-  }
-  if e=os.WriteFile(path,restored,0600);e!=nil{
+  }}
+  if e=replaceLibraryFile(path,restored);e!=nil{
    // En caso de error, devolver el original sin tocar la copia buena.
-   _=os.Rename(quarantine,path)
+   if !missing {_=os.Rename(quarantine,path)}
    return libraryState{},false,fmt.Errorf("No se pudo restaurar la copia local: %w",e)
   }
   return state,true,nil
  }
+ if missing&&!evidence{return initialLibrary(legacy),false,nil}
  return libraryState{},false,fmt.Errorf("El archivo %s está dañado. No se ha sobrescrito porque no hay ninguna copia válida. Conserva el archivo y restaura una copia manualmente",path)
 }

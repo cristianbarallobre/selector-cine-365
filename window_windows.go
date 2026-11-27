@@ -348,7 +348,17 @@ func webMessageReceived(_ unsafe.Pointer, sender, args unsafe.Pointer) uintptr {
 	if webviewString(args, 3, len(w.url)) != w.url {
 		return sOK
 	}
-	message := webviewString(args, 5, 1400)
+	message := webviewString(args, 5, uiDraftLimit+256)
+	if strings.HasPrefix(message,"cine-draft:"){
+		ack:=nativeDraftMessage(filepath.Dir(getSavePath()),message)
+		if ack!=""{
+			value:=utf16Ptr(ack)
+			invokeCOM(w.webview,33,ptr(unsafe.Pointer(value)))
+			runtime.KeepAlive(value)
+		}
+		return sOK
+	}
+	if len(message)>1400{return sOK}
 	if strings.HasPrefix(message, "cine-diagnostic:") {
 		diagnosticUIEvent(strings.TrimPrefix(message, "cine-diagnostic:"))
 		return sOK

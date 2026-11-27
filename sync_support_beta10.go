@@ -114,7 +114,7 @@ func (a *runningApp) localRecoveryList() ([]recoveryInfo, error) {
 			return nil, err
 		}
 		for _, entry := range entries {
-			if entry.IsDir() || !safeRecoveryName.MatchString(entry.Name()) {
+			if !entry.Type().IsRegular() || !safeRecoveryName.MatchString(entry.Name()) {
 				continue
 			}
 			info, err := entry.Info()
@@ -127,7 +127,11 @@ func (a *runningApp) localRecoveryList() ([]recoveryInfo, error) {
 			})
 		}
 	}
-	sort.Slice(all, func(i, j int) bool { return all[i].WhenMS > all[j].WhenMS })
+	sort.Slice(all, func(i, j int) bool {
+		pi,pj:=stringsHasPendingSuffix(all[i].Name),stringsHasPendingSuffix(all[j].Name)
+		if pi!=pj{return pi}
+		return all[i].WhenMS > all[j].WhenMS
+	})
 	if len(all) > 50 {
 		all = all[:50]
 	}
@@ -221,7 +225,7 @@ func (a *runningApp) restoreLocalRecovery(id, etag string) (map[string]any, erro
 		a.mu.Unlock()
 		return nil, err
 	}
-	mirrorPending, err := commitLibrary(a.libraryPath, a.savePath, restored)
+	mirrorPending, metadataErr, err := a.commitProtectedLibrary(restored,nil,nil,"")
 	if err != nil {
 		a.mu.Unlock()
 		return nil, err
@@ -233,17 +237,12 @@ func (a *runningApp) restoreLocalRecovery(id, etag string) (map[string]any, erro
 	if mirrorPending {
 		warnings = append(warnings, "Copia TXT pendiente")
 	}
-	syncReady := true
-	if a.syncStore != nil {
-		if err = a.syncStore.observe(before, restored); err != nil {
-			syncReady = false
-			warnings = append(warnings, "Estado de sincronización pendiente de guardar")
-			logDiagnostic("Biblioteca restaurada, pero falló el guardado de sus revisiones: " + err.Error())
-		}
+	syncReady:=metadataErr==nil
+	if metadataErr!=nil{warnings=append(warnings,"Estado de sincronización pendiente de guardar");diagnosticError("sincronizacion","guardar espejo de revisiones",metadataErr)}
+	if !desktopFeatures&&a.syncStore!=nil{
+		if err=a.syncStore.observe(before,restored);err!=nil{syncReady=false;warnings=append(warnings,"Estado de sincronización pendiente de guardar")}
 	}
-	if desktopFeatures && a.markManualCloudUpload() != nil {
-		warnings = append(warnings, "No se pudo guardar el estado de subida pendiente")
-	}
+	if desktopFeatures{a.resolvePendingCopies(restored,false)}
 	a.mu.Unlock()
 	if !desktopFeatures && syncReady && a.syncStore != nil && a.graph != nil && a.graph.active() {
 		if a.syncStore.isPaired(a.graph.pairingID()) {

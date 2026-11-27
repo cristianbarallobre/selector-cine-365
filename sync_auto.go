@@ -53,12 +53,14 @@ func (a *runningApp) cloudAutoSync() (map[string]any, error) {
 		a.mu.Unlock()
 		return nil, err
 	}
+	var metadataErr error
 	if libChanged {
 		if err = a.saveSyncRecovery(a.library, ""); err != nil {
 			a.mu.Unlock()
 			return nil, err
 		}
-		if err = saveLibrary(a.libraryPath, a.savePath, plan.Library); err != nil {
+		_,metadataErr,err=a.commitProtectedLibrary(plan.Library,&plan,nil,folder)
+		if err != nil {
 			a.mu.Unlock()
 			return nil, err
 		}
@@ -66,7 +68,10 @@ func (a *runningApp) cloudAutoSync() (map[string]any, error) {
 		a.libraryRevision++
 		a.syncLastReceived.Store(time.Now().UnixMilli())
 	}
-	metadataErr := a.syncStore.accept(plan, nil, folder)
+	if !libChanged&&desktopFeatures{
+		_,metadataErr,err=a.commitProtectedLibrary(a.library,&plan,nil,folder)
+		if err!=nil{a.mu.Unlock();return nil,err}
+	}else if !desktopFeatures{metadataErr=a.syncStore.accept(plan,nil,folder)}
 	a.syncPreviewToken = ""
 	a.mu.Unlock()
 	result := syncResult(plan, libChanged, metadataErr, a.publishFolderSync)

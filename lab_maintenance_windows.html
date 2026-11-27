@@ -74,6 +74,7 @@ async function labMaintenanceRefresh(){
   const sync=data.onedrive_connected?'OneDrive conectado':data.cloud_connected?'Carpeta de nube configurada':'Sin nube conectada';
   info.textContent=(data.library_recovered?'⚠ Se recuperó una copia válida de la biblioteca. Comprueba tus listas y guarda otra copia. ':'')+
    (data.sync_pending_review?'⚠ Sincronización pendiente de revisión. ':'')+
+   (data.backup_warning?'⚠ Falló alguna copia automática durante esta sesión; exporta una copia JSON y revisa el registro. ':'')+
    'TMDB: '+(data.tmdb_connected?'conectado':'sin conectar')+' · '+sync+'.';
  }catch(e){info.textContent='⚠ '+e.message;}
 }
