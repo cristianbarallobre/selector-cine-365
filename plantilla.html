@@ -585,7 +585,7 @@ h2{font-size:19px}
         <div class="cloud-guide-heading">
           <div>
             <div class="cloud-title">☁ OneDrive y copias de seguridad</div>
-            <p>Comparte tus listas y películas vistas entre Windows y Android. <strong>No necesitas instalar OneDrive.</strong> También puedes utilizar la aplicación solo en este PC: tus datos se guardan localmente.</p>
+            <p>Comparte tus listas y películas vistas entre equipos. <strong>No necesitas instalar OneDrive.</strong> También puedes utilizar la aplicación solo en este PC: tus datos se guardan localmente.</p>
           </div>
           <div class="cloud-guide-state" id="cloudWizardStatus" role="status" aria-live="polite">Comprobando conexión y sincronización…</div>
         </div>
@@ -697,12 +697,12 @@ h2{font-size:19px}
         <article><h3>2. Conectar TMDB</h3><p>Abre <strong>Conectar TMDB</strong>, escribe una clave personal de TMDB y guarda. Aparecerán carteles, puntuaciones y plataformas en España. Los datos ya consultados se guardan en caché; Actualizar vuelve a consultar cuando tú lo pidas.</p></article>
         <article><h3>3. Sorteo y estadísticas</h3><p>En Sorteo eliges una película pendiente al azar. En Estadísticas encontrarás el progreso de tu colección, periodos, géneros, directores y otros datos disponibles.</p></article>
         <article><h3>4. Mis listas</h3><p>Crea, renombra y abre listas. Utiliza los números de página para recorrerlas. Puedes comparar listas y consultar sus coincidencias en la biblioteca.</p></article>
-        <article><h3>5. OneDrive y sincronización</h3><p>En <strong>Mis listas → OneDrive y copias de seguridad</strong> sigue los pasos numerados: <strong>1) Conectar cuenta Microsoft</strong> (se crea la carpeta Selector_Cine_365; inicialmente puede estar vacía), <strong>2) Revisar y confirmar</strong> las listas del PC y de OneDrive (primera vez obligatoria), <strong>3) Sincronizar ahora</strong> y comprobar el estado. Después puedes elegir sincronización automática o manual. Android debe conectarse a la misma cuenta y completar su propia revisión. Los conflictos requieren decisión; el guardado local funciona sin nube.</p></article>
+        <article><h3>5. OneDrive y sincronización</h3><p>En <strong>Mis listas → OneDrive y copias de seguridad</strong> sigue los pasos numerados: <strong>1) Conectar cuenta Microsoft</strong> (se crea la carpeta Selector_Cine_365; inicialmente puede estar vacía), <strong>2) Revisar y confirmar</strong> las listas del PC y de OneDrive (primera vez obligatoria), <strong>3) Sincronizar ahora</strong> y comprobar el estado. Después puedes elegir sincronización automática o manual. Los conflictos requieren decisión; el guardado local funciona sin nube.</p></article>
         <article><h3>6. Copias y seguridad</h3><p>Antes de importar muchas películas o cambiar de versión, exporta una copia JSON. Puedes usar la app solo en local y desactivar la nube sin perder las películas guardadas en el PC. No abras simultáneamente dos versiones de Windows.</p></article>
       </div>
       <p><strong>¿Necesitas todos los detalles?</strong> El manual extenso incluye ejemplos, procedimientos paso a paso, sincronización, solución de problemas y recuperación.</p>
-      <a class="tool cine-manual-link" href="https://github.com/cristianbarallobre/selector-cine-365/blob/v9-android-beta/docs/MANUAL_COMPLETO_SELECTOR_CINE_365.pdf" target="_blank" rel="noopener noreferrer">📖 Abrir manual completo en PDF (GitHub)</a>
-      <p class="cine-instructions-footnote">También puedes copiar este enlace: <span>https://github.com/cristianbarallobre/selector-cine-365/blob/v9-android-beta/docs/MANUAL_COMPLETO_SELECTOR_CINE_365.pdf</span></p>
+      <a class="tool cine-manual-link" href="https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/MANUAL_COMPLETO_SELECTOR_CINE_365.md" target="_blank" rel="noopener noreferrer">📖 Abrir manual completo (GitHub)</a>
+      <p class="cine-instructions-footnote">También puedes copiar este enlace: <span>https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/MANUAL_COMPLETO_SELECTOR_CINE_365.md</span></p>
     </div>
   </section>
 </main>
@@ -1032,52 +1032,6 @@ function moveFilmInCurrentList(fromRawIndex,toRawIndex){
  notify('Orden actualizado. El número de cada película corresponde ahora a su posición.');
  return true;
 }
-let filmTouchOrder=null,filmDropSuppressedUntil=0;
-document.addEventListener('click',e=>{
- if(Date.now()<filmDropSuppressedUntil){
-  e.preventDefault();e.stopImmediatePropagation();
- }
-},true);
-document.addEventListener('touchmove',e=>{
- const state=filmTouchOrder;
- if(!state)return;
- const touch=e.touches[0];
- if(!touch)return;
- if(!state.active){
-  if(Math.hypot(touch.clientX-state.x,touch.clientY-state.y)>11){
-   clearTimeout(state.timer);filmTouchOrder=null;
-  }
-  return;
- }
- if(e.cancelable)e.preventDefault();
- const hovered=document.elementFromPoint(touch.clientX,touch.clientY)?.closest('.film-item');
- if(hovered&&hovered.parentElement===$('filmList')){
-  const index=Number(hovered.dataset.idx);
-  if(Number.isInteger(index))state.to=index;
-  document.querySelectorAll('#filmList .film-item.reorder-target').forEach(el=>el.classList.remove('reorder-target'));
-  hovered.classList.add('reorder-target');
- }
- const scroller=$('view-library');
- const bounds=scroller.getBoundingClientRect();
- if(touch.clientY<bounds.top+65)scroller.scrollTop-=17;
- else if(touch.clientY>bounds.bottom-65)scroller.scrollTop+=17;
-},{passive:false});
-function finishFilmTouchOrder(event,cancel=false){
- const state=filmTouchOrder;
- if(!state)return;
- clearTimeout(state.timer);
- filmTouchOrder=null;
- document.querySelectorAll('#filmList .reorder-target, #filmList .reorder-moving').forEach(el=>{
-  el.classList.remove('reorder-target','reorder-moving');
- });
- if(state.active){
-  if(event?.cancelable)event.preventDefault();
-  filmDropSuppressedUntil=Date.now()+350;
-  if(!cancel&&state.to!==state.from)moveFilmInCurrentList(state.from,state.to);
- }
-}
-document.addEventListener('touchend',e=>finishFilmTouchOrder(e),{passive:false});
-document.addEventListener('touchcancel',e=>finishFilmTouchOrder(e,true),{passive:false});
 function attachFilmReorder(card,handle,film){
  // Desktop drag starts only from its dedicated grip: normal card controls work.
  handle.draggable=true;
@@ -1103,22 +1057,6 @@ function attachFilmReorder(card,handle,film){
   const from=Number(e.dataTransfer.getData('text/plain'));
   if(Number.isInteger(from))moveFilmInCurrentList(from,film.idx);
  });
- // Android: hold the card for 500 ms, then slide it vertically. Regular short
- // swipes continue to scroll and taps on check/links remain unaffected.
- card.addEventListener('touchstart',e=>{
-  if(!window.CineAndroid||!filmOrderEditable()||e.touches.length!==1)return;
-  const hit=e.target;
-  if(hit.closest('button,a,input,select')&&!hit.closest('.film-reorder-handle'))return;
-  if(filmTouchOrder)finishFilmTouchOrder(null,true);
-  const touch=e.touches[0];
-  const state={from:film.idx,to:film.idx,x:touch.clientX,y:touch.clientY,active:false,timer:null};
-  state.timer=setTimeout(()=>{
-   if(filmTouchOrder!==state||!filmOrderEditable())return;
-   state.active=true;card.classList.add('reorder-moving');
-   if(navigator.vibrate)navigator.vibrate(18);
-  },500);
-  filmTouchOrder=state;
- },{passive:true});
 }
 
 function renderList(){
@@ -2069,7 +2007,7 @@ $('cloudDisable').addEventListener('click',async()=>{
  catch(e){$('cloudStatus').textContent='⚠ '+e.message;}
 });
 
-const cineSyncDeviceLabel=(id)=>id.startsWith('android-')?'Android':id.startsWith('desktop-')?'Windows':'Otro dispositivo';
+const cineSyncDeviceLabel=(id)=>id.startsWith('desktop-')?'Windows':'Otro dispositivo';
 const cineSyncAt=(ms)=>ms?new Date(ms).toLocaleString('es-ES'):'sin fecha';
 async function cineRefreshHistory(){
  const target=$('cloudHistory'),button=$('cloudHistoryRefresh'),info=$('cloudHistoryChecked');
@@ -2481,7 +2419,7 @@ async function copyText(text){
 }
 $('copyChoice').addEventListener('click',()=>{if(chosen)void copyText(chosen.name);});
 $('copyBtn').addEventListener('click',()=>void copyText(rawText));
-// A filename must reflect the active list, without invalid Windows/Android path chars.
+// A filename must reflect the active list, without invalid invalid path chars.
 function exportTxtFilename(name){
  const base=String(name||'').normalize('NFC').replace(/[\\/:*?"<>|\x00-\x1f]/g,' ').replace(/\s+/g,' ').replace(/[. ]+$/g,'').trim();
  return (base||'Lista de películas').slice(0,120).replace(/[. ]+$/g,'')+'.txt';

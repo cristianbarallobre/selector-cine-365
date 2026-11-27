@@ -1,6 +1,6 @@
 # Guardado y recuperación de Selector Cine 365
 
-Windows y macOS 9.2.24. Android conserva el funcionamiento de su publicación v9.0.0.
+Windows y macOS 9.2.24.
 
 ## Guardado principal y copia opcional
 
@@ -22,7 +22,7 @@ Si el guardado local no está confirmado, reintenta o exporta un JSON de emergen
 2. Elige un JSON verificado o consulta **Mis listas → Guardado y copia adicional → Actividad reciente, historial y copias de recuperación**.
 3. Revisa las cantidades y confirma la restauración. Se conserva una copia local anterior. Comprueba tus listas.
 
-La nueva edición no borra archivos existentes de OneDrive ni utiliza sus conexiones antiguas. Las versiones anteriores de Android mantienen su comportamiento de sincronización; utiliza la exportación manual para mover bibliotecas a la nueva edición de escritorio.
+La nueva edición no borra archivos existentes de OneDrive ni utiliza sus conexiones antiguas. Utiliza la exportación manual para trasladar bibliotecas entre equipos.
 
 [Manual completo](https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/MANUAL_COMPLETO_SELECTOR_CINE_365.md) · [Rutas de datos](https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/UBICACIONES_DATOS_SELECTOR_CINE_365.md)
 

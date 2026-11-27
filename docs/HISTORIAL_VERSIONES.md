@@ -1,6 +1,5 @@
 <!-- Documento histórico v8.1.1: no modificar la narración de esa edición como si describiera v9. -->
 
-> **ARCHIVO HISTÓRICO — documentación cerrada en v8.1.1 (19 de noviembre de 2026).** No representa las funciones de la versión estable v9.0.0. Para Windows, Android y Mac consulta el [manual v9](MANUAL_COMPLETO_SELECTOR_CINE_365.md), el [historial reciente](../CHANGELOG.md) y la [página principal](../README.md).
 
 
 <img src="../icon.png" style="width:0.80709in;height:0.80709in" />
@@ -35,7 +34,6 @@ Este documento reúne la evolución de Selector de Cine 365 desde su primer prot
 | **EDICIÓN DEL DOCUMENTO 1.2 · 19 de noviembre de 2026** |
 |---------------------------------------------------------|
 
-| **ALCANCE Aplicación de escritorio para Windows; el proyecto Android se documenta por separado** |
 |--------------------------------------------------------------------------------------------------|
 
 | **BASE DOCUMENTAL Paquetes de código fuente, archivos LEEME y decisiones registradas durante el desarrollo** |
@@ -624,7 +622,6 @@ Carpeta elegida → Selector_Cine_365_Copias → actual / historico / AAAA-MM-DD
 
 - Compatibilidad entre versiones: retroceder desde la 8.1 o la 8.1.1 puede dejar de aprovechar identidades_cine.json y la conciliación más reciente; exportar una copia de seguridad antes de cambiar de versión.
 
-- Android: existe un proyecto de adaptación para Android Studio, pero no una APK compilada y probada incluida en esta línea de versiones de Windows.
 
 ## Verificación de versiones
 

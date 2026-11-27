@@ -1,9 +1,0 @@
-Selector Cine 365 — publicación estable v9.0.0
-Fecha: 2026-11-22
-Motivo: el usuario ha probado la última compilación en Windows, Mac y Android
-y la considera la mejor referencia actual.
-No recompilar ni modificar los cuatro binarios de v9.0.0-beta.14.
-Publicar exactamente los mismos APK/EXE/ZIP, verificar firmas y SHA-256,
-regenerar los manuales actuales, etiquetar el código fuente y marcar Latest.
-El identificador Android estable permanece es.cine365.app.limpia / 9027.
-Conservar la Beta 14 histórica y los tags de las demás versiones.

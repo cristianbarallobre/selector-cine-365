@@ -1,6 +1,6 @@
 # Manual de Selector Cine 365
 
-Windows y macOS 9.2.24. Android estable de la publicación v9.0.0.
+Windows y macOS 9.2.24.
 
 ## Instalar y proteger la biblioteca
 
@@ -8,9 +8,8 @@ Windows y macOS 9.2.24. Android estable de la publicación v9.0.0.
 2. Si ya usas la app, exporta una copia JSON y cierra la versión anterior.
 3. En Windows abre el nuevo EXE portátil. Si el equipo lo necesita, instala WebView2 Runtime. En Mac descomprime el ZIP, lleva la app a Aplicaciones y reemplaza la anterior.
 4. Si Windows o Mac avisan sobre el editor, verifica primero que el archivo procede de la publicación oficial y comprueba su SHA-256. Los paquetes Mac llevan firma ad hoc y carecen de notarización.
-5. En Android instala la APK Limpia con el mismo identificador y la misma firma que tu instalación compatible. Para cambiar de edición, importa una copia JSON en la nueva.
 
-[Descargas de escritorio](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.24-desktop) · [APK oficial de Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0)
+[Descargas de escritorio](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.24-desktop)
 
 ## Biblioteca y listas
 
@@ -51,10 +50,6 @@ La biblioteca se guarda automáticamente en el equipo. Desde **Mis listas → Co
 No se conectan cuentas ni se combinan bibliotecas automáticamente. Una carpeta gestionada por un servicio externo queda bajo responsabilidad de ese servicio. Las claves TMDB y la caché permanecen en cada dispositivo. Las copias locales de recuperación siguen en **Mis listas → Guardado y copia adicional → Actividad reciente, historial y copias de recuperación**.
 
 [Guía de guardado y recuperación](https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/GUIA_SINCRONIZACION_SEGURA.md) · [Rutas de datos](https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/UBICACIONES_DATOS_SELECTOR_CINE_365.md)
-
-## Android
-
-La edición pública se identifica como **Beta 13.13 Limpia**. Tiene biblioteca, navegación táctil, estadísticas, sorteo, copias y sincronización mediante revisión manual. La edición Android 9.2.5 es una versión de pruebas para Android 8 o posterior. Se instala en paralelo con la estable. Una instalación de pruebas con firma distinta requiere reinstalar esa copia. [Descarga de Android 9.2.5](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.5-android).
 
 ## Diagnóstico y cierre seguro (escritorio 9.2.18–9.2.24)
 

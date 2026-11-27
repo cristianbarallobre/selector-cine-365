@@ -70,7 +70,6 @@
 - La recepción automática conserva la lista, la búsqueda y la página. El selector se alinea con el panel de sorteo.
 - Quitar una película de las listas numeradas conserva Favoritos. La identificación manual permite aceptar una diferencia de año.
 - Windows utiliza el icono de la app. Mac guarda la caché aparte de la biblioteca y protege la sesión de OneDrive en el llavero.
-- La APK estable de Android sigue disponible en la publicación v9.0.0.
 
 [Código fuente 9.2.7 (release archivada)](https://github.com/cristianbarallobre/selector-cine-365/tree/v9.2.7-desktop) · [Manual completo](docs/MANUAL_COMPLETO_SELECTOR_CINE_365.md)
 
@@ -78,11 +77,7 @@
 
 ## v9.0.0 — estable (22 de noviembre de 2026)
 
-**Estado:** canal estable recomendado, basado en las compilaciones **Windows/macOS Beta 14** y **Android Beta 13.13 Limpia**, sin recompilación de los binarios. El usuario ha comprobado esta combinación en los dispositivos previstos.
 
-- **Publicación coordinada:** Windows EXE, Mac Intel/Apple Silicon y Android APK firmada, junto con manual completo, guía de sincronización, hashes SHA-256 y código fuente fijo en la etiqueta `v9.0.0`.
-- **Correcciones estabilizadas:** protección contra mezcla de listas con ID repetido, primera sincronización Android sin concatenación del catálogo de muestra, vista previa con recuentos por lista, persistencia de Microsoft en Windows mediante DPAPI y carga progresiva local de fichas TMDB.
-- **Compatibilidad Android:** `es.cine365.app.limpia`, versionCode 9027; actualiza la Beta 13.12 Limpia con firma idéntica; no es una actualización de `es.cine365.app`.
 - **Limitaciones:** las bibliotecas históricas ya contaminadas requieren recuperación manual desde copias verificadas; en Mac Microsoft aún no persiste mediante Keychain; la caché TMDB es local por dispositivo.
 - **Mantenimiento:** documentación consolidada, archivos históricos etiquetados, releases redundantes respaldadas antes de retirada. No se han cambiado funcionalidades del ejecutable al promocionarlo a estable.
 
@@ -90,40 +85,29 @@
 
 ---
 
-## Etapa anterior: Beta 14 / Android Beta 13.13 (21 de noviembre de 2026)
+## Etapa anterior: Beta 14 (21 de noviembre de 2026)
 
-## v9 Beta 14 / Android Beta 13.13 — candidato recomendado (21/11/2026)
+## v9 Beta 14 — candidato recomendado (21/11/2026)
 
-- **Código fuente unificado** de las ramas de Windows/macOS y Android, con compilaciones y pruebas automatizadas.
 - **Sincronización segura:** fusión por ID ya no añade a ciegas películas de listas distintas con el mismo `atlas`. Se bloquean listas sospechosas, incluyendo copias ya contaminadas con un gran excedente de películas.
-- **Primera instalación Android:** una biblioteca inicial completamente intacta se sustituye por la biblioteca real sincronizada, sin anexar las 365 películas de muestra.
-- **Android:** vista previa detallada con nombres y películas de cada lista; Beta 13.13, `versionCode 9027`, paquete `es.cine365.app.limpia` y firma original para futuras actualizaciones dentro de esta línea.
 - **Windows Beta 14:** sesión de OneDrive cifrada con DPAPI, vista previa y corrección de scroll/selector, exportación TXT y bloqueo de conflictos entre listas.
 - **Mac Intel/Apple Silicon Beta 14:** la misma protección de listas de Go en las compilaciones; sesión Microsoft temporal, todavía sin Keychain.
-- **TMDB:** identificaciones manuales viajan como IDs; los pósteres y plataformas siguen siendo cachés locales. Android completa un número limitado de fichas visibles.
 - **Limitación:** los datos históricamente fusionados no se separan solos. Las betas no están certificadas con todas las cuentas y dispositivos reales. Se recomienda respaldo JSON antes de sincronizar.
 
-[Notas de publicación](RELEASE_NOTES_v9_BETA14_RECOMENDADA.md) · [Manual vigente](docs/MANUAL_BETA14_ANDROID13_13.md).
 
 ---
 
 ## Historial anterior (archivo)
 
-## v9 Beta 13.3 — Android (21 de noviembre de 2026)
 
-- Eliminada la **subida automática a OneDrive desde cada guardado local**. Cambiar de lista activa guarda únicamente en Android y no muestra «Guardando…».
 - Comprobación única de nube al abrir (lectura sin importar ni enviar). Se eliminan los intervalos, comprobaciones al reanudar y subida de restauraciones locales.
 - Nuevo botón pequeño de **dos flechas circulares** junto al indicador de guardado; inicia comparación bidireccional con **confirmación previa obligatoria** y resolución de conflictos. Los guardados en el móvil siguen siendo automáticos.
 - Se suprimen operaciones innecesarias de disco para datos idénticos y consultas TMDB automáticas al cambiar de lista.
-- Android versionCode 9017, mismo paquete y certificado de firma; Windows y Mac permanecen Beta 13.1.
 - Pruebas de guardado local sin tráfico de nube, única consulta al inicio, no sincronización en segundo plano y conservación de la fusión causal.
 
-## v9 Beta 13.2 — Android (21 de noviembre de 2026)
 
-- Optimización específica de batería: corregida doble inicialización del backend en Android.
 - WebView suspendida cuando la actividad se minimiza; se reanuda al volver. Guardado local inmediato para ediciones pendientes y preservación de revisiones.
 - Eliminado ping de 12 segundos; sincronización automática OneDrive cada 60 segundos mientras visible, además de al regresar, sin nuevas comprobaciones automáticas en segundo plano.
-- Compilación Android con versionCode 9016 y mismo paquete/certificado de las Betas 11–13. Windows/Mac permanecen Beta 13.1; siguen operativas las sincronizaciones manuales.
 - La mejora real de batería requiere comprobarse en el móvil durante más tiempo; las capturas de ocho minutos no bastan para cuantificarla.
 
 ## v9 Beta 13.1 — Windows y Mac (20 de noviembre de 2026)
@@ -131,34 +115,23 @@
 - Reparada la ruta local `GET /api/platforms/cache`, implementada en TMDB pero omitida del enrutador principal. Esto provocaba HTTP 404 y dejaba el mensaje «Conexión local TMDB no disponible. Reintentando…» al reabrir, aunque la clave estuviera guardada.
 - La lectura de estado y caché se realiza por separado. Si falla la caché, no se interpreta que falte la clave ni se sobrescribe la configuración; el botón Actualizar reintenta.
 - Añadidas pruebas automáticas de HTTP 200 para estado y caché, y HTTP 403 sin token; se conservaron las pruebas de listas y sincronización.
-- Windows y las dos arquitecturas de macOS comparten el mismo código corregido. Android **permanece en Beta 13 (9015)**; no necesitaba esta corrección del servidor Go.
 - Las cuatro plataformas y la documentación actualizada están incluidas en la release conjunta `v9.0.0-beta.13.1`.
 
-## v9 Beta 13 — Windows, Mac y Android (20 de noviembre de 2026)
+## v9 Beta 13 — Windows y Mac (20 de noviembre de 2026)
 
 - «Mis listas» en Windows/Mac reserva cuatro filas de altura constante por página, incluso si hay menos listas.
-- Eliminaciones persistentes de listas mediante `deleted_lists` compartido: evita que una copia antigua de Android/Windows las vuelva a crear.
 - Sincronización de los IDs manuales de TMDB (`tmdb_overrides`) dentro de la biblioteca. La clave API no se exporta y permanece privada en cada dispositivo.
 - Reintento al leer configuración TMDB al abrir; una caída temporal no cambia el estado a «Sin configurar». Se comprueba persistencia de la clave en disco tras reiniciar.
-- Android: versionCode 9015 con el mismo identificador/certificado, conservando notch y barra de gestos de Beta 12.2.
 - Pruebas causales de marcas, borrados en ambos sentidos, restauración de identificación e integridad de biblioteca; copias locales antes de fusiones.
 
-## v9 Beta 12.2 — Android (20 de noviembre de 2026)
 
-- Corregida la franja vacía debajo de las seis pestañas móviles, observada en Redmi tras Beta 12.1.
-- Se elimina la segunda reserva CSS `env(safe-area-inset-bottom)`, porque el contenedor nativo de Android ya aplica `WindowInsets` de barras y notch.
 - El menú vuelve al límite seguro inferior y se conserva la protección del título respecto a la cámara frontal.
 - Mismo paquete `es.cine365.app` y certificado que Beta 11, 12 y 12.1; código de versión **9014**, instalable directamente encima sin desinstalar.
-- Pruebas JavaScript y Gradle completadas, firma Android v2/v3 verificada. Pendiente confirmar visualmente en el Redmi. Windows/Mac sin cambios.
 
-## v9 Beta 12.1 — Android (20 de noviembre de 2026)
 
-- Corrección del título parcialmente cubierto por la cámara frontal/notch y barras de sistema en Android 15 y posteriores.
-- La zona segura se calcula mediante `WindowInsets` del sistema (`systemBars` y `displayCutout`) y se aplica al contenedor nativo de la WebView, sin píxeles fijos; Android antiguos mantienen los ajustes de ventana previstos.
-- Misma identidad `es.cine365.app` y certificado de firma de Beta 12, `versionCode=9013`: actualización sobre la instalación existente sin borrar datos.
 - Windows y Mac no cambian; se reutilizan sus paquetes de Beta 12.
 
-## v9 Beta 12 — Windows, macOS, Android (beta)
+## v9 Beta 12 — Windows y macOS (beta)
 
 - Búsqueda global entre listas, sin duplicados por identidad TMDB o título/año; opción «Lista actual».
 - Numeración dinámica de listas; fichas con «Listas: 1, 2…» y navegación/edición de pertenencia.
@@ -166,25 +139,20 @@
 - Windows y Mac: paginador de estadísticas anclado al fondo; Mac conserva interfaz y lógica Go de Windows.
 - Windows y Mac: filas de «Mis listas» visibles aunque la nube e historial ocupen el panel.
 - «Actualizar historial» lee el historial local, informa de la consulta y no dibuja una caja extra al estar vacío.
-- Android: mismo proyecto nativo de v9 con UI para móvil; mantiene cabecera fija, carga incremental y estadísticas sin paginar.
 - No se modifica el motor de sincronización causal de Beta 10: se conservan revisiones, recuperación, copia local, historial y PKCE.
 
-## v9 Beta 11 — Windows y Android (beta)
+## v9 Beta 11 — Windows (beta)
 
 - Se introdujeron búsqueda global, listas numeradas y edición de pertenencias.
 - Se corrigió la posición de los controles de paginación en Estadísticas de Windows.
-- Android pasó al paquete permanente `es.cine365.app`, con `versionCode=9011`. La clave privada estable se conserva fuera de GitHub; versiones futuras necesitan la misma firma.
 
-## v9 Beta 10 — Windows y Android (beta)
+## v9 Beta 10 — Windows (beta)
 
 - Revisión de sincronización causal, protección contra la «resurrección» de marcas antiguas, historial y restauración.
-- «Sincronizar ahora» y fecha de última comprobación; OneDrive Android mediante PKCE y Microsoft Graph Delta Query.
 - Alineación de la sección Instrucciones y conservación de la interacción por tick.
-- Android Beta 10 y betas anteriores usaban un identificador con sufijo distinto: requerían migración de datos al saltar al paquete permanente.
 
-## v9 Betas 1–9 — Windows y Android (experimental)
+## v9 Betas 1–9 — Windows (experimental)
 
-- Primeras ediciones nativas de Android, caché TMDB, conexión OneDrive, sincronización automática, diseño móvil, controles de vista y documentación técnica.
 - Beta 9 usaba `es.cine365.app.v9beta9`; no puede actualizarse directamente sobre el paquete nuevo conservando datos privados sin exportación/importación.
 
 ## Archivo v8 y anterior

@@ -1,18 +1,11 @@
-# Política de publicaciones de Selector Cine 365
+# Política de versiones, descargas y recuperación
 
-## Descargas vigentes
+Selector Cine 365 se distribuye para Windows x64, macOS Intel y macOS Apple Silicon. La edición recomendada es la última publicación de escritorio verificada.
 
-- **Escritorio.** La última estable de GitHub proporciona el EXE de Windows y los ZIP de macOS. [Última estable](https://github.com/cristianbarallobre/selector-cine-365/releases/latest)
-- **Android.** La APK estable se encuentra en la publicación v9.0.0 y mantiene la firma y el identificador de la edición Limpia. [APK estable](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0)
+- Verificar las pruebas y las sumas SHA-256 antes de publicar.
+- Conservar el código y las versiones de escritorio anteriores para recuperación.
+- No publicar claves, credenciales, bibliotecas personales ni archivos de configuración privada.
+- Exportar una copia JSON antes de sustituir la aplicación o restaurar datos.
+- Los ejecutables Windows pueden mostrar SmartScreen y los paquetes Mac no están notarizados.
 
-## Compilaciones y manuales
-
-Las publicaciones de escritorio incluyen SHA256SUMS.txt. Los paquetes macOS 9.2.24 usan firma ad hoc y carecen de notarización de Apple. Las guías vigentes se publican en la rama principal, en Markdown y en los formatos descargables indicados en el índice. Las notas de publicación detallan las comprobaciones de cada compilación.
-
-Las notas de betas y las guías con un número antiguo documentan sus lanzamientos. Android 9.2.5 se identifica como edición de pruebas.
-
-[Índice de documentación](README.md) · [Historial de cambios](../CHANGELOG.md) · [Todas las publicaciones](https://github.com/cristianbarallobre/selector-cine-365/releases)
-
-## Conservación de publicaciones
-
-Se mantienen las dos últimas estables de escritorio, la referencia 9.2.0, la estable Android v9.0.0, la prueba Android 9.2.5 y la referencia histórica v8.2. Las publicaciones redundantes se retiran únicamente después de verificar un archivo de sus instaladores, notas, sumas y referencias Git en un borrador de GitHub. Se conservan las etiquetas y ramas originales. Las descargas vigentes apuntan siempre a la última estable correspondiente.
+[Última publicación](https://github.com/cristianbarallobre/selector-cine-365/releases/latest) · [Historial](../CHANGELOG.md)
