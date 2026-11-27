@@ -1,0 +1,124 @@
+name: Limpieza de distribución y documentación de escritorio
+on:
+  push:
+    branches: [maintenance/desktop-cleanup-2026-11-27]
+permissions:
+  contents: write
+jobs:
+  distribution:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Retirar descargas y ramas de la plataforma cerrada
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view v9.2.5-android >/dev/null 2>&1; then
+            gh release delete v9.2.5-android --cleanup-tag --yes
+          fi
+          if gh release view v9.0.0 >/dev/null 2>&1; then
+            mkdir -p "$RUNNER_TEMP/desktop-old"
+            cd "$RUNNER_TEMP/desktop-old"
+            gh release download v9.0.0 --pattern 'Selector_Cine_365_Windows_Beta14.exe' --pattern 'Selector_Cine_365_Mac_*Beta14.zip'
+            test -s Selector_Cine_365_Windows_Beta14.exe
+            test -s Selector_Cine_365_Mac_AppleSilicon_Beta14.zip
+            test -s Selector_Cine_365_Mac_Intel_Beta14.zip
+            sha256sum Selector_Cine_365_Windows_Beta14.exe Selector_Cine_365_Mac_*Beta14.zip > SHA256SUMS.txt
+            while IFS= read -r asset; do
+              case "$asset" in
+                Selector_Cine_365_Windows_Beta14.exe|Selector_Cine_365_Mac_AppleSilicon_Beta14.zip|Selector_Cine_365_Mac_Intel_Beta14.zip|SHA256SUMS.txt) ;;
+                *) gh release delete-asset v9.0.0 "$asset" --yes ;;
+              esac
+            done < <(gh release view v9.0.0 --json assets --jq '.assets[].name')
+            gh release upload v9.0.0 SHA256SUMS.txt --clobber
+            gh release edit v9.0.0 --title 'Selector Cine 365 v9.0.0 — Windows y macOS (histórica)' --notes 'Publicación histórica de escritorio del 22 de noviembre de 2026. Se conservan sin cambios los ejecutables originales de Windows x64, Mac Intel y Mac Apple Silicon. Para instalar la edición vigente, consulta la última publicación de escritorio. Las huellas SHA-256 corresponden exclusivamente a estos tres archivos.'
+            cd "$GITHUB_WORKSPACE"
+          fi
+          for tag in v9.2.22-desktop v9.2.20-desktop v9.2.0-desktop v9.2.23-desktop; do
+            if gh release view "$tag" >/dev/null 2>&1; then
+              notes="$(gh release view "$tag" --json body --jq .body)"
+              clean="$(printf '%s' "$notes" | sed -E 's/ Sin cambios en Android\.//g; s/ Sin cambios de diseño ni Android\./ Sin cambios de diseño./g; s/ Para Android continúa disponible la release v9\.0\.0\.//g')"
+              if [ "$notes" != "$clean" ]; then gh release edit "$tag" --notes "$clean"; fi
+            fi
+          done
+          gh api --paginate "repos/$GH_REPO/branches?per_page=100" --jq '.[].name' > "$RUNNER_TEMP/branch-list.txt"
+          while IFS= read -r branch; do
+            case "${branch,,}" in
+              *android*) git push origin --delete "$branch" ;;
+            esac
+          done < "$RUNNER_TEMP/branch-list.txt"
+          gh release list --limit 100
+  docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Instalar conversores
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends pandoc libreoffice-writer fonts-liberation fonts-crosextra-carlito poppler-utils python3-docx
+      - name: Generar los manuales vigentes
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in MANUAL_COMPLETO_SELECTOR_CINE_365 GUIA_SINCRONIZACION_SEGURA; do
+            pandoc "docs/$name.md" --from=gfm --to=docx --standalone --metadata lang=es-ES --resource-path=docs:. -o "docs/$name.docx"
+            /usr/bin/python3 - "docs/$name.docx" <<'PY'
+          import sys
+          from docx import Document
+          from docx.shared import Mm
+          d=Document(sys.argv[1])
+          for section in d.sections:
+              section.page_width=Mm(210)
+              section.page_height=Mm(297)
+              section.top_margin=section.bottom_margin=section.left_margin=section.right_margin=Mm(20)
+          d.save(sys.argv[1])
+          PY
+            libreoffice -env:UserInstallation="file://$RUNNER_TEMP/lo-$name" --headless --convert-to pdf --outdir "$RUNNER_TEMP" "docs/$name.docx"
+            test -s "$RUNNER_TEMP/$name.pdf"
+            cp "$RUNNER_TEMP/$name.pdf" "docs/$name.pdf"
+            pdftotext -layout "docs/$name.pdf" "$RUNNER_TEMP/$name.txt"
+            if grep -Ei 'android|\bapk\b|gradle' "$RUNNER_TEMP/$name.txt"; then exit 1; fi
+            unzip -tq "docs/$name.docx"
+          done
+          python3 - <<'PY'
+          from pathlib import Path
+          for name,prefix in [('README.md','docs/'),('docs/README.md','')]:
+              p=Path(name)
+              s=p.read_text()
+              for stem in ['MANUAL_COMPLETO_SELECTOR_CINE_365','GUIA_SINCRONIZACION_SEGURA']:
+                  link=f']({prefix}{stem}.md)'
+                  s=s.replace(link,link+f' · [PDF]({prefix}{stem}.pdf) · [Word]({prefix}{stem}.docx)')
+              p.write_text(s)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md docs/README.md docs/MANUAL_COMPLETO_SELECTOR_CINE_365.{docx,pdf} docs/GUIA_SINCRONIZACION_SEGURA.{docx,pdf}
+          if ! git diff --cached --quiet; then
+            git commit -m "docs: regenerar manuales de Windows y macOS"
+            git push origin HEAD:main
+          fi
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Revisar referencias restantes en ramas de trabajo
+        shell: bash
+        run: |
+          for ref in origin/main origin/experimental origin/release/desktop-9.2.24; do
+            echo "=== $ref ==="
+            git ls-tree -r --name-only "$ref" | grep -Ei 'android|\.apk$|gradle' || true
+            git grep -inI -E 'android|\bapk\b|gradle|notch|redmi' "$ref" -- ':!go.sum' || true
+          done
