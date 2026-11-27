@@ -905,9 +905,6 @@ func (a *runningApp) servePlatformHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), 500)
 			return
 		}
-		if a.cloud != nil {
-			_ = a.cloud.backup()
-		}
 		_ = json.NewEncoder(w).Encode(map[string]bool{"saved": true})
 	case "/api/platforms/lookup":
 		if r.Method != "POST" {

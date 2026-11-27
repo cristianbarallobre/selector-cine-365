@@ -159,7 +159,7 @@ func(a *runningApp) serveExtraBackup(w http.ResponseWriter,r *http.Request){
  if r.Method!=http.MethodPost{http.Error(w,"Método no permitido",405);return}
  switch r.URL.Path{
  case "/api/extra-backup/browse":
-  folder,err:=chooseCloudFolder();if err!=nil{fail(400,err);return}
+  folder,err:=chooseBackupFolder();if err!=nil{fail(400,err);return}
   _=json.NewEncoder(w).Encode(map[string]string{"folder":folder});return
  case "/api/extra-backup/config":
   var req struct{Folder *string `json:"folder"`}

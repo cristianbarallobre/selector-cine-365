@@ -1,15 +1,15 @@
 name: Escritorio 9.2.26 · macOS y Windows
 on:
   push:
-    branches: [maintenance/desktop-9.2.26-hardening]
+    branches: [integration/desktop-9.2.26-main, main]
 permissions:
   contents: read
 concurrency:
-  group: selector-cine-desktop-9.2.26
+  group: selector-cine-desktop-9.2.26-integration
   cancel-in-progress: true
 jobs:
   windows:
-    if: github.ref == 'refs/heads/maintenance/desktop-9.2.26-hardening'
+    if: github.ref == 'refs/heads/integration/desktop-9.2.26-main' || github.ref == 'refs/heads/main'
     runs-on: windows-latest
     timeout-minutes: 25
     steps:
@@ -18,6 +18,11 @@ jobs:
         with: { go-version: '1.27.4' }
       - uses: actions/setup-node@v4
         with: { node-version: '22' }
+      - name: Leer versión común
+        shell: pwsh
+        run: |
+          if ((Get-Content version.go -Raw) -notmatch 'const appVersion = "([^"]+)"') { throw "Falta appVersion" }
+          "CINE_VERSION=$($Matches[1])" >> $env:GITHUB_ENV
       - run: go test -count=1 ./...
       - run: go test -tags lab -count=1 ./...
       - run: go test -run '^$' -bench 'Benchmark(LibraryActivity|DesktopCommit|ProviderCacheHit)' -benchmem -benchtime=100ms
@@ -27,12 +32,12 @@ jobs:
             node $f.FullName
             if ($LASTEXITCODE) { exit $LASTEXITCODE }
           }
-      - run: go build -trimpath -ldflags="-H windowsgui -s -w" -o Selector_Cine_365_Windows_9.2.26.exe .
+      - run: go build -trimpath -ldflags="-H windowsgui -s -w" -o "Selector_Cine_365_Windows_${env:CINE_VERSION}.exe" .
         env: { CGO_ENABLED: '0' }
       - uses: actions/upload-artifact@v4
-        with: { name: Windows, path: Selector_Cine_365_Windows_9.2.26.exe, if-no-files-found: error }
+        with: { name: Windows, path: Selector_Cine_365_Windows_*.exe, if-no-files-found: error }
   mac:
-    if: github.ref == 'refs/heads/maintenance/desktop-9.2.26-hardening'
+    if: github.ref == 'refs/heads/integration/desktop-9.2.26-main' || github.ref == 'refs/heads/main'
     strategy:
       fail-fast: false
       matrix:
@@ -58,7 +63,14 @@ jobs:
           security list-keychains -d user -s "$kc"
       - run: bash scripts/build_macos_app.sh
         env: { CC: clang }
-      - run: bash scripts/test_macos_package.sh "dist/Selector_Cine_365_Mac_${MAC_LABEL}_9.2.26.zip"
+      - run: go test -run '^
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Mac_${{ matrix.label }}
+          path: dist/Selector_Cine_365_Mac_*.zip
+          if-no-files-found: error
+ -bench 'Benchmark(LibraryActivity|DesktopCommit|ProviderCacheHit)' -benchmem -benchtime=100ms
+      - run: bash scripts/test_macos_package.sh dist/Selector_Cine_365_Mac_${MAC_LABEL}_*.zip
       - uses: actions/upload-artifact@v4
         with:
           name: Mac_${{ matrix.label }}

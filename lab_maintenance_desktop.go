@@ -78,6 +78,7 @@ func (a *runningApp) serveLabMaintenance(w http.ResponseWriter,r *http.Request) 
    "data_storage":dataUsage,"cache_storage":cineDirectoryUsage(cacheRoot),
    "local_backup_storage":cineSumUsage(cineDirectoryUsage(filepath.Join(root,"copias_automaticas")),cineDirectoryUsage(filepath.Join(root,"copias_rapidas_lab")),cineDirectoryUsage(filepath.Join(root,"sync_recuperacion"))),
    "diagnostic_storage":cineDirectoryUsage(filepath.Join(root,"logs")),
+   "activity_storage":cineDirectoryUsage(filepath.Join(root,activityStorageDir)),
    "legacy_cache":cineLegacyCacheUsage(root,cacheRoot),
    "go_heap_bytes":mem.HeapAlloc,"go_reserved_bytes":mem.Sys,"go_workers":runtime.NumGoroutine(),
    "library_path":root,"cache_path":cacheRoot,
@@ -90,11 +91,6 @@ func (a *runningApp) serveLabMaintenance(w http.ResponseWriter,r *http.Request) 
    "backup_warning":libraryBackupIssue.Load(),
    "library_recovered":a.libraryRecovered,
    "tmdb_connected":a.platforms!=nil&&a.platforms.configured(),
-   "cloud_connected":a.cloud!=nil&&a.cloud.status().Enabled,
-   "onedrive_connected":a.graph!=nil&&a.graph.active(),
-   "sync_pending_review":a.syncPendingConflict.Load(),
-   "sync_last_check_ms":a.syncLastCheck.Load(),
-   "sync_last_received_ms":a.syncLastReceived.Load(),
    "webview_managed_separately":true,
   }
   respond(200,info)

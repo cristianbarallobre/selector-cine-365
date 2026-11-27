@@ -34,6 +34,6 @@ El historial de actividad conserva hasta 10.000 movimientos confirmados de la bi
 
 ## Código y versiones anteriores
 
-El tag de escritorio identifica el código que se compiló para Windows y macOS 9.2.25. La rama principal integra el código de escritorio y la documentación; las descargas estables se identifican mediante su tag. El desarrollo de la siguiente versión se valida antes de publicarse. [Fuente 9.2.25](https://github.com/cristianbarallobre/selector-cine-365/tree/v9.2.25-desktop)
+El tag de escritorio identifica el código que se compiló para Windows y macOS 9.2.25. La rama principal integra el código de escritorio y la documentación; las descargas estables se identifican mediante su tag. Consulta las releases para saber qué versión está publicada. [Fuente 9.2.25](https://github.com/cristianbarallobre/selector-cine-365/tree/v9.2.25-desktop)
 
 Autor: Cristian Barallobre Rúa.

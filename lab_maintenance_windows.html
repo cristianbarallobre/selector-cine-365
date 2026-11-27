@@ -61,6 +61,7 @@ async function labMaintenanceRefresh(){
    ['Caché (incluye perfil si está dentro)',labMiB(data.cache_storage?.bytes),data.cache_storage?.files||0],
    ['Copias locales',labMiB(data.local_backup_storage?.bytes),data.local_backup_storage?.files||0],
    ['Registros',labMiB(data.diagnostic_storage?.bytes),data.diagnostic_storage?.files||0],
+   ['Historial local (instantáneas)',labMiB(data.activity_storage?.bytes),data.activity_storage?.files||0],
    ['Caché antigua detectada',labMiB(data.legacy_cache?.bytes),data.legacy_cache?.files||0],
    ['Biblioteca',labMiB(data.library?.bytes),data.library?.files||0],
     ['Memoria del motor',labMiB(data.go_heap_bytes),'Heap Go (no incluye WebView)'],

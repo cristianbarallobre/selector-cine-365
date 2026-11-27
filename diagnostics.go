@@ -118,10 +118,7 @@ var diagnosticRoutes = map[string]bool{
  "/":true,"/api/library":true,"/api/library/draft":true,"/api/save":true,"/api/beacon-save":true,"/api/quit":true,
  "/api/ping":true,"/api/sync/history":true,"/api/sync/revisions":true,"/api/sync/recovery/list":true,
  "/api/sync/recovery/pending":true,"/api/sync/recovery/preview":true,"/api/sync/recovery/restore":true,
- "/api/cloud/status":true,"/api/cloud/pending":true,"/api/cloud/config":true,"/api/cloud/backup":true,
- "/api/cloud/browse":true,"/api/cloud/preview":true,"/api/cloud/sync":true,"/api/cloud/auto":true,
- "/api/cloud/auto-folder":true,"/api/cloud/mode":true,"/api/onedrive-desktop/status":true,
- "/api/onedrive-desktop/start":true,"/api/onedrive-desktop/disconnect":true,"/api/lab/maintenance":true,
+ "/api/lab/maintenance":true,
  "/api/extra-backup/status":true,"/api/extra-backup/config":true,"/api/extra-backup/browse":true,"/api/extra-backup/now":true,
  "/api/platforms/status":true,"/api/platforms/cache":true,"/api/platforms/config":true,
  "/api/platforms/lookup":true,"/api/platforms/match":true,"/api/platforms/overrides":true,
@@ -143,7 +140,7 @@ func diagnosticHTTP(next http.Handler) http.Handler {
   started:=time.Now(); rw:=&diagnosticResponse{ResponseWriter:w}
   route:=r.URL.Path;if !diagnosticRoutes[route]{route="other"}
   method:=r.Method;if method!="GET"&&method!="POST"{method="other"}
-  important:=method=="POST" && (route=="/api/library"||strings.HasPrefix(route,"/api/cloud/")||strings.HasPrefix(route,"/api/sync/recovery/")||route=="/api/quit"||route=="/api/save")
+  important:=method=="POST" && (route=="/api/library"||strings.HasPrefix(route,"/api/extra-backup/")||strings.HasPrefix(route,"/api/sync/recovery/")||route=="/api/quit"||route=="/api/save")
   id:=diagnosticRequestID.Add(1)
   if important {diagnosticEvent("INFO","http",fmt.Sprintf("inicio id=%d %s %s",id,method,route))}
   defer diagnosticPanic()

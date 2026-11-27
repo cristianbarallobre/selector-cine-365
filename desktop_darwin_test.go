@@ -3,8 +3,6 @@
 package main
 
 import (
-	"errors"
-	"os"
 	"path/filepath"
 	"testing"
 )
@@ -24,25 +22,3 @@ func TestMacCacheIsolation(t *testing.T) {
 	}
 }
 
-func TestMacKeychainSession(t *testing.T) {
-	dir := t.TempDir()
-	s := protectedSessionStore(dir)
-	defer s.clear()
-	value := graphStoredSession{Version: graphSessionVersion, ClientID: desktopMicrosoftAppID, RootID: "fixture", Refresh: "synthetic-1"}
-	for _, token := range []string{"synthetic-1", "synthetic-2"} {
-		value.Refresh = token
-		if err := s.save(value); err != nil {
-			t.Fatal(err)
-		}
-		got, err := protectedSessionStore(dir).load()
-		if err != nil || got != value {
-			t.Fatalf("recuperación de sesión: %v", err)
-		}
-	}
-	if err := s.clear(); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := s.load(); !errors.Is(err, os.ErrNotExist) {
-		t.Fatalf("desconexión: %v", err)
-	}
-}

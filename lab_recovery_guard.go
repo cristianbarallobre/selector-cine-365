@@ -89,7 +89,10 @@ func labLoadLibraryProtected(path,legacy string) (libraryState,bool,error) {
  if err!=nil&&!missing{return libraryState{},false,fmt.Errorf("No se puede leer la biblioteca: %w",err)}
  if labValidBackup(data) {
   var state libraryState
-  if err:=json.Unmarshal(data,&state);err==nil{return state,false,nil}
+  if err:=json.Unmarshal(data,&state);err==nil{
+   if _,e:=expandActivityReference(filepath.Dir(path),data);e!=nil{return libraryState{},false,fmt.Errorf("La biblioteca es válida pero su historial no está disponible. No se ha modificado ningún archivo: %w",e)}
+   return state,false,nil
+  }
  }
  root:=filepath.Dir(path)
  candidates:=[]struct{dir string;pattern *regexp.Regexp}{
@@ -118,6 +121,7 @@ func labLoadLibraryProtected(path,legacy string) (libraryState,bool,error) {
  for _,candidate:=range found{
   restored,e:=os.ReadFile(candidate.filename)
   if e!=nil||!labValidBackup(restored){continue}
+  restored,e=expandActivityReference(root,restored);if e!=nil{continue}
   var state libraryState
   if e=json.Unmarshal(restored,&state);e!=nil{continue}
   quarantine:=path+".corrupt_"+time.Now().UTC().Format("20060102T150405.000000000")+".json"

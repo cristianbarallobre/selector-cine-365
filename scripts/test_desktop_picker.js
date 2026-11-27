@@ -10,6 +10,9 @@
   const picker=el('listSwitcherButton').getBoundingClientRect();
   const sortPanel=document.querySelector('#view-library section[aria-label="Sorteo de películas"]').getBoundingClientRect();
   check(Math.abs(picker.left-sortPanel.left)<1 && Math.abs(picker.width-sortPanel.width)<1,'Selector de listas desalineado');
+  check(picker.width>0 && sortPanel.width>0,'Controles de biblioteca sin tamaño');
+  check(picker.left>=-2 && picker.right<=window.innerWidth+2,'Selector fuera de la ventana');
+  check(document.documentElement.scrollWidth<=window.innerWidth+2,'Desbordamiento horizontal de la interfaz');
   check(el('membershipConfirm')?.hidden,'Falta la confirmación integrada de listas');
   check(el('matchStatus'),'Falta el aviso de identificación TMDB');
   const menu=el('sortPlatformMenu'),button=el('sortPlatformButton');

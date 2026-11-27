@@ -9,3 +9,5 @@ func writeTMDBSettings(path string,s platformSettings)error{
  data,e:=json.Marshal(s);if e!=nil{return e}
  return replaceLibraryFile(path,data)
 }
+
+func zeroBytes(data []byte){for i:=range data{data[i]=0}}

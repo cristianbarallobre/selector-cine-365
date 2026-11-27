@@ -1,8 +1,11 @@
-# Candidata 9.2.26 de escritorio
-- Caducidad de disponibilidad TMDB: 24 h; se conservan resultados útiles si la red falla. Hasta 24 fichas antiguas por ciclo de fondo en Biblioteca.
-- Copia completa con historial (máx. 10.000 eventos), sin claves ni caché. La importación sustituye biblioteca e historial; crea antes un punto de rescate.
-- Copia adicional: actual, anterior, hasta 14 copias diarias; oportunidad de terminar al cerrar limitada a 2 segundos.
-- Caché TMDB en LocalAppData en Windows y Library/Caches en macOS. El origen antiguo se conserva y se aprovechan cachés compatibles; no mover ni borrar la biblioteca.
-- Credencial TMDB mediante DPAPI o Llavero de macOS. Si falla la migración no se borra la configuración anterior.
-- Escrituras protegidas de fichas; copia transaccional de metadatos sin ciclo JSON; diagnóstico de memoria del motor y benchmark sintético.
-- Pendiente de validar mediante CI y pruebas nativas. La release estable no cambia automáticamente.
+# Validación de la candidata 9.2.26
+
+La descarga estable sigue identificada en Releases. Este documento describe el código en validación.
+
+- Guardado: la biblioteca confirma una referencia SHA-256 a una instantánea del historial escrita previamente. Las copias locales son autocontenidas; se conserva un espejo de recuperación compatible con versiones antiguas.
+- Copias adicionales: biblioteca e historial, actual y anterior, hasta 14 diarias. Sin claves, caché ni sesiones. Las copias automáticas locales tienen límites de espacio; las pendientes no se retiran por antigüedad.
+- Se ha eliminado la implementación del motor de sincronización remota y la autenticación asociada. Se mantienen los campos y utilidades de revisión local necesarios para leer formatos anteriores. No se conectan cuentas.
+- TMDB: cuatro consultas simultáneas como máximo, pausa ante 429, reutilización de datos guardados y aviso de fecha. DPAPI en Windows y llavero en macOS, con pruebas de migración, desconexión y reconexión.
+- Mantenimiento: tamaños de datos, caché, copias, historial y registros; limpieza voluntaria de duplicados idénticos. No se elimina una carpeta personal.
+- Pruebas: Windows y macOS Intel/Apple Silicon, guardado y recuperación, benchmarks de actividad, disco y caché. WebKit a 960×680, 1200×820 y 1600×1000. No sustituye una revisión visual manual en equipos físicos.
+- No se cambia automáticamente la release publicada. Para un traslado o una vuelta a otra versión, exportar una copia completa desde la aplicación.

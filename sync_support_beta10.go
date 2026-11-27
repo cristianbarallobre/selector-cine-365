@@ -233,33 +233,16 @@ func (a *runningApp) restoreLocalRecovery(id, etag string) (map[string]any, erro
 	a.library = restored
 	a.libraryRevision++
 	if a.extraBackup!=nil{a.extraBackup.request()}
-	a.syncPreviewToken = ""
 	var warnings []string
 	if mirrorPending {
 		warnings = append(warnings, "Copia TXT pendiente")
 	}
-	syncReady:=metadataErr==nil
 	if metadataErr!=nil{warnings=append(warnings,"Historial local pendiente de guardar");diagnosticError("sincronizacion","guardar espejo de revisiones",metadataErr)}
 	if !desktopFeatures&&a.syncStore!=nil{
-		if err=a.syncStore.observe(before,restored);err!=nil{syncReady=false;warnings=append(warnings,"Estado de sincronización pendiente de guardar")}
+		if err=a.syncStore.observe(before,restored);err!=nil{warnings=append(warnings,"Estado de sincronización pendiente de guardar")}
 	}
 	if desktopFeatures{a.resolvePendingCopies(restored,false)}
 	a.mu.Unlock()
-	if !desktopFeatures && syncReady && a.syncStore != nil && a.graph != nil && a.graph.active() {
-		if a.syncStore.isPaired(a.graph.pairingID()) {
-			a.queueGraphUpload()
-		}
-	} else if !desktopFeatures && syncReady && a.cloud != nil && a.syncStore != nil {
-		folder := a.cloud.status().Folder
-		if a.syncStore.isPaired(folder) {
-			saved := a.cloud.backup()
-			if saved.LastError != "" {
-				warnings = append(warnings, saved.LastError)
-			} else if err = a.publishDeviceSnapshot(); err != nil {
-				warnings = append(warnings, err.Error())
-			}
-		}
-	}
 	return map[string]any{
 		"restored": true, "lists": len(restored.Lists), "seen": syncWatched(restored), "warning": strings.Join(warnings, " · "),
 	}, nil

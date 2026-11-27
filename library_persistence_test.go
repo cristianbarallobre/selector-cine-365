@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http/httptest"
 	"os"
@@ -12,32 +11,6 @@ import (
 	"strings"
 	"testing"
 )
-
-func TestOversizedSyncPreviewKeepsLocalLibraryUsable(t *testing.T) {
-	dir, folder := t.TempDir(), t.TempDir()
-	state := initialLibrary(strings.Repeat("☐ Película (2000)\n", 40500))
-	for i := 1; i < 12; i++ {
-		state.Lists = append(state.Lists, filmCollection{ID: fmt.Sprint(i), Name: "Lista", Text: state.Lists[0].Text})
-	}
-	store, err := newDesktopSyncStore(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	cloud := newCloudBackups(dir)
-	if err = cloud.configure(folder); err != nil {
-		t.Fatal(err)
-	}
-	app := &runningApp{cloud: cloud, syncStore: store, libraryPath: filepath.Join(dir, "colecciones.json"), savePath: filepath.Join(dir, "legacy.txt"), token: "test"}
-	if w := postTestLibrary(t, app, state); w.Code != 204 {
-		t.Fatal(w.Code, w.Body.String())
-	}
-	if _, err = app.cloudSyncPreview(); !errors.Is(err, errSyncSnapshotTooLarge) {
-		t.Fatal(err)
-	}
-	if app.syncPreviewToken != "" || !reflect.DeepEqual(loadLibrary(app.libraryPath, ""), state) {
-		t.Fatal("preflight changed local data")
-	}
-}
 
 func postTestLibrary(t *testing.T, a *runningApp, state libraryState) *httptest.ResponseRecorder {
 	t.Helper()

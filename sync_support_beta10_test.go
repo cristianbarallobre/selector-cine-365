@@ -19,7 +19,7 @@ func TestRecoveryConfirmsLocalCommitWhenSyncStateCannotBeWritten(t *testing.T) {
 	if err = os.Mkdir(store.path, 0700); err != nil {
 		t.Fatal(err)
 	}
-	a := &runningApp{library: initialLibrary("☐ Vértigo (1958)"), libraryPath: filepath.Join(dir, "colecciones.json"), savePath: filepath.Join(dir, "legacy.txt"), syncStore: store, syncPreviewToken: "previous"}
+	a := &runningApp{library: initialLibrary("☐ Vértigo (1958)"), libraryPath: filepath.Join(dir, "colecciones.json"), savePath: filepath.Join(dir, "legacy.txt"), syncStore: store}
 	if err = a.saveSyncRecovery(initialLibrary("☑ Vértigo (1958)"), ""); err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +34,7 @@ func TestRecoveryConfirmsLocalCommitWhenSyncStateCannotBeWritten(t *testing.T) {
 	if err != nil || result["restored"] != true || result["warning"] == "" {
 		t.Fatal(result, err)
 	}
-	if syncWatched(loadLibrary(a.libraryPath, "")) != 1 || a.syncPreviewToken != "" {
+	if syncWatched(loadLibrary(a.libraryPath, "")) != 1 {
 		t.Fatal("committed recovery was not applied")
 	}
 }
@@ -50,7 +50,7 @@ func TestBeta10RestoreKeepsBeforeBackupAndRecordsUnwatch(t *testing.T) {
 	}
 	src := filepath.Join(folder, "sync_recuperacion", "20261120T100000.000000000.json")
 	b, _ := json.Marshal(old)
-	if err := cloudWriteFile(src, b); err != nil {
+	if err := writeRecoveryTestFile(src, b); err != nil {
 		t.Fatal(err)
 	}
 	store, err := newDesktopSyncStore(folder)
@@ -119,10 +119,12 @@ func TestBeta10RecoveryRejectsArbitraryPathsAndCorruptSnapshots(t *testing.T) {
 		}
 	}
 	bad := filepath.Join(dir, "sync_recuperacion", "20261120_bad.json")
-	if err := cloudWriteFile(bad, []byte("{invalid")); err != nil {
+	if err := writeRecoveryTestFile(bad, []byte("{invalid")); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := a.restoreLocalRecovery("rec:20261120_bad.json", a.libraryETag()); err == nil {
 		t.Fatal("accepted corrupt JSON")
 	}
 }
+
+func writeRecoveryTestFile(path string,data []byte)error{if e:=os.MkdirAll(filepath.Dir(path),0700);e!=nil{return e};return replaceLibraryFile(path,data)}

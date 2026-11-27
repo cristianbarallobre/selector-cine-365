@@ -34,3 +34,10 @@ int cineTMDBKeySave(const char *account,const void *data,int length){
   return SecItemAdd((CFDictionaryRef)q,NULL);
  }
 }
+
+int cineTMDBKeyDelete(const char *account){
+ @autoreleasepool {
+  OSStatus status=SecItemDelete((CFDictionaryRef)tmdbQuery(account));
+  return status==errSecItemNotFound?errSecSuccess:status;
+ }
+}
