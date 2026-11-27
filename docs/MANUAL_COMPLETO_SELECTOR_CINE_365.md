@@ -39,14 +39,6 @@ Al añadir una película desde Descubrir, Biblioteca reutiliza la ficha y el car
 
 Si la app ha elegido otra película, abre **Identificar película en TMDB** y pega su ID numérico o su enlace. Si los años difieren, verifica el título y pulsa **Guardar de todos modos** si la ficha es correcta. El año de tu lista se conserva. **Volver a búsqueda automática** retira la identificación manual.
 
-### Puntuaciones IMDb (escritorio, opcional)
-
-En **Mis listas → Mantenimiento → Puntuaciones IMDb**, confirma que los datos se utilizarán solo de forma individual, personal y no comercial. Cada equipo descarga la copia oficial de puntuaciones directamente y la comprueba antes de sustituir la anterior. La actualización se comprueba cada 24 horas mientras la app esté abierta; también puedes pulsar **Actualizar IMDb**. Si no existe coincidencia exacta o no se dispone de una copia válida, sigue apareciendo TMDB. Los listados de descubrimiento del catálogo siguen consultando las categorías de TMDB. La valoración personal no cambia. Las puntuaciones y sus identificadores se guardan en la caché regenerable, no en la biblioteca ni en OneDrive.
-
-[Condiciones de IMDb](https://help.imdb.com/article/imdb/general-information/can-i-use-imdb-data-in-my-software/G5JTRESSHJBBHTGX).
-
-Information courtesy of IMDb (https://www.imdb.com). Used with permission.
-
 ## Copias y OneDrive
 
 La biblioteca se guarda automáticamente en el equipo. Desde **Mis listas → Copia de seguridad** en escritorio o **Ajustes** en Android, exporta un JSON para conservar todas las listas. Una exportación TXT corresponde a la lista seleccionada.

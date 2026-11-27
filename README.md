@@ -34,7 +34,7 @@ Windows y macOS guardan tus listas y marcas automáticamente en el equipo. Con u
 
 ## Código y versiones anteriores
 
-Desde 9.2.21, IMDb es una integración opcional de uso individual, personal y no comercial, activable en Mantenimiento. El dataset se descarga directamente en cada equipo y no se incluye en las publicaciones. El cambio de lista activa no marca una subida a OneDrive por sí solo.
+Cambiar de lista activa no marca una subida a OneDrive por sí solo.
 
 El tag de escritorio identifica el código que se compiló para Windows y macOS 9.2.21. La rama principal centraliza la documentación. La APK pública de Android tiene su propia publicación. [Fuente 9.2.21](https://github.com/cristianbarallobre/selector-cine-365/tree/v9.2.21-desktop) · [Publicación Android](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0)
 

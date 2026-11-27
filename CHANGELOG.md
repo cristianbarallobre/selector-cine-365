@@ -4,7 +4,6 @@
 
 - Cambiar de lista conserva la selección en el equipo, sin activar una subida a OneDrive si no cambian los datos compartidos.
 - Indicadores amarillos con reloj para operaciones pendientes y flecha circular para sincronización en curso.
-- Puntuaciones IMDb opcionales para uso individual, personal y no comercial: descarga local de la fuente oficial, actualización diaria, coincidencia por identificador exacto y alternativa TMDB. No se distribuye el dataset ni se sincroniza con OneDrive.
 
 [Publicación 9.2.21](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.21-desktop)
 

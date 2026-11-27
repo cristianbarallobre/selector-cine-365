@@ -19,6 +19,6 @@ Los carteles y los datos de disponibilidad se pueden volver a descargar desde TM
 - macOS: `~/Library/Application Support/Selector_Cine_365/logs`.
 - Exportación: Mis listas → Mantenimiento → Exportar registro de diagnóstico.
 
-## Puntuaciones IMDb (escritorio)
+## Recuperación de cambios pendientes
 
-La preferencia de uso personal se conserva en `imdb_ajustes.json` dentro de la carpeta de datos. `imdb_title_ratings.tsv.gz` e `imdb_ids.json` son cachés regenerables del equipo, no forman parte de las listas ni de las copias de OneDrive. Los borradores de guardado están en `sync_recuperacion`.
+Los borradores de guardado están en `sync_recuperacion`.
