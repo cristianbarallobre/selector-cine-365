@@ -63,16 +63,10 @@ jobs:
           security list-keychains -d user -s "$kc"
       - run: bash scripts/build_macos_app.sh
         env: { CC: clang }
-      - run: go test -run '^
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Mac_${{ matrix.label }}
-          path: dist/Selector_Cine_365_Mac_*.zip
-          if-no-files-found: error
- -bench 'Benchmark(LibraryActivity|DesktopCommit|ProviderCacheHit)' -benchmem -benchtime=100ms
+      - run: go test -run '^$' -bench 'Benchmark(LibraryActivity|DesktopCommit|ProviderCacheHit)' -benchmem -benchtime=100ms
       - run: bash scripts/test_macos_package.sh dist/Selector_Cine_365_Mac_${MAC_LABEL}_*.zip
       - uses: actions/upload-artifact@v4
         with:
           name: Mac_${{ matrix.label }}
-          path: dist/Selector_Cine_365_Mac_*_9.2.26.zip
+          path: dist/Selector_Cine_365_Mac_*.zip
           if-no-files-found: error
