@@ -188,7 +188,7 @@ func saveLibraryJSONCheckpoint(path string,l libraryState,checkpoint *syncDevice
 	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
 		return err
 	}
-	bytes, err := json.MarshalIndent(libraryDisk{libraryState:l,LocalSync:checkpoint}, "", "  ")
+	bytes,activityRef,activityData,err := encodeLocalLibrary(l,checkpoint)
 	if err != nil {
 		return err
 	}
@@ -216,10 +216,12 @@ func saveLibraryJSONCheckpoint(path string,l libraryState,checkpoint *syncDevice
 	if readErr == nil && len(before) > 0 {
 		// Versiones rápidas solo de un estado anterior válido, con un número
 		// máximo de copias. No respaldar accidentalmente archivos corruptos.
-		labQuickBackup(path, before)
+		portable,e:=expandActivityReference(filepath.Dir(path),before)
+		if e!=nil{return fmt.Errorf("No se pudo verificar el historial anterior; no se ha sobrescrito: %w",e)}
+		labQuickBackup(path, portable)
 		if e:=os.MkdirAll(backupDir,0700);e!=nil{recordBackupIssue("crear carpeta de copias diarias",e)}else{
 			backup:=filepath.Join(backupDir,time.Now().Format("2006-01-02")+".json")
-			if _,e:=os.Stat(backup);os.IsNotExist(e){recordBackupIssue("guardar copia diaria",replaceLibraryFile(backup,before))}else if e!=nil{recordBackupIssue("comprobar copia diaria",e)}
+			if _,e:=os.Stat(backup);os.IsNotExist(e){recordBackupIssue("guardar copia diaria",replaceLibraryFile(backup,portable))}else if e!=nil{recordBackupIssue("comprobar copia diaria",e)}
 		}
 	}
 	if len(expected)>0&&expected[0]!=""{
@@ -227,13 +229,17 @@ func saveLibraryJSONCheckpoint(path string,l libraryState,checkpoint *syncDevice
 		if e!=nil{return e}
 		if actual!=expected[0]{return errors.New("La biblioteca cambió externamente durante el guardado; no se ha sobrescrito")}
 	}
+	if activityRef!=""{if err:=writeActivitySnapshot(filepath.Dir(path),activityRef,activityData);err!=nil{return err}}
 	if err := replaceLibraryFile(path, bytes); err != nil {
 		return err
 	}
 	if protectedLibraryEnabled && os.IsNotExist(readErr){
-		recordBackupIssue("guardar primera copia",replaceLibraryFile(filepath.Join(filepath.Dir(path),"biblioteca_guardada.json"),bytes))
+		portable,e:=expandActivityReference(filepath.Dir(path),bytes)
+		if e==nil{e=replaceLibraryFile(filepath.Join(filepath.Dir(path),"biblioteca_guardada.json"),portable)}
+		recordBackupIssue("guardar primera copia",e)
 	}
 	labPruneLibraryBackups(path)
+	if activityRef!=""{pruneActivitySnapshots(filepath.Dir(path),activityRef)}
 	return nil
 }
 

@@ -37,6 +37,7 @@ func decodeRecoveryBackup(data []byte)(libraryState,*[]activityEntry,error){
  }
  var disk libraryDisk
  if err:=json.Unmarshal(data,&disk);err!=nil{return libraryState{},nil,err}
+ if disk.ActivityRef!=""{return libraryState{},nil,errors.New("Esta copia depende de un archivo de historial local; exporta una copia completa desde la aplicación")}
  if disk.LocalSync!=nil{
   s:=&desktopSyncStore{state:*disk.LocalSync}
   b.CompleteVersion=1;b.Activity=s.localActivity()

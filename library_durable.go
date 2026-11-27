@@ -16,6 +16,7 @@ import (
 type libraryDisk struct {
  libraryState
  LocalSync *syncDeviceState `json:"_local_sync,omitempty"`
+ ActivityRef string `json:"_local_activity_ref,omitempty"`
 }
 
 func libraryFingerprint(path string) (string,error) {
@@ -44,6 +45,10 @@ func readLibraryCheckpoint(path string) *syncDeviceState {
   return s
  }
  s:=disk.LocalSync
+ if disk.ActivityRef!=""{
+  events,e:=readActivitySnapshot(filepath.Dir(path),disk.ActivityRef);if e!=nil{return nil}
+  s.Activity=events;s.ActivityMigrated=true
+ }
  if s.Checkpoint==""||s.DeviceID==""||s.Protocol!=syncProtocol||s.Known==nil||s.Revisions==nil{return nil}
  return s
 }
@@ -62,6 +67,8 @@ func recoverSyncCheckpoint(dir string, checkpoint *syncDeviceState, recovered ..
   if err!=nil{return nil,err}
  }else if existingOK&&existing.Checkpoint==checkpoint.Checkpoint&&existing.DeviceID==checkpoint.DeviceID{
   store=&desktopSyncStore{path:path,state:existing}
+  // The committed library owns the activity, even if a mirror is stale.
+  store.state.Activity=checkpoint.Activity;store.state.ActivityMigrated=checkpoint.ActivityMigrated
  }else{
   store=&desktopSyncStore{path:path,state:*checkpoint}
   store.state.GraphUploadPending=true
@@ -135,7 +142,7 @@ func (a *runningApp) commitProtectedLibraryWithHistory(next libraryState, plan *
  if err==nil&&a.libraryDigest!=""{
   var cp *syncDeviceState
   if desktopFeatures&&a.syncStore!=nil{cp=&a.syncStore.state}
-  data,e:=json.MarshalIndent(libraryDisk{libraryState:next,LocalSync:cp},"","  ")
+  data,_,_,e:=encodeLocalLibrary(next,cp)
   if e!=nil{a.libraryDigest="unavailable";diagnosticError("guardado","calcular huella tras escritura",e)}else{a.libraryDigest=libraryBytesFingerprint(data)}
  }
  return
