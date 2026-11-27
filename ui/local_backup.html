@@ -1,0 +1,15 @@
+      <div class="cloud-box" aria-label="Guardado y copia adicional">
+        <div class="cloud-title">📁 Guardado y copia adicional</div>
+        <p>La biblioteca se guarda siempre en este equipo. Si quieres, conserva una segunda copia automática en una carpeta de tu elección.</p>
+        <p class="cloud-status">La copia incluye listas, estados de visionado, favoritos, valoraciones, identificaciones de películas e historial. No incluye claves de acceso, sesiones ni cachés.</p>
+        <label for="extraBackupFolder">Ubicación adicional (opcional)</label>
+        <input id="extraBackupFolder" class="cloud-path" type="text" autocomplete="off" placeholder="Elige una carpeta del equipo">
+        <div class="cloud-buttons">
+          <button type="button" class="tool" id="extraBackupBrowse">📁 Elegir carpeta</button>
+          <button type="button" class="tool" id="extraBackupActivate">Guardar ubicación</button>
+          <button type="button" class="tool" id="extraBackupNow">Copiar ahora</button>
+          <button type="button" class="tool" id="extraBackupDisable">Desactivar copia</button>
+        </div>
+        <p id="extraBackupStatus" class="cloud-status" role="status" aria-live="polite">Comprobando ubicación…</p>
+        <p id="extraBackupTarget" class="cloud-status"></p>
+        <p>Si eliges una carpeta gestionada por otro programa, ese programa se encarga de copiarla a sus servidores. Selector Cine 365 no inicia sesión, no recibe cambios y no mezcla listas de varios dispositivos. Para recuperar una copia, utiliza Restaurar copia y selecciona su JSON.</p>

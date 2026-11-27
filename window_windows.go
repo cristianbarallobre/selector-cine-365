@@ -9,6 +9,7 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
@@ -31,10 +32,12 @@ const (
 	wmMove                  = 0x0003
 	wmSetFocus              = 0x0007
 	wmAppNavigate           = 0x8021
+	wmAppCloseResult        = 0x8022
 	wsOverlappedWindow      = 0x00CF0000
 	wsClipChildren          = 0x02000000
 	wsClipSiblings          = 0x04000000
 	swShow                  = 5
+	swShowMaximized         = 3 // Win32 SW_SHOWMAXIMIZED, conserva la barra de título y restaurar
 	coinitApartmentThreaded = 2
 	sOK                     = 0
 	eNoInterface            = uintptr(0x80004002)
@@ -81,6 +84,7 @@ var (
 	iidNavStartHandler    = winGuid{0x9adbe429, 0xf36d, 0x432b, [8]byte{0x9d, 0xdc, 0xf8, 0x88, 0x1f, 0xbd, 0x76, 0xe3}}
 	iidNavDoneHandler     = winGuid{0xd33a35bf, 0x1c49, 0x4f98, [8]byte{0x93, 0xab, 0x00, 0x6e, 0x05, 0x33, 0xfe, 0x1c}}
 	iidProcessFailHandler = winGuid{0x79e0aea4, 0x990b, 0x42d9, [8]byte{0xaa, 0x1d, 0x0f, 0xcc, 0x2e, 0x5b, 0xc7, 0xf1}}
+	iidWebMessageHandler  = winGuid{0x57213f19, 0x00e6, 0x49fa, [8]byte{0x8e, 0x07, 0x89, 0x8e, 0xa0, 0x1e, 0xcb, 0xd2}}
 )
 
 type callbackVTable struct{ QueryInterface, AddRef, Release, Invoke uintptr }
@@ -92,9 +96,9 @@ type callbackObject struct {
 
 type nativeWindow struct {
 	hwnd                uintptr
-	environment         uintptr
-	controller          uintptr
-	webview             uintptr
+	environment         unsafe.Pointer
+	controller          unsafe.Pointer
+	webview             unsafe.Pointer
 	url                 string
 	profile             string
 	envCallback         callbackObject
@@ -102,12 +106,19 @@ type nativeWindow struct {
 	navStartCallback    callbackObject
 	navDoneCallback     callbackObject
 	processFailCallback callbackObject
+	webMessageCallback  callbackObject
 	navStartVTable      callbackVTable
 	navDoneVTable       callbackVTable
 	processFailVTable   callbackVTable
+	webMessageVTable    callbackVTable
 	navStartToken       uint64
 	navDoneToken        uint64
 	processFailToken    uint64
+	webMessageToken     uint64
+	ready               bool
+	closing             bool
+	closeAttempt        uintptr
+	closeDetail         string
 	envVTable           callbackVTable
 	ctrlVTable          callbackVTable
 	loader              *syscall.DLL
@@ -138,6 +149,7 @@ var (
 	procGetModuleHandle  = kernel32DLL.NewProc("GetModuleHandleW")
 	procCoInitialize     = ole32DLL.NewProc("CoInitializeEx")
 	procCoUninitialize   = ole32DLL.NewProc("CoUninitialize")
+	procCoTaskMemFree    = ole32DLL.NewProc("CoTaskMemFree")
 	procSetAppID         = shell32DLL.NewProc("SetCurrentProcessExplicitAppUserModelID")
 	procExtractIcon      = shell32DLL.NewProc("ExtractIconExW")
 	procBlackBrush       = gdi32DLL.NewProc("GetStockObject")
@@ -146,19 +158,20 @@ var (
 func utf16Ptr(s string) *uint16    { return syscall.StringToUTF16Ptr(s) }
 func ptr(p unsafe.Pointer) uintptr { return uintptr(p) }
 func badHR(hr uintptr) bool        { return uint32(hr)&0x80000000 != 0 }
-func comMethod(obj uintptr, index uintptr) uintptr {
-	table := *(*uintptr)(unsafe.Pointer(obj))
-	return *(*uintptr)(unsafe.Pointer(table + index*unsafe.Sizeof(uintptr(0))))
+func comMethod(obj unsafe.Pointer, index uintptr) uintptr {
+	table := *(*unsafe.Pointer)(obj)
+	return *(*uintptr)(unsafe.Add(table, index*unsafe.Sizeof(uintptr(0))))
 }
-func invokeCOM(obj uintptr, index uintptr, args ...uintptr) uintptr {
+func invokeCOM(obj unsafe.Pointer, index uintptr, args ...uintptr) uintptr {
 	argv := make([]uintptr, 0, len(args)+1)
-	argv = append(argv, obj)
+	argv = append(argv, uintptr(obj))
 	argv = append(argv, args...)
 	result, _, _ := syscall.SyscallN(comMethod(obj, index), argv...)
+	runtime.KeepAlive(obj)
 	return result
 }
 func resizeNativeWebview(w *nativeWindow) {
-	if w == nil || w.controller == 0 || w.hwnd == 0 {
+	if w == nil || w.controller == nil || w.hwnd == 0 {
 		return
 	}
 	var rc winRect
@@ -172,12 +185,12 @@ func nativeWndProc(hwnd, msg, wparam, lparam uintptr) uintptr {
 		resizeNativeWebview(w)
 		return 0
 	case wmMove:
-		if w != nil && w.controller != 0 {
+		if w != nil && w.controller != nil {
 			invokeCOM(w.controller, 23)
 		}
 		return 0
 	case wmAppNavigate:
-		if w != nil && w.webview != 0 {
+		if w != nil && w.webview != nil {
 			logDiagnostic("WM_APP: iniciando Navigate, fuera del callback COM")
 			addr := utf16Ptr(w.url)
 			hr := invokeCOM(w.webview, 5, ptr(unsafe.Pointer(addr)))
@@ -190,29 +203,65 @@ func nativeWndProc(hwnd, msg, wparam, lparam uintptr) uintptr {
 		}
 		return 0
 	case wmSetFocus:
-		if w != nil && w.controller != 0 {
+		if w != nil && w.controller != nil {
 			invokeCOM(w.controller, 12, 0)
 		}
 		return 0
 	case wmClose:
+		if w != nil && w.ready && w.webview != nil {
+			if w.closing {
+				return 0
+			}
+			w.closing = true
+			w.closeAttempt++
+			w.closeDetail = ""
+			attempt := w.closeAttempt
+			message := utf16Ptr(fmt.Sprintf("cine-prepare-close:%d", attempt))
+			hr := invokeCOM(w.webview, 33, ptr(unsafe.Pointer(message))) // PostWebMessageAsString
+			runtime.KeepAlive(message)
+			if badHR(hr) {
+				procPostMessage.Call(hwnd, wmAppCloseResult, 0, attempt)
+			} else {
+				time.AfterFunc(20*time.Second, func() { procPostMessage.Call(hwnd, wmAppCloseResult, 0, attempt) })
+			}
+			return 0
+		}
 		procDestroyWindow.Call(hwnd)
+		return 0
+	case wmAppCloseResult:
+		if w != nil && w.closing && lparam == w.closeAttempt {
+			if wparam == 1 {
+				procDestroyWindow.Call(hwnd)
+			} else {
+				// Invalidate late replies before entering the native modal message loop.
+				w.closeAttempt++
+				logDiagnostic("Cierre: guardado no confirmado; se ofrece cerrar de todas formas")
+				if confirmCloseWithoutSave(hwnd, w.closeDetail) {
+					diagnosticEvent("WARN", "cierre", "usuario confirma cierre sin guardado confirmado")
+					procDestroyWindow.Call(hwnd)
+				} else {
+					diagnosticEvent("INFO", "cierre", "usuario cancela cierre")
+					w.closing = false
+				}
+			}
+		}
 		return 0
 	case wmDestroy:
 		if w != nil {
-			if w.controller != 0 {
+			if w.controller != nil {
 				invokeCOM(w.controller, 24) // Close
 			}
-			if w.webview != 0 {
+			if w.webview != nil {
 				invokeCOM(w.webview, 2) // Release AddRef
-				w.webview = 0
+				w.webview = nil
 			}
-			if w.controller != 0 {
+			if w.controller != nil {
 				invokeCOM(w.controller, 2) // Release AddRef
-				w.controller = 0
+				w.controller = nil
 			}
-			if w.environment != 0 {
+			if w.environment != nil {
 				invokeCOM(w.environment, 2)
-				w.environment = 0
+				w.environment = nil
 			}
 			w.hwnd = 0
 		}
@@ -222,37 +271,38 @@ func nativeWndProc(hwnd, msg, wparam, lparam uintptr) uintptr {
 	r, _, _ := procDefWindow.Call(hwnd, msg, wparam, lparam)
 	return r
 }
-func callbackQueryInterface(this, riid, out uintptr) uintptr {
-	if riid == 0 || out == 0 {
+func callbackQueryInterface(cb *callbackObject, riid *winGuid, out **callbackObject) uintptr {
+	if riid == nil || out == nil {
 		return eFail
 	}
-	cb := (*callbackObject)(unsafe.Pointer(this))
-	iid := *(*winGuid)(unsafe.Pointer(riid))
+	iid := *riid
 	if iid == iidIUnknown || (cb.Kind == 0 && iid == iidEnvironmentHandler) || (cb.Kind == 1 && iid == iidControllerHandler) ||
 		(cb.Kind == 2 && iid == iidNavStartHandler) ||
 		(cb.Kind == 3 && iid == iidNavDoneHandler) ||
-		(cb.Kind == 4 && iid == iidProcessFailHandler) {
-		*(*uintptr)(unsafe.Pointer(out)) = this
+		(cb.Kind == 4 && iid == iidProcessFailHandler) ||
+		(cb.Kind == 5 && iid == iidWebMessageHandler) {
+		*out = cb
 		atomic.AddInt32(&cb.RefCount, 1)
 		return sOK
 	}
-	*(*uintptr)(unsafe.Pointer(out)) = 0
+	*out = nil
 	return eNoInterface
 }
-func callbackAddRef(this uintptr) uintptr {
-	cb := (*callbackObject)(unsafe.Pointer(this))
+func callbackAddRef(cb *callbackObject) uintptr {
 	return uintptr(atomic.AddInt32(&cb.RefCount, 1))
 }
-func callbackRelease(this uintptr) uintptr {
-	cb := (*callbackObject)(unsafe.Pointer(this))
+func callbackRelease(cb *callbackObject) uintptr {
 	return uintptr(atomic.AddInt32(&cb.RefCount, -1))
 }
-func navigationStarting(this, sender, args uintptr) uintptr {
+func navigationStarting(_, _, _ unsafe.Pointer) uintptr {
+	if w := activeNativeWindow; w != nil {
+		w.ready = false
+	}
 	logDiagnostic("NavigationStarting: WebView2 ha iniciado navegación")
 	return sOK
 }
-func navigationCompleted(this, sender, args uintptr) uintptr {
-	if args == 0 {
+func navigationCompleted(_ unsafe.Pointer, sender, args unsafe.Pointer) uintptr {
+	if args == nil {
 		logDiagnostic("NavigationCompleted: sin argumentos")
 		return sOK
 	}
@@ -269,11 +319,65 @@ func navigationCompleted(this, sender, args uintptr) uintptr {
 		return sOK
 	}
 	logDiagnostic(fmt.Sprintf("NavigationCompleted: éxito=%v, WebErrorStatus=%d", success != 0, errorCode))
+	if w := activeNativeWindow; w != nil {
+		w.ready = success != 0 && webviewString(sender, 4, len(w.url)) == w.url
+	}
 	return sOK
 }
-func processFailed(this, sender, args uintptr) uintptr {
+func webviewString(object unsafe.Pointer, method uintptr, maxLength int) string {
+	if object == nil {
+		return ""
+	}
+	var value *uint16
+	if badHR(invokeCOM(object, method, ptr(unsafe.Pointer(&value)))) || value == nil {
+		return ""
+	}
+	defer procCoTaskMemFree.Call(ptr(unsafe.Pointer(value)))
+	for i, character := range unsafe.Slice(value, maxLength+1) {
+		if character == 0 {
+			return syscall.UTF16ToString(unsafe.Slice(value, i))
+		}
+	}
+	return ""
+}
+func webMessageReceived(_ unsafe.Pointer, sender, args unsafe.Pointer) uintptr {
+	w := activeNativeWindow
+	if w == nil || args == nil || sender != w.webview {
+		return sOK
+	}
+	if webviewString(args, 3, len(w.url)) != w.url {
+		return sOK
+	}
+	message := webviewString(args, 5, uiDraftLimit+256)
+	if strings.HasPrefix(message,"cine-draft:"){
+		ack:=nativeDraftMessage(filepath.Dir(getSavePath()),message)
+		if ack!=""{
+			value:=utf16Ptr(ack)
+			invokeCOM(w.webview,33,ptr(unsafe.Pointer(value)))
+			runtime.KeepAlive(value)
+		}
+		return sOK
+	}
+	if len(message)>1400{return sOK}
+	if strings.HasPrefix(message, "cine-diagnostic:") {
+		diagnosticUIEvent(strings.TrimPrefix(message, "cine-diagnostic:"))
+		return sOK
+	}
+	if !w.closing { return sOK }
+	ready := fmt.Sprintf("cine-close-ready:%d", w.closeAttempt)
+	pending := fmt.Sprintf("cine-close-pending:%d", w.closeAttempt)
+	switch {
+	case message == ready:
+		procPostMessage.Call(w.hwnd, wmAppCloseResult, 1, w.closeAttempt)
+	case message == pending || strings.HasPrefix(message, pending+":"):
+		w.closeDetail = strings.TrimPrefix(strings.TrimPrefix(message, pending), ":")
+		procPostMessage.Call(w.hwnd, wmAppCloseResult, 0, w.closeAttempt)
+	}
+	return sOK
+}
+func processFailed(_, _, args unsafe.Pointer) uintptr {
 	var kind int32
-	if args != 0 {
+	if args != nil {
 		if hr := invokeCOM(args, 3, ptr(unsafe.Pointer(&kind))); badHR(hr) {
 			logDiagnostic(fmt.Sprintf("ProcessFailed: get_ProcessFailedKind 0x%08X", uint32(hr)))
 		}
@@ -281,12 +385,12 @@ func processFailed(this, sender, args uintptr) uintptr {
 	logDiagnostic(fmt.Sprintf("ProcessFailed: kind=%d", kind))
 	return sOK
 }
-func environmentReady(this, hresult, env uintptr) uintptr {
+func environmentReady(_ unsafe.Pointer, hresult uintptr, env unsafe.Pointer) uintptr {
 	w := activeNativeWindow
 	if w == nil || w.hwnd == 0 {
 		return sOK
 	}
-	if badHR(hresult) || env == 0 {
+	if badHR(hresult) || env == nil {
 		logDiagnostic(fmt.Sprintf("Environment failed: 0x%08X", uint32(hresult)))
 		w.failure = fmt.Errorf("WebView2 no pudo arrancar (HRESULT 0x%08X). Comprueba que Microsoft Edge WebView2 Runtime esté instalado", uint32(hresult))
 		procDestroyWindow.Call(w.hwnd)
@@ -304,12 +408,12 @@ func environmentReady(this, hresult, env uintptr) uintptr {
 	}
 	return sOK
 }
-func controllerReady(this, hresult, controller uintptr) uintptr {
+func controllerReady(_ unsafe.Pointer, hresult uintptr, controller unsafe.Pointer) uintptr {
 	w := activeNativeWindow
 	if w == nil || w.hwnd == 0 {
 		return sOK
 	}
-	if badHR(hresult) || controller == 0 {
+	if badHR(hresult) || controller == nil {
 		logDiagnostic(fmt.Sprintf("Controller failed: 0x%08X", uint32(hresult)))
 		w.failure = fmt.Errorf("WebView2 no pudo crear la ventana (0x%08X)", uint32(hresult))
 		procDestroyWindow.Call(w.hwnd)
@@ -320,9 +424,9 @@ func controllerReady(this, hresult, controller uintptr) uintptr {
 	w.controller = controller
 	resizeNativeWebview(w)
 	invokeCOM(controller, 4, 1) // mostrar WebView2
-	var webview uintptr
+	var webview unsafe.Pointer
 	hr := invokeCOM(controller, 25, ptr(unsafe.Pointer(&webview)))
-	if badHR(hr) || webview == 0 {
+	if badHR(hr) || webview == nil {
 		w.failure = fmt.Errorf("Error al iniciar la vista WebView2: 0x%08X", uint32(hr))
 		procDestroyWindow.Call(w.hwnd)
 		return sOK
@@ -339,6 +443,7 @@ func controllerReady(this, hresult, controller uintptr) uintptr {
 		{"NavigationStarting", 7, &w.navStartCallback, &w.navStartToken},
 		{"NavigationCompleted", 15, &w.navDoneCallback, &w.navDoneToken},
 		{"ProcessFailed", 25, &w.processFailCallback, &w.processFailToken},
+		{"WebMessageReceived", 34, &w.webMessageCallback, &w.webMessageToken},
 	} {
 		hr = invokeCOM(webview, ev.method, ptr(unsafe.Pointer(ev.cb)), ptr(unsafe.Pointer(ev.token)))
 		logDiagnostic(fmt.Sprintf("Evento %s: registro 0x%08X", ev.name, uint32(hr)))
@@ -356,6 +461,18 @@ func controllerReady(this, hresult, controller uintptr) uintptr {
 // El SDK de Microsoft distribuye la DLL cargadora por separado del runtime.
 // Instalamos únicamente esa DLL desde NuGet oficial, una sola vez por usuario.
 const webview2PackageURL = "https://api.nuget.org/v3-flatcontainer/microsoft.web.webview2/1.0.3537.50/microsoft.web.webview2.1.0.3537.50.nupkg"
+const webview2LoaderSHA256 = "2f965e10aed3b356a408978a0e6d74eb86e3e722dd008fa9ad39f68884479e85"
+
+func verifiedWebview2Loader(path string) bool {
+	file, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+	defer file.Close()
+	hash := sha256.New()
+	size, err := io.Copy(hash, io.LimitReader(file, (5<<20)+1))
+	return err == nil && size <= 5<<20 && fmt.Sprintf("%x", hash.Sum(nil)) == webview2LoaderSHA256
+}
 
 func obtainWebview2Loader() (string, error) {
 	config, err := os.UserConfigDir()
@@ -363,13 +480,13 @@ func obtainWebview2Loader() (string, error) {
 		return "", err
 	}
 	dest := filepath.Join(config, "AtlasDelCine", "webview2", "WebView2Loader.dll")
-	if st, err := os.Stat(dest); err == nil && st.Size() > 20000 {
+	if verifiedWebview2Loader(dest) {
 		return dest, nil
 	}
 	// Primero intentamos con un DLL al lado del ejecutable, para instalaciones sin red.
 	if exe, err := os.Executable(); err == nil {
 		adjacent := filepath.Join(filepath.Dir(exe), "WebView2Loader.dll")
-		if st, err := os.Stat(adjacent); err == nil && st.Size() > 20000 {
+		if verifiedWebview2Loader(adjacent) {
 			return adjacent, nil
 		}
 	}
@@ -408,8 +525,8 @@ func obtainWebview2Loader() (string, error) {
 			break
 		}
 	}
-	if len(content) < 20000 || !bytes.HasPrefix(content, []byte("MZ")) {
-		return "", errors.New("el paquete oficial no contiene WebView2Loader.dll x64")
+	if fmt.Sprintf("%x", sha256.Sum256(content)) != webview2LoaderSHA256 {
+		return "", errors.New("no coincide la integridad de WebView2Loader.dll x64")
 	}
 	if err := os.MkdirAll(filepath.Dir(dest), 0700); err != nil {
 		return "", err
@@ -436,7 +553,7 @@ func nativeWindowLoop(url, profile string) error {
 	if err != nil {
 		return err
 	}
-	logDiagnostic("DLL hallada: " + loaderFile)
+	logDiagnostic("DLL de WebView2 localizada")
 	dll, err := syscall.LoadDLL(loaderFile)
 	if err != nil {
 		return fmt.Errorf("no se pudo cargar WebView2Loader.dll: %w", err)
@@ -463,9 +580,11 @@ func nativeWindowLoop(url, profile string) error {
 	w.navStartVTable = callbackVTable{qi, add, release, syscall.NewCallback(navigationStarting)}
 	w.navDoneVTable = callbackVTable{qi, add, release, syscall.NewCallback(navigationCompleted)}
 	w.processFailVTable = callbackVTable{qi, add, release, syscall.NewCallback(processFailed)}
+	w.webMessageVTable = callbackVTable{qi, add, release, syscall.NewCallback(webMessageReceived)}
 	w.navStartCallback = callbackObject{VTable: &w.navStartVTable, RefCount: 1, Kind: 2}
 	w.navDoneCallback = callbackObject{VTable: &w.navDoneVTable, RefCount: 1, Kind: 3}
 	w.processFailCallback = callbackObject{VTable: &w.processFailVTable, RefCount: 1, Kind: 4}
+	w.webMessageCallback = callbackObject{VTable: &w.webMessageVTable, RefCount: 1, Kind: 5}
 	w.envCallback = callbackObject{VTable: &w.envVTable, RefCount: 1, Kind: 0}
 	w.ctrlCallback = callbackObject{VTable: &w.ctrlVTable, RefCount: 1, Kind: 1}
 	instance, _, _ := procGetModuleHandle.Call(0)
@@ -487,7 +606,10 @@ func nativeWindowLoop(url, profile string) error {
 	}
 	logDiagnostic("Ventana Win32 creada")
 	w.hwnd = hwnd
-	procShowWindow.Call(hwnd, swShow)
+	// Windows LAB abre maximizado, no en modo quiosco: permite restaurar y cerrar.
+	showMode := uintptr(swShow)
+	showMode = uintptr(swShowMaximized)
+	procShowWindow.Call(hwnd, showMode)
 	procUpdateWindow.Call(hwnd)
 	logDiagnostic("Solicitando crear entorno WebView2")
 	hr, _, _ = createEnv.Call(0, ptr(unsafe.Pointer(utf16Ptr(profile))), 0, ptr(unsafe.Pointer(&w.envCallback)))
@@ -519,17 +641,13 @@ func launchVisualWindow(url, profile string, onClose func(), heartbeat func() bo
 	}
 	logDiagnostic("Ventana WebView2: arrancando proceso independiente")
 	cmd := exec.Command(exe, "--webview2-host", url, profile)
-	// La compilación windowsgui no dispone de consola: guardamos sus errores.
-	diag := diagnosticFile()
-	if diag != nil {
-		cmd.Stdout, cmd.Stderr = diag, diag
-		defer diag.Close()
-	}
 	// Do not pass SW_HIDE via STARTUPINFO to a process whose first ShowWindow
 	// must display a native window; -H=windowsgui already hides its console.
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: false}
+	nativeDesktopWindowActive.Store(true)
 	if err := cmd.Start(); err != nil {
-		logDiagnostic("No se pudo arrancar proceso WebView2: " + err.Error())
+		nativeDesktopWindowActive.Store(false)
+		diagnosticError("nativo", "no se pudo arrancar WebView2", err)
 		return launchCompatibleBrowser(url, filepath.Join(filepath.Dir(profile), "perfil_compatible_v7_3"))
 	}
 	// Impide que WebView2 mantenga una ventana negra indefinidamente.
@@ -543,10 +661,11 @@ func launchVisualWindow(url, profile string, onClose func(), heartbeat func() bo
 	})
 	go func() {
 		err := cmd.Wait()
+		nativeDesktopWindowActive.Store(false)
 		finished.Store(true)
 		watchdog.Stop()
 		if err != nil {
-			logDiagnostic("Host WebView2 falló: " + err.Error())
+			diagnosticError("nativo", "Host WebView2 falló", err)
 			fbErr := launchCompatibleBrowser(url, filepath.Join(filepath.Dir(profile), "perfil_compatible_v7_3"))
 			if fbErr != nil {
 				notifyError("Selector de Cine 365", "WebView2 no pudo iniciarse ni fue posible abrir el navegador: "+fbErr.Error()+"\nArchivo de errores: "+diagnosticPath())
@@ -587,11 +706,12 @@ func launchCompatibleBrowser(url, profile string) error {
 		if fi, err := os.Stat(path); err != nil || fi.IsDir() {
 			continue
 		}
-		args := []string{"--app=" + url, "--new-window", "--window-size=1200,820", "--user-data-dir=" + profile, "--no-first-run", "--no-default-browser-check", "--disable-background-mode"}
+		args := []string{"--app=" + url, "--new-window", "--user-data-dir=" + profile, "--no-first-run", "--no-default-browser-check", "--disable-background-mode"}
+		args = append(args, "--start-maximized")
 		cmd := exec.Command(path, args...)
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 		if err := cmd.Start(); err == nil {
-			logDiagnostic("Modo compatible abierto con: " + path)
+			logDiagnostic("Modo compatible abierto con navegador dedicado")
 			go func() { _ = cmd.Wait() }()
 			return nil
 		}
@@ -606,33 +726,6 @@ func launchCompatibleBrowser(url, profile string) error {
 	logDiagnostic("Modo compatible abierto con navegador predeterminado")
 	return nil
 }
-func diagnosticPath() string {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		dir = os.TempDir()
-	}
-	return filepath.Join(dir, "AtlasDelCine", "diagnostico_v7_3.txt")
-}
-func diagnosticFile() *os.File {
-	path := diagnosticPath()
-	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
-		return nil
-	}
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
-	if err != nil {
-		return nil
-	}
-	return f
-}
-func logDiagnostic(msg string) {
-	f := diagnosticFile()
-	if f == nil {
-		return
-	}
-	defer f.Close()
-	fmt.Fprintf(f, "%s %s\n", time.Now().Format("2006-01-02 15:04:05"), msg)
-}
-
 // Se llama antes del servidor HTTP en el proceso secundario.
 func maybeNativeChild() bool {
 	if len(os.Args) < 2 || os.Args[1] != "--webview2-host" {
@@ -642,25 +735,43 @@ func maybeNativeChild() bool {
 		logDiagnostic("Host: argumentos incompletos")
 		os.Exit(2)
 	}
-	logDiagnostic("Host: inicializando WebView2 (v8.1 - arranque estable de v7.3)")
+	logDiagnostic("Host: inicializando WebView2")
 	err := nativeWindowLoop(os.Args[2], os.Args[3])
 	if err != nil {
-		logDiagnostic("Host: error de WebView2: " + err.Error())
+		diagnosticError("nativo", "Host: error de WebView2", err)
 		os.Exit(3)
 	}
 	logDiagnostic("Host: cerrado sin errores")
 	os.Exit(0)
 	return true
 }
+// The native dialog is independent of the renderer and HTTP server.
+func confirmCloseWithoutSave(hwnd uintptr, detail string) bool {
+	if detail == "" {
+		detail = "La interfaz no respondió; no se puede identificar qué cambios quedaron pendientes."
+	}
+	proc := user32DLL.NewProc("MessageBoxW")
+	body := utf16Ptr("No se pudo confirmar el guardado local.\n\n" + detail + "\n\nSi cierras ahora, puedes perder cambios sin guardar.\n\n¿Cerrar de todas formas?\nSí: cerrar ahora.\nNo: volver para reintentar o exportar una copia de emergencia.")
+	title := utf16Ptr("Selector Cine 365 · Guardado no confirmado")
+	result, _, _ := proc.Call(hwnd, ptr(unsafe.Pointer(body)), ptr(unsafe.Pointer(title)), 0x4|0x30|0x100)
+	runtime.KeepAlive(body)
+	runtime.KeepAlive(title)
+	return result == 6 // IDYES; default button is No.
+}
+
 func notifyError(title, body string) {
 	proc := user32DLL.NewProc("MessageBoxW")
 	proc.Call(0, ptr(unsafe.Pointer(utf16Ptr(body))), ptr(unsafe.Pointer(utf16Ptr(title))), 0x10)
 }
 
-// traceHTTP records whether the embedded renderer reached the local app.
-func traceHTTP(path, userAgent string) {
-	if len(userAgent) > 160 {
-		userAgent = userAgent[:160]
+// Record startup and resumed heartbeats rather than every 12-second ping.
+var lastWindowsHeartbeat atomic.Int64
+func traceHTTP(path, _ string) {
+	if path == "/" { diagnosticEvent("INFO", "motor", "interfaz solicitada"); return }
+	if path != "/api/ping" { return }
+	now := time.Now().Unix()
+	previous := lastWindowsHeartbeat.Swap(now)
+	if previous == 0 { diagnosticEvent("INFO", "motor", "primer heartbeat") } else if now-previous > 45 {
+		diagnosticEvent("WARN", "motor", fmt.Sprintf("heartbeat reanudado tras %d s", now-previous))
 	}
-	logDiagnostic("Servidor local " + path + " (" + userAgent + ")")
 }

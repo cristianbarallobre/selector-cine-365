@@ -30,22 +30,22 @@ type identityStorage struct {
 // Serialize requests for new IDs to avoid simultaneous duplicate lookups.
 var identityRequestLock sync.Mutex
 
-func (p *availabilityServer) saveIdentityCacheLocked() {
+func (p *availabilityServer) saveIdentityCacheLocked() error {
 	if p.identityPath == "" {
-		return
+		return nil
 	}
 	bytes, err := json.MarshalIndent(identityStorage{Entries: p.identities}, "", "  ")
 	if err != nil {
-		return
+		return err
 	}
-	_ = os.MkdirAll(filepath.Dir(p.identityPath), 0700)
-	tmp := p.identityPath + ".tmp"
-	if os.WriteFile(tmp, bytes, 0600) == nil {
-		if os.Rename(tmp, p.identityPath) != nil {
-			_ = os.WriteFile(p.identityPath, bytes, 0600)
-			_ = os.Remove(tmp)
-		}
+	if err = os.MkdirAll(filepath.Dir(p.identityPath), 0700); err != nil {
+		return err
 	}
+	if err = replaceLibraryFile(p.identityPath, bytes); err != nil {
+		return err
+	}
+	p.identityDirty = false
+	return nil
 }
 
 func (p *availabilityServer) knownIdentities() map[string]int {
@@ -93,6 +93,10 @@ func (p *availabilityServer) knownIdentity(key string) (int, bool) {
 func (p *availabilityServer) recordIdentity(key string, id int) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	p.recordIdentityLocked(key, id)
+}
+
+func (p *availabilityServer) recordIdentityLocked(key string, id int) {
 	if p.identities == nil {
 		p.identities = map[string]filmIdentityRecord{}
 	}
@@ -122,6 +126,12 @@ func (p *availabilityServer) identifyFilm(ctx context.Context, title string, yea
 	}
 	identityRequestLock.Lock()
 	defer identityRequestLock.Unlock()
+	p.mu.Lock()
+	manual, revision := p.overrides[key], p.overrideRevision[key]
+	p.mu.Unlock()
+	if manual > 0 {
+		return manual, "ok", nil
+	}
 	if !force {
 		if id, ok := p.knownIdentity(key); ok {
 			if id > 0 {
@@ -201,7 +211,15 @@ func (p *availabilityServer) identifyFilm(ctx context.Context, title string, yea
 			break
 		}
 	}
-	p.recordIdentity(key, id)
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.overrideRevision[key] != revision {
+		if manual = p.overrides[key]; manual > 0 {
+			return manual, "ok", nil
+		}
+		return 0, "superseded", nil
+	}
+	p.recordIdentityLocked(key, id)
 	if id == 0 {
 		return 0, "not-found", nil
 	}

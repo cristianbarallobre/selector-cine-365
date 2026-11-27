@@ -2,6 +2,7 @@ package main
 
 import (
  "encoding/json"
+ "net/http/httptest"
  "os"
  "path/filepath"
  "strings"
@@ -19,7 +20,7 @@ func TestCloudAutoSyncImportsPairedChangesWithoutOverwritingPeer(t *testing.T){
  if err:=saveLibrary(path,savePath,local);err!=nil{t.Fatal(err)}
  store,err:=newDesktopSyncStore(localDir);if err!=nil{t.Fatal(err)}
  cloud:=newCloudBackups(localDir);if err=cloud.configure(cloudDir);err!=nil{t.Fatal(err)}
- app:=&runningApp{syncStore:store,cloud:cloud,library:local,libraryPath:path,savePath:savePath}
+ app:=&runningApp{syncStore:store,cloud:cloud,library:local,libraryPath:path,savePath:savePath,token:"test"}
  first,err:=app.cloudAutoSync();if err!=nil{t.Fatal(err)}
  if first["skipped"]!="not_paired"{t.Fatalf("auto synced before pairing: %+v",first)}
  preview,err:=app.cloudSyncPreview();if err!=nil{t.Fatal(err)}
@@ -32,7 +33,23 @@ func TestCloudAutoSyncImportsPairedChangesWithoutOverwritingPeer(t *testing.T){
  b,_:=json.Marshal(peer)
  remote:=filepath.Join(cloudSyncRoot(cloudDir),"sincronizacion","dispositivos","peer-example.json")
  if err=cloudWriteFile(remote,b);err!=nil{t.Fatal(err)}
- result,err:=app.cloudAutoSync();if err!=nil{t.Fatal(err)}
+ request:=func(method,path,body string) *httptest.ResponseRecorder {
+  r:=httptest.NewRequest(method,path,strings.NewReader(body))
+  r.Header.Set("X-Atlas-Token",app.token)
+  w:=httptest.NewRecorder();app.serveHTTP(w,r)
+  return w
+ }
+ beforeReceive:=app.syncLastReceived.Load()
+ status:=request("GET","/api/cloud/pending","")
+ if status.Code!=200||!strings.Contains(status.Body.String(),`"incoming_pending":true`){t.Fatalf("no detecta la recepción pendiente: %s",status.Body.String())}
+ if desktopFeatures {
+  skipped:=request("POST","/api/cloud/auto","{}")
+  if skipped.Code!=200||!strings.Contains(skipped.Body.String(),"manual_only"){t.Fatalf("se permitió sincronizar en segundo plano: %s",skipped.Body.String())}
+ }
+ if !strings.Contains(app.library.Lists[0].Text,"☐")||app.syncLastReceived.Load()!=beforeReceive {t.Fatal("la comprobación modificó la biblioteca")}
+ result:=map[string]any{}
+ sync:=request("POST","/api/cloud/auto",`{"force":true}`)
+ if sync.Code!=200||json.Unmarshal(sync.Body.Bytes(),&result)!=nil{t.Fatal(sync.Body.String())}
  if result["changed"]!=true{t.Fatalf("remote change not imported: %+v",result)}
  data,err:=os.ReadFile(path);if err!=nil{t.Fatal(err)}
  if !strings.Contains(string(data),"☑ 001."){t.Fatal("remote mark lost")}

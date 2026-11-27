@@ -1,0 +1,249 @@
+<style id="lab-smart-sort-style">
+#view-library .lab-smart-box{flex:0 0 auto;border:1px solid #576781;background:linear-gradient(125deg,#1c2c40,#192434);border-radius:12px;margin:7px 0 5px;padding:9px 11px;min-width:0}
+#view-library .lab-smart-heading{display:flex;align-items:center;gap:9px;justify-content:space-between;cursor:pointer;font-size:13px;font-weight:850;color:#f8dca8;line-height:1.4}
+#view-library .lab-smart-heading input{width:17px;height:17px;accent-color:#f1bd6b;cursor:pointer;flex:none}
+#view-library .lab-smart-heading .lab-smart-caption{margin-left:auto;font-size:10px;color:#e8bd78;letter-spacing:.06em}
+#view-library .lab-smart-controls{display:grid;grid-template-columns:1fr 1fr;gap:7px 9px;margin-top:10px}
+#view-library .lab-smart-controls[hidden]{display:none!important}
+#view-library .lab-smart-field{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:11px;color:#bed0e5;font-weight:750}
+#view-library .lab-smart-field:last-of-type{grid-column:1/-1}
+#view-library .lab-smart-field select{width:100%;min-width:0;border:1px solid #667993;border-radius:8px;background:#223348;color:#f3f5fa;padding:7px 8px;font-size:12px;cursor:pointer;min-height:34px}
+#view-library .lab-smart-reason{font-size:11px;color:#f3d79e;line-height:1.45;margin:7px 0 0}
+#view-library .lab-smart-reason[hidden]{display:none!important}
+#view-library .panel.lab-smart-panel-open{overflow-y:auto;scrollbar-color:#566a81 transparent;overscroll-behavior-y:contain}
+#view-library .lab-smart-status{font-size:11px;color:#c5d5e6;margin:6px 0 0;line-height:1.4}
+@media(max-height:760px){#view-library .lab-smart-controls{gap:5px}#view-library .lab-smart-field select{padding:5px 7px;min-height:29px}#view-library .lab-smart-box{padding:7px 9px}}
+/* El botón pertenece a la tarjeta de resultado; no abre detalles el resto de la tarjeta. */
+#view-library .pick{position:relative}
+#view-library .lab-smart-details-btn{position:absolute;top:11px;right:12px;z-index:2;border:1px solid #b99b67;border-radius:9px;background:#26384c;color:#ffdfad;padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer}
+#view-library .lab-smart-details-btn[hidden]{display:none!important}
+#view-library .lab-smart-details-btn:hover:not(:disabled){background:#38516a;border-color:#f6d28f}
+#view-library .lab-smart-details-btn:focus-visible{outline:2px solid #ffe39c;outline-offset:3px}
+#view-library .lab-smart-result-has-details .result-copy{padding-top:27px}
+</style>
+<!-- LAB_SMART_HTML -->
+<div class="lab-smart-box" id="labSmartBox">
+  <label class="lab-smart-heading" for="labSmartEnabled"><span>🧠 Sorteo inteligente</span><span class="lab-smart-caption">LAB</span><input id="labSmartEnabled" type="checkbox" aria-controls="labSmartControls"></label>
+  <div class="lab-smart-controls" id="labSmartControls" hidden>
+    <label class="lab-smart-field" for="labSmartSeen">Películas
+      <select id="labSmartSeen">
+        <option value="pending">No vistas (pendientes)</option>
+        <option value="seen">Vistas</option>
+        <option value="both">Vistas y no vistas</option>
+      </select>
+    </label>
+    <label class="lab-smart-field" for="labSmartDuration">Duración
+      <select id="labSmartDuration">
+        <option value="any">Cualquier duración</option>
+        <option value="short">Hasta 90 minutos</option>
+        <option value="medium">De 91 a 120 minutos</option>
+        <option value="long">Más de 120 minutos</option>
+      </select>
+    </label>
+    <label class="lab-smart-field" for="labSmartGenre">Género
+      <select id="labSmartGenre"><option value="any">Todos los géneros</option></select>
+    </label>
+  </div>
+  <div class="lab-smart-status" id="labSmartStatus" hidden aria-live="polite"></div>
+</div>
+<!-- LAB_SMART_SCRIPT -->
+// El botón de la esquina aparece tras cualquier sorteo (clásico o inteligente).
+function labSmartSyncSeenAction(){
+ const button=$('markWatched');
+ if(button)button.textContent=chosen&&chosen.checked?'↩ Marcar como pendiente':'✓ Marcar como vista';
+}
+function labSmartSyncDetailsButton(){
+ const button=$('labSmartResultDetails');
+ if(!button)return;
+ const hasFilm=!!(chosen&&chosen.title);
+ button.hidden=!hasFilm;
+ button.disabled=!hasFilm;
+ button.setAttribute('aria-label',hasFilm?'Ver detalles de '+chosen.title:'Ver detalles de la película sorteada');
+ $('resultPoster').closest('.pick')?.classList.toggle('lab-smart-result-has-details',hasFilm);
+}
+$('labSmartResultDetails').addEventListener('click',()=>{
+ if(chosen)void labOpenFilmDetails(chosen);
+});
+const labSmartEnable=$('labSmartEnabled');
+const labSmartSeen=$('labSmartSeen'),labSmartDuration=$('labSmartDuration'),labSmartGenre=$('labSmartGenre');
+const labSmartPanel=$('labSmartBox').closest('.panel');
+let labSmartCache={items:{},resolved:{}};
+let labSmartHistory=[],labSmartCacheBusy=false,labSmartCacheReady=false;
+function labSmartNormalize(value){
+ return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
+  .replace(/æ/g,'ae').replace(/œ/g,'oe').replace(/[^\p{L}\p{N}]+/gu,' ').trim();
+}
+function labSmartMetadata(f){
+ const main=platformData.get(providerKey(f))||{};
+ const resolved=labSmartCache.resolved[labSmartNormalize(f.title)+'|'+(Number(f.year)||0)]||0;
+ const id=Number(knownTMDB(f)||main.tmdb_id||resolved)||0;
+ const extra=labSmartCache.items[String(id)]||{};
+ const mainGenres=Array.isArray(main.genres)?main.genres:[];
+ const genres=mainGenres.length?mainGenres:(Array.isArray(extra.genres)?extra.genres:[]);
+ const mainVotes=Number(main.vote_count)||0,extraVotes=Number(extra.vote_count)||0;
+ const more=extraVotes>mainVotes?extra:main;
+ return {
+  genres:genres.filter(x=>typeof x==='string'),
+  runtime:Math.max(0,Number(main.runtime)||Number(extra.runtime)||0),
+  vote_count:Math.max(mainVotes,extraVotes),
+  vote_average:Math.max(0,Math.min(10,Number(more.vote_average)||0))
+ };
+}
+// El sorteo clásico sigue usando eligibleFilms(), que solo incluye pendientes.
+// El modo inteligente permite ampliar explícitamente a vistas o a toda la lista.
+function labSmartPool(){
+ if(!parsed)return [];
+ const status=labSmartSeen.value;
+ const films=labStatsDataset().entries.filter(f=>status==='both'||(status==='seen'?f.checked:!f.checked));
+ if(!selectedSortPlatforms.size)return films;
+ return films.filter(f=>{
+  const r=platformData.get(providerKey(f));
+  if(!r||r.state!=='ok')return false;
+  const providers=subscriptions(r);
+  return selectedSortPlatforms.has('any')?providers.length>0:providers.some(name=>selectedSortPlatforms.has(name));
+ });
+}
+function labSmartCandidates(){
+ const genre=labSmartGenre.value,duration=labSmartDuration.value;
+ return labSmartPool().filter(f=>{
+  const d=labSmartMetadata(f);
+  if(genre!=='any'&&!d.genres.some(x=>labSmartNormalize(x)===genre))return false;
+  if(duration==='short'&&!(d.runtime>0&&d.runtime<=90))return false;
+  if(duration==='medium'&&!(d.runtime>90&&d.runtime<=120))return false;
+  if(duration==='long'&&!(d.runtime>120))return false;
+  return true;
+ });
+}
+function labSmartGenres(){
+ const current=labSmartGenre.value;
+ const all=new Map();
+ for(const film of labSmartPool()){
+  for(const genre of labSmartMetadata(film).genres){
+   const key=labSmartNormalize(genre);
+   if(key&&!all.has(key))all.set(key,genre);
+  }
+ }
+ const items=[...all.entries()].sort((a,b)=>a[1].localeCompare(b[1],'es'));
+ const signature=JSON.stringify(items);
+ if(labSmartGenre.dataset.signature!==signature){
+  labSmartGenre.dataset.signature=signature;
+  labSmartGenre.replaceChildren();
+  const any=document.createElement('option');any.value='any';any.textContent='Todos los géneros';labSmartGenre.appendChild(any);
+  for(const [key,name] of items){const o=document.createElement('option');o.value=key;o.textContent=name;labSmartGenre.appendChild(o);}
+  labSmartGenre.value=current;
+  if(labSmartGenre.value!==current)labSmartGenre.value='any';
+ }
+}
+function labSmartUpdateCount(){
+ if(!labSmartEnable.checked||!parsed)return;
+ labSmartGenres();
+ const candidates=labSmartCandidates();
+ const total=labSmartPool().length;
+ const status=labSmartSeen.value;
+ const caption=status==='seen'?'vistas':status==='both'?'películas':'pendientes';
+ $('choose').disabled=candidates.length===0;
+ $('choose').textContent=candidates.length?'🧠 Elegir película inteligente':'Sin películas para este criterio';
+ $('sortCount').textContent=candidates.length+' de '+total+' '+caption+' cumplen tus filtros';
+ $('labSmartStatus').hidden=candidates.length>0;
+ $('labSmartStatus').textContent=candidates.length?'':(
+  total===0?'No hay películas de este estado disponibles en la plataforma seleccionada.':
+  'No hay coincidencias con esa duración y género. Prueba a ampliar los filtros o actualizar las fichas TMDB.'
+ );
+}
+async function labSmartFetchCache(){
+ if(labSmartCacheBusy||!labSmartEnable.checked)return;
+ labSmartCacheBusy=true;
+ try{
+  const response=await fetch('/api/discover/smart-cache',{headers:{'X-Atlas-Token':token},cache:'no-store'});
+  if(!response.ok)throw new Error('Caché no disponible');
+  const data=await response.json();
+  if(data&&data.items&&data.resolved){
+   labSmartCache=data;
+   labSmartCacheReady=true;
+   labSmartUpdateCount();
+  }
+ }catch(e){
+  $('labSmartStatus').hidden=false;
+  $('labSmartStatus').textContent='Se usarán los datos TMDB disponibles en la biblioteca.';
+ }finally{labSmartCacheBusy=false;}
+}
+labSmartEnable.addEventListener('change',()=>{
+ const active=labSmartEnable.checked;
+ $('labSmartControls').hidden=!active;
+ $('labSmartStatus').hidden=!active;
+ labSmartPanel.classList.toggle('lab-smart-panel-open',active);
+ resetChoice();
+ if(active){labSmartUpdateCount();void labSmartFetchCache();}
+ else{updateSortAvailability();}
+});
+for(const id of ['labSmartSeen','labSmartDuration','labSmartGenre']){
+ $(id).addEventListener('change',()=>{resetChoice();labSmartUpdateCount();});
+}
+setInterval(()=>{if(labSmartEnable.checked&&!document.hidden)void labSmartFetchCache();},30000);
+// Las últimas elecciones no se guardan en las listas ni se sincronizan.
+function labSmartPickWeighted(items,weights){
+ const bytes=new Uint32Array(1);
+ if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(bytes);
+ const random=(window.crypto&&crypto.getRandomValues?bytes[0]:Math.floor(Math.random()*4294967296))/4294967296;
+ const sum=weights.reduce((a,b)=>a+b,0);
+ let needle=random*sum;
+ for(let i=0;i<items.length;i++){needle-=weights[i];if(needle<0)return items[i];}
+ return items[items.length-1];
+}
+function labSmartGenreExposure(){
+ const exposure=new Map();
+ for(const film of labStatsDataset().entries){
+  if(!film.checked)continue;
+  for(const g of labSmartMetadata(film).genres){
+   const key=labSmartNormalize(g);
+   exposure.set(key,(exposure.get(key)||0)+1);
+  }
+ }
+ return exposure;
+}
+// Preferencia suave por buenas valoraciones y géneros menos vistos.
+// El criterio principal lo deciden los filtros, no este peso.
+function labSmartWeight(f,exposure){
+ const m=labSmartMetadata(f);
+ const votes=m.vote_count,score=m.vote_average;
+ let weight=1;
+ if(votes>=50&&score>0)weight*=Math.max(.8,Math.min(1.65,.95+(score-5)*.15));
+ if(m.genres.length){
+  const avg=m.genres.reduce((sum,g)=>sum+(exposure.get(labSmartNormalize(g))||0),0)/m.genres.length;
+  weight*=1+.75/(1+avg/4);
+ }
+ return Math.max(.05,Math.min(10,weight));
+}
+function labSmartChoose(){
+ const candidates=labSmartCandidates();
+ if(!candidates.length){labSmartUpdateCount();return;}
+ let pool=candidates.filter(f=>!labSmartHistory.includes(providerKey(f)));
+ const fresh=pool.length>0;
+ if(!fresh){pool=candidates.length>1?candidates.filter(f=>f.idx!==lastChoice):candidates;}
+ if(!pool.length)pool=candidates;
+ const exposure=labSmartGenreExposure();
+ const winner=labSmartPickWeighted(pool,pool.map(f=>labSmartWeight(f,exposure)));
+ chosen=winner;lastChoice=winner.idx;
+ const key=providerKey(winner);
+ labSmartHistory=[key,...labSmartHistory.filter(x=>x!==key)].slice(0,8);
+ $('resultTag').textContent='🧠 SORTEO INTELIGENTE';
+ $('resultTitle').textContent=winner.title;
+ updateChoicePlatforms();
+ $('markWatched').disabled=virtualMode;$('copyChoice').disabled=false;
+ const data=labSmartMetadata(winner);
+ const reasons=[];
+ reasons.push(winner.checked?'Ya la habías visto':'Pendiente de ver');
+ if(data.runtime>0)reasons.push(data.runtime+' min');
+ if(labSmartGenre.value!=='any'&&data.genres.length)reasons.push('Género: '+data.genres.find(x=>labSmartNormalize(x)===labSmartGenre.value));
+ if(!fresh)reasons.push('Se agotaron las alternativas recientes');
+ $('labSmartReason').textContent=reasons.filter(Boolean).join(' · ');
+ $('labSmartReason').hidden=false;
+ $('message').textContent=virtualMode?'Vista de coincidencias · solo lectura':'';
+}
+$('choose').addEventListener('click',e=>{
+ $('labSmartReason').hidden=true;
+ if(!labSmartEnable.checked)return;
+ e.stopImmediatePropagation();e.preventDefault();
+ labSmartChoose();
+},true);
+// Al cambiar de plataforma/lista, la lógica base solicita actualizar el contador.

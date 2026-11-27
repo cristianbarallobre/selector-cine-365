@@ -22,4 +22,3 @@ func maybeNativeChild() bool { return false }
 
 func traceHTTP(path, userAgent string) {}
 
-func logDiagnostic(message string) {}

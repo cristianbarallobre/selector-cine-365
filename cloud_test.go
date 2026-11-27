@@ -16,6 +16,17 @@ func TestCloudBackupsAndHistory(t *testing.T) {
 	if e := os.MkdirAll(sync, 0700); e != nil {
 		t.Fatal(e)
 	}
+	otherChannel := "Selector_Cine_365_LAB_Copias"
+	if appIsLab {
+		otherChannel = "Selector_Cine_365_Copias"
+	}
+	otherLibrary := filepath.Join(sync, otherChannel, "actual", "colecciones.json")
+	if err := os.MkdirAll(filepath.Dir(otherLibrary), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(otherLibrary, []byte("otro canal"), 0600); err != nil {
+		t.Fatal(err)
+	}
 	state := initialLibrary("☑ 001. Ciudadano Kane (1941)\n☐ 002. Casablanca (1942)")
 	legacy := filepath.Join(data, "mis_365_peliculas.txt")
 	if e := saveLibrary(filepath.Join(data, "colecciones.json"), legacy, state); e != nil {
@@ -49,6 +60,9 @@ func TestCloudBackupsAndHistory(t *testing.T) {
 	d, _ = os.ReadFile(last)
 	if !strings.Contains(string(d), "☑ 002.") {
 		t.Fatal("cloud copy not updated")
+	}
+	if data, err := os.ReadFile(otherLibrary); err != nil || string(data) != "otro canal" {
+		t.Fatalf("backup modified the other channel: %v", err)
 	}
 	entries, e := os.ReadDir(filepath.Join(sync, cloudDirectoryName, "historico"))
 	if e != nil || len(entries) != 1 {
@@ -103,6 +117,9 @@ func TestCloudAPIAndLocalSave(t *testing.T) {
 	a := &runningApp{libraryPath: filepath.Join(root, "colecciones.json"), savePath: filepath.Join(root, "mis_365_peliculas.txt"), library: state, cloud: newCloudBackups(root), token: "demo"}
 	request := func(path, method, body string, auth bool) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(method, path, strings.NewReader(body))
+		if path == "/api/library" && method == "POST" {
+			req.Header.Set("If-Match", a.libraryETag())
+		}
 		if auth {
 			req.Header.Set("X-Atlas-Token", "demo")
 		}
@@ -120,10 +137,18 @@ func TestCloudAPIAndLocalSave(t *testing.T) {
 	state.Lists[0].Text = "☑ 001. Casablanca (1942)"
 	b, _ = json.Marshal(state)
 	got := request("/api/library", "POST", string(b), true)
-	if got.Code != 204 || got.Header().Get("X-Cine-Cloud") != "ok" {
+	if got.Code != 204 || (!desktopFeatures && got.Header().Get("X-Cine-Cloud") != "ok") {
 		t.Fatalf("save response %d %v", got.Code, got.Header())
 	}
 	copyPath := filepath.Join(dest, cloudDirectoryName, "actual", "colecciones.json")
+	if desktopFeatures {
+		if _, err := os.Stat(copyPath); !os.IsNotExist(err) {
+			t.Fatalf("Guardado o configuración publicaron sin pedirlo: %v", err)
+		}
+		if got := request("/api/cloud/backup", "POST", "", true); got.Code != 200 {
+			t.Fatalf("manual backup: %d %s", got.Code, got.Body.String())
+		}
+	}
 	bytes, e := os.ReadFile(copyPath)
 	if e != nil || !strings.Contains(string(bytes), "☑ 001.") {
 		t.Fatalf("cloud save failed %v", e)
@@ -132,7 +157,7 @@ func TestCloudAPIAndLocalSave(t *testing.T) {
 	state.Lists[0].Text = "☐ 001. Casablanca (1942)"
 	b, _ = json.Marshal(state)
 	got = request("/api/library", "POST", string(b), true)
-	if got.Code != 204 || got.Header().Get("X-Cine-Cloud") != "error" {
+	if got.Code != 204 || (!desktopFeatures && got.Header().Get("X-Cine-Cloud") != "error") {
 		t.Fatalf("local save should succeed even when cloud fails: %d %v", got.Code, got.Header())
 	}
 	if file, e := os.ReadFile(a.libraryPath); e != nil || !strings.Contains(string(file), "☐ 001.") {

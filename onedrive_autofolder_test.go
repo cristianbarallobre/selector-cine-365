@@ -16,7 +16,7 @@ func TestDiscoverWindowsOneDriveWithoutManualFolder(t *testing.T) {
   return ""
  })
  if err!=nil{t.Fatal(err)}
- want:=filepath.Join(root,"Selector_Cine_365")
+ want:=filepath.Join(root,oneDriveFolderName)
  if folder!=want{t.Fatalf("folder=%q want %q",folder,want)}
  if _,err:=os.Stat(want);!os.IsNotExist(err){t.Fatalf("discovery must never create or upload: %v",err)}
 }
@@ -24,7 +24,7 @@ func TestDiscoverWindowsOneDriveWithoutManualFolder(t *testing.T) {
 func TestDiscoverPreservesExistingFolder(t *testing.T) {
  home:=t.TempDir()
  root:=filepath.Join(home,"OneDrive")
- want:=filepath.Join(root,"Selector_Cine_365")
+ want:=filepath.Join(root,oneDriveFolderName)
  if err:=os.MkdirAll(want,0700);err!=nil{t.Fatal(err)}
  folder,err:=discoverOneDriveFolder(home,"windows",func(string)string{return root})
  if err!=nil||folder!=want{t.Fatalf("folder=%q err=%v",folder,err)}
@@ -47,7 +47,7 @@ func TestDiscoverMacCloudStorage(t *testing.T) {
  root:=filepath.Join(home,"Library","CloudStorage","OneDrive-Personal")
  if err:=os.MkdirAll(root,0700);err!=nil{t.Fatal(err)}
  folder,err:=discoverOneDriveFolder(home,"darwin",func(string)string{return ""})
- if err!=nil||folder!=filepath.Join(root,"Selector_Cine_365"){t.Fatalf("folder=%q err=%v",folder,err)}
+ if err!=nil||folder!=filepath.Join(root,oneDriveFolderName){t.Fatalf("folder=%q err=%v",folder,err)}
 }
 
 func TestDiscoverDoesNotChooseUnknownPlatform(t *testing.T) {

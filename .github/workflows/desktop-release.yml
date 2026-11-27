@@ -1,0 +1,66 @@
+name: Escritorio 9.2.26 · macOS y Windows
+on:
+  push:
+    branches: [maintenance/desktop-9.2.26-hardening]
+permissions:
+  contents: read
+concurrency:
+  group: selector-cine-desktop-9.2.26
+  cancel-in-progress: true
+jobs:
+  windows:
+    if: github.ref == 'refs/heads/maintenance/desktop-9.2.26-hardening'
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.27.4' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: go test -count=1 ./...
+      - run: go test -tags lab -count=1 ./...
+      - run: go test -run '^$' -bench 'Benchmark(LibraryActivity|DesktopCommit|ProviderCacheHit)' -benchmem -benchtime=100ms
+      - shell: pwsh
+        run: |
+          foreach ($f in @(Get-ChildItem scripts/test_lab*.cjs) + @(Get-Item scripts/test_beta14_desktop_dropdowns.cjs,scripts/test_windows_restore.cjs,scripts/test_txt_import_creates_list_beta14.cjs,scripts/test_desktop_save_recovery.cjs,scripts/test_durable_save.cjs,scripts/test_sync_header.cjs)) {
+            node $f.FullName
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
+      - run: go build -trimpath -ldflags="-H windowsgui -s -w" -o Selector_Cine_365_Windows_9.2.26.exe .
+        env: { CGO_ENABLED: '0' }
+      - uses: actions/upload-artifact@v4
+        with: { name: Windows, path: Selector_Cine_365_Windows_9.2.26.exe, if-no-files-found: error }
+  mac:
+    if: github.ref == 'refs/heads/maintenance/desktop-9.2.26-hardening'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {runner: macos-15, arch: arm64, label: Apple_Silicon}
+          - {runner: macos-15-intel, arch: amd64, label: Intel}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    env:
+      MAC_ARCH: ${{ matrix.arch }}
+      MAC_LABEL: ${{ matrix.label }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.26.11' } # Compatible con macOS 12.
+      - name: Llavero temporal para las pruebas de sesión
+        run: |
+          kc="$RUNNER_TEMP/cine-tests.keychain-db"
+          pw=$(uuidgen)
+          security create-keychain -p "$pw" "$kc"
+          security unlock-keychain -p "$pw" "$kc"
+          security default-keychain -d user -s "$kc"
+          security list-keychains -d user -s "$kc"
+      - run: bash scripts/build_macos_app.sh
+        env: { CC: clang }
+      - run: bash scripts/test_macos_package.sh "dist/Selector_Cine_365_Mac_${MAC_LABEL}_9.2.26.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Mac_${{ matrix.label }}
+          path: dist/Selector_Cine_365_Mac_*_9.2.26.zip
+          if-no-files-found: error

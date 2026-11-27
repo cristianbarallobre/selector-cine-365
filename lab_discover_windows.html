@@ -1,0 +1,1311 @@
+<style>
+/* Windows LAB: versión, autor y por último confirmación de guardado. */
+.header-side .header-tag{order:1}
+.header-side .creator-credit{order:2}
+.header-side .saved{order:3}
+/* LAB Windows: las filas aprovechan el espacio libre, hasta 110px, sin perder capacidad de página. */
+#view-library .film-item{
+ height:var(--lab-film-row-height,96px);
+ min-height:var(--lab-film-row-height,96px);
+ max-height:var(--lab-film-row-height,96px);
+ flex:0 0 var(--lab-film-row-height,96px);
+ align-items:center;
+}
+#view-library .film-toggle{
+ min-height:calc(var(--lab-film-row-height,96px) - 6px);
+ align-items:center;
+ padding-top:11px;
+ padding-bottom:11px;
+}
+#view-library .film-main{align-self:center}
+#view-library .film-poster,#view-library .poster-placeholder{width:42px;height:60px;align-self:center}
+.lab-nav-tag{margin-left:3px;border:1px solid #e3c785;border-radius:5px;padding:1px 4px;font-size:9px;color:#ffde94;letter-spacing:.06em}
+.lab-discover.view{display:flex;flex-direction:column;gap:16px;min-width:0;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:0 3px 24px 0;scrollbar-color:#51667f transparent}
+/* Windows LAB: Mis listas desplaza la VISTA igual que Descubrir; no su panel.
+   La cabecera de la aplicación y las pestañas permanecen fuera del scroll. */
+#view-collections.view{display:flex;flex-direction:column;gap:16px;min-width:0;min-height:0;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain;padding:0 3px 24px 0;scrollbar-color:#51667f transparent;scrollbar-width:auto}
+#view-collections.view[hidden]{display:none!important}
+#view-collections > .panel{height:auto!important;min-height:0!important;flex:0 0 auto;overflow:visible!important;clip-path:none!important;scrollbar-gutter:auto!important}
+#view-collections > .panel::-webkit-scrollbar{display:none}
+
+.lab-discover .panel{height:auto;min-height:0;flex:0 0 auto;overflow:visible}
+.lab-discover .platform-credit{flex:0 0 auto;margin:0 0 8px}
+.lab-discover [hidden]{display:none!important}
+.lab-discover .panel{padding:22px}
+.lab-discover-hero{background:radial-gradient(ellipse at 90% 0%,#314461 0%,#192332 62%)!important}
+.lab-discover-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.lab-discover-head h2{font-size:26px;margin:4px 0 6px;color:#f6f3ee}
+.lab-discover-head p{color:#aebbd0;margin:0 0 16px;font-size:13px}
+.lab-kicker{color:#ffce7b;font-size:11px;font-weight:800;letter-spacing:.15em}
+.lab-discover-search{display:flex;gap:10px;align-items:center}
+.lab-discover-search input{min-width:0;flex:1;border:1px solid #526880;background:#0b1522;color:#fff;padding:13px 14px;border-radius:10px;font-size:15px;outline:none}
+.lab-discover-search input:focus{border-color:#f0be69}
+.lab-discover-search button,.lab-detail-add,.lab-detail-cta{border-radius:10px;border:1px solid #efbd71;background:linear-gradient(125deg,#f6d895,#dba857);color:#25190b;padding:12px 18px;font-weight:800;cursor:pointer}
+.lab-discover-filters{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 0}
+.lab-discover-criteria{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin:12px 0 0}
+.lab-discover-criteria label{display:flex;flex-direction:column;gap:5px;color:#e4c58d;font-size:12px;font-weight:750;min-width:170px;flex:0 1 240px}
+.lab-discover-criteria select{min-width:0;width:100%;border:1px solid #526880;border-radius:8px;background:#223348;color:#f6f7fb;height:36px;padding:6px 9px;cursor:pointer;font-size:12px}
+.lab-discover-criteria select:hover:not(:disabled){border-color:#edc07c}
+.lab-discover-criteria select:disabled{opacity:.5;cursor:not-allowed}
+.lab-discover-criteria p{flex:1 1 230px;margin:0 0 6px;font-size:11px;line-height:1.35;color:#c5d2df}
+.lab-discover-criteria p[hidden]{display:none!important}
+.lab-filter{border:1px solid #47576c;background:#1a2738;color:#d5e0ee;padding:9px 14px;border-radius:999px;font-weight:700;cursor:pointer}
+.lab-filter.active{background:#493b25;color:#ffe0a0;border-color:#d4a85b}
+.lab-discover .lab-results-panel{padding-top:17px}
+.lab-result-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.lab-result-top h3{font-size:18px;margin:0}
+.lab-status{font-size:13px;color:#b2c2d5;min-height:21px;margin:6px 0}
+.lab-movies-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;align-items:stretch;min-width:0}
+.lab-movie-card{display:flex;min-width:0;flex-direction:column;text-align:left;gap:0;background:linear-gradient(180deg,#273549,#172331);border:1px solid #415168;border-radius:14px;padding:0;overflow:hidden;color:#f3f5fb}
+/* Solo el botón Detalles abre fichas: las tarjetas no son clicables. */
+.lab-card-details{width:100%;border:1px solid #c5a062;border-radius:8px;padding:8px 10px;background:#473923;color:#ffe1a2;font-size:13px;font-weight:750;cursor:pointer;margin-top:auto}
+.lab-card-details:hover{background:#654c29}
+.lab-card-details:focus-visible,.lab-film-detail-button:focus-visible{outline:2px solid #ffda91;outline-offset:2px}
+.lab-film-detail-button{border:1px solid #b59660;border-radius:7px;background:#354354;color:#ffe1a5;padding:4px 8px;font-size:11px;font-weight:700;white-space:nowrap;flex:none;cursor:pointer;margin:7px 13px 7px 5px}
+.lab-film-detail-button:hover{background:#51432e;color:#fff0c9}
+.lab-movie-poster{width:100%;aspect-ratio:2/3;object-fit:cover;background:linear-gradient(145deg,#324157,#1a2635);display:block}
+.lab-movie-empty{display:grid;place-items:center;color:#8ca2b7;font-size:35px}
+/* El placeholder no debe seguir visible cuando ya existe una carátula. */
+#labDetailPlaceholder[hidden]{display:none!important}
+.lab-card-body{padding:11px 12px 13px;display:flex;flex-direction:column;gap:8px;flex:1;min-height:121px}
+.lab-card-name{font-size:14px;font-weight:790;line-height:1.36;min-height:40px;overflow-wrap:anywhere}
+.lab-card-info{display:flex;align-items:center;justify-content:space-between;gap:4px;color:#becad8;font-size:12px}
+.lab-card-rating{color:#ffd17e;font-weight:700}
+.lab-pager{display:flex;align-items:center;justify-content:center;gap:12px;padding-top:20px;flex-wrap:wrap}
+.lab-result-top h3{min-width:0;overflow-wrap:anywhere}
+.lab-pager .page-btn{cursor:pointer;min-width:98px}
+.lab-pager .page-btn:disabled{opacity:.32;cursor:not-allowed}
+.lab-detail-overlay{z-index:90;overflow-y:auto;align-items:start;padding:28px 12px}
+.lab-detail-modal{width:min(900px,100%);max-width:none;padding:0;overflow:hidden;margin:auto;border:1px solid #536480;border-radius:17px;background:#162230;color:#f1f5fa;box-shadow:0 18px 70px #000b}
+.lab-detail-top{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#202e42;padding:15px 20px}
+.lab-detail-top h2{margin:0;font-size:17px}
+.lab-detail-top .page-btn{width:34px;min-width:34px;height:34px;display:grid;place-items:center;padding:0;font-size:18px;font-weight:750;cursor:pointer}
+.lab-detail-top .page-btn:hover{background:#384b64}
+.lab-detail-nav{display:flex;align-items:center;gap:8px}
+.lab-detail-top .lab-detail-back{width:auto;min-width:0;padding:0 12px;font-size:12px;white-space:nowrap}
+.lab-detail-back[hidden]{display:none!important}
+.lab-detail-content{padding:22px;display:grid;grid-template-columns:185px minmax(0,1fr);gap:24px}
+.lab-detail-poster{width:100%;aspect-ratio:2/3;object-fit:cover;border:1px solid #3b4f65;border-radius:12px;background:#233249}
+.lab-detail-content h3{font-size:27px;line-height:1.2;margin:0 0 8px}
+.lab-detail-subtitle{color:#aebfd2;font-size:13px;margin:0 0 12px}
+.lab-detail-tags{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 15px}
+.lab-detail-tags span{background:#283b4e;border:1px solid #42586f;padding:5px 9px;border-radius:20px;font-size:12px}
+.lab-detail-overview{font-size:14px;line-height:1.65;color:#dde4ec}
+.lab-detail-label{font-size:12px;color:#e9bb71;font-weight:800;letter-spacing:.03em;margin:15px 0 6px}
+.lab-detail-cast{display:flex;flex-direction:column;gap:11px;color:#c5d3e2;font-size:13px;line-height:1.45}
+.lab-cast-director{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.lab-cast-director-label,.lab-cast-heading{font-size:12px;font-weight:800;color:#e7ba75}
+.lab-cast-director strong{font-size:13px;font-weight:730;color:#f3f5f9}
+.lab-cast-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:7px}
+.lab-cast-entry{min-width:0;display:flex;flex-direction:column;gap:3px;padding:8px 10px;border:1px solid #384b60;border-radius:9px;background:#202e40}
+.lab-cast-actor{font-size:13px;font-weight:770;color:#f5f7fb;overflow-wrap:anywhere}
+button.lab-cast-actor{font-family:inherit;background:none;border:0;padding:0;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:#b99a6b;text-underline-offset:3px}
+button.lab-cast-actor:hover{color:#ffcf83;text-decoration-color:currentColor}
+button.lab-cast-actor:focus-visible{outline:2px solid #ffda91;outline-offset:3px;border-radius:2px}
+.lab-person-overlay{z-index:100}
+#labPersonPlaceholder[hidden]{display:none!important}
+.lab-person-bio{white-space:pre-line;font-size:14px;line-height:1.65;color:#dde4ec}
+.lab-person-original{margin:7px 0 17px;display:inline-flex;align-items:center;gap:5px;padding:7px 11px;border:1px solid #62758a;border-radius:8px;background:#27394d;color:#ecc48c;font-size:12px;cursor:pointer}
+.lab-person-original[hidden]{display:none!important}
+.lab-person-original:focus-visible{outline:2px solid #f0cd88;outline-offset:2px}
+ .lab-person-film-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 12px}
+.lab-person-film-controls label{display:flex;align-items:center;gap:7px;color:#cbd8e7;font-size:12px;font-weight:680}
+.lab-person-film-controls select{background:#273a50;border:1px solid #5c7089;color:#f5f5fc;border-radius:8px;padding:7px 10px;font:inherit;min-width:160px;cursor:pointer}
+.lab-person-film-controls select:focus-visible{outline:2px solid #ffd78e;outline-offset:2px}
+.lab-person-film-controls small{font-size:11px;color:#bac7d7}
+.lab-person-films{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:8px}
+.lab-person-film{border:1px solid #455a70;border-radius:9px;background:#233347;color:#f5f6fb;text-align:left;padding:11px;display:flex;flex-direction:column;gap:5px;cursor:pointer;font:inherit;min-width:0}
+.lab-person-film:hover{border-color:#e9bf79;background:#304257}
+.lab-person-film:focus-visible{outline:2px solid #ffda91;outline-offset:2px}
+.lab-person-film-title{font-size:13px;font-weight:750;overflow-wrap:anywhere}
+.lab-person-film-role{font-size:12px;color:#b8cad8;overflow-wrap:anywhere}
+.lab-cast-role{font-size:12px;color:#d4bb94;overflow-wrap:anywhere}
+.lab-cast-role::before{content:"Personaje: ";font-weight:650;color:#a8bbc9}
+.lab-detail-platforms{display:flex;flex-wrap:wrap;gap:6px}
+.lab-detail-platforms span{font-size:12px;padding:5px 8px;border-radius:7px;background:#2f4051;border:1px solid #5d7085}
+.lab-detail-links{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
+.lab-detail-links a{color:#ffd088;text-decoration:none;font-weight:650;font-size:13px}
+/* Situar las listas existentes antes de «Añadir a la lista». */
+.lab-detail-membership{margin-top:19px;padding-top:15px;border-top:1px solid #374859}
+.lab-detail-membership-heading{font-size:12px;font-weight:800;letter-spacing:.03em;color:#e9bb71;margin:0 0 9px}
+.lab-detail-membership-chips{display:flex;flex-wrap:wrap;align-items:center;gap:7px;max-height:132px;overflow-y:auto}
+.lab-detail-membership-chip{display:inline-flex;align-items:center;gap:5px;max-width:100%;border:1px solid #496078;border-radius:8px;background:#24364a;padding:6px 9px;font-size:12px;line-height:1.3;color:#dbe6f2;overflow-wrap:anywhere}
+.lab-detail-membership-number{font-weight:800;color:#f4c477;flex-shrink:0}
+.lab-detail-membership-chip.lab-detail-membership-favorite{border-color:#8e6a79;background:#3d333f;color:#edc5cb}
+.lab-detail-membership-empty{font-size:12px;color:#aabacb}
+.lab-detail-actions{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin-top:16px;padding-top:0;border-top:0}
+.lab-detail-actions label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:#bbc9d7;flex:1;min-width:150px}
+.lab-detail-actions select{border:1px solid #50647e;background:#112031;color:#fff;border-radius:8px;padding:11px;width:100%;cursor:pointer}
+.lab-detail-note{color:#afd1bb;font-size:12px;min-height:20px;margin-top:9px}
+.lab-prefetch-banner{display:flex;align-items:center;gap:9px;justify-content:space-between;min-height:27px;font-size:11px;color:#c3d1e2;line-height:1.3;overflow:hidden}
+.lab-prefetch-banner span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.lab-prefetch-banner button{font-size:11px;white-space:nowrap;background:#293c4e;color:#f2d499;border:1px solid #8d724e;border-radius:7px;padding:4px 8px;cursor:pointer}
+.lab-prefetch-banner button[hidden]{display:none!important}
+/* Coherencia del cursor: solo las acciones interactivas muestran la mano. */
+#labDiscoverView button:not(:disabled),#labDetailOverlay button:not(:disabled),
+#labDiscoverView select:not(:disabled),#labDetailOverlay select:not(:disabled),
+#labDiscoverView a[href],#labDetailOverlay a[href]{cursor:pointer}
+#labDiscoverView button:disabled,#labDetailOverlay button:disabled{cursor:not-allowed}
+@media(max-width:650px){.lab-discover .panel{padding:14px}.lab-discover-search{flex-wrap:wrap}.lab-discover-search button{width:100%}.lab-movies-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.lab-detail-content{grid-template-columns:1fr;padding:16px}.lab-detail-poster{max-width:170px}.lab-detail-modal{max-height:none}.lab-detail-content h3{font-size:21px}}
+/* Confirmación de borrado integrada: sin cuadros confirm() del navegador ni IP localhost. */
+#labDeleteListOverlay{z-index:130}
+#labDeleteListOverlay[hidden]{display:none!important}
+#labDeleteListOverlay .lab-list-confirm-card{width:min(460px,100%);background:#1a2636;border:1px solid #536780;border-radius:17px;padding:24px;box-shadow:0 24px 75px #000a}
+#labDeleteListOverlay .lab-list-confirm-tag{font-size:11px;font-weight:850;letter-spacing:.08em;color:#f3c66d;margin:0 0 9px}
+#labDeleteListOverlay h2{font-size:21px;line-height:1.25;margin:0 0 12px;color:#f8f5ee}
+#labDeleteListOverlay .lab-list-confirm-message{font-size:14px;line-height:1.6;color:#d9e2ed;margin:0 0 8px;overflow-wrap:anywhere}
+#labDeleteListOverlay .lab-list-confirm-note{font-size:12px;line-height:1.5;color:#a9b9cd;margin:0}
+#labDeleteListOverlay .lab-list-confirm-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:25px}
+#labDeleteListOverlay .lab-list-confirm-actions button{width:auto;min-width:120px;min-height:42px;padding:9px 15px;border-radius:9px;font-size:13px;font-weight:780;cursor:pointer}
+#labDeleteListOverlay #labDeleteListCancel{color:#eff5fc;background:#26364a;border:1px solid #62758a}
+#labDeleteListOverlay #labDeleteListCancel:hover{background:#354960}
+#labDeleteListOverlay #labDeleteListConfirm{color:#fff;background:#963e3b;border:1px solid #ca7773}
+#labDeleteListOverlay #labDeleteListConfirm:hover{background:#b24d46}
+#labDeleteListOverlay button:focus-visible{outline:2px solid #f3c66d;outline-offset:3px}
+@media(max-width:420px){#labDeleteListOverlay .lab-list-confirm-actions button{flex:1;min-width:0}}
+/* Retrato bajo demanda: un solo tooltip fuera de la tarjeta para evitar recortes. */
+#labActorPhotoTooltip{position:fixed;z-index:150;width:174px;max-width:calc(100vw - 16px);pointer-events:none;background:#203046;color:#f5f7fc;border:1px solid #d2b478;border-radius:12px;padding:6px;box-shadow:0 14px 42px #000c}
+#labActorPhotoTooltip[hidden]{display:none!important}
+#labActorPhotoTooltip img{display:block;width:100%;height:212px;object-fit:cover;object-position:top center;background:#1b2739;border-radius:7px}
+#labActorPhotoTooltip .lab-actor-photo-label{display:block;text-align:center;font-size:12px;font-weight:760;line-height:1.3;padding:7px 3px 2px;overflow-wrap:anywhere}
+@media(hover:none){#labActorPhotoTooltip{display:none!important}}
+/* Salto desde el número de lista: destacar sin filtrar ni modificar el TXT. */
+#view-library .film-item.lab-list-jump-target{
+ outline:2px solid #ffdc87;
+ outline-offset:-2px;
+ border-radius:12px;
+ background:linear-gradient(120deg,#5b4728,#2e4050 65%);
+ box-shadow:inset 0 0 0 1px #e3b75b,0 0 17px #f2bf6244;
+}
+@media(prefers-reduced-motion:no-preference){
+ #view-library .film-item.lab-list-jump-target{animation:lab-list-jump-pulse 1.1s ease-in-out 2}
+ @keyframes lab-list-jump-pulse{
+  0%,100%{box-shadow:inset 0 0 0 1px #e3b75b,0 0 12px #f2bf6255}
+  50%{box-shadow:inset 0 0 0 2px #ffdc87,0 0 23px #ffd77f99}
+ }
+}
+/* Arrastre de películas entre páginas: el origen no depende del DOM de la página. */
+body.lab-crosspage-dragging,body.lab-crosspage-dragging *{user-select:none!important}
+#filmPaging .lab-crosspage-nav-target{outline:2px dashed #ffdc88;outline-offset:3px;background:#685034;color:#fff4d7}
+#filmList .film-item.lab-crosspage-row-target{outline:2px solid #ffda87;outline-offset:-2px;background:#304158}
+.lab-crosspage-drag-ghost{position:fixed;z-index:180;max-width:min(320px,75vw);background:#2a394d;border:1px solid #ffd18a;border-radius:10px;box-shadow:0 14px 32px #0009;color:#fff4d8;padding:9px 13px;pointer-events:none;font-size:12px;font-weight:750;line-height:1.4;white-space:normal}
+.lab-crosspage-drag-ghost small{display:block;color:#ced9e8;font-size:11px;font-weight:500;margin-top:2px}
+</style>
+<section class="lab-discover view" id="labDiscoverView" hidden aria-label="Descubrir películas">
+  <div class="panel lab-discover-hero">
+    <div class="lab-discover-head">
+      <div><span class="lab-kicker">SELECTOR CINE 365 · LAB WINDOWS</span><h2>Descubre tu próxima película</h2><p>Explora TMDB, consulta fichas completas y añade películas sin sustituir tus listas.</p></div>
+      <button class="mini-ctrl" type="button" id="labConfigureTMDB">⚙ Configurar TMDB</button>
+    </div>
+    <form id="labSearchForm" class="lab-discover-search" role="search">
+      <input id="labSearchInput" type="search" autocomplete="off" maxlength="100" placeholder="Busca películas por título…" aria-label="Buscar películas en TMDB">
+      <button type="submit">⌕ Buscar</button>
+    </form>
+    <div class="lab-discover-filters" role="group" aria-label="Explorar categorías">
+      <button class="lab-filter active" data-lab-kind="trending" type="button">✦ Tendencias</button>
+      <button class="lab-filter" data-lab-kind="popular" type="button">Populares</button>
+      <button class="lab-filter" data-lab-kind="top" type="button">Mejor valoradas</button>
+      <button class="lab-filter" data-lab-kind="upcoming" type="button">Próximos estrenos</button>
+    </div>
+    <div class="lab-discover-criteria" aria-label="Filtrar películas descubiertas">
+      <label for="labDiscoverGenre">Género
+        <select id="labDiscoverGenre">
+          <option value="any">Todos los géneros</option>
+          <option value="28">Acción</option>
+          <option value="12">Aventura</option>
+          <option value="16">Animación</option>
+          <option value="35">Comedia</option>
+          <option value="80">Crimen</option>
+          <option value="99">Documental</option>
+          <option value="18">Drama</option>
+          <option value="10751">Familiar</option>
+          <option value="14">Fantasía</option>
+          <option value="36">Historia</option>
+          <option value="27">Terror</option>
+          <option value="10402">Música</option>
+          <option value="9648">Misterio</option>
+          <option value="10749">Romance</option>
+          <option value="878">Ciencia ficción</option>
+          <option value="10770">Película de TV</option>
+          <option value="53">Suspense</option>
+          <option value="10752">Bélica</option>
+          <option value="37">Western</option>
+        </select>
+      </label>
+      <p id="labDiscoverFilterHint" hidden></p>
+    </div>
+  </div>
+  <div class="panel lab-results-panel">
+    <div class="lab-result-top"><h3 id="labResultsHeading">Tendencias de la semana</h3><span class="count-tag" id="labResultsCount">TMDB · España cuando esté disponible</span></div>
+    <p class="lab-status" id="labDiscoverStatus" aria-live="polite">Abre Descubrir para consultar las películas.</p>
+    <div class="lab-movies-grid" id="labMoviesGrid" aria-live="polite"></div>
+    <div class="lab-pager" id="labDiscoverPager" hidden>
+      <button class="page-btn" id="labPrevPage" type="button">‹ Anterior</button><span class="page-label" id="labPageLabel">1 / 1</span><button class="page-btn" id="labNextPage" type="button">Siguiente ›</button>
+    </div>
+  </div>
+  <p class="platform-credit">Datos y carátulas: TMDB. Las plataformas se consultan para España; pueden cambiar sin aviso.</p>
+</section>
+<div class="overlay lab-detail-overlay" id="labDetailOverlay" hidden>
+  <section class="lab-detail-modal" role="dialog" aria-modal="true" aria-labelledby="labDetailHeading">
+    <div class="lab-detail-top"><h2 id="labDetailHeading">Ficha de película</h2><div class="lab-detail-nav"><button class="page-btn lab-detail-back" id="labDetailBack" type="button" aria-label="Volver a la ficha anterior" title="Volver a la ficha anterior" hidden>← Atrás</button><button class="page-btn" id="labDetailFavorite" type="button" aria-label="Añadir a Favoritos" title="Añadir a Favoritos" hidden>♡</button><button class="page-btn" id="labDetailClose" type="button" aria-label="Cerrar todas las fichas" title="Cerrar todas las fichas">✕</button></div></div>
+    <div class="lab-detail-content">
+      <div><img id="labDetailPoster" class="lab-detail-poster" alt="Carátula de la película" hidden><div class="lab-movie-empty lab-detail-poster" id="labDetailPlaceholder">🎞</div></div>
+      <div>
+        <h3 id="labDetailTitle">Cargando ficha…</h3>
+        <p class="lab-detail-subtitle" id="labDetailSubtitle"></p>
+        <div class="lab-detail-tags" id="labDetailGenres"></div>
+        <p class="lab-detail-overview" id="labDetailOverview"></p>
+        <div class="lab-detail-label">REPARTO Y DIRECCIÓN</div>
+        <div class="lab-detail-cast" id="labDetailCast"></div>
+        <div class="lab-detail-label">DÓNDE VERLA EN ESPAÑA</div>
+        <div class="lab-detail-platforms" id="labDetailPlatforms"></div>
+        <div class="lab-detail-links" id="labDetailLinks"></div>
+        <section class="lab-detail-membership" aria-label="Listas que contienen esta película">
+          <div class="lab-detail-membership-heading">EN TUS LISTAS</div>
+          <div class="lab-detail-membership-chips" id="labDetailMemberships" aria-live="polite">
+            <span class="lab-detail-membership-empty">Comprobando tus listas…</span>
+          </div>
+        </section>
+        <div class="lab-detail-actions">
+          <label for="labAddList">Añadir a la lista
+            <select id="labAddList"></select>
+          </label>
+          <button class="lab-detail-add" type="button" id="labDetailAdd" disabled>＋ Añadir pendiente</button>
+        </div>
+        <p class="lab-detail-note" id="labDetailNote" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+</div>
+<div class="overlay lab-detail-overlay lab-person-overlay" id="labPersonOverlay" hidden>
+  <section class="lab-detail-modal" role="dialog" aria-modal="true" aria-labelledby="labPersonHeading">
+    <div class="lab-detail-top"><h2 id="labPersonHeading">Ficha de intérprete</h2><div class="lab-detail-nav"><button class="page-btn lab-detail-back" type="button" id="labPersonBack" aria-label="Volver a la ficha anterior" title="Volver a la ficha anterior" hidden>← Atrás</button><button class="page-btn" type="button" id="labPersonClose" aria-label="Cerrar todas las fichas" title="Cerrar todas las fichas">✕</button></div></div>
+    <div class="lab-detail-content">
+      <div><img id="labPersonPortrait" class="lab-detail-poster" alt="Fotografía del intérprete" hidden><div class="lab-movie-empty lab-detail-poster" id="labPersonPlaceholder">👤</div></div>
+      <div>
+        <h3 id="labPersonName">Cargando intérprete…</h3>
+        <p class="lab-detail-subtitle" id="labPersonSubtitle"></p>
+        <div class="lab-detail-label">BIOGRAFÍA</div>
+        <p class="lab-person-bio" id="labPersonBio"></p>
+        <button class="lab-person-original" id="labPersonOriginal" type="button" hidden>Ver biografía original en inglés</button>
+        <div class="lab-detail-label" id="labPersonFilmsTitle">FILMOGRAFÍA</div>
+        <div class="lab-person-film-controls">
+          <label for="labPersonFilmSort">Ordenar por
+            <select id="labPersonFilmSort">
+              <option value="featured">Destacadas</option>
+              <option value="rated">Mejor valoradas</option>
+              <option value="popular">Más populares</option>
+              <option value="recent">Recientes</option>
+            </select>
+          </label>
+          <small id="labPersonFilmsCount" aria-live="polite"></small>
+        </div>
+        <div class="lab-person-films" id="labPersonFilms"></div>
+        <div class="lab-detail-links" id="labPersonLinks"></div>
+        <p class="lab-detail-note" id="labPersonNote" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+</div>
+<div class="overlay" id="labDeleteListOverlay" hidden>
+  <section class="lab-list-confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="labDeleteListTitle" aria-describedby="labDeleteListMessage">
+    <p class="lab-list-confirm-tag">SELECTOR CINE 365 · LAB</p>
+    <h2 id="labDeleteListTitle">¿Eliminar lista?</h2>
+    <p class="lab-list-confirm-message" id="labDeleteListMessage">¿Seguro que quieres eliminar «<strong id="labDeleteListName"></strong>»?</p>
+    <p class="lab-list-confirm-note">Esta lista dejará de aparecer en la aplicación.</p>
+    <div class="lab-list-confirm-actions">
+      <button type="button" id="labDeleteListCancel">Cancelar</button>
+      <button type="button" id="labDeleteListConfirm">Eliminar lista</button>
+    </div>
+  </section>
+</div>
+<div id="labActorPhotoTooltip" role="tooltip" hidden></div>
+<!-- LAB_DISCOVERY_SCRIPT -->
+const labNav=$('labDiscoverNav'),labView=$('labDiscoverView'),labDetailOverlay=$('labDetailOverlay');
+
+let labPrefetchTimer=null,labPrefetchPaused=false;
+function labCollectFilms(){
+ // La lista abierta se prioriza, después las demás. Una película repetida se descarga una sola vez.
+ const active=activeCollection();
+ const ordered=[active,...libraryState.lists.filter(x=>x.id!==active.id)];
+ const seen=new Set(),items=[];
+ for(const list of ordered){
+  for(const film of parse(list.text||'').entries){
+   const id=knownTMDB(film)||0,year=Number(film.year)||0;
+   const k=id?'id:'+id:providerKey(film);
+   if(seen.has(k))continue;
+   seen.add(k);
+   items.push({title:film.title,year,id});
+   if(items.length>=1200)return items;
+  }
+ }
+ return items;
+}
+function labPrefetchLabel(status){
+ const text=$('labPrefetchText'),control=$('labPrefetchPause');
+ if(!platformConfigured){
+  text.textContent='Fichas: configura TMDB para preparar la caché automáticamente.';
+  control.hidden=true;return;
+ }
+ const total=Number(status.total)||0,cached=Number(status.cached)||0;
+ const pending=Number(status.pending)||0;
+ const errors=Number(status.errors)||0;
+ const waiting=status.running?' · descargando en segundo plano':status.paused?' · en pausa':pending?' · pendientes '+pending:' · al día';
+ let msg='Fichas guardadas: '+cached+' / '+total+waiting;
+ if(!status.running&&!pending&&cached<total&&errors)msg+=' · '+(total-cached)+' sin completar';
+ text.textContent=msg;
+ text.title=msg+(status.last_error?' · Último aviso: '+status.last_error:'');
+ labPrefetchPaused=Boolean(status.paused);
+ control.hidden=total===0||(!status.running&&!pending&&!status.paused);
+ control.textContent=status.paused?'Reanudar':'Pausar';
+}
+async function labPrefetchStatus(){
+ try{
+  const status=await labGet('/api/discover/prefetch');
+  labPrefetchLabel(status);
+ }catch(err){$('labPrefetchText').textContent='Fichas: no se pudo consultar el progreso.';}
+}
+async function labSendPrefetch(){
+ if(!platformConfigured){labPrefetchLabel({total:0});return;}
+ const films=labCollectFilms();
+ if(!films.length){labPrefetchLabel({total:0});return;}
+ try{
+  const r=await fetch('/api/discover/prefetch',{method:'POST',
+    headers:{'Content-Type':'application/json','X-Atlas-Token':token},body:JSON.stringify({films}),cache:'no-store'});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  labPrefetchLabel(await r.json());
+ }catch(err){$('labPrefetchText').textContent='No se pudo iniciar la precarga; la biblioteca sigue disponible.';}
+}
+function labQueuePrefetchSoon(){
+ clearTimeout(labPrefetchTimer);
+ labPrefetchTimer=setTimeout(()=>{labPrefetchTimer=null;void labSendPrefetch();},1100);
+}
+$('labPrefetchPause').addEventListener('click',async()=>{
+ try{
+  const r=await fetch('/api/discover/prefetch/pause',{method:'POST',
+   headers:{'Content-Type':'application/json','X-Atlas-Token':token},
+   body:JSON.stringify({paused:!labPrefetchPaused}),cache:'no-store'});
+  if(!r.ok)throw new Error('No se pudo cambiar el estado');
+  labPrefetchLabel(await r.json());
+ }catch(e){$('labPrefetchText').textContent='No se pudo pausar o reanudar la precarga.';}
+});
+setInterval(()=>{if(!document.hidden)void labPrefetchStatus();},4000);
+
+let labKind='trending',labQuery='',labBrowseBeforeSearch=null,labPage=1,labPages=1,labRequestSerial=0,labDetailSerial=0,labCurrentMovie=null;
+// Paginación por PELÍCULAS, independiente de las páginas de 20 resultados de TMDB.
+// Los resultados sobrantes se guardan y aparecen en la siguiente pantalla visual.
+let labMoviePool=[],labMovieIDs=new Set(),labTMDBNextPage=1,labTMDBTotal=0;
+let labMovieResponseCache=new Map(),labLastFillTarget=0,labResizeTimer=null;
+function labResetBrowsePages(){
+ labPage=1;labPages=1;labMoviePool=[];labMovieIDs=new Set();labTMDBNextPage=1;labTMDBTotal=0;
+ labMovieResponseCache=new Map();labLastFillTarget=0;
+}
+const labFold=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es').replace(/[^\p{L}\p{N}]+/gu,' ').trim();
+const labPosterSrc=path=>'/api/discover/poster?path='+encodeURIComponent(path)+'&token='+encodeURIComponent(token);
+function labLeave(){labView.hidden=true;labNav.classList.remove('active');}
+function labOpen(){
+ for(const name of ['library','statistics','collections','instructions'])$('view-'+name).hidden=true;
+ document.querySelectorAll('.top-nav [data-view]').forEach(x=>x.classList.remove('active'));
+ labView.hidden=false;labNav.classList.add('active');activeView='discover';
+ if(!$('labMoviesGrid').childElementCount)void labBrowse();
+}
+labNav.addEventListener('click',labOpen);
+// Es imprescindible ocultar Descubrir ANTES del showView original.
+ // Sin esta captura, renderList mide Biblioteca cuando ambas vistas flex siguen abiertas;
+ // el cálculo deja una sola película por página.
+ document.querySelectorAll('.top-nav [data-view]').forEach(b=>b.addEventListener('click',labLeave,true));
+ // Si cambia el tamaño después (redimensionar, modales, cambio de vistas), recalcular.
+ let labLastListHeight=0,labListResizeFrame=0;
+ if(typeof ResizeObserver!=='undefined'){
+  new ResizeObserver(()=>{
+   if(activeView!=='library'||$('view-library').hidden||!labView.hidden)return;
+   const height=$('filmList').clientHeight;
+   if(height<160||Math.abs(height-labLastListHeight)<4)return;
+   labLastListHeight=height;
+   if(labListResizeFrame)cancelAnimationFrame(labListResizeFrame);
+   labListResizeFrame=requestAnimationFrame(()=>{
+    labListResizeFrame=0;
+    if(activeView==='library'&&!$('view-library').hidden&&labView.hidden)renderList();
+   });
+  }).observe($('filmList'));
+ }
+$('labConfigureTMDB').addEventListener('click',()=>{labLeave();showView('library');$('platformSetup').click();});
+async function labGet(path){
+ const r=await fetch(path,{headers:{'X-Atlas-Token':token},cache:'no-store'});
+ const body=await r.text();let value;
+ try{value=JSON.parse(body)}catch(e){value={error:body}}
+ if(!r.ok)throw new Error(value.error||'TMDB devolvió HTTP '+r.status);
+ return value;
+}
+function labStatus(s){$('labDiscoverStatus').textContent=s;}
+function labDiscoverFiltered(){
+ return !labQuery&&$('labDiscoverGenre').value!=='any';
+}
+function labSyncDiscoverFilters(){
+ const search=!!labQuery,genre=$('labDiscoverGenre');
+ genre.disabled=search;
+ const hint=$('labDiscoverFilterHint');
+ hint.hidden=!search&&!(labKind==='trending'&&labDiscoverFiltered());
+ hint.textContent=search
+  ?'El filtro de género se aplica al explorar categorías; la búsqueda por título no lo aplica.'
+  :'Con filtros, Tendencias se ordena por popularidad (TMDB no permite filtrar el ranking semanal).';
+}
+$('labDiscoverGenre').addEventListener('change',()=>{labResetBrowsePages();labSyncDiscoverFilters();void labBrowse();});
+function labKindSelect(kind){
+ labKind=kind;labQuery='';labBrowseBeforeSearch=null;labResetBrowsePages();$('labSearchInput').value='';
+ document.querySelectorAll('[data-lab-kind]').forEach(b=>b.classList.toggle('active',b.dataset.labKind===kind));
+ labSyncDiscoverFilters();void labBrowse();
+}
+document.querySelectorAll('[data-lab-kind]').forEach(b=>b.addEventListener('click',()=>labKindSelect(b.dataset.labKind)));
+$('labSearchForm').addEventListener('submit',e=>{
+ e.preventDefault();const q=$('labSearchInput').value.trim();
+ if(q.length<2){labStatus('Escribe al menos dos caracteres.');return;}
+ labStartSearch(q);
+});
+function labStartSearch(query){
+ if(!labQuery)labBrowseBeforeSearch={
+  page:labPage,pages:labPages,pool:labMoviePool,ids:labMovieIDs,
+  next:labTMDBNextPage,total:labTMDBTotal,cache:labMovieResponseCache
+ };
+ labQuery=query;labResetBrowsePages();
+ document.querySelectorAll('[data-lab-kind]').forEach(b=>b.classList.remove('active'));
+ labSyncDiscoverFilters();void labBrowse();
+}
+function labClearSearch(){
+ if(!labQuery||$('labSearchInput').value.trim())return;
+ const previous=labBrowseBeforeSearch;
+ if(!previous){labKindSelect(labKind);return;}
+ labQuery='';labBrowseBeforeSearch=null;
+ labPage=previous.page;labPages=previous.pages;labMoviePool=previous.pool;labMovieIDs=previous.ids;
+ labTMDBNextPage=previous.next;labTMDBTotal=previous.total;labMovieResponseCache=previous.cache;
+ document.querySelectorAll('[data-lab-kind]').forEach(b=>b.classList.toggle('active',b.dataset.labKind===labKind));
+ labSyncDiscoverFilters();void labBrowse();
+}
+for(const event of ['input','search'])$('labSearchInput').addEventListener(event,labClearSearch);
+// Calcular tarjetas necesarias a partir de las columnas reales y el alto visible.
+// Se piden páginas TMDB consecutivas sin repetirlas en la siguiente página visual.
+function labDiscoverFillTarget(){
+ const grid=$('labMoviesGrid'),rect=grid.getBoundingClientRect();
+ const style=window.getComputedStyle(grid);
+ const gap=Number.parseFloat(style.columnGap)||14;
+ const availableWidth=Math.max(180,
+  rect.width||0,grid.clientWidth||0,
+  (grid.parentElement?.clientWidth||0)-44,(labView.clientWidth||0)-44);
+ const columns=Math.max(1,Math.floor((availableWidth+gap)/(180+gap)));
+ const width=Math.max(180,(availableWidth-gap*(columns-1))/columns);
+ const approxCardHeight=width*1.5+130;
+ const height=Math.max(120,labView.getBoundingClientRect().bottom-rect.top-75);
+ const rows=Math.max(3,Math.ceil((height+gap)/(approxCardHeight+gap)));
+ // Página visual con FILAS COMPLETAS. Si TMDB entrega 20 títulos para
+ // seis columnas, mostramos 18 y guardamos 2 para la página siguiente.
+ return columns*Math.max(1,Math.min(rows,Math.floor(80/columns)||1));
+}
+async function labBrowse(){
+ const stamp=++labRequestSerial,grid=$('labMoviesGrid');
+ grid.replaceChildren();
+ labSyncDiscoverFilters();
+ labStatus('Consultando TMDB…');$('labDiscoverPager').hidden=true;
+ const headings={trending:'Tendencias de la semana',popular:'Películas populares',top:'Mejor valoradas',upcoming:'Próximos estrenos'};
+ $('labResultsHeading').textContent=labQuery?'Resultados para «'+labQuery+'»':headings[labKind];
+ const genre=$('labDiscoverGenre').value;
+ const path=labQuery?'/api/discover/search?q='+encodeURIComponent(labQuery):
+  '/api/discover/list?kind='+encodeURIComponent(labKind)+(genre==='any'?'':'&genre='+encodeURIComponent(genre));
+ const target=labDiscoverFillTarget();
+ const startIndex=(labPage-1)*target,required=startIndex+target;
+ labLastFillTarget=target;
+ let partialError=null,requested=0;
+ // TMDB pagina de 20 en 20 y la interfaz por filas de columnas.
+ // Nunca cerrar la pantalla visual a mitad de fila si aún hay títulos.
+ // Un máximo preventivo limita consultas por pantalla incluso con páginas vacías.
+ while(labMoviePool.length<required&&labTMDBNextPage<=labPages&&requested<25){
+  const page=labTMDBNextPage,cacheKey=path+'|'+page;
+  let data=labMovieResponseCache.get(cacheKey);
+  try{
+   if(!data){
+    data=await labGet(path+'&page='+page);
+    if(stamp!==labRequestSerial)return;
+    if(labMovieResponseCache.size>=100)labMovieResponseCache.clear();
+    labMovieResponseCache.set(cacheKey,data);
+   }
+  }catch(err){
+   if(stamp!==labRequestSerial)return;
+   partialError=err;
+   break;
+  }
+  if(stamp!==labRequestSerial)return;
+  labPages=Math.max(page,Math.min(500,Number(data.total_pages)||page));
+  labTMDBTotal=Math.max(0,Number(data.total_results)||labTMDBTotal);
+  for(const movie of Array.isArray(data.results)?data.results:[]){
+   const id=Number(movie?.id);
+   if(!Number.isSafeInteger(id)||id<=0||labMovieIDs.has(id)||!movie?.title)continue;
+   labMovieIDs.add(id);
+   labMoviePool.push(movie);
+  }
+  labTMDBNextPage=page+1;
+  requested++;
+ }
+ if(stamp!==labRequestSerial)return;
+ const visible=labMoviePool.slice(startIndex,required);
+ for(const film of visible)grid.appendChild(labCard(film));
+ const more=labMoviePool.length>required||labTMDBNextPage<=labPages;
+ const finished=labTMDBNextPage>labPages;
+ if(visible.length){
+  labStatus(partialError?'⚠ No se pudieron cargar más resultados: '+partialError.message:
+   finished&&!more?'Estos son los últimos resultados disponibles en TMDB.':
+   'Pulsa Detalles para consultar la ficha y añadirla a una lista.');
+ }else{
+  labStatus(partialError?'⚠ '+partialError.message:'No se encontraron más películas para esta búsqueda.');
+ }
+ $('labResultsCount').textContent=labTMDBTotal?labTMDBTotal.toLocaleString('es-ES')+' resultados':'Página '+labPage;
+ $('labDiscoverPager').hidden=labPage===1&&!more;
+ $('labPageLabel').textContent=visible.length?
+  'Página '+labPage+' · Películas '+(startIndex+1)+'–'+(startIndex+visible.length)+(labTMDBTotal?' de '+labTMDBTotal:''):
+  'Página '+labPage+' · Sin resultados';
+ $('labPrevPage').disabled=labPage===1;
+ $('labNextPage').disabled=!more;
+}
+function labDiscoverOnResize(){
+ if(labResizeTimer)clearTimeout(labResizeTimer);
+ labResizeTimer=setTimeout(()=>{
+  labResizeTimer=null;
+  if(activeView!=='discover'||labView.hidden)return;
+  const target=labDiscoverFillTarget();
+  if(target!==labLastFillTarget){
+   // Reagrupar el catálogo ya obtenido según el nuevo número de columnas.
+   // Mantener el índice de inicio aproximado sin perder ni duplicar películas.
+   const oldIndex=(labPage-1)*Math.max(1,labLastFillTarget);
+   labPage=Math.floor(oldIndex/target)+1;
+   void labBrowse();
+  }
+ },220);
+}
+window.addEventListener('resize',labDiscoverOnResize);
+function labCard(film){
+ const card=document.createElement('article');card.className='lab-movie-card';
+ const img=film.poster_path?document.createElement('img'):document.createElement('div');
+ img.className=film.poster_path?'lab-movie-poster':'lab-movie-poster lab-movie-empty';
+ if(film.poster_path){img.src=labPosterSrc(film.poster_path);img.loading='lazy';img.alt='';img.addEventListener('error',()=>{img.replaceWith(labNoPoster())},{once:true});}
+ else img.textContent='🎞';
+ const body=document.createElement('div');body.className='lab-card-body';
+ const title=document.createElement('div');title.className='lab-card-name';title.textContent=film.title;
+ const meta=document.createElement('div');meta.className='lab-card-info';
+ const year=document.createElement('span');year.textContent=String(film.release_date||'').slice(0,4)||'Sin fecha';
+ const rating=document.createElement('span');rating.className='lab-card-rating';rating.textContent=film.vote_count?'★ '+Number(film.vote_average).toFixed(1):'—';
+ const details=document.createElement('button');details.type='button';details.className='lab-card-details';details.textContent='Detalles';details.setAttribute('aria-label','Ver detalles de '+film.title);
+ details.addEventListener('click',e=>{e.stopPropagation();void labShowDetail(film.id);});
+ meta.append(year,rating,labDiscoverFavoriteButton(film));body.append(title,meta,details);card.append(img,body);
+ return card;
+}
+function labNoPoster(){const x=document.createElement('div');x.className='lab-movie-poster lab-movie-empty';x.textContent='🎞';return x;}
+function labGoPage(direction){
+ const next=labPage+direction;
+ if(next<1||(direction>0&&$('labNextPage').disabled))return;
+ labPage=next;void labBrowse();
+ $('labResultsHeading').scrollIntoView({block:'start',behavior:'auto'});
+}
+$('labPrevPage').addEventListener('click',()=>labGoPage(-1));
+$('labNextPage').addEventListener('click',()=>labGoPage(1));
+const labPersonOverlay=$('labPersonOverlay');
+let labPersonSerial=0,labDetailTrail=[];
+function labDetailCurrent(){return labDetailTrail[labDetailTrail.length-1];}
+function labRememberDetailScroll(){
+ const current=labDetailCurrent();
+ if(!current)return;
+ const overlay=current.kind==='person'?labPersonOverlay:labDetailOverlay;
+ current.scrollTop=overlay.scrollTop||0;
+}
+function labSyncDetailNavigation(){
+ const canGoBack=labDetailTrail.length>1;
+ $('labDetailBack').hidden=!canGoBack;
+ $('labPersonBack').hidden=!canGoBack;
+}
+function labEnterDetail(kind,id,record=true,role=''){
+ if(record){
+  // Una apertura desde Biblioteca o Descubrir inicia un historial independiente.
+  if(labDetailOverlay.hidden&&labPersonOverlay.hidden){labDetailTrail=[];}
+  else labRememberDetailScroll();
+  const last=labDetailCurrent();
+  if(!last||last.kind!==kind||last.id!==id||last.role!==role)labDetailTrail.push({kind,id,role,scrollTop:0});
+ }
+ labSyncDetailNavigation();
+}
+function labHidePerson(){++labPersonSerial;labPersonOverlay.hidden=true;}
+function labCloseDetail(){
+ labHideActorPhoto();
+ labHidePerson();++labDetailSerial;
+ labDetailOverlay.hidden=true;labCurrentMovie=null;labDetailTrail=[];
+ labSyncDetailNavigation();
+}
+function labDetailBack(){
+ if(labDetailTrail.length<=1)return;
+ labRememberDetailScroll();
+ labDetailTrail.pop();
+ const previous=labDetailCurrent();
+ if(previous.kind==='person'){void labOpenPerson(previous.id,false,previous.role);}
+ else{void labShowDetail(previous.id,false);}
+}
+$('labDetailBack').addEventListener('click',labDetailBack);
+$('labPersonBack').addEventListener('click',labDetailBack);
+$('labDetailClose').addEventListener('click',labCloseDetail);
+$('labPersonClose').addEventListener('click',labCloseDetail);
+labDetailOverlay.addEventListener('click',e=>{if(e.target===labDetailOverlay)labCloseDetail();});
+labPersonOverlay.addEventListener('click',e=>{if(e.target===labPersonOverlay)labCloseDetail();});
+window.addEventListener('keydown',e=>{
+ if(e.key!=='Escape'||labDetailOverlay.hidden)return;
+ e.preventDefault();
+ if(labDetailTrail.length>1)labDetailBack();
+ else labCloseDetail();
+});
+// FilmAffinity no utiliza los identificadores TMDB; el acceso seguro es una
+// búsqueda por título en FilmAffinity España, nunca una ficha inventada.
+function labFilmAffinitySearchURL(movie){
+ const title=String(movie?.title||movie?.original_title||'').trim();
+ if(!title)return '';
+ return 'https://www.filmaffinity.com/es/search.php?stype=title&stext='+encodeURIComponent(title);
+}
+function labDetailLink(label,url){
+ if(typeof url!=='string'||!/^https:\/\//.test(url))return;
+ const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=label;$('labDetailLinks').appendChild(a);
+}
+function labTextChips(target,values){
+ target.replaceChildren();for(const item of values){const b=document.createElement('span');b.textContent=item;target.appendChild(b);}
+}
+// Una foto solo se solicita al mantener el ratón sobre un nombre, nunca al
+// dibujar la cuadrícula. El tooltip usa position:fixed para no quedar recortado.
+let labActorPhotoTimer=null,labActorPhotoTarget=null;
+function labHideActorPhoto(){
+ if(labActorPhotoTimer!==null)clearTimeout(labActorPhotoTimer);
+ labActorPhotoTimer=null;labActorPhotoTarget=null;
+ const tip=$('labActorPhotoTooltip');tip.hidden=true;tip.replaceChildren();
+}
+function labActorPhotoPath(person){
+ const path=person&&typeof person.profile_path==='string'?person.profile_path:'';
+ return /^\/[a-z0-9_\/-]+\.(?:jpg|jpeg|png|webp)$/i.test(path)?path:'';
+}
+function labShowActorPhoto(actor,person,immediate=false){
+ labHideActorPhoto();
+ const path=labActorPhotoPath(person);
+ if(!path||labDetailOverlay.hidden)return;
+ labActorPhotoTarget=actor;
+ labActorPhotoTimer=setTimeout(()=>{
+  labActorPhotoTimer=null;
+  if(labActorPhotoTarget!==actor||labDetailOverlay.hidden||!actor.isConnected)return;
+  const tip=$('labActorPhotoTooltip');
+  const img=document.createElement('img');img.alt='';img.decoding='async';img.src=labPosterSrc(path);
+  img.addEventListener('error',()=>{if(labActorPhotoTarget===actor)labHideActorPhoto();},{once:true});
+  const label=document.createElement('span');label.className='lab-actor-photo-label';label.textContent=person.name;
+  tip.replaceChildren(img,label);tip.hidden=false;
+  const rect=actor.getBoundingClientRect(),bounds=tip.getBoundingClientRect();
+  const width=window.innerWidth||document.documentElement.clientWidth;
+  const height=window.innerHeight||document.documentElement.clientHeight;
+  const left=Math.max(8,Math.min(rect.left,width-bounds.width-8));
+  let top=rect.top-bounds.height-9;
+  if(top<8)top=rect.bottom+9;
+  if(top+bounds.height>height-8)top=Math.max(8,height-bounds.height-8);
+  tip.style.left=left+'px';tip.style.top=top+'px';
+ },immediate?0:200);
+}
+labDetailOverlay.addEventListener('scroll',labHideActorPhoto,true);
+window.addEventListener('resize',labHideActorPhoto);
+function labRenderCredits(movie){
+ labHideActorPhoto();
+ const root=$('labDetailCast');root.replaceChildren();
+ const director=document.createElement('div');director.className='lab-cast-director';
+ const directorLabel=document.createElement('span');directorLabel.className='lab-cast-director-label';directorLabel.textContent='Dirección:';
+ director.appendChild(directorLabel);
+ const directors=(Array.isArray(movie.directors)?movie.directors:[]).filter(person=>person&&person.name);
+ if(directors.length){
+  for(const person of directors)director.appendChild(labCreditLink(person,'director'));
+ }else{
+  const directorName=document.createElement('strong');directorName.textContent=movie.director||'Sin datos';
+  director.appendChild(directorName);
+ }
+ root.appendChild(director);
+ const people=(Array.isArray(movie.cast)?movie.cast:[]).filter(person=>person&&person.name);
+ if(!people.length)return;
+ const heading=document.createElement('div');heading.className='lab-cast-heading';heading.textContent='Reparto y personajes';
+ root.appendChild(heading);
+ const entries=document.createElement('div');entries.className='lab-cast-grid';
+ for(const person of people){
+  const entry=document.createElement('div');entry.className='lab-cast-entry';
+  entry.appendChild(labCreditLink(person));
+  if(person.character){
+   const role=document.createElement('span');role.className='lab-cast-role';role.textContent=person.character;
+   entry.appendChild(role);
+  }
+  entries.appendChild(entry);
+ }
+ root.appendChild(entries);
+}
+function labCreditLink(person,role=''){
+ const personID=Number(person.id);
+ const clickable=Number.isSafeInteger(personID)&&personID>0&&personID<=999999999;
+ const link=document.createElement(clickable?'button':'strong');
+ link.className='lab-cast-actor';link.textContent=person.name;
+ if(clickable){
+  link.type='button';link.setAttribute('aria-label','Ver ficha de '+person.name);
+  link.addEventListener('mouseenter',()=>labShowActorPhoto(link,person));
+  link.addEventListener('mouseleave',labHideActorPhoto);
+  link.addEventListener('focus',()=>labShowActorPhoto(link,person,true));
+  link.addEventListener('blur',labHideActorPhoto);
+  link.addEventListener('click',()=>{labHideActorPhoto();void labOpenPerson(personID,true,role);});
+ }
+ return link;
+}
+// Clasificaciones locales: TMDB no publica una lista canónica de papeles
+// destacados. Combinamos valoración con confianza, posición en el reparto y
+// popularidad, sin confundir ninguna de estas señales con calidad artística.
+let labPersonMovies=[];
+function labMovieCredibleRating(film){
+ const votes=Math.max(0,Number(film.vote_count)||0);
+ const score=Math.max(0,Math.min(10,Number(film.vote_average)||0));
+ return (score*votes+6*120)/(votes+120);
+}
+function labMovieFeaturedScore(film){
+ const quality=labMovieCredibleRating(film)/10;
+ const order=Math.max(0,Number(film.order)||0);
+ const prominence=1/(1+order/5);
+ const popularity=Math.min(1,Math.log1p(Math.max(0,Number(film.popularity)||0))/Math.log1p(250));
+ return quality*.50+prominence*.35+popularity*.15;
+}
+function labSortedPersonMovies(items,mode){
+ const valid=items.filter(m=>Number.isSafeInteger(Number(m.id))&&Number(m.id)>0&&m.title);
+ const rank=mode==='rated'?labMovieCredibleRating:mode==='popular'?m=>Number(m.popularity)||0:mode==='recent'?m=>String(m.release_date||''):labMovieFeaturedScore;
+ return valid.slice().sort((a,b)=>{
+  const av=rank(a),bv=rank(b);
+  if(av!==bv)return av>bv?-1:1;
+  const dateA=String(a.release_date||''),dateB=String(b.release_date||'');
+  if(dateA!==dateB)return dateA>dateB?-1:1;
+  return Number(a.id)-Number(b.id);
+ });
+}
+function labRenderPersonFilmography(){
+ const movies=$('labPersonFilms');
+ movies.replaceChildren();
+ const ranked=labSortedPersonMovies(labPersonMovies,$('labPersonFilmSort').value);
+ $('labPersonFilmsCount').textContent=ranked.length?'Mostrando '+Math.min(16,ranked.length)+' de '+ranked.length:'Sin películas registradas';
+ for(const film of ranked.slice(0,16)){
+  const btn=document.createElement('button');btn.type='button';btn.className='lab-person-film';
+  const title=document.createElement('span');title.className='lab-person-film-title';
+  title.textContent=film.title+(film.release_date?' ('+String(film.release_date).slice(0,4)+')':'');
+  btn.appendChild(title);
+  if(film.character){const role=document.createElement('span');role.className='lab-person-film-role';role.textContent='Como '+film.character;btn.appendChild(role);}
+  btn.addEventListener('click',()=>{void labShowDetail(Number(film.id));});
+  movies.appendChild(btn);
+ }
+ if(!movies.childElementCount)movies.textContent='No hay películas registradas en TMDB.';
+}
+$('labPersonFilmSort').addEventListener('change',()=>{
+ const current=labDetailCurrent();
+ if(current&&current.kind==='person')current.sort=$('labPersonFilmSort').value;
+ labRenderPersonFilmography();
+});
+// TMDB conserva fechas ISO para ordenar, pero en pantalla deben verse como
+// se leen en España (sin depender del idioma del sistema operativo).
+function labFormatSpanishDate(iso,long=false){
+ const match=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso||''));
+ if(!match)return String(iso||'');
+ const year=Number(match[1]),month=Number(match[2]),day=Number(match[3]);
+ const d=new Date(Date.UTC(year,month-1,day));
+ if(d.getUTCFullYear()!==year||d.getUTCMonth()+1!==month||d.getUTCDate()!==day)return String(iso||'');
+ return long?new Intl.DateTimeFormat('es-ES',{timeZone:'UTC',year:'numeric',month:'long',day:'numeric'}).format(d):day.toString().padStart(2,'0')+'/'+month.toString().padStart(2,'0')+'/'+match[1];
+}
+const labPersonDepartmentES={Acting:'Interpretación',Directing:'Dirección',Writing:'Guion',Production:'Producción',Editing:'Montaje',Camera:'Fotografía',Sound:'Sonido',Art:'Arte',Crew:'Equipo técnico',VisualEffects:'Efectos visuales',Lighting:'Iluminación',CostumeMakeUp:'Vestuario y maquillaje'};
+function labShowPersonBiography(person){
+ const bio=$('labPersonBio'),button=$('labPersonOriginal');
+ const translated=String(person?.biography||'').trim();
+ const original=String(person?.biography_original||'').trim();
+ button.hidden=true;button.onclick=null;
+ if(translated){bio.textContent=translated;return;}
+ bio.textContent='TMDB todavía no dispone de una biografía de esta persona en español.';
+ if(original){
+  button.hidden=false;button.textContent='Ver biografía original en inglés';
+  let shown=false;
+  button.onclick=()=>{
+   shown=!shown;
+   bio.textContent=shown?original:'TMDB todavía no dispone de una biografía de esta persona en español.';
+   button.textContent=shown?'Ocultar original en inglés':'Ver biografía original en inglés';
+  };
+ }
+}
+async function labOpenPerson(id,record=true,role=''){
+ labHideActorPhoto();
+ labEnterDetail('person',id,record,role);
+ const directing=role==='director';
+ const serial=++labPersonSerial;
+ labPersonOverlay.hidden=false;labPersonOverlay.scrollTop=0;
+ $('labPersonBack').focus();
+ $('labPersonHeading').textContent=directing?'Ficha de dirección':'Ficha de intérprete';
+ $('labPersonFilmsTitle').textContent=directing?'PELÍCULAS DIRIGIDAS':'FILMOGRAFÍA';
+ $('labPersonName').textContent=directing?'Cargando ficha…':'Cargando intérprete…';
+ $('labPersonSubtitle').textContent='';$('labPersonBio').textContent='';
+ $('labPersonOriginal').hidden=true;$('labPersonOriginal').onclick=null;
+ labPersonMovies=[];
+ $('labPersonFilmSort').value=labDetailCurrent()?.sort||'featured';
+ $('labPersonFilmsCount').textContent='';
+ $('labPersonFilms').replaceChildren();$('labPersonLinks').replaceChildren();
+ $('labPersonPortrait').hidden=true;$('labPersonPortrait').removeAttribute('src');
+ $('labPersonPlaceholder').hidden=false;
+ $('labPersonNote').textContent='Consultando TMDB…';
+ try{
+  const p=await labGet('/api/discover/person?id='+encodeURIComponent(id)+(directing?'&role=director':''));
+  if(serial!==labPersonSerial)return;
+  $('labPersonName').textContent=p.name||(directing?'Dirección':'Intérprete');
+  const dates=p.birthday?(p.deathday?'Nacimiento: '+labFormatSpanishDate(p.birthday,true)+' · Fallecimiento: '+labFormatSpanishDate(p.deathday,true):'Nacimiento: '+labFormatSpanishDate(p.birthday,true)):'';
+  $('labPersonSubtitle').textContent=[labPersonDepartmentES[p.known_for_department]||p.known_for_department||'',dates,p.place_of_birth||''].filter(Boolean).join(' · ');
+  labShowPersonBiography(p);
+  if(p.profile_path){
+   const portrait=$('labPersonPortrait');
+   portrait.alt='Fotografía de '+p.name;
+   portrait.src=labPosterSrc(p.profile_path);portrait.hidden=false;$('labPersonPlaceholder').hidden=true;
+   portrait.onerror=()=>{if(serial===labPersonSerial){portrait.hidden=true;$('labPersonPlaceholder').hidden=false;}};
+  }
+  labPersonMovies=Array.isArray(p.movies)?p.movies:[];
+  labRenderPersonFilmography();
+  if(typeof p.tmdb_url==='string'&&/^https:\/\/www\.themoviedb\.org\/person\/\d+$/.test(p.tmdb_url)){
+   const link=document.createElement('a');link.href=p.tmdb_url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='↗ Ficha de TMDB';
+   $('labPersonLinks').appendChild(link);
+  }
+  $('labPersonNote').textContent='Ficha consultada en TMDB.';
+  labPersonOverlay.scrollTop=labDetailCurrent()?.kind==='person'?labDetailCurrent().scrollTop||0:0;
+ }catch(e){if(serial===labPersonSerial){$('labPersonName').textContent='Ficha no disponible';$('labPersonNote').textContent='⚠ '+e.message;}}
+}
+// Mostrar las listas reales sin tener que intentar añadir la película.
+// Identificar primero por ID TMDB confirmado y, si falta, por título/año,
+// igual que la protección contra duplicados de labAddCurrentMovie().
+function labMovieMemberships(movie){
+ if(!movie?.title)return [];
+ const id=Number(movie.id)||0;
+ const year=String(movie.release_date||'').slice(0,4);
+ const titles=new Set([labFold(movie.title),labFold(movie.original_title)].filter(Boolean));
+ const found=new Map(),known=libraryState.tmdb_overrides||{};
+ for(const row of filmMembershipIndex().rows){
+  for(const membership of row._lists||[]){
+   const film={title:membership.title,year:membership.year};
+   const confirmed=Number(knownTMDB(film)||known[filmKey(film)]||0);
+   const byID=id>0&&confirmed===id;
+   const byTitle=titles.has(labFold(film.title))&&
+     (!film.year||!year||String(film.year)===year);
+   if(!byID&&!byTitle)continue;
+   found.set(membership.id,membership);
+  }
+ }
+ return [...found.values()].sort((a,b)=>a.n-b.n);
+}
+function labRenderDetailMemberships(movie){
+ const holder=$('labDetailMemberships');holder.replaceChildren();
+ if(!movie?.title){
+  const empty=document.createElement('span');empty.className='lab-detail-membership-empty';
+  empty.textContent='Comprobando tus listas…';holder.appendChild(empty);return;
+ }
+ const entries=labMovieMemberships(movie);
+ for(const entry of entries){
+  const chip=document.createElement('span');chip.className='lab-detail-membership-chip';
+  const number=document.createElement('span');number.className='lab-detail-membership-number';
+  number.textContent=String(entry.n)+' ·';
+  const name=document.createElement('span');name.textContent=entry.name;
+  chip.append(number,name);chip.title=String(entry.n)+'. '+entry.name;
+  holder.appendChild(chip);
+ }
+ // Favoritos es una vista virtual: se indica sin número ni duplicar listas.
+ const favorite=typeof labReactionFor==='function'&&
+   labReactionFor({title:movie.title,year:String(movie.release_date||'').slice(0,4)})?.favorite;
+ if(favorite){
+  const chip=document.createElement('span');
+  chip.className='lab-detail-membership-chip lab-detail-membership-favorite';
+  chip.textContent='♥ Favoritos';holder.appendChild(chip);
+ }
+ if(!holder.childElementCount){
+  const empty=document.createElement('span');empty.className='lab-detail-membership-empty';
+  empty.textContent='Todavía no está en ninguna lista.';holder.appendChild(empty);
+ }
+ return entries;
+}
+function labUpdateDetailAddState(){
+ const button=$('labDetailAdd'),movie=labCurrentMovie;
+ if(!movie){button.disabled=true;return;}
+ const already=labMovieMemberships(movie).some(entry=>entry.id===$('labAddList').value);
+ button.disabled=already;
+ button.textContent=already?'✓ Ya está en esta lista':'＋ Añadir pendiente';
+ button.title=already?'Esta película ya está en la lista seleccionada.':'Añadir la película como pendiente a esta lista.';
+}
+$('labAddList').addEventListener('change',labUpdateDetailAddState);
+async function labShowDetail(id,record=true){
+ labHideActorPhoto();
+ labEnterDetail('movie',id,record);
+ labHidePerson();
+ const serial=++labDetailSerial;labCurrentMovie=null;labDetailOverlay.hidden=false;
+ labDetailOverlay.scrollTop=0;
+ (labDetailTrail.length>1?$('labDetailBack'):$('labDetailClose')).focus();
+ $('labDetailTitle').textContent='Cargando ficha…';$('labDetailSubtitle').textContent='';
+ $('labDetailOverview').textContent='';$('labDetailCast').textContent='';
+ $('labDetailGenres').replaceChildren();$('labDetailPlatforms').replaceChildren();$('labDetailLinks').replaceChildren();
+ $('labDetailPoster').hidden=true;$('labDetailPlaceholder').hidden=false;
+ $('labDetailNote').textContent='Consultando TMDB…';$('labDetailAdd').disabled=true;$('labDetailFavorite').hidden=true;
+ labRenderDetailMemberships(null);
+ try{
+  const m=await labGet('/api/discover/detail?id='+encodeURIComponent(id));
+  if(serial!==labDetailSerial)return;labCurrentMovie=m;labRefreshDetailFavorite();labRenderDetailMemberships(m);
+  $('labDetailTitle').textContent=m.title;
+  const parts=[String(m.release_date||'').slice(0,4),m.runtime?m.runtime+' min':'',m.vote_count?'★ '+Number(m.vote_average).toFixed(1)+'/10 en TMDB':''];$('labDetailSubtitle').textContent=parts.filter(Boolean).join(' · ');
+  $('labDetailOverview').textContent=m.overview||'TMDB no tiene una sinopsis en español para esta película.';
+  labTextChips($('labDetailGenres'),m.genres||[]);
+  labRenderCredits(m);
+  const service=[];
+  for(const [kind,label] of [['subscriptions','Suscripción'],['free','Gratis'],['ads','Con anuncios'],['rent','Alquiler'],['buy','Compra']]){
+   for(const provider of m[kind]||[])service.push(label+': '+provider);
+  }
+  labTextChips($('labDetailPlatforms'),service.length?service:[m.availability_note||'Sin disponibilidad registrada para España']);
+  if(m.trailer)labDetailLink('▶ Ver tráiler',m.trailer);
+  if(m.watch_link)labDetailLink('↗ Ver plataformas',m.watch_link);
+  labDetailLink('↗ Ficha de TMDB',m.tmdb_url);
+  labDetailLink('↗ Buscar en FilmAffinity España',labFilmAffinitySearchURL(m));
+  if(m.poster_path){
+   const img=$('labDetailPoster');img.src=labPosterSrc(m.poster_path);img.hidden=false;$('labDetailPlaceholder').hidden=true;
+   img.onerror=()=>{img.hidden=true;$('labDetailPlaceholder').hidden=false;};
+  }
+  const select=$('labAddList');select.replaceChildren();
+  for(const list of libraryState.lists){const o=document.createElement('option');o.value=list.id;o.textContent=list.name;select.appendChild(o);}
+  select.value=libraryState.active_id;
+  labUpdateDetailAddState();
+  const note=m.cache_state==='actualizando'?'Ficha guardada · actualizando datos antiguos en segundo plano.':
+    m.cache_state==='guardada'?'Ficha cargada de la caché local.':
+    'Ficha descargada y guardada localmente.';
+  $('labDetailNote').textContent=note+' Puedes añadirla a una lista.';
+  labDetailOverlay.scrollTop=labDetailCurrent()?.kind==='movie'?labDetailCurrent().scrollTop||0:0;
+ }catch(e){if(serial===labDetailSerial){$('labDetailTitle').textContent='Ficha no disponible';$('labDetailNote').textContent='⚠ '+e.message;}}
+}
+// Descubrir ya tiene esta ficha TMDB completa en memoria y en caché LAB.
+ // Aprovecharla inmediatamente en Biblioteca; no esperar a la precarga lenta.
+function labHydrateAddedMovie(movie,film){
+ const key=providerKey(film);
+ const old=platformData.get(key)||{};
+ const data={
+  ...old,state:movie.availability_note?'partial':'ok',tmdb_id:Number(movie.id)||0,
+  metadata_version:2,poster_path:movie.poster_path||'',
+  vote_average:Number(movie.vote_average)||0,vote_count:Number(movie.vote_count)||0,
+  runtime:Number(movie.runtime)||0,genres:Array.isArray(movie.genres)?movie.genres:[],
+  subscriptions:Array.isArray(movie.subscriptions)?movie.subscriptions:[],
+  free:Array.isArray(movie.free)?movie.free:[],
+  ads:Array.isArray(movie.ads)?movie.ads:[],
+  rent:Array.isArray(movie.rent)?movie.rent:[],
+  buy:Array.isArray(movie.buy)?movie.buy:[],
+  film_url:movie.watch_link||movie.tmdb_url||''
+ };
+ platformData.set(key,data);
+ // Compartir la ficha existente con la caché persistente de Biblioteca.
+ // No bloquear el guardado de la lista ni perder el contenido ya visible
+ // si hay un error de TMDB o la consulta devuelve datos incompletos.
+ void platformApi('/api/discover/library-cache',{id:Number(movie.id)})
+  .then(info=>{
+   if(info?.tmdb_id===Number(movie.id)){
+    // La consulta de plataformas puede no incluir todos los metadatos:
+    // conservar la ficha ya obtenida si llegan campos vacíos o parciales.
+    platformData.set(key,{
+     ...data,...info,
+     poster_path:info.poster_path||data.poster_path,
+     runtime:Number(info.runtime)>0?Number(info.runtime):data.runtime,
+     genres:Array.isArray(info.genres)&&info.genres.length?info.genres:data.genres,
+     vote_count:Number(info.vote_count)>0?Number(info.vote_count):data.vote_count,
+     vote_average:Number(info.vote_count)>0?Number(info.vote_average)||0:data.vote_average
+    });
+    scheduledPlatformRender();
+   }
+  }).catch(()=>{});
+}
+function labAddCurrentMovie(){
+ const movie=labCurrentMovie;if(!movie)return;
+ const dst=libraryState.lists.find(x=>x.id===$('labAddList').value);
+ if(!dst){$('labDetailNote').textContent='Selecciona una lista válida.';return;}
+ const title=String(movie.title||'').replace(/[\u0000-\u001f\u007f]+/g,' ').replace(/\s+/g,' ').trim();
+ const year=String(movie.release_date||'').slice(0,4);
+ if(!title||title.length>220||(year&&(!/^(18|19|20|21)\d{2}$/.test(year)||Number(year)>2200))){
+  $('labDetailNote').textContent='La película no tiene un título o año válido para guardarla.';return;
+ }
+ syncActiveText();
+ const identity=filmKey({title,year}),known=libraryState.tmdb_overrides||{};
+ const existing=parse(dst.text).entries.some(f=>{
+  const fid=knownTMDB(f)||known[filmKey(f)]||0;
+  return Number(fid)===Number(movie.id)||labFold(f.title)===labFold(title)&&(!f.year||!year||f.year===year);
+ });
+ if(existing){
+  labRenderDetailMemberships(movie);labUpdateDetailAddState();
+  $('labDetailNote').textContent='Esta película ya existe en «'+dst.name+'». No se ha duplicado.';return;
+ }
+ const line='☐ '+title+(year?' ('+year+')':'');
+ const joined=dst.text.trimEnd()+(dst.text.trim()?'\n':'')+line;
+ if(joined.length>900000||Object.keys(known).length>=9999){$('labDetailNote').textContent='La lista o el catálogo de identidades ha alcanzado su límite.';return;}
+ dst.text=joined;
+ if(dst.id===libraryState.active_id&&!virtualMode)rawText=joined;
+ libraryState.tmdb_overrides=known;known[identity]=movie.id;identityMap.set(identity,movie.id);
+ // La ficha debe aparecer al instante aunque la consulta de plataformas tarde.
+ labHydrateAddedMovie(movie,{title,year});
+ update();renderCollectionControls();scheduleSave();
+ labRenderDetailMemberships(movie);labUpdateDetailAddState();
+ $('labDetailNote').textContent='✓ Añadida como pendiente a «'+dst.name+'». Guardando…';
+}
+$('labDetailAdd').addEventListener('click',labAddCurrentMovie);
+// El título, la imagen y el resto de la fila no abren fichas.
+// Exclusivo Windows LAB: el botón aparece a la derecha del estado Vista/Pendiente.
+function labCreateDetailButton(f){
+ const button=document.createElement('button');button.type='button';
+ button.className='lab-film-detail-button';button.textContent='Detalles';
+ button.setAttribute('aria-label','Ver detalles de '+f.title);
+ button.addEventListener('click',e=>{e.stopPropagation();void labOpenFilmDetails(f);});
+ return button;
+}
+async function labOpenFilmDetails(f){
+ if(!f||!f.title)return;
+ const title=f.title,year=f.year||'',id=f._favoriteTMDBID||knownTMDB(f);
+ if(id){void labShowDetail(id);return;}
+ try{
+  const cached=await labGet('/api/discover/resolve?title='+encodeURIComponent(title)+'&year='+encodeURIComponent(Number(year)||0));
+  if(cached.id>0){void labShowDetail(cached.id);return;}
+  const data=await labGet('/api/discover/search?q='+encodeURIComponent(title)+'&page=1');
+  const matches=(data.results||[]).filter(m=>labFold(m.title)===labFold(title)&&(!year||String(m.release_date||'').slice(0,4)===String(year)));
+  if(matches.length===1){void labShowDetail(matches[0].id);return;}
+  labOpen();$('labSearchInput').value=title;labStartSearch(title);
+  labStatus('Selecciona la película correcta para abrir sus detalles.');
+ }catch(err){labOpen();labStatus('⚠ '+err.message);}
+}
+
+// Arrastre de escritorio entre páginas. HTML5 dragstart se cancela cuando la
+// fila original desaparece en renderList(): Pointer Events con captura en BODY
+// conservan el gesto y permiten navegar por «Siguiente», «Anterior» y números.
+let labCrossPageDrag=null;
+function labReorderPageSize(){
+ const height=Math.max(0,($('filmList').clientHeight||370)-2);
+ return Math.max(1,Math.floor((height+7)/103));
+}
+function labReorderPageTarget(element){
+ const button=element?.closest?.('#filmPaging button');
+ if(!button||button.disabled)return null;
+ const last=(Number(String($('filmPageTotal').textContent||'').replace(/[^0-9]/g,''))||1)-1;
+ let target=null;
+ if(button.id==='filmNext')target=filmPage+1;
+ else if(button.id==='filmPrev')target=filmPage-1;
+ else if(button.closest('#filmPageNumbers')){
+  if(button.classList.contains('page-number'))target=Number(button.textContent)-1;
+  else if(button.classList.contains('page-skip'))target=filmPage+(button.textContent==='»'?10:-10);
+ }
+ return Number.isInteger(target)&&target>=0&&target<=last?target:null;
+}
+function labReorderRowAt(element){
+ const row=element?.closest?.('#filmList .film-item');
+ if(!row)return null;
+ const idx=Number(row.dataset.idx);
+ return Number.isSafeInteger(idx)&&idx>=0?idx:null;
+}
+function labCrossPageClearTargets(){
+ for(const row of document.querySelectorAll('#filmList .lab-crosspage-row-target'))row.classList.remove('lab-crosspage-row-target');
+ for(const nav of document.querySelectorAll('#filmPaging .lab-crosspage-nav-target'))nav.classList.remove('lab-crosspage-nav-target');
+}
+function labCrossPageCancelHover(state){
+ if(state.hoverTimer!==null)clearTimeout(state.hoverTimer);
+ state.hoverTimer=null;state.hoverPage=null;
+}
+function labCrossPageMove(e){
+ const state=labCrossPageDrag;
+ if(!state||e.pointerId!==state.pointerId)return;
+ if(!state.started){
+  if(Math.hypot(e.clientX-state.startX,e.clientY-state.startY)<7)return;
+  state.started=true;
+  document.body.classList.add('lab-crosspage-dragging');
+  state.ghost=document.createElement('div');
+  state.ghost.className='lab-crosspage-drag-ghost';
+  state.ghost.setAttribute('aria-hidden','true');
+  const name=document.createElement('span');name.textContent='Moviendo: '+state.name;
+  const hint=document.createElement('small');hint.textContent='Pasa por otra página y suelta sobre una película';
+  state.ghost.append(name,hint);
+  document.body.appendChild(state.ghost);
+ }
+ if(e.cancelable)e.preventDefault();
+ if(!filmOrderEditable()||labReorderListID()!==state.listID){
+  labCrossPageFinish(e,true);return;
+ }
+ const width=window.innerWidth||document.documentElement.clientWidth;
+ const height=window.innerHeight||document.documentElement.clientHeight;
+ state.ghost.style.left=Math.max(8,Math.min(e.clientX+16,width-255))+'px';
+ state.ghost.style.top=Math.max(8,Math.min(e.clientY+15,height-70))+'px';
+ const element=document.elementFromPoint(e.clientX,e.clientY);
+ const row=element?.closest?.('#filmList .film-item');
+ const destination=labReorderRowAt(element);
+ const page=labReorderPageTarget(element);
+ const navButton=element?.closest?.('#filmPaging button');
+ if(state.lastNavigatedButton&&state.lastNavigatedButton!==navButton)state.lastNavigatedButton=null;
+ labCrossPageClearTargets();
+ state.to=destination;
+ if(row&&destination!==null){
+  row.classList.add('lab-crosspage-row-target');
+  labCrossPageCancelHover(state);
+ }else if(page!==null&&page!==filmPage){
+  const button=navButton;
+  button?.classList.add('lab-crosspage-nav-target');
+  // Tras cambiar de página, soltar sobre el mismo botón no debe avanzar
+  // accidentalmente OTRA página. Para seguir avanzando, salir y volver.
+  if(state.lastNavigatedButton===button)return;
+  if(state.hoverPage!==page){
+   labCrossPageCancelHover(state);
+   state.hoverPage=page;
+   state.hoverTimer=setTimeout(()=>{
+    state.hoverTimer=null;
+    if(labCrossPageDrag!==state||!state.started||!filmOrderEditable()||
+       labReorderListID()!==state.listID)return;
+    filmPage=page;
+    state.to=null;state.hoverPage=null;state.lastNavigatedButton=button;
+    renderList();
+    labCrossPageClearTargets();
+  },460);
+  }
+ }else{
+  labCrossPageCancelHover(state);
+ }
+}
+function labReorderListID(){
+ return typeof labFavoritesMode!=='undefined'&&labFavoritesMode?labFavoriteID:libraryState.active_id;
+}
+function labReorderEntries(){
+ return typeof labFavoritesMode!=='undefined'&&labFavoritesMode?labFavoritesFilms():parsed.entries;
+}
+function labCrossPageFinish(e,cancel=false){
+ const state=labCrossPageDrag;
+ if(!state||e.pointerId!==state.pointerId)return;
+ // La película se identifica por su índice RAW, no por el número de página:
+ // el movimiento reordena el TXT completo y no solo las filas visibles.
+ let target=null,destinationPage=filmPage;
+ if(!cancel&&state.started&&filmOrderEditable()&&labReorderListID()===state.listID){
+  const element=document.elementFromPoint(e.clientX,e.clientY);
+  target=labReorderRowAt(element);
+  const page=labReorderPageTarget(element);
+  if(target===null&&page!==null){
+   const button=element?.closest?.('#filmPaging button');
+   // Un cambio ya realizado mantiene el destino en la página mostrada.
+   destinationPage=button===state.lastNavigatedButton?filmPage:page;
+   const entries=labReorderEntries();
+   const index=Math.min(destinationPage*labReorderPageSize(),entries.length-1);
+   target=entries[index]?.idx??null;
+  }
+ }
+ labCrossPageDrag=null;
+ labCrossPageCancelHover(state);
+ labCrossPageClearTargets();
+ document.body.classList.remove('lab-crosspage-dragging');
+ state.ghost?.remove();
+ try{
+  if(document.body.hasPointerCapture?.(state.pointerId))document.body.releasePointerCapture(state.pointerId);
+ }catch(_){}
+ if(target!==null&&target!==state.from){
+  filmPage=destinationPage;
+  if(moveFilmInCurrentList(state.from,target))renderList();
+ }
+}
+document.addEventListener('pointerdown',e=>{
+ if(e.button!==0||!filmOrderEditable())return;
+ const grip=e.target.closest?.('#filmList .film-reorder-handle');
+ if(!grip)return;
+ const row=grip.closest('.film-item');
+ const idx=Number(row?.dataset.idx);
+ if(!Number.isSafeInteger(idx)||idx<0)return;
+ const movie=labReorderEntries().find(f=>f.idx===idx);
+ if(!movie)return;
+ if(labCrossPageDrag)return;
+ labCrossPageDrag={
+  pointerId:e.pointerId,from:idx,to:null,listID:labReorderListID(),
+  name:movie.title||movie.name||'Película',startX:e.clientX,startY:e.clientY,
+  started:false,hoverPage:null,hoverTimer:null,lastNavigatedButton:null,ghost:null
+ };
+ try{document.body.setPointerCapture?.(e.pointerId);}catch(_){}
+ e.preventDefault();
+},true);
+document.addEventListener('pointermove',labCrossPageMove,{capture:true,passive:false});
+document.addEventListener('pointerup',e=>labCrossPageFinish(e),true);
+document.addEventListener('pointercancel',e=>labCrossPageFinish(e,true),true);
+window.addEventListener('blur',()=>{
+ if(labCrossPageDrag)labCrossPageFinish({pointerId:labCrossPageDrag.pointerId},true);
+});
+window.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&labCrossPageDrag){
+  e.preventDefault();e.stopImmediatePropagation();
+  labCrossPageFinish({pointerId:labCrossPageDrag.pointerId},true);
+ }
+},true);
+
+// Abrir una lista desde su número: mostrarla entera y señalar dónde está la
+// película incluso cuando aparece en una página posterior. No alterar las listas.
+let labListJumpHighlight=null,labListJumpTimer=null,labListJumpSerial=0;
+function labClearListJumpHighlight(){
+ if(labListJumpTimer!==null)clearTimeout(labListJumpTimer);
+ labListJumpTimer=null;labListJumpHighlight=null;
+ for(const node of document.querySelectorAll('#filmList .lab-list-jump-target'))node.classList.remove('lab-list-jump-target');
+}
+function labJumpToFilmList(m){
+ if(!m||!libraryState.lists.some(list=>list.id===m.id))return;
+ const serial=++labListJumpSerial;
+ labClearListJumpHighlight();
+ // No arrastrar búsquedas, estados o filtros que ocultarían la película.
+ search='';$('search').value='';filter='all';
+ document.querySelectorAll('.filter').forEach(b=>b.classList.toggle('selected',b.dataset.filter==='all'));
+ selectedListPlatforms.clear();closeListPlatformMenu();updateListPlatformOptions();
+ labFiltersResetForList();
+ if(m.id!==libraryState.active_id||virtualMode||labFavoritesMode)switchCollection(m.id);
+ else showView('library');
+ selectSearchScope('current');
+ // En filmMembershipIndex() el título y el año proceden precisamente del
+ // registro de la lista destino, no de una búsqueda aproximada en TMDB.
+ const target=parsed.entries.find(f=>f.title===m.title&&String(f.year||'')===String(m.year||''));
+ if(!target)return;
+ const index=parsed.entries.indexOf(target);
+ // La primera página ya está dibujada: su longitud revela la capacidad
+ // REAL, incluida la altura adaptable de Biblioteca LAB.
+ const capacity=Math.max(1,$('filmList').querySelectorAll('.film-item').length);
+ filmPage=Math.floor(index/capacity);
+ labListJumpHighlight={listID:m.id,rawIndex:target.idx};
+ renderList();
+ requestAnimationFrame(()=>{
+  if(serial!==labListJumpSerial||!labListJumpHighlight||libraryState.active_id!==m.id)return;
+  const row=Array.from($('filmList').querySelectorAll('.film-item')).find(el=>String(el.dataset.idx)===String(target.idx));
+  if(row)row.scrollIntoView({block:'center',behavior:'smooth'});
+ });
+ labListJumpTimer=setTimeout(()=>{
+  if(serial!==labListJumpSerial)return;
+  labClearListJumpHighlight();
+ },4200);
+}
+// Confirmación visual exclusiva de LAB; mantener el borrado y su sincronización originales.
+let labDeleteListResolver=null,labDeleteListPriorFocus=null;
+function labConfirmDeleteList(list){
+ const overlay=$('labDeleteListOverlay');
+ if(!overlay.hidden)return Promise.resolve(false);
+ $('labDeleteListName').textContent=list.name;
+ labDeleteListPriorFocus=document.activeElement;
+ overlay.hidden=false;
+ $('labDeleteListCancel').focus();
+ return new Promise(resolve=>{labDeleteListResolver=resolve;});
+}
+function labFinishDeleteListConfirmation(accepted){
+ const overlay=$('labDeleteListOverlay');
+ if(overlay.hidden)return;
+ overlay.hidden=true;
+ const resolve=labDeleteListResolver;
+ labDeleteListResolver=null;
+ const previous=labDeleteListPriorFocus;
+ labDeleteListPriorFocus=null;
+ if(previous&&previous.isConnected&&typeof previous.focus==='function')previous.focus();
+ if(resolve)resolve(accepted);
+}
+$('labDeleteListCancel').addEventListener('click',()=>labFinishDeleteListConfirmation(false));
+$('labDeleteListConfirm').addEventListener('click',()=>labFinishDeleteListConfirmation(true));
+$('labDeleteListOverlay').addEventListener('click',e=>{
+ if(e.target===$('labDeleteListOverlay'))labFinishDeleteListConfirmation(false);
+});
+window.addEventListener('keydown',e=>{
+ if($('labDeleteListOverlay').hidden)return;
+ if(e.key==='Escape'){
+  e.preventDefault();e.stopImmediatePropagation();labFinishDeleteListConfirmation(false);return;
+ }
+ if(e.key==='Tab'){
+  const first=$('labDeleteListCancel'),last=$('labDeleteListConfirm');
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+  else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+ }
+},true);

@@ -1,0 +1,471 @@
+<style>
+/* Windows LAB: emociones sutiles y corazón independiente de TMDB. */
+/* Reparto estable de acciones en todas las filas de Biblioteca:
+   [valoración] [Vista/Pendiente | corazón]
+                [Detalles       | editar] */
+#view-library .lab-film-action-layout{
+ display:grid;grid-template-columns:72px 122px;gap:9px;align-items:center;
+ flex:0 0 203px;width:203px;min-width:0;max-width:203px;
+ margin:0 11px 0 4px;
+}
+#view-library .lab-film-score-slot{
+ width:72px;min-width:0;min-height:68px;
+ display:flex;justify-content:center;align-items:center;
+}
+#view-library .lab-film-action-grid{
+ display:grid;grid-template-columns:minmax(0,1fr) 34px;
+ grid-template-rows:31px 31px;gap:7px 6px;
+ align-items:center;justify-items:stretch;min-width:0;
+}
+#view-library .lab-film-action-grid .pill{
+ display:flex!important;align-items:center;justify-content:center;
+ margin:0!important;width:100%;min-width:0;height:29px;
+ padding:0 5px;font-size:10px;white-space:nowrap;
+}
+#view-library .lab-film-action-grid .lab-heart-button{
+ display:grid;place-items:center;width:34px;height:31px;min-height:31px;
+ min-width:34px;padding:0;margin:0;
+}
+#view-library .lab-film-action-grid .lab-film-detail-button{
+ display:flex;align-items:center;justify-content:center;
+ width:100%;min-width:0;height:31px;margin:0;padding:0 3px;font-size:11px;
+}
+#view-library .lab-film-action-grid .matchlink{
+ display:grid;place-items:center;width:34px;height:31px;
+ min-width:34px;min-height:31px;margin:0;padding:0;
+}
+#view-library .lab-film-score-slot .lab-rate-button{
+ width:70px;max-width:70px;min-height:58px;
+ display:flex;align-items:center;justify-content:center;flex-direction:column;
+ gap:2px;padding:5px 3px;margin:0;font-size:11px;line-height:1.15;
+}
+#view-library .lab-film-score-slot .lab-rate-button .lab-emotion{font-size:23px;line-height:1.25}
+/* En vistas virtuales el lápiz se oculta aunque el contenedor use grid. */
+#view-library .lab-film-action-grid .matchlink[hidden]{display:none!important}
+@media(max-width:650px){
+ #view-library .lab-film-action-layout{
+  grid-template-columns:56px 104px;gap:6px;
+  flex-basis:166px;width:166px;max-width:166px;margin:0 7px 0 0;
+ }
+ #view-library .lab-film-score-slot{width:56px;min-height:68px}
+ #view-library .lab-film-action-grid{grid-template-columns:minmax(0,1fr) 30px;gap:6px 4px}
+ #view-library .lab-film-action-grid .lab-heart-button,
+ #view-library .lab-film-action-grid .matchlink{width:30px;min-width:30px}
+ #view-library .lab-film-score-slot .lab-rate-button{width:54px;max-width:54px;min-height:54px;font-size:10px}
+ #view-library .lab-film-score-slot .lab-rate-button .lab-emotion{font-size:20px}
+ #view-library .lab-film-action-grid .pill{font-size:9px;padding:0 2px}
+ #view-library .lab-film-action-grid .lab-film-detail-button{font-size:10px;padding:0 1px}
+}
+#view-library .lab-reaction-controls{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-shrink:0}
+#view-library .lab-heart-button,#view-library .lab-rate-button{font-family:inherit;background:#223347;border:1px solid #445b73;border-radius:9px;cursor:pointer;min-height:31px;min-width:32px;color:#aab9c9;padding:5px 7px;font-size:13px}
+#view-library .lab-heart-button{font-size:20px;line-height:1;font-weight:700;color:#889caf;transition:color .15s,background .15s}
+#view-library .lab-heart-button:hover{color:#f4b7bb;border-color:#b47483}
+#view-library .lab-heart-button.lab-is-favorite{color:#db8b94;border-color:#b36f7b;background:#45333e}
+/* La pertenencia a Favoritos se indica junto a los números, sin contar como lista numerada. */
+#view-library .film-memberships .lab-membership-heart{
+ display:inline-grid;place-items:center;flex:0 0 auto;
+ width:20px;min-width:20px;height:21px;margin:0;padding:0;
+ border:1px solid #856776;border-radius:5px;
+ background:#403540;color:#e2a0ab;
+ font-family:inherit;font-size:15px;font-weight:700;line-height:1;cursor:pointer;
+}
+#view-library .film-memberships .lab-membership-heart:hover{
+ background:#62424d;color:#f2bcc6;border-color:#c28b9b;
+}
+#view-library .film-memberships .lab-membership-heart:focus-visible{
+ outline:2px solid #f1cd8b;outline-offset:2px;
+}
+#view-library .lab-rate-button{color:#d6dfe9;font-size:12px;white-space:nowrap;display:flex;align-items:center;gap:4px}
+#view-library .lab-rate-button:hover{border-color:#d9b877}
+#view-library .lab-rate-button .lab-emotion{filter:saturate(.65);font-size:18px}
+#view-library .lab-rate-button.lab-is-rated{border-color:#9f8c6c}
+#view-library .lab-rate-button:focus-visible,#view-library .lab-heart-button:focus-visible{outline:2px solid #f1cd8b;outline-offset:2px}
+#labRatingOverlay{z-index:135}
+#labRatingOverlay[hidden],#labFavoritesCollection[hidden]{display:none!important}
+.lab-rating-panel{width:min(430px,100%);background:#1b293a;border:1px solid #536980;border-radius:16px;padding:22px 24px;box-shadow:0 22px 58px #000b;color:#e9f0f6}
+.lab-rating-panel h2{font-size:19px;margin:0 35px 9px 0}
+.lab-rating-panel .lab-rating-caption{font-size:13px;line-height:1.4;color:#bdcbd9;margin:0 0 17px;overflow-wrap:anywhere}
+.lab-rating-options{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:16px 0}
+.lab-rating-options button{min-width:0;cursor:pointer;border:1px solid #53647b;border-radius:12px;background:#27374c;padding:10px 2px 8px;color:#dce5f0;font-size:10px;display:flex;align-items:center;flex-direction:column;gap:5px}
+.lab-rating-options button .lab-rating-emoji{font-size:31px;line-height:1.3;filter:saturate(.60);opacity:.80}
+.lab-rating-options button:hover,.lab-rating-options button.lab-rating-selected{background:#394552;border-color:#e3bd7d}
+.lab-rating-options button:hover .lab-rating-emoji,.lab-rating-options button.lab-rating-selected .lab-rating-emoji{filter:saturate(.85);opacity:1}
+.lab-rating-options button:focus-visible,.lab-rating-actions button:focus-visible{outline:2px solid #f1cc87;outline-offset:2px}
+.lab-rating-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.lab-rating-actions button{cursor:pointer;border:1px solid #50677e;background:#29394e;color:#e8eef6;border-radius:9px;padding:8px 12px;font-weight:700;font-size:12px}
+ .lab-discover-favorite{border:1px solid #5f617a;background:#283347;border-radius:8px;color:#9aabba;min-width:32px;height:30px;cursor:pointer;font-size:20px;line-height:1}
+.lab-discover-favorite.lab-is-favorite{color:#df9fa8;background:#493740;border-color:#ac7885}
+.lab-discover-favorite:hover{border-color:#d4a9b3}
+.lab-discover-favorite:focus-visible{outline:2px solid #efcf93}
+#labDetailFavorite{color:#aab7c8;font-size:22px}
+#labDetailFavorite.lab-is-favorite{color:#df9fa8;background:#493740;border-color:#ac7885}
+#labFavoritesCollection{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#253243;border:1px solid #745b69;border-radius:11px;padding:12px 14px;margin-bottom:8px}
+#labFavoritesCollection .lab-favorites-title{color:#edc5ca;font-size:15px;font-weight:800}
+#labFavoritesCollection .lab-favorites-info{font-size:12px;color:#bbc9d7;margin-top:3px}
+#labFavoritesOpen{border:1px solid #bd8992;background:#453840;border-radius:8px;color:#f4dce0;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer}
+#labFavoritesOpen:focus-visible{outline:2px solid #efd4a0}
+@media(max-width:750px){#view-library .lab-reaction-controls{gap:3px}#view-library .lab-heart-button{padding:4px 5px;min-width:27px}#view-library .lab-rate-button{padding:4px 5px;min-width:27px}#view-library .lab-rate-button .lab-emotion{font-size:16px}}
+</style>
+<!-- LAB_REACTIONS_HTML -->
+<div class="overlay" id="labRatingOverlay" hidden>
+  <section class="lab-rating-panel" role="dialog" aria-modal="true" aria-labelledby="labRatingHeading" aria-describedby="labRatingTitle">
+    <h2 id="labRatingHeading">Tu valoración</h2>
+    <p class="lab-rating-caption" id="labRatingTitle"></p>
+    <div id="labRatingOptions" class="lab-rating-options" role="group" aria-label="Elige una puntuación de 1 a 5"></div>
+    <div class="lab-rating-actions">
+      <button type="button" id="labRatingClear">Quitar nota</button>
+      <button type="button" id="labRatingClose">Cancelar</button>
+    </div>
+  </section>
+</div>
+<!-- LAB_REACTIONS_SCRIPT -->
+const labFavoriteID='__favoritos_automaticos_lab__';
+const labRatingEmojis=['😫','☹️','😐','🙂','😄'];
+const labRatingDescriptions=['Muy mala','Mala','Normal','Buena','Excelente'];
+let labFavoritesMode=false,labRatingFilm=null,labRatingReturnFocus=null;
+let labFavoritesRevision=0;
+let labReactionsByTMDB=null;
+function labReactionMovieID(f){
+ return Number(f?._favoriteTMDBID||knownTMDB(f)||0);
+}
+function labReactionRecordID(record){
+ return Number(record?.tmdb_id||labReactionMovieID(record)||0);
+}
+function labMatchingReactions(f){
+ const records=libraryState.reactions||{},key=filmKey(f),id=labReactionMovieID(f),direct=records[key];
+ if(!id)return direct?[[key,direct]]:[];
+ if(!labReactionsByTMDB){
+  labReactionsByTMDB=new Map();
+  for(const [storedKey,record] of Object.entries(records)){
+   if(!record?.title)continue;
+   const movieID=labReactionRecordID(record);
+   if(!movieID)continue;
+   const matches=labReactionsByTMDB.get(movieID)||[];
+   matches.push([storedKey,record]);labReactionsByTMDB.set(movieID,matches);
+  }
+ }
+ const matches=[...(labReactionsByTMDB.get(id)||[])];
+ if(direct&&!labReactionRecordID(direct))matches.push([key,direct]);
+ return matches.sort((a,b)=>Number(b[1].favorite===true)-Number(a[1].favorite===true)||
+  Number(b[0]===key)-Number(a[0]===key)||b[1].changed_at-a[1].changed_at);
+}
+function labFavoriteSeenLookup(){
+ labReactionsByTMDB=null;
+ return film=>labReactionFor(film)?.favorite===true;
+}
+function labReactionFor(f){return labMatchingReactions(f)[0]?.[1]||null;}
+function labFavoritesRecords(){
+ const seenIDs=new Set();
+ const positions=new Map((libraryState.favorites_order?.keys||[]).map((key,index)=>[key,index]));
+ return Object.entries(libraryState.reactions||{})
+  .filter(([,rec])=>rec&&rec.favorite===true&&rec.title)
+  .sort((a,b)=>(positions.get(a[0])??Infinity)-(positions.get(b[0])??Infinity)||
+   b[1].changed_at-a[1].changed_at||a[0].localeCompare(b[0],'es'))
+  .filter(([,record])=>{
+   const id=labReactionRecordID(record);
+   if(!id)return true;
+   if(seenIDs.has(id))return false;
+   seenIDs.add(id);return true;
+  });
+}
+function labMoveFavorite(from,to){
+ const keys=labFavoritesRecords().map(([key])=>key);
+ if(!Number.isInteger(from)||!Number.isInteger(to)||from<0||to<0||from>=keys.length||to>=keys.length||from===to)return false;
+ const [moved]=keys.splice(from,1);
+ keys.splice(to,0,moved);
+ const previous=Number(libraryState.favorites_order?.changed_at)||0;
+ libraryState.favorites_order={keys,changed_at:Math.min(4102444800000,Math.max(Date.now(),previous+1))};
+ scheduleSave();
+ renderList();
+ notify('Orden de Favoritos actualizado.');
+ return true;
+}
+function labFavoriteCount(){return labFavoritesRecords().length;}
+// Las estadísticas y el sorteo consumen las mismas películas que muestra
+// Biblioteca. La lista física activa permanece intacta mientras se ven Favoritos.
+function labStatsDataset(){
+ if(!labFavoritesMode)return parsed;
+ const entries=labFavoritesFilms();
+ const pending=entries.filter(f=>!f.checked);
+ return {entries,pending,seen:entries.length-pending.length};
+}
+function labRefreshStatsPanels(){
+ if(typeof parsed==='undefined'||!parsed)return; // La biblioteca aún puede estar inicializándose
+ const current=labStatsDataset();
+ if(!current)return;
+ const n=current.entries.length;
+ $('total').textContent=n;
+ $('watched').textContent=current.seen;
+ $('remaining').textContent=current.pending.length;
+ const pct=n?Math.round(100*current.seen/n):0;
+ $('progressFill').style.width=pct+'%';
+ $('progress').setAttribute('aria-valuenow',pct);
+ // Un sorteo empezado en otra lista no puede quedar asociado a Favoritos.
+ if(labFavoritesMode&&chosen&&!labReactionFor(chosen)?.favorite){
+  resetChoice();
+ }
+ updateSortAvailability();
+ renderStats();
+}
+
+function labFavoritesFilms(){
+ const records=labFavoritesRecords();
+ const lines=records.map(([,rec])=>{
+  const title=String(rec.title).replace(/[\r\n]+/g,' ').trim();
+  return '☑ '+title+(rec.year?' ('+rec.year+')':'');
+ });
+ const films=parse(lines.join('\n')).entries;
+ films.forEach((film,i)=>{film._favoriteTMDBID=labReactionRecordID(records[i][1]);});
+ return films;
+}
+function labWriteReaction(f,changes){
+ const matches=labMatchingReactions(f),key=matches[0]?.[0]||filmKey(f);
+ if(!key||key.length>275)return;
+ const data=libraryState.reactions||(libraryState.reactions={});
+ labFavoritesRevision++;
+ if(!data[key]&&Object.keys(data).length>=15000){notify('Límite de valoraciones alcanzado.');return;}
+ const existing=data[key]||{};
+ const now=Math.min(4102444800000,Math.max(Date.now(),(existing.changed_at||0)+1));
+ data[key]={
+  favorite:changes.favorite===undefined?existing.favorite===true:changes.favorite===true,
+  rating:changes.rating===undefined?(existing.rating||0):changes.rating,
+  tmdb_id:Number(changes.tmdb_id||existing.tmdb_id||f._favoriteTMDBID||knownTMDB(f))||0,
+  title:String(existing.title||f.title||'').trim().slice(0,200),
+  year:String(existing.title?existing.year||'':f.year||'').slice(0,4),
+  changed_at:now
+ };
+ if(changes.favorite===false){
+  for(const [alias,record] of matches.slice(1)){
+   if(record.favorite)data[alias]={...record,favorite:false,changed_at:Math.min(4102444800000,Math.max(now,(record.changed_at||0)+1))};
+  }
+ }
+ labReactionsByTMDB=null;
+ if(changes.favorite===true){
+  syncActiveText();
+  const groups=buildIdentityGroups(),id=data[key].tmdb_id;
+  const matching=id?filmMembershipIndex().rows.find(item=>knownTMDB(item)===id):null;
+  const target=matching||f;
+  if(propagateSeen(target,true)){
+   cineRecentIntents.set(groupKey(target,groups),{checked:true,until:Date.now()+90000});
+   rawText=virtualMode?buildIntersection():activeCollection().text||'';
+   update();
+  }
+ }
+ scheduleSave();
+ labUpdateFavoritesCard();
+ renderList();
+ renderCollectionControls();
+ labRefreshDiscoverFavorites();
+ labRefreshDetailFavorite();
+ labRefreshStatsPanels();
+ if(labCurrentMovie?.title&&!$('labDetailOverlay').hidden){
+  labRenderDetailMemberships(labCurrentMovie);
+  labUpdateDetailAddState();
+ }
+}
+function labToggleFavorite(f){
+ if(!f||!f.title)return;
+ const current=labReactionFor(f);
+ labWriteReaction(f,{favorite:!(current&&current.favorite)});
+ // Si se retiró el último favorito, volver a la lista real sin borrar nada.
+ if(labFavoritesMode&&!labFavoriteCount()){
+  labFavoritesMode=false;
+  renderList();
+  renderCollectionControls();
+ }
+}
+function labDiscoverReactionFilm(m){
+ return {title:String(m.title||'').trim(),year:String(m.release_date||'').slice(0,4),_favoriteTMDBID:Number(m.id)||0};
+}
+function labDiscoverFavoriteButton(m){
+ const f=labDiscoverReactionFilm(m),button=document.createElement('button');
+ button.type='button';button.className='lab-discover-favorite';
+ button.dataset.favoriteTitle=f.title;
+ button.dataset.favoriteYear=f.year;
+ button.dataset.favoriteID=String(f._favoriteTMDBID);
+ button.textContent=labReactionFor(f)?.favorite?'♥':'♡';
+ button.title=labReactionFor(f)?.favorite?'Quitar de Favoritos':'Añadir a Favoritos';
+ if(labReactionFor(f)?.favorite)button.classList.add('lab-is-favorite');
+ button.setAttribute('aria-label',button.title+': '+f.title);
+ button.setAttribute('aria-pressed',String(!!labReactionFor(f)?.favorite));
+ button.addEventListener('click',e=>{e.stopPropagation();labToggleFavorite(f);});
+ return button;
+}
+function labRefreshDiscoverFavorites(){
+ for(const button of document.querySelectorAll('.lab-discover-favorite')){
+  const f={title:button.dataset.favoriteTitle,year:button.dataset.favoriteYear,_favoriteTMDBID:Number(button.dataset.favoriteID)};
+  const fav=!!labReactionFor(f)?.favorite;
+  button.textContent=fav?'♥':'♡';
+  button.title=fav?'Quitar de Favoritos':'Añadir a Favoritos';
+  button.setAttribute('aria-pressed',String(fav));
+  button.classList.toggle('lab-is-favorite',fav);
+ }
+}
+function labRefreshDetailFavorite(){
+ const button=$('labDetailFavorite'),m=labCurrentMovie;
+ button.hidden=!m?.title;
+ if(!m?.title)return;
+ const fav=!!labReactionFor(labDiscoverReactionFilm(m))?.favorite;
+ button.textContent=fav?'♥':'♡';
+ button.title=fav?'Quitar de Favoritos':'Añadir a Favoritos';
+ button.setAttribute('aria-pressed',String(fav));
+ button.setAttribute('aria-label',button.title+': '+m.title);
+ button.classList.toggle('lab-is-favorite',fav);
+}
+$('labDetailFavorite').addEventListener('click',()=>{
+ if(labCurrentMovie?.title)labToggleFavorite(labDiscoverReactionFilm(labCurrentMovie));
+});
+// El corazón junto a los números de «Listas» es un enlace a la lista
+// automática de Favoritos, igual que los números son enlaces a sus listas.
+// NO cambia el estado favorito: eso corresponde al botón grande de la derecha.
+function labJumpToFavoriteFilm(f){
+ const favorite=labReactionFor(f);
+ if(!favorite?.favorite)return;
+ const id=labReactionRecordID(favorite),key=filmKey(favorite);
+ const serial=++labListJumpSerial;
+ labClearListJumpHighlight();
+ if(typeof labCancelLibrarySearch==='function')labCancelLibrarySearch();
+ // Evitar que una búsqueda o filtros anteriores oculten la película.
+ labFiltersResetForList();
+ labOpenFavorites();
+ const films=labFavoritesFilms();
+ const targetIndex=films.findIndex(item=>id?labReactionMovieID(item)===id:filmKey(item)===key);
+ if(targetIndex<0)return;
+ const target=films[targetIndex];
+ const parent=$('filmList');
+ const usableHeight=Math.max(0,(parent.clientHeight||370)-2);
+ const pageSize=Math.max(1,Math.floor((usableHeight+7)/103));
+ filmPage=Math.floor(targetIndex/pageSize);
+ labListJumpHighlight={listID:labFavoriteID,rawIndex:target.idx};
+ renderList();
+ requestAnimationFrame(()=>{
+  if(serial!==labListJumpSerial||!labFavoritesMode||!labListJumpHighlight)return;
+  const row=Array.from(parent.querySelectorAll('.film-item'))
+    .find(el=>String(el.dataset.idx)===String(target.idx));
+  if(row)row.scrollIntoView({block:'center',behavior:'smooth'});
+ });
+ labListJumpTimer=setTimeout(()=>{
+  if(serial===labListJumpSerial)labClearListJumpHighlight();
+ },4200);
+}
+// Indicador pequeño junto a «Listas:»: solo se dibuja si la película
+// pertenece a Favoritos. El botón grande mantiene la edición del corazón.
+function labFavoriteMembershipButton(f){
+ if(!labReactionFor(f)?.favorite)return null;
+ const button=document.createElement('button');
+ button.type='button';button.className='lab-membership-heart';
+ button.textContent='♥';button.title='Ver en Favoritos';
+ button.setAttribute('aria-label','Ver «'+f.title+'» en Favoritos');
+ button.setAttribute('aria-pressed','true');
+ button.addEventListener('click',e=>{
+  e.stopPropagation();
+  labJumpToFavoriteFilm(f);
+ });
+ return button;
+}
+// Mantener medidas iguales en vistas y pendientes. La nota solo existe en
+// vistas, pero su columna se reserva para alinear siempre el resto de botones.
+function labFilmRowActions(f,status,details,edit){
+ const shell=document.createElement('div');shell.className='lab-film-action-layout';
+ const scoreSlot=document.createElement('div');scoreSlot.className='lab-film-score-slot';
+ const right=document.createElement('div');right.className='lab-film-action-grid';
+ const reactions=labReactionControls(f);
+ const heart=reactions.querySelector('.lab-heart-button');
+ const score=reactions.querySelector('.lab-rate-button');
+ if(score)scoreSlot.appendChild(score);
+ if(!heart)throw new Error('Falta el botón de Favoritos');
+ right.append(status,heart,details,edit);
+ shell.append(scoreSlot,right);
+ return shell;
+}
+function labReactionControls(f){
+ const wrap=document.createElement('div');wrap.className='lab-reaction-controls';
+ const heart=document.createElement('button');heart.type='button';heart.className='lab-heart-button';
+ const current=labReactionFor(f),fav=!!current?.favorite;
+ if(fav)heart.classList.add('lab-is-favorite');
+ heart.textContent=fav?'♥':'♡';
+ heart.title=fav?'Quitar de Favoritos':'Añadir a Favoritos';
+ heart.setAttribute('aria-label',heart.title+': '+f.title);
+ heart.setAttribute('aria-pressed',String(fav));
+ heart.addEventListener('click',()=>labToggleFavorite(f));
+ wrap.appendChild(heart);
+ if(f.checked){
+  const rating=Number(current?.rating)||0;
+  const btn=document.createElement('button');btn.type='button';btn.className='lab-rate-button';
+  if(rating)btn.classList.add('lab-is-rated');
+  const emoji=document.createElement('span');emoji.className='lab-emotion';
+  emoji.textContent=rating?labRatingEmojis[rating-1]:'☆';
+  emoji.setAttribute('aria-hidden','true');
+  const text=document.createElement('span');text.textContent=rating?rating+'/5':'Valorar';
+  btn.append(emoji,text);
+  btn.title=rating?'Tu nota: '+rating+' de 5 · Cambiar':'Valorar esta película del 1 al 5';
+  btn.setAttribute('aria-label',btn.title+': '+f.title);
+  btn.addEventListener('click',()=>labOpenRating(f));
+  wrap.appendChild(btn);
+ }
+ return wrap;
+}
+function labRatingIsWatched(f){
+ const key=filmKey(f);
+ return !!labReactionFor(f)?.favorite||libraryState.lists.some(l=>parse(l.text||'').entries.some(x=>x.checked&&filmKey(x)===key));
+}
+function labOpenRating(f){
+ if(!f?.checked||!labRatingIsWatched(f))return;
+ labRatingFilm={title:f.title,year:f.year,_favoriteTMDBID:labReactionMovieID(f)};
+ labRatingReturnFocus=document.activeElement;
+ $('labRatingTitle').textContent=f.title+(f.year?' ('+f.year+')':'')+' · Escoge uno de los cinco emoticonos.';
+ const options=$('labRatingOptions');options.replaceChildren();
+ const value=Number(labReactionFor(f)?.rating)||0;
+ for(let i=0;i<5;i++){
+  const score=i+1,btn=document.createElement('button');btn.type='button';
+  btn.className=value===score?'lab-rating-selected':'';
+  btn.setAttribute('aria-pressed',String(score===value));
+  btn.setAttribute('aria-label',score+' de 5: '+labRatingDescriptions[i]);
+  const face=document.createElement('span');face.className='lab-rating-emoji';face.textContent=labRatingEmojis[i];
+  const mark=document.createElement('span');mark.textContent=score+'/5';
+  btn.append(face,mark);
+  btn.addEventListener('click',()=>{
+   const movie=labRatingFilm;
+   labCloseRating();
+   if(movie&&labRatingIsWatched(movie))labWriteReaction(movie,{rating:score});
+  });
+  options.appendChild(btn);
+ }
+ $('labRatingClear').hidden=!value;
+ $('labRatingOverlay').hidden=false;
+ options.querySelector('button.lab-rating-selected')?.focus?.();
+ if(!value)options.querySelector('button')?.focus();
+}
+function labCloseRating(){
+ $('labRatingOverlay').hidden=true;
+ labRatingFilm=null;
+ if(labRatingReturnFocus?.isConnected)labRatingReturnFocus.focus();
+ labRatingReturnFocus=null;
+}
+$('labRatingClose').addEventListener('click',labCloseRating);
+$('labRatingClear').addEventListener('click',()=>{
+ const f=labRatingFilm;
+ labCloseRating();
+ if(f&&labRatingIsWatched(f))labWriteReaction(f,{rating:0});
+});
+$('labRatingOverlay').addEventListener('click',e=>{if(e.target===$('labRatingOverlay'))labCloseRating();});
+window.addEventListener('keydown',e=>{
+ if($('labRatingOverlay').hidden)return;
+ if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();labCloseRating();}
+},true);
+function labUpdateFavoritesCard(){
+ const count=labFavoriteCount();
+ $('labFavoritesCollection').hidden=count===0;
+ $('labFavoritesCount').textContent=count+' '+(count===1?'película':'películas')+' · lista automática';
+}
+function labOpenFavorites(openLibrary=true){
+ if(!labFavoriteCount())return;
+ syncActiveText();
+ virtualMode=false;
+ rawText=activeCollection().text||'';
+ labFavoritesMode=true;
+ restartList();
+ if(openLibrary)showView('library');
+ if(platformConfigured)void loadPlatforms(false);
+}
+$('labFavoritesOpen').addEventListener('click',labOpenFavorites);

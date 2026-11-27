@@ -18,4 +18,3 @@ func launchVisualWindow(url, _ string, onClose func(), _ func() bool) error {
 func maybeNativeChild() bool { return false }
 func notifyError(title, body string) { fmt.Fprintln(os.Stderr, title+":", body) }
 func traceHTTP(path, userAgent string) {}
-func logDiagnostic(message string) {}

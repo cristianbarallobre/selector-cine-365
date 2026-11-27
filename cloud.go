@@ -29,6 +29,7 @@ type cloudStatus struct {
  LastCheckMS int64 `json:"last_check_ms,omitempty"`
  LastReceivedMS int64 `json:"last_received_ms,omitempty"`
  AutoSync bool `json:"auto_sync"`
+ UploadPending bool `json:"upload_pending"`
  SyncMode string `json:"sync_mode"`
  Provider string `json:"provider,omitempty"`
 }
@@ -42,8 +43,6 @@ type cloudBackups struct {
 	lastBackup   string
 	lastError    string
 }
-
-const cloudDirectoryName = "Selector_Cine_365_Copias"
 
 func newCloudBackups(dir string) *cloudBackups {
 	c := &cloudBackups{sourceDir: dir, settingsFile: filepath.Join(dir, "copia_nube_ajustes.json"),modeFile:filepath.Join(dir,"modo_sincronizacion.json"),autoEnabled:true}
@@ -169,6 +168,17 @@ func (c *cloudBackups) backup() cloudStatus {
 			c.lastError = readErr.Error()
 			return c.statusLocked()
 		}
+		// The private local transaction checkpoint must not travel to another device.
+		if filename=="colecciones.json"{
+			var library libraryDisk
+			if json.Unmarshal(b,&library)!=nil||validateLibrary(library.libraryState)!=nil{
+				c.lastError="La biblioteca local no es válida";return c.statusLocked()
+			}
+			if library.LocalSync!=nil{
+				b,readErr=json.MarshalIndent(library.libraryState,"","  ")
+				if readErr!=nil{c.lastError=readErr.Error();return c.statusLocked()}
+			}
+		}
 		if writeErr := cloudWriteFile(filepath.Join(dest, "actual", filename), b); writeErr != nil {
 			c.lastError = writeErr.Error()
 			return c.statusLocked()
@@ -205,13 +215,16 @@ func (a *runningApp) cloudDisplayStatus() cloudStatus {
   id:=a.graph.pairingID()
   a.graph.mu.Lock();graphError:=a.graph.lastError;a.graph.mu.Unlock()
   return cloudStatus{
-   Enabled:true,Folder:id,Target:"OneDrive / Selector_Cine_365",Provider:"onedrive-direct",LastError:graphError,AutoSync:a.cloud.autoMode(),SyncMode:func()string{if a.cloud.autoMode(){return "automatic"};return "manual"}(),
+   Enabled:true,Folder:id,Target:"OneDrive / "+oneDriveFolderName,Provider:"onedrive-direct",LastError:graphError,AutoSync:!desktopFeatures&&a.cloud.autoMode(),SyncMode:func()string{if !desktopFeatures&&a.cloud.autoMode(){return "automatic"};return "manual"}(),
+   UploadPending:a.syncStore!=nil&&a.syncStore.graphUploadPending(),
    SyncPaired:a.syncStore!=nil&&a.syncStore.isPaired(id),
    NeedsReview:a.syncStore==nil||!a.syncStore.isPaired(id)||a.syncPendingConflict.Load(),
    LastCheckMS:a.syncLastCheck.Load(),LastReceivedMS:a.syncLastReceived.Load(),
   }
  }
  s:=a.cloud.status()
+ if desktopFeatures {s.AutoSync=false;s.SyncMode="manual"}
+ s.UploadPending=a.syncStore!=nil&&a.syncStore.graphUploadPending()
  s.SyncPaired=a.syncStore!=nil&&a.syncStore.isPaired(s.Folder)
  s.NeedsReview=(s.Enabled&&!s.SyncPaired&&cloudHasDeviceSnapshots(s.Folder))||a.syncPendingConflict.Load()
  s.LastCheckMS=a.syncLastCheck.Load()
@@ -227,6 +240,10 @@ func (a *runningApp) serveCloudHTTP(w http.ResponseWriter, r *http.Request) {
 	respond := func(status int, v any) { w.WriteHeader(status); _ = json.NewEncoder(w).Encode(v) }
 	switch r.URL.Path {
 	case "/api/cloud/mode":
+        if desktopFeatures {
+         if r.Method!=http.MethodGet {http.Error(w,"La sincronización de escritorio es manual",405);return}
+         respond(200,map[string]any{"auto_sync":false});return
+        }
         if r.Method==http.MethodGet{
             respond(200,map[string]any{"auto_sync":a.cloud.autoMode()});return
         }
@@ -245,6 +262,11 @@ func (a *runningApp) serveCloudHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		respond(200, a.cloudDisplayStatus())
+    case "/api/cloud/pending":
+        if r.Method!=http.MethodGet {http.Error(w,"Método no permitido",405);return}
+        pending,err:=a.cloudIncomingPending()
+        if err!=nil{respond(409,map[string]string{"error":err.Error()});return}
+        respond(200,map[string]bool{"incoming_pending":pending})
     case "/api/cloud/auto-folder":
         if r.Method!=http.MethodPost {http.Error(w,"Método no permitido",405);return}
         // Preserve the existing library and its device pairing; never switch accounts
@@ -290,6 +312,7 @@ func (a *runningApp) serveCloudHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		a.mu.Lock();a.syncPreviewToken="";a.mu.Unlock()
+        if desktopFeatures {respond(200,a.cloudDisplayStatus());return}
         // Si hay otro equipo registrado, primero revisar: no publicar la
         // biblioteca local como una copia compartida por el simple hecho de conectar.
         if payload.Folder!="" && a.syncStore!=nil && !a.syncStore.isPaired(payload.Folder) && cloudHasDeviceSnapshots(payload.Folder) {
@@ -338,12 +361,17 @@ func (a *runningApp) serveCloudHTTP(w http.ResponseWriter, r *http.Request) {
         if r.Method!=http.MethodPost {http.Error(w,"Método no permitido",405);return}
         var options struct{Force bool `json:"force"`}
         _=json.NewDecoder(io.LimitReader(r.Body,2048)).Decode(&options)
-        if !options.Force&&!a.cloud.autoMode(){
+        if !options.Force&&(desktopFeatures||!a.cloud.autoMode()){
             respond(200,map[string]any{"changed":false,"skipped":"manual_only"});return
         }
         var data map[string]any
         var err error
-        if a.graph!=nil&&a.graph.active(){data,err=a.graphAutoSync(options.Force)}else{data,err=a.cloudAutoSync()}
+        if a.graph!=nil&&a.graph.active(){data,err=a.graphAutoSync(options.Force)}else{
+         data,err=a.cloudAutoSync()
+         if err==nil&&options.Force&&data["changed"]==false&&data["metadata_updated"]!=true&&data["warning"]==nil&&data["needs_review"]!=true&&a.cloud.status().Enabled&&data["skipped"]!="local_changed" {
+          if publishErr:=a.publishFolderSync();publishErr!=nil{data["warning"]="Subida pendiente: "+publishErr.Error()}
+         }
+        }
         if err!=nil{respond(409,map[string]string{"error":err.Error()});return}
         respond(200,data)
     case "/api/cloud/preview":

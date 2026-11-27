@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -65,4 +66,30 @@ func TestStrictMatching(t *testing.T) {
 	if id != 0 {
 		t.Fatalf("must not guess from wrong year: %d", id)
 	}
+}
+
+func TestManualMatchYearWarningCanBeAccepted(t *testing.T) {
+ old := tmdbClient
+ defer func() { tmdbClient = old }()
+ tmdbClient = &http.Client{Transport: roundTripMock(func(r *http.Request) (*http.Response, error) {
+  status, body := 200, `{"title":"Partie de campagne","release_date":"1946-01-01"}`
+  if strings.HasSuffix(r.URL.Path,"/999") { status,body=404,`{}` }
+  return &http.Response{StatusCode:status,Header:make(http.Header),Body:io.NopCloser(strings.NewReader(body))},nil
+ })}
+ p := newAvailabilityServer(t.TempDir())
+ if err:=p.saveKey(strings.Repeat("a",32));err!=nil{t.Fatal(err)}
+ a:=&runningApp{platforms:p,token:"fixture"}
+ send:=func(body string)*httptest.ResponseRecorder{
+  request:=httptest.NewRequest(http.MethodPost,"/api/platforms/match",strings.NewReader(body))
+  request.Header.Set("X-Atlas-Token","fixture")
+  response:=httptest.NewRecorder()
+  a.servePlatformHTTP(response,request)
+  return response
+ }
+ warning:=send(`{"title":"Una partida de campo","year":1936,"id":43878}`)
+ if warning.Code!=200||!strings.Contains(warning.Body.String(),`"year_mismatch":1946`)||p.overrideFor("Una partida de campo",1936)!=0{t.Fatalf("warning: %d %s",warning.Code,warning.Body)}
+ saved:=send(`{"title":"Una partida de campo","year":1936,"id":43878,"accept_year_mismatch":true}`)
+ if saved.Code!=200||p.overrideFor("Una partida de campo",1936)!=43878{t.Fatalf("save: %d %s",saved.Code,saved.Body)}
+ invalid:=send(`{"title":"Una partida de campo","year":1936,"id":999,"accept_year_mismatch":true}`)
+ if invalid.Code!=400||p.overrideFor("Una partida de campo",1936)!=43878{t.Fatalf("invalid match: %d %s",invalid.Code,invalid.Body)}
 }

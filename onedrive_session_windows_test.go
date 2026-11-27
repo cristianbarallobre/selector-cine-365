@@ -11,7 +11,7 @@ import (
 
 func TestWindowsDPAPIUserBoundSessionRoundTrip(t *testing.T){
  dir:=t.TempDir()
- store:=windowsProtectedSessionStore(dir)
+ store:=protectedSessionStore(dir)
  secret:="windows-only-test-refresh-token-THIS-MUST-BE-ENCRYPTED"
  original:=graphStoredSession{
   Version:graphSessionVersion,ClientID:desktopMicrosoftAppID,
@@ -34,7 +34,7 @@ func TestWindowsDPAPIUserBoundSessionRoundTrip(t *testing.T){
 
 func TestWindowsDPAPIRejectsTampering(t *testing.T){
  dir:=t.TempDir()
- store:=windowsProtectedSessionStore(dir)
+ store:=protectedSessionStore(dir)
  if err:=store.save(graphStoredSession{Version:graphSessionVersion,ClientID:desktopMicrosoftAppID,RootID:"folder",Refresh:"private-refresh"});err!=nil{t.Fatal(err)}
  path:=filepath.Join(dir,"onedrive_sesion_dpapi.bin")
  data,err:=os.ReadFile(path);if err!=nil{t.Fatal(err)}
