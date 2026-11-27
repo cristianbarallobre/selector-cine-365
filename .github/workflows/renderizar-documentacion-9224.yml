@@ -1,0 +1,111 @@
+name: Regenerar manuales Word y PDF 9.2.24
+on:
+  push:
+    branches: [docs/render-9.2.24]
+permissions:
+  contents: write
+concurrency:
+  group: selector-cine-docs
+  cancel-in-progress: false
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Instalar conversores
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends pandoc libreoffice-writer fonts-liberation fonts-crosextra-carlito poppler-utils python3-docx
+      - name: Generar los tres manuales vigentes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = d04595ea93409711fec16e631aee649ca64fa3ac
+          mkdir -p "$RUNNER_TEMP/qa"
+          for name in MANUAL_COMPLETO_SELECTOR_CINE_365 GUIA_SINCRONIZACION_SEGURA GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365; do
+            pandoc "docs/$name.md" --from=gfm --to=docx --standalone \
+              --metadata lang=es-ES --resource-path=docs:. -o "docs/$name.docx"
+            /usr/bin/python3 - "docs/$name.docx" <<'PY'
+          import sys
+          from docx import Document
+          from docx.shared import Mm
+          path=sys.argv[1]
+          doc=Document(path)
+          for section in doc.sections:
+              section.page_width=Mm(210)
+              section.page_height=Mm(297)
+              section.top_margin=Mm(20)
+              section.bottom_margin=Mm(20)
+              section.left_margin=Mm(20)
+              section.right_margin=Mm(20)
+          doc.save(path)
+          PY
+            libreoffice -env:UserInstallation="file://$RUNNER_TEMP/lo-$name" \
+              --headless --convert-to pdf --outdir "$RUNNER_TEMP" "docs/$name.docx"
+            test -s "$RUNNER_TEMP/$name.pdf"
+            cp "$RUNNER_TEMP/$name.pdf" "docs/$name.pdf"
+            pdftotext -layout "docs/$name.pdf" "$RUNNER_TEMP/qa/$name.txt"
+            pdfinfo "docs/$name.pdf" > "$RUNNER_TEMP/qa/$name.info"
+            pdftoppm -r 115 -png "docs/$name.pdf" "$RUNNER_TEMP/qa/$name"
+            unzip -tq "docs/$name.docx"
+          done
+      - name: Verificar contenido, versiones y páginas
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, pathlib, re, zipfile, xml.etree.ElementTree as ET
+          root=pathlib.Path('docs')
+          qa=pathlib.Path(os.environ['RUNNER_TEMP'])/'qa'
+          checks={
+              'MANUAL_COMPLETO_SELECTOR_CINE_365':['9.2.24','9.2.5','Diagnóstico y cierre seguro','Exportar registro de diagnóstico','2 MiB','Guardado y copia adicional'],
+              'GUIA_SINCRONIZACION_SEGURA':['9.2.24','Guardado y copia adicional','JSON de emergencia','Exportar registro de diagnóstico','Volver a una copia anterior'],
+              'GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365':['9.2.24','PKCE S256','Files.ReadWrite','Documento histórico','Revisar el registro'],
+          }
+          norm=lambda s:re.sub(r'\s+',' ',s).strip()
+          ns={'w':'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
+          for name,terms in checks.items():
+              pdf=norm((qa/f'{name}.txt').read_text())
+              with zipfile.ZipFile(root/f'{name}.docx') as z:
+                  assert z.testzip() is None
+                  document=ET.fromstring(z.read('word/document.xml'))
+                  docx=norm(' '.join(t.text or '' for t in document.findall('.//w:t',ns)))
+                  assert 'word/_rels/document.xml.rels' in z.namelist()
+              for term in terms:
+                  assert term in pdf,f'{name} PDF: falta {term}'
+                  assert term in docx,f'{name} DOCX: falta {term}'
+              for stale in ['9.2.15','9.2.17','9.2.4']:
+                  assert stale not in pdf and stale not in docx,(name,stale)
+              info=(qa/f'{name}.info').read_text()
+              pages=int(re.search(r'^Pages:\s+(\d+)',info,re.M).group(1))
+              assert pages>=1
+              assert len(list(qa.glob(f'{name}-*.png')))==pages
+              print(f'{name}: {pages} páginas; PDF y Word verificados.')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: revision-manuales-9.2.24
+          path: |
+            ${{ runner.temp }}/qa
+            docs/MANUAL_COMPLETO_SELECTOR_CINE_365.docx
+            docs/MANUAL_COMPLETO_SELECTOR_CINE_365.pdf
+            docs/GUIA_SINCRONIZACION_SEGURA.docx
+            docs/GUIA_SINCRONIZACION_SEGURA.pdf
+            docs/GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.docx
+            docs/GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365.pdf
+          if-no-files-found: error
+      - name: Publicar los seis archivos en la rama principal
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for name in MANUAL_COMPLETO_SELECTOR_CINE_365 GUIA_SINCRONIZACION_SEGURA GUIA_AZURE_ENTRA_ONEDRIVE_SELECTOR_CINE_365; do
+            git add "docs/$name.docx" "docs/$name.pdf"
+          done
+          git diff --cached --stat
+          test "$(git diff --cached --name-only | wc -l)" = 6
+          git commit -m "docs: regenerar manuales PDF y Word para escritorio 9.2.24"
+          git push origin HEAD:main
