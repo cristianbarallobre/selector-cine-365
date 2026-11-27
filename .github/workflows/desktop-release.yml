@@ -1,15 +1,15 @@
 name: Escritorio 9.2.26 · macOS y Windows
 on:
   push:
-    branches: [maintenance/desktop-9.2.26-hardening]
+    branches: [maintenance/desktop-9.2.26-local-only]
 permissions:
   contents: read
 concurrency:
-  group: selector-cine-desktop-9.2.26
+  group: selector-cine-desktop-9.2.26-local-only
   cancel-in-progress: true
 jobs:
   windows:
-    if: github.ref == 'refs/heads/maintenance/desktop-9.2.26-hardening'
+    if: github.ref == 'refs/heads/maintenance/desktop-9.2.26-local-only'
     runs-on: windows-latest
     timeout-minutes: 25
     steps:
@@ -32,7 +32,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with: { name: Windows, path: Selector_Cine_365_Windows_9.2.26.exe, if-no-files-found: error }
   mac:
-    if: github.ref == 'refs/heads/maintenance/desktop-9.2.26-hardening'
+    if: github.ref == 'refs/heads/maintenance/desktop-9.2.26-local-only'
     strategy:
       fail-fast: false
       matrix:
