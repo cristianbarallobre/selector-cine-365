@@ -162,8 +162,8 @@ func saveLibrary(path, legacyPath string, l libraryState) error {
 func commitLibrary(path, legacyPath string, l libraryState) (mirrorPending bool, err error) {
 	return commitLibraryCheckpoint(path, legacyPath, l, nil)
 }
-func commitLibraryCheckpoint(path, legacyPath string, l libraryState, checkpoint *syncDeviceState) (mirrorPending bool, err error) {
-	if err := saveLibraryJSONCheckpoint(path, l, checkpoint); err != nil {
+func commitLibraryCheckpoint(path, legacyPath string, l libraryState, checkpoint *syncDeviceState, expected ...string) (mirrorPending bool, err error) {
+	if err := saveLibraryJSONCheckpoint(path, l, checkpoint, expected...); err != nil {
 		return false, err
 	}
 	for _, list := range l.Lists {
@@ -181,7 +181,7 @@ func commitLibraryCheckpoint(path, legacyPath string, l libraryState, checkpoint
 func saveLibraryJSON(path string, l libraryState) error {
 	return saveLibraryJSONCheckpoint(path,l,nil)
 }
-func saveLibraryJSONCheckpoint(path string,l libraryState,checkpoint *syncDeviceState) error {
+func saveLibraryJSONCheckpoint(path string,l libraryState,checkpoint *syncDeviceState,expected ...string) error {
 	if err := validateLibrary(l); err != nil {
 		return err
 	}
@@ -199,6 +199,11 @@ func saveLibraryJSONCheckpoint(path string,l libraryState,checkpoint *syncDevice
 	// no sobrescribir el original en LAB. El siguiente inicio intentará
 	// recuperar una copia válida y conservará el archivo defectuoso.
 	before, readErr := os.ReadFile(path)
+	if len(expected)>0&&expected[0]!=""{
+		actual:="missing"
+		if readErr==nil{actual=libraryBytesFingerprint(before)}else if !os.IsNotExist(readErr){return readErr}
+		if actual!=expected[0]{return errors.New("La biblioteca cambió externamente; no se ha sobrescrito")}
+	}
 	if protectedLibraryEnabled {
 		if readErr == nil && !labValidBackup(before) {
 			return errors.New("El archivo de biblioteca ha cambiado o está dañado. No se sobrescribió; reinicia la aplicación para recuperarlo de una copia válida")
@@ -216,6 +221,11 @@ func saveLibraryJSONCheckpoint(path string,l libraryState,checkpoint *syncDevice
 			backup:=filepath.Join(backupDir,time.Now().Format("2006-01-02")+".json")
 			if _,e:=os.Stat(backup);os.IsNotExist(e){recordBackupIssue("guardar copia diaria",replaceLibraryFile(backup,before))}else if e!=nil{recordBackupIssue("comprobar copia diaria",e)}
 		}
+	}
+	if len(expected)>0&&expected[0]!=""{
+		actual,e:=libraryFingerprint(path)
+		if e!=nil{return e}
+		if actual!=expected[0]{return errors.New("La biblioteca cambió externamente durante el guardado; no se ha sobrescrito")}
 	}
 	if err := replaceLibraryFile(path, bytes); err != nil {
 		return err

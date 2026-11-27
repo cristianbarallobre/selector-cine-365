@@ -117,6 +117,7 @@ func (s *desktopSyncStore) saveLocked() error {
 	if e != nil {
 		return e
 	}
+	if e = os.MkdirAll(filepath.Dir(s.path),0700); e != nil {return e}
 	if e = replaceLibraryFile(s.path, b); e != nil {
 		return e
 	}

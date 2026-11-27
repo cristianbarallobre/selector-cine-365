@@ -4,6 +4,9 @@ on:
     branches: [release/desktop-9.2.20]
 permissions:
   contents: read
+concurrency:
+  group: selector-cine-desktop-9.2.20
+  cancel-in-progress: true
 jobs:
   windows:
     if: github.ref == 'refs/heads/release/desktop-9.2.20'
@@ -71,5 +74,6 @@ jobs:
       - env: { GH_TOKEN: "${{ github.token }}", GH_REPO: "${{ github.repository }}" }
         run: |
           if gh release view v9.2.20-desktop >/dev/null 2>&1; then exit 0; fi
+          test "$(gh api "repos/$GH_REPO/git/ref/heads/release/desktop-9.2.20" --jq .object.sha)" = "$GITHUB_SHA"
           sha256sum Selector_Cine_365_* > SHA256SUMS.txt
           gh release create v9.2.20-desktop --target "$GITHUB_SHA" --latest --title "Selector Cine 365 · Mac y Windows 9.2.20" --notes "Versión de robustez del guardado local: borradores persistentes, tiempos límite, recuperación de biblioteca ausente, copias verificadas, protección de cambios externos y revisiones de sincronización junto a la biblioteca. Sin cambios de diseño ni Android. Windows x64 y macOS Intel y Apple Silicon (macOS 12 o posterior). Los paquetes Mac llevan firma ad hoc y carecen de notarización de Apple." Selector_Cine_365_* SHA256SUMS.txt

@@ -18,15 +18,18 @@ type libraryDisk struct {
 }
 
 func libraryFingerprint(path string) (string,error) {
- data,err:=os.ReadFile(path)
+ data,err:=readRecoveryFile(path)
  if errors.Is(err,os.ErrNotExist){return "missing",nil}
  if err!=nil{return "",err}
- sum:=sha256.Sum256(data)
- return hex.EncodeToString(sum[:]),nil
+ return libraryBytesFingerprint(data),nil
 }
 
+func libraryBytesFingerprint(data []byte) string{
+ sum:=sha256.Sum256(data)
+ return hex.EncodeToString(sum[:])
+}
 func readLibraryCheckpoint(path string) *syncDeviceState {
- data,err:=os.ReadFile(path);if err!=nil{return nil}
+ data,err:=readRecoveryFile(path);if err!=nil{return nil}
  var disk libraryDisk
  if json.Unmarshal(data,&disk)!=nil||disk.LocalSync==nil{return nil}
  s:=disk.LocalSync
@@ -37,21 +40,44 @@ func readLibraryCheckpoint(path string) *syncDeviceState {
 // Recover metadata from the same atomic library commit, even if the separate
 // metadata file could not be written. A matching checkpoint may have newer
 // publication acknowledgements, so preserve it.
-func recoverSyncCheckpoint(dir string, checkpoint *syncDeviceState) (*desktopSyncStore,error) {
- if checkpoint==nil{return newDesktopSyncStore(dir)}
+func recoverSyncCheckpoint(dir string, checkpoint *syncDeviceState, recovered ...libraryState) (*desktopSyncStore,error) {
  path:=filepath.Join(dir,"sync_dispositivo_v2.json")
  var existing syncDeviceState
  data,err:=os.ReadFile(path)
- if err==nil&&json.Unmarshal(data,&existing)==nil&&existing.Checkpoint==checkpoint.Checkpoint&&existing.DeviceID==checkpoint.DeviceID&&existing.Known!=nil&&existing.Revisions!=nil{
-  return &desktopSyncStore{path:path,state:existing},nil
+ existingOK:=err==nil&&json.Unmarshal(data,&existing)==nil&&existing.DeviceID!=""&&existing.Known!=nil&&existing.Revisions!=nil
+ var store *desktopSyncStore
+ if checkpoint==nil{
+  store,err=newDesktopSyncStore(dir)
+  if err!=nil{return nil,err}
+ }else if existingOK&&existing.Checkpoint==checkpoint.Checkpoint&&existing.DeviceID==checkpoint.DeviceID{
+  store=&desktopSyncStore{path:path,state:existing}
+ }else{
+  store=&desktopSyncStore{path:path,state:*checkpoint}
+  store.state.GraphUploadPending=true
+  // A rollback must never reuse causal sequence numbers from a newer save.
+  if existingOK&&existing.DeviceID==store.state.DeviceID&&existing.Seq>store.state.Seq{
+   store.state.Seq=existing.Seq
+   store.state.Known=syncJoin(store.state.Known,existing.Known)
+   store.state.PairedFolder=""
+  }
  }
- s:=&desktopSyncStore{path:path,state:*checkpoint}
- s.state.GraphUploadPending=true
- if err:=s.saveLocked();err!=nil{
-  diagnosticError("sincronizacion","reparar estado desde biblioteca",err)
-  // The committed library still contains the checkpoint.
+ if len(recovered)>0{
+  // Restoring an older local backup is not consent to publish it. Force
+  // a fresh review, and do not let mismatching sidecar marks change it at startup.
+  statuses:=syncStatuses(recovered[0])
+  for key,revision:=range store.state.Revisions{
+   if seen,ok:=statuses[key];!ok||seen!=revision.Checked{delete(store.state.Revisions,key)}
+  }
+  store.state.PairedFolder=""
+  store.state.GraphUploadPending=true
  }
- return s,nil
+ if checkpoint!=nil||len(recovered)>0{
+  if err:=store.saveLocked();err!=nil{
+   diagnosticError("sincronizacion","reparar estado desde biblioteca",err)
+   // Keep the checkpoint in memory; the committed library still owns it.
+  }
+ }
+ return store,nil
 }
 
 // Caller holds a.mu. Prepare all sync metadata in memory, then commit it
@@ -63,7 +89,7 @@ func (a *runningApp) commitProtectedLibrary(next libraryState, plan *syncPlan, d
   if current!=a.libraryDigest{return false,nil,errors.New("La biblioteca cambió en disco. No se sobrescribió; exporta los cambios y reinicia la aplicación")}
  }
  if a.syncStore==nil||!desktopFeatures{
-  mirrorPending,err=commitLibrary(a.libraryPath,a.savePath,next)
+  mirrorPending,err=commitLibraryCheckpoint(a.libraryPath,a.savePath,next,nil,a.libraryDigest)
  }else{
   s:=a.syncStore
   s.mu.Lock()
@@ -78,7 +104,7 @@ func (a *runningApp) commitProtectedLibrary(next libraryState, plan *syncPlan, d
   if e!=nil{return false,nil,e}
   checkpoint,e:=randomToken();if e!=nil{return false,nil,e}
   clone.state.Checkpoint=checkpoint
-  mirrorPending,err=commitLibraryCheckpoint(a.libraryPath,a.savePath,next,&clone.state)
+  mirrorPending,err=commitLibraryCheckpoint(a.libraryPath,a.savePath,next,&clone.state,a.libraryDigest)
   if err==nil{
    s.state=clone.state
    s.graphUploadVersion=clone.graphUploadVersion
@@ -86,13 +112,10 @@ func (a *runningApp) commitProtectedLibrary(next libraryState, plan *syncPlan, d
   }
  }
  if err==nil&&a.libraryDigest!=""{
-  a.libraryDigest,err=libraryFingerprint(a.libraryPath)
-  if err!=nil{
-   // Commit already succeeded. Freeze further writes until restart.
-   a.libraryDigest="unavailable"
-   diagnosticError("guardado","comprobar huella tras escritura",err)
-   err=nil
-  }
+  var cp *syncDeviceState
+  if desktopFeatures&&a.syncStore!=nil{cp=&a.syncStore.state}
+  data,e:=json.MarshalIndent(libraryDisk{libraryState:next,LocalSync:cp},"","  ")
+  if e!=nil{a.libraryDigest="unavailable";diagnosticError("guardado","calcular huella tras escritura",e)}else{a.libraryDigest=libraryBytesFingerprint(data)}
  }
  return
 }

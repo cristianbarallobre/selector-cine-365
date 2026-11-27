@@ -277,7 +277,7 @@ func (a *runningApp) serveSyncSupport(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if a.syncStore == nil {
-			respond(200, map[string]any{"revisions": map[string]syncRevision{}})
+			respond(503, map[string]string{"error":"Revisiones locales no disponibles; no se reconciliarán las marcas"})
 			return
 		}
 		_, revisions, _ := a.syncStore.parts()

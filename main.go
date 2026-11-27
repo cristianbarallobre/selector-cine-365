@@ -306,6 +306,7 @@ func serve() error {
 	if err != nil {
 		return err
 	}
+	if _,e:=os.UserConfigDir();e!=nil{return fmt.Errorf("No se puede localizar la carpeta de datos del usuario; no se usará una biblioteca temporal: %w",e)}
 	savePath := getSavePath()
 	unlock, err := lockProfile(filepath.Dir(savePath))
 	if err != nil {
@@ -337,7 +338,9 @@ func serve() error {
 	}
 	digest, digestErr:=libraryFingerprint(libPath)
 	if digestErr!=nil{return digestErr}
-	syncStore, syncErr := recoverSyncCheckpoint(filepath.Dir(savePath),readLibraryCheckpoint(libPath))
+	var recoveredState []libraryState
+	if recovered{recoveredState=append(recoveredState,lib)}
+	syncStore, syncErr := recoverSyncCheckpoint(filepath.Dir(savePath),readLibraryCheckpoint(libPath),recoveredState...)
 	if syncErr != nil {
 		// Un fallo en el estado de sincronización no debe impedir usar datos locales.
 		diagnosticError("sincronizacion", "estado local no disponible", syncErr)
