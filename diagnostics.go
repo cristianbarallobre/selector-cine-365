@@ -17,7 +17,7 @@ import (
  "time"
 )
 
-const diagnosticVersion = "9.2.25"
+const diagnosticVersion = appVersion
 const diagnosticMaxBytes = 2 * 1024 * 1024
 var diagnosticEnabled atomic.Bool
 var diagnosticMu sync.Mutex

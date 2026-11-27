@@ -71,7 +71,14 @@ func (a *runningApp) serveLabMaintenance(w http.ResponseWriter,r *http.Request) 
   daily,_:=labBackupCandidates(filepath.Join(root,"copias_automaticas"),labDailyBackupName)
   quick,_:=labBackupCandidates(filepath.Join(root,"copias_rapidas_lab"),labQuickBackupName)
   var mem runtime.MemStats;runtime.ReadMemStats(&mem)
+  dataUsage:=cineDirectoryUsage(root)
+  cacheUsage:=labFileUsage{};if cacheRoot!=root&&!withinFolder(root,cacheRoot){cacheUsage=cineDirectoryUsage(cacheRoot)}
   info:=map[string]any{
+   "storage_total":labFileUsage{Files:dataUsage.Files+cacheUsage.Files,Bytes:dataUsage.Bytes+cacheUsage.Bytes},
+   "data_storage":dataUsage,"cache_storage":cineDirectoryUsage(cacheRoot),
+   "local_backup_storage":cineSumUsage(cineDirectoryUsage(filepath.Join(root,"copias_automaticas")),cineDirectoryUsage(filepath.Join(root,"copias_rapidas_lab")),cineDirectoryUsage(filepath.Join(root,"sync_recuperacion"))),
+   "diagnostic_storage":cineDirectoryUsage(filepath.Join(root,"logs")),
+   "legacy_cache":cineLegacyCacheUsage(root,cacheRoot),
    "go_heap_bytes":mem.HeapAlloc,"go_reserved_bytes":mem.Sys,"go_workers":runtime.NumGoroutine(),
    "library_path":root,"cache_path":cacheRoot,
    "library":labLocalFileUsage(a.libraryPath),
@@ -97,6 +104,10 @@ func (a *runningApp) serveLabMaintenance(w http.ResponseWriter,r *http.Request) 
    respond(400,map[string]string{"error":"Solicitud no válida"});return
   }
   switch req.Action{
+  case "clean_verified_legacy_cache":
+   n,err:=cineCleanVerifiedLegacyCache(root,cacheRoot)
+   if err!=nil{respond(500,map[string]string{"error":"No se pudieron limpiar todas las copias temporales verificadas"});return}
+   respond(200,map[string]any{"removed":n})
   case "prune_posters":
    n,err:=prunePosterCache(posterDir,appPosterMaxFiles,appPosterMaxBytes,appPosterMaxAge)
    if err!=nil{respond(500,map[string]string{"error":"No se han podido revisar los carteles"});return}

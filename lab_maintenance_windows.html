@@ -23,6 +23,7 @@
     <button type="button" id="labMaintenanceRefresh">Comprobar estado</button>
     <button type="button" id="labDiagnosticsExport">Exportar registro de diagnóstico</button>
     <button type="button" id="labMaintenancePrune">Revisar imágenes antiguas</button>
+    <button type="button" id="labLegacyClean">Limpiar duplicados antiguos verificados</button>
     <button type="button" id="labMaintenanceClear">Limpiar imágenes descargadas</button>
     <a target="_blank" rel="noopener noreferrer" href="https://github.com/cristianbarallobre/selector-cine-365/releases">Versiones estables en GitHub</a>
   </div>
@@ -41,7 +42,7 @@ async function labPreviewRecovery(){
  try{
   const data=await cloudRequest('/api/sync/recovery/preview?id='+encodeURIComponent(id));
   if($('cloudRecoveryList').value!==id)return;
-  status.textContent='✓ Copia válida · '+data.lists+' listas · '+data.seen+' vistas · '+data.favorites+' favoritas. Al restaurarla se conservará una copia del estado actual.';
+  status.textContent='✓ Copia válida · '+data.lists+' listas · '+data.seen+' vistas · '+data.favorites+' favoritas. '+(data.has_history?data.activity_count+' movimientos de historial incluidos.':'Sin historial en esta copia; se conserva el actual.')+' Al restaurarla se conservará una copia del estado actual.';
   $('cloudRecoveryRestore').disabled=false;
  }catch(e){
   if($('cloudRecoveryList').value!==id)return;
@@ -55,6 +56,12 @@ async function labMaintenanceRefresh(){
   const data=await cloudRequest('/api/lab/maintenance');
   metrics.replaceChildren();
   const items=[
+   ['Almacenamiento total local',labMiB(data.storage_total?.bytes),data.storage_total?.files||0],
+   ['Datos locales',labMiB(data.data_storage?.bytes),data.data_storage?.files||0],
+   ['Caché (incluye perfil si está dentro)',labMiB(data.cache_storage?.bytes),data.cache_storage?.files||0],
+   ['Copias locales',labMiB(data.local_backup_storage?.bytes),data.local_backup_storage?.files||0],
+   ['Registros',labMiB(data.diagnostic_storage?.bytes),data.diagnostic_storage?.files||0],
+   ['Caché antigua detectada',labMiB(data.legacy_cache?.bytes),data.legacy_cache?.files||0],
    ['Biblioteca',labMiB(data.library?.bytes),data.library?.files||0],
     ['Memoria del motor',labMiB(data.go_heap_bytes),'Heap Go (no incluye WebView)'],
    ['Fichas TMDB',labMiB(data.tmdb_details?.bytes),data.tmdb_details?.files||0],
@@ -110,4 +117,11 @@ $('labMaintenanceClear').addEventListener('click',async()=>{
   $('labMaintenanceStatus').textContent='Se han eliminado '+data.removed+' imágenes.';
  }catch(e){$('labMaintenanceStatus').textContent='⚠ '+e.message;}
  finally{button.disabled=false;}
+});
+
+$('labLegacyClean').addEventListener('click',async()=>{
+ if(!confirm('¿Eliminar exclusivamente archivos de caché antiguos con una copia idéntica en la ubicación nueva? No se tocarán listas, historial, claves ni perfiles del navegador.'))return;
+ const button=$('labLegacyClean');button.disabled=true;
+ try{const data=await cloudRequest('/api/lab/maintenance','POST',{action:'clean_verified_legacy_cache'});await labMaintenanceRefresh();$('labMaintenanceStatus').textContent='Duplicados verificados eliminados: '+data.removed;}
+ catch(e){$('labMaintenanceStatus').textContent='⚠ '+e.message;}finally{button.disabled=false;}
 });

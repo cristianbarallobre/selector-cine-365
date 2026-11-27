@@ -302,6 +302,11 @@ func (p *availabilityServer) finishAvailability(key string, revision uint64, res
 		if result.TMDBID == prior.TMDBID && result.PosterPath == "" {
 			result.PosterPath = prior.PosterPath
 		}
+        if result.TMDBID==prior.TMDBID&&result.Note!=""&&result.Runtime==0{
+         result.Runtime=prior.Runtime;result.Director=prior.Director;result.Genres=prior.Genres;result.Countries=prior.Countries
+         if result.VoteCount==0{result.VoteAverage=prior.VoteAverage;result.VoteCount=prior.VoteCount}
+         if result.Title==""{result.Title=prior.Title}
+        }
 	}
 	p.putCachedLocked(key, result)
 	return result
@@ -451,6 +456,9 @@ func titleSearchVariants(title string) []string {
 func newAvailabilityError(s string) providerResult { return providerResult{State: "error", Note: s} }
 func requestTMDB(ctx context.Context, path string, params url.Values, key string, v any) (resultErr error) {
 	started := time.Now()
+	release,err:=acquireTMDBRequest(ctx,tmdbClient)
+	if err!=nil{return err}
+	defer release()
 	defer func() { if resultErr != nil { diagnosticEvent("WARN", "tmdb", fmt.Sprintf("consulta fallida cause=%s ms=%d", diagnosticErrorKind(resultErr), time.Since(started).Milliseconds())) } }()
 	if !strings.HasPrefix(key, "eyJ") && !strings.Contains(key, ".") {
 		params.Set("api_key", key)
@@ -466,7 +474,7 @@ func requestTMDB(ctx context.Context, path string, params url.Values, key string
 	}
 	res, e := tmdbClient.Do(req)
 	if e != nil {
-		return fmt.Errorf("Conexión no disponible: %w", e)
+		return fmt.Errorf("Conexión TMDB no disponible: %s", diagnosticErrorKind(e))
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 { diagnosticEvent("WARN", "tmdb", fmt.Sprintf("TMDB status=%d", res.StatusCode)) }
@@ -474,6 +482,7 @@ func requestTMDB(ctx context.Context, path string, params url.Values, key string
 		return errors.New("Clave TMDB incorrecta o sin autorización")
 	}
 	if res.StatusCode == 429 {
+		deferTMDBRequests(tmdbClient,res.Header.Get("Retry-After"))
 		return errors.New("Límite temporal de TMDB. Prueba a actualizar más tarde")
 	}
 	if res.StatusCode != 200 {
