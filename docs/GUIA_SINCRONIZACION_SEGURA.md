@@ -1,6 +1,6 @@
 # Guardado y recuperación de Selector Cine 365
 
-Windows y macOS 9.2.28.
+Windows y macOS 9.2.29.
 
 ## Guardado principal y copia opcional
 
@@ -29,3 +29,11 @@ Consulta hasta 10.000 movimientos confirmados en **Mis listas → Guardado y cop
 [Manual completo](https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/MANUAL_COMPLETO_SELECTOR_CINE_365.md) · [Rutas de datos](https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/UBICACIONES_DATOS_SELECTOR_CINE_365.md)
 
 Autor: Cristian Barallobre Rúa.
+
+## Salvaguardas de la copia adicional y del historial
+
+
+Cambiar solo de lista activa conserva la selección en el equipo, pero no reescribe la copia adicional cuando su contenido e historial son iguales. La fecha de la copia corresponde al archivo guardado. Si la copia actual está dañada, se conserva su contenido en un archivo `colecciones_danada_<huella>.json` antes de reconstruirla desde la biblioteca principal. Si no se puede conservar el original, no se sustituye. Los archivos dañados conservados quedan disponibles para revisión manual.
+
+
+Si la biblioteca es válida pero su historial no está disponible, se buscan copias completas que contengan exactamente el historial comprometido, verificado por su huella SHA-256. Si no se encuentra ninguna, no se descarta historial ni se sustituye automáticamente la biblioteca; conserva los archivos y revisa una copia completa antes de intervenir.

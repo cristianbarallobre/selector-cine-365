@@ -1,12 +1,21 @@
 # Historial de cambios — Selector Cine 365
 
-## 9.2.28 de escritorio
+## 9.2.29 de escritorio
+
+- Protección del origen HTTP local y bloqueo de conexiones de la interfaz a orígenes ajenos.
+- Reparación conservadora de copias adicionales, recuperación del historial exacto desde copias verificadas y ausencia de escrituras adicionales por navegación.
+- Disponibilidad TMDB coherente por ID entre Biblioteca y Descubrir; refresco de fichas abiertas desde caché.
+- Pruebas de fallos de almacenamiento y manuales actualizados.
+
+[Publicación 9.2.29](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.29-desktop)
+
+## 9.2.28 (candidata de escritorio)
 
 - Indicadores minimalistas de disponibilidad en Biblioteca y antigüedad visible en Sorteo y fichas.
 - Ayuda del interrogante revisada y manuales actualizados.
 - Conserva las comprobaciones automáticas y manuales de plataformas.
 
-[Publicación 9.2.28](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.28-desktop)
+Cambios incorporados en 9.2.29; la candidata pública no se publicó como estable.
 
 ## 9.2.27 (pruebas)
 

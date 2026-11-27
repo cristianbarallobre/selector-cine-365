@@ -1,16 +1,16 @@
-name: Escritorio 9.2.28 · macOS y Windows
+name: Escritorio 9.2.29 · macOS y Windows
 on:
   push:
-    branches: [integration/desktop-9.2.28-main, main]
+    branches: [integration/desktop-9.2.29-main, main]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: selector-cine-desktop-9.2.28-integration
+  group: selector-cine-desktop-9.2.29-integration
   cancel-in-progress: true
 jobs:
   windows:
-    if: github.ref == 'refs/heads/integration/desktop-9.2.28-main' || github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/integration/desktop-9.2.29-main' || github.ref == 'refs/heads/main'
     runs-on: windows-latest
     timeout-minutes: 25
     steps:
@@ -49,12 +49,12 @@ jobs:
       - uses: actions/upload-artifact@v4
         with: { name: Windows, path: Selector_Cine_365_Windows_*.exe, if-no-files-found: error }
   mac:
-    if: github.ref == 'refs/heads/integration/desktop-9.2.28-main' || github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/integration/desktop-9.2.29-main' || github.ref == 'refs/heads/main'
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {runner: macos-26, arch: arm64, label: Apple_Silicon}
+          - {runner: macos-latest, arch: arm64, label: Apple_Silicon}
           - {runner: macos-15-intel, arch: amd64, label: Intel}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
@@ -84,7 +84,7 @@ jobs:
           if-no-files-found: error
 
   manuals:
-    if: github.ref == 'refs/heads/integration/desktop-9.2.28-main' || github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/integration/desktop-9.2.29-main' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -108,7 +108,7 @@ jobs:
           if-no-files-found: error
   publish:
     needs: [windows, mac, manuals]
-    if: github.ref == 'refs/heads/integration/desktop-9.2.28-main' || (github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch')
+    if: github.ref == 'refs/heads/integration/desktop-9.2.29-main' || (github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -122,6 +122,6 @@ jobs:
       - name: Integrar y publicar únicamente tras las pruebas
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: '19'
+          PR_NUMBER: '20'
           ARTIFACT_ROOT: ${{ runner.temp }}/cine-artifacts
-        run: bash scripts/publish_desktop_9_2_28.sh
+        run: bash scripts/publish_desktop_9_2_29.sh
