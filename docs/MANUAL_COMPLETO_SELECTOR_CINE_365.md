@@ -1,6 +1,6 @@
 # Manual de Selector Cine 365
 
-Windows y macOS 9.2.29.
+Windows y macOS 9.2.30.
 
 ## Instalar y proteger la biblioteca
 
@@ -9,7 +9,7 @@ Windows y macOS 9.2.29.
 3. En Windows abre el nuevo EXE portátil. Si el equipo lo necesita, instala WebView2 Runtime. En Mac descomprime el ZIP, lleva la app a Aplicaciones y reemplaza la anterior.
 4. Si Windows o Mac avisan sobre el editor, verifica primero que el archivo procede de la publicación oficial y comprueba su SHA-256. Los paquetes Mac llevan firma ad hoc y carecen de notarización.
 
-[Descargas de escritorio](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.29-desktop)
+[Descargas de escritorio](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.30-desktop)
 
 ## Biblioteca y listas
 
@@ -55,7 +55,7 @@ No se conectan cuentas ni se combinan bibliotecas automáticamente. Una carpeta 
 
 En **Mis listas → Guardado y copia adicional → Actividad reciente, historial y copias de recuperación** consulta las últimas modificaciones confirmadas. Puedes buscar por película, lista o acción, filtrar por tipo y recorrer páginas de 20 movimientos. Se conservan hasta 10.000 registros locales. Los movimientos antiguos de visionado se conservan cuando están disponibles; no se reconstruyen acciones que nunca fueron registradas. El historial se guarda físicamente en instantáneas verificadas dentro de historial_local, con un espejo de recuperación. Las exportaciones completas y las copias adicionales incluyen los movimientos. Al restaurar una copia que contiene historial, se recupera también su historial; con una copia antigua sin historial se conserva el actual.
 
-## Diagnóstico y cierre seguro (escritorio 9.2.18–9.2.29)
+## Diagnóstico y cierre seguro (escritorio 9.2.18–9.2.30)
 
 Desde 9.2.20 se conserva un borrador local de los cambios pendientes cuando puede escribirse; se ofrece recuperar copias válidas si falta o se daña la biblioteca principal. Si el guardado no se confirma, revisa los cambios pendientes, reintenta o exporta una copia JSON de emergencia. Es posible cerrar voluntariamente con advertencia de pérdida de cambios. En Mis listas → Mantenimiento → Exportar registro de diagnóstico puedes guardar los registros técnicos locales para revisar incidencias. No se envían automáticamente ni incluyen claves de acceso o contenido de listas.
 

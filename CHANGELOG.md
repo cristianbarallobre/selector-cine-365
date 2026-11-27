@@ -1,5 +1,13 @@
 # Historial de cambios — Selector Cine 365
 
+## 9.2.30 de escritorio
+
+- Retirado el enlace a FilmAffinity de las fichas y su generador de URL. Se conservan TMDB y tráileres.
+- Prueba de regresión para verificar la ausencia del enlace.
+- Sin cambios en los datos ni en el guardado. No se ha confirmado la causa de los bloqueos intermitentes.
+
+[Publicación 9.2.30](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.2.30-desktop)
+
 ## 9.2.29 de escritorio
 
 - Protección del origen HTTP local y bloqueo de conexiones de la interfaz a orígenes ajenos.
