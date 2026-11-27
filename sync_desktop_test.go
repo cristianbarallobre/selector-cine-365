@@ -13,7 +13,7 @@ import (
 func TestSyncMergeRemoteWatchedAndLocalPending(t *testing.T) {
 	local := initialLibrary("☐ 001. Ciudadano Kane (1941)\n☐ 002. Casablanca (1942)")
 	remote := initialLibrary("☑ 001. Ciudadano Kane (1941)\n☐ 002. Casablanca (1942)")
-	peer := syncSnapshot{Protocol: 2, DeviceID: "android-test", Library: remote, Known: map[string]int64{}, Revisions: map[string]syncRevision{}}
+	peer := syncSnapshot{Protocol: 2, DeviceID: "remote-test", Library: remote, Known: map[string]int64{}, Revisions: map[string]syncRevision{}}
 	merged, _, _, conflicts, err := syncMerge(local, map[string]syncRevision{}, map[string]int64{}, peer)
 	if err != nil {
 		t.Fatal(err)
@@ -22,17 +22,17 @@ func TestSyncMergeRemoteWatchedAndLocalPending(t *testing.T) {
 		t.Fatalf("merge: %v, watched %d", conflicts, syncWatched(merged))
 	}
 	if !strings.Contains(merged.Lists[0].Text, "☑ 001.") {
-		t.Fatal("no se importó la marca de Android")
+		t.Fatal("no se importó la marca de Remote")
 	}
 }
 func TestSyncMergeCausalUnwatch(t *testing.T) {
 	l := initialLibrary("☑ 001. Casablanca (1942)")
 	remote := initialLibrary("☐ 001. Casablanca (1942)")
 	key := "casablanca|1942"
-	localRev := syncRevision{Checked: true, Device: "android", Seq: 1, Clock: map[string]int64{"android": 1}}
-	remoteRev := syncRevision{Checked: false, Device: "desktop", Seq: 2, Clock: map[string]int64{"android": 1, "desktop": 2}}
-	peer := syncSnapshot{Protocol: 2, DeviceID: "desktop", Library: remote, Known: map[string]int64{"android": 1, "desktop": 2}, Revisions: map[string]syncRevision{key: remoteRev}}
-	result, rev, _, conflicts, err := syncMerge(l, map[string]syncRevision{key: localRev}, map[string]int64{"android": 1}, peer)
+	localRev := syncRevision{Checked: true, Device: "remote", Seq: 1, Clock: map[string]int64{"remote": 1}}
+	remoteRev := syncRevision{Checked: false, Device: "desktop", Seq: 2, Clock: map[string]int64{"remote": 1, "desktop": 2}}
+	peer := syncSnapshot{Protocol: 2, DeviceID: "desktop", Library: remote, Known: map[string]int64{"remote": 1, "desktop": 2}, Revisions: map[string]syncRevision{key: remoteRev}}
+	result, rev, _, conflicts, err := syncMerge(l, map[string]syncRevision{key: localRev}, map[string]int64{"remote": 1}, peer)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,8 +45,8 @@ func TestSyncMergeConcurrentOpposite(t *testing.T) {
 	remote := initialLibrary("☐ 001. Casablanca (1942)")
 	key := "casablanca|1942"
 	left := syncRevision{Checked: true, Device: "desktop", Seq: 1, Clock: map[string]int64{"desktop": 1}}
-	right := syncRevision{Checked: false, Device: "android", Seq: 1, Clock: map[string]int64{"android": 1}}
-	p := syncSnapshot{Protocol: 2, DeviceID: "android", Library: remote, Known: map[string]int64{"android": 1}, Revisions: map[string]syncRevision{key: right}}
+	right := syncRevision{Checked: false, Device: "remote", Seq: 1, Clock: map[string]int64{"remote": 1}}
+	p := syncSnapshot{Protocol: 2, DeviceID: "remote", Library: remote, Known: map[string]int64{"remote": 1}, Revisions: map[string]syncRevision{key: right}}
 	_, _, _, issues, err := syncMerge(l, map[string]syncRevision{key: left}, map[string]int64{"desktop": 1}, p)
 	if err != nil {
 		t.Fatal(err)
@@ -55,7 +55,7 @@ func TestSyncMergeConcurrentOpposite(t *testing.T) {
 		t.Fatalf("missing conflict: %+v", issues)
 	}
 }
-func TestSyncPreviewAndPublishPreserveAndroidSnapshot(t *testing.T) {
+func TestSyncPreviewAndPublishPreserveRemoteSnapshot(t *testing.T) {
 	root := t.TempDir()
 	localDir := filepath.Join(root, "desktop")
 	cloudDir := filepath.Join(root, "shared")
@@ -75,9 +75,9 @@ func TestSyncPreviewAndPublishPreserveAndroidSnapshot(t *testing.T) {
 	if err := cloud.configure(cloudDir); err != nil {
 		t.Fatal(err)
 	}
-	android := syncSnapshot{Protocol: 2, DeviceID: "android-test", Library: initialLibrary("☑ 001. Ciudadano Kane (1941)"), Known: map[string]int64{"android-test": 1}, Revisions: map[string]syncRevision{"ciudadano kane|1941": {Checked: true, Device: "android-test", Seq: 1, Clock: map[string]int64{"android-test": 1}}}}
-	b, _ := json.Marshal(android)
-	target := filepath.Join(cloudDir, cloudDirectoryName, "sincronizacion", "dispositivos", "android-test.json")
+	remote := syncSnapshot{Protocol: 2, DeviceID: "remote-test", Library: initialLibrary("☑ 001. Ciudadano Kane (1941)"), Known: map[string]int64{"remote-test": 1}, Revisions: map[string]syncRevision{"ciudadano kane|1941": {Checked: true, Device: "remote-test", Seq: 1, Clock: map[string]int64{"remote-test": 1}}}}
+	b, _ := json.Marshal(remote)
+	target := filepath.Join(cloudDir, cloudDirectoryName, "sincronizacion", "dispositivos", "remote-test.json")
 	if err := cloudWriteFile(target, b); err != nil {
 		t.Fatal(err)
 	}
@@ -100,14 +100,14 @@ func TestSyncPreviewAndPublishPreserveAndroidSnapshot(t *testing.T) {
 		t.Fatal(err)
 	}
 	if string(got) != string(b) {
-		t.Fatal("Windows overwrote Android snapshot")
+		t.Fatal("Windows overwrote Remote snapshot")
 	}
 	saved, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(string(saved), "☑ 001.") {
-		t.Fatal("desktop did not import Android changes")
+		t.Fatal("desktop did not import Remote changes")
 	}
 	if !store.isPaired(cloudDir) {
 		t.Fatal("desktop not paired")
@@ -141,8 +141,8 @@ func TestDesktopSaveDoesNotOverwriteUnpairedRemote(t *testing.T) {
 		t.Fatal(err)
 	}
 	rootCloud := filepath.Join(shared, cloudDirectoryName)
-	peerFile := filepath.Join(rootCloud, "sincronizacion", "dispositivos", "android-other.json")
-	if err := cloudWriteFile(peerFile, []byte("{\"device_id\":\"android-other\",\"protocol\":2}")); err != nil {
+	peerFile := filepath.Join(rootCloud, "sincronizacion", "dispositivos", "remote-other.json")
+	if err := cloudWriteFile(peerFile, []byte("{\"device_id\":\"remote-other\",\"protocol\":2}")); err != nil {
 		t.Fatal(err)
 	}
 	actual := filepath.Join(rootCloud, "actual", "colecciones.json")
@@ -172,7 +172,7 @@ func TestDesktopSaveDoesNotOverwriteUnpairedRemote(t *testing.T) {
 		t.Fatal("unpaired Windows replaced shared legacy data")
 	}
 	savedPeer, _ := os.ReadFile(peerFile)
-	if !strings.Contains(string(savedPeer), "android-other") {
+	if !strings.Contains(string(savedPeer), "remote-other") {
 		t.Fatal("remote snapshot changed")
 	}
 	savedLocal, _ := os.ReadFile(app.libraryPath)

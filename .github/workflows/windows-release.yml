@@ -54,7 +54,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           sha256sum Selector_Cine_365_Windows_9.1.0.exe > SHA256SUMS.txt
-          gh release create v9.1.0-windows --target "$GITHUB_SHA" --prerelease --title "Selector Cine 365 · Windows 9.1.0" --notes "Versión para Windows x64. Incluye Descubrir, sorteo inteligente, filtros, favoritos y estadísticas; conserva la sección al cambiar de lista y los metadatos al restaurar copias. Mantiene los datos de Windows v9.0.0. Android sigue pendiente de incorporar favoritos y notas recibidos por sincronización. Las descargas de Android y Mac continúan en la release v9.0.0." Selector_Cine_365_Windows_9.1.0.exe SHA256SUMS.txt
+          gh release create v9.1.0-windows --target "$GITHUB_SHA" --prerelease --title "Selector Cine 365 · Windows 9.1.0" --notes "Versión para Windows x64. Incluye Descubrir, sorteo inteligente, filtros, favoritos y estadísticas; conserva la sección al cambiar de lista y los metadatos al restaurar copias. Mantiene los datos de Windows v9.0.0." Selector_Cine_365_Windows_9.1.0.exe SHA256SUMS.txt
   publish-verified:
     if: github.ref == 'refs/heads/publish/windows-9.1.0' && github.event_name == 'push'
     runs-on: ubuntu-latest

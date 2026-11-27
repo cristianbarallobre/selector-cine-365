@@ -454,7 +454,7 @@ func syncOrderedFilmRows(current, remote string) string {
 }
 
 // Reject unrelated libraries which happen to reuse a legacy list ID. A new
-// Android installation always starts with "atlas" and can otherwise append
+// Remote installation always starts with "atlas" and can otherwise append
 // hundreds of unrelated film lines into the selected Windows list.
 func syncListFilmKeys(list filmCollection) map[string]bool {
 	keys := map[string]bool{}

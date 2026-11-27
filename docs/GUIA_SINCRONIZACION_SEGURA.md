@@ -1,32 +1,29 @@
-# Sincronización segura — Beta 14 Windows/Mac y Beta 13.13 Android
+# Guardado y recuperación de Selector Cine 365
 
-**22/11/2026 · Versión estable de distribución v9.0.0, con Windows/Mac Beta 14 y Android Beta 13.13.**
+Windows y macOS 9.2.24.
 
-## Qué se sincroniza
+## Guardado principal y copia opcional
 
-Se comparten `colecciones.json` (listas, marcas, orden cuando procede, `tmdb_overrides`, eliminaciones) y snapshots individuales en `sincronizacion/dispositivos/*.json`. **No** viajan claves de TMDB, tokens Microsoft ni archivos de caché de carátulas/plataformas. Windows conserva su sesión mediante DPAPI; Android guarda su sesión con Android Keystore; Mac todavía necesita reautorizar.
+La biblioteca de escritorio se guarda automáticamente en el equipo. No necesita conectar una cuenta ni consultar archivos remotos. En **Mis listas → Guardado y copia adicional**, elige una carpeta y pulsa **Guardar ubicación**. Puedes elegir un disco externo o una carpeta gestionada por otro programa. La aplicación crea una carpeta propia por instalación, con `colecciones.json` y, tras una modificación, `colecciones_anterior.json`.
 
-## Reglas antes de pulsar confirmar
+El archivo contiene listas, estados de visionado, favoritos, valoraciones e identificaciones de películas. No incluye sesiones, claves ni cachés. **Copiar ahora** solicita una copia del estado principal. Si la carpeta no está disponible, el guardado local sigue funcionando y la app reintenta. Desactivar la copia conserva los archivos existentes.
 
-1. Exporta la biblioteca buena de Windows como JSON y guárdala **fuera** de OneDrive.
-2. Comprueba cuántas películas tiene **cada lista** en Windows, no solo el total de vistas.
-3. Si Android está recién instalado, abre Nube, conecta la misma cuenta y realiza una **vista previa**. El contenido inicial de 365 películas es solo un ejemplo local: la sincronización nueva lo sustituye por la biblioteca real **si no lo has modificado**.
-4. En la vista previa, verifica **nombre + cantidad de películas de cada lista**; si una lista tiene inexplicablemente películas de varias, pulsa **Cancelar**.
-5. Después de revisar la biblioteca, resuelve únicamente conflictos reales de películas vistas. Pulsa **Confirmar y sincronizar** para recibir/enviar una vez.
-6. En Android vuelve a sincronizar manualmente cuando quieras. Si habilitas automático en Windows, ten en cuenta que pueden llegar snapshots nuevos sin abrir Android.
+## Trasladar una biblioteca
 
-## Si las listas ya aparecen mezcladas
+Exporta un JSON desde **Mis listas → Copia de seguridad**. En el equipo de destino, exporta primero su biblioteca actual y usa **Restaurar copia** para seleccionar el JSON de origen. No se fusionan bibliotecas ni se aplican cambios automáticamente. La copia de un equipo no sustituye la copia de otro.
 
-**No sincronices ningún dispositivo.** Una beta anterior añadía filas de otra lista cuando ambos registros compartían `id: atlas`. El código nuevo detiene nuevas fusiones sospechosas, pero **no separa por sí mismo las películas ya añadidas**.
+## Resolver fallos de guardado
 
-- Conserva una copia de `colecciones.json` del Windows que tenga las listas correctas. Si no están correctas, busca un archivo anterior bajo `%APPDATA%\Selector_Cine_365\copias_automaticas` o `sync_recuperacion` y comprueba sus listas antes de restaurar.
-- Conserva los snapshots antiguos de OneDrive. **No elimines las carpetas de sincronización** para forzar una recuperación.
-- Evita confirmar una vista previa donde algún conteo sea inesperado; la solución requiere una recuperación selectiva desde una copia buena.
+Si el guardado local no está confirmado, reintenta o exporta un JSON de emergencia. Desde 9.2.20 se intenta conservar un borrador recuperable de las ediciones antes del guardado principal. En Mis listas → Mantenimiento → Exportar registro de diagnóstico puedes exportar el registro técnico local.
 
-## Carpetas y ajustes
+## Volver a una copia anterior
 
-En Windows: `%APPDATA%\Selector_Cine_365`. En Android: almacenamiento privado `es.cine365.app.limpia` dentro de `Selector_Cine_365`. En nube: `Selector_Cine_365` de OneDrive; según las rutas históricas, los JSON pueden estar en `Selector_Cine_365_Copias/sincronizacion/dispositivos`.
+1. Exporta la biblioteca actual antes de sustituirla.
+2. Elige un JSON verificado o consulta **Mis listas → Guardado y copia adicional → Actividad reciente, historial y copias de recuperación**.
+3. Revisa las cantidades y confirma la restauración. Se conserva una copia local anterior. Comprueba tus listas.
 
-Una carpeta vacía de Windows no equivale a una carpeta vacía de OneDrive. Puedes usar la aplicación **sin nube**; el guardado en disco sigue operativo. No es necesario abrir Microsoft al iniciar Windows si ya se guardó una autorización DPAPI válida.
+La nueva edición no borra archivos existentes de OneDrive ni utiliza sus conexiones antiguas. Utiliza la exportación manual para trasladar bibliotecas entre equipos.
 
-[Manual de usuario vigente](MANUAL_COMPLETO_SELECTOR_CINE_365.md) · [Descargas de esta beta](https://github.com/cristianbarallobre/selector-cine-365/releases/tag/v9.0.0).
+[Manual completo](https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/MANUAL_COMPLETO_SELECTOR_CINE_365.md) · [Rutas de datos](https://github.com/cristianbarallobre/selector-cine-365/blob/main/docs/UBICACIONES_DATOS_SELECTOR_CINE_365.md)
+
+Autor: Cristian Barallobre Rúa.

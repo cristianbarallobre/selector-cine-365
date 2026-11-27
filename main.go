@@ -113,7 +113,6 @@ func makeHTML(initial, token string) (string, error) {
 	if runtime.GOOS == "darwin" {
 		out = strings.NewReplacer(
 			"WebView2 administra su propia caché y no se elimina mientras la aplicación está abierta.", "WebKit gestiona los datos temporales de esta ventana.",
-			"entre Windows y Android", "entre Mac, Windows y Android",
 			"En Windows la autorización se guarda cifrada para este usuario", "En el Mac la autorización se guarda en tu llavero",
 			"actualizar el EXE", "actualizar la aplicación",
 			"desde Windows", "desde el llavero del Mac",
