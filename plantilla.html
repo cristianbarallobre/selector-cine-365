@@ -407,6 +407,11 @@ h2{font-size:19px}
 #cloudHeaderControls:not([hidden]){grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin-top:8px}
 #cloudHeaderPending,#cloudHeaderMessage{margin:0;font-size:12px}
 #cloudHeaderMessage{flex-basis:100%}
+#cloudHeaderPending .cine-sync-pending{color:var(--gold,#f3c66d);font-weight:650}
+#cloudHeaderPending .cine-sync-symbol{display:inline-block;margin-right:4px;line-height:1;font-size:13px}
+#cloudHeaderPending .cine-sync-working .cine-sync-symbol{animation:cineSyncSpin 1.8s linear infinite}
+@keyframes cineSyncSpin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){#cloudHeaderPending .cine-sync-working .cine-sync-symbol{animation:none}}
 .match-status.year-warning{color:#ffda92}
 #membershipActions[hidden]{display:none}
 #libraryStartup{max-width:480px;margin:24px auto}
@@ -2610,7 +2615,7 @@ async function reviewCloudSync(){
   $('cloudSyncPanel').hidden=false;
   $('cloudSyncPanel').scrollIntoView({block:'nearest'});
  }catch(e){syncPreviewToken='';showCloudSyncError(e.message);}
- finally{closeCloudDialog();cloudManualBusy=false;button.disabled=false;}
+ finally{closeCloudDialog();cloudManualBusy=false;renderCloudHeader();button.disabled=false;}
 }
 $('cloudSyncReview').addEventListener('click',()=>void reviewCloudSync());
 $('cloudSyncCancel').addEventListener('click',()=>{syncPreviewToken='';$('cloudSyncPanel').hidden=true;});
@@ -2651,7 +2656,7 @@ $('cloudSyncConfirm').addEventListener('click',async()=>{
     ?'⚠ Se agotó el tiempo de espera. La copia podría haberse enviado igualmente. Consulta la carpeta de OneDrive y el estado de sincronización antes de repetir la operación.'
     :'⚠ '+e.message+' No se ha confirmado la subida; tus listas siguen guardadas localmente.';
    showCloudSyncError(e.message);await cloudRefresh().catch(()=>{});
- }finally{closeCloudDialog();cloudManualBusy=false;button.disabled=false;}
+ }finally{closeCloudDialog();cloudManualBusy=false;renderCloudHeader();button.disabled=false;}
 });
 function renderCloudHeader(){
  const controls=$('cloudHeaderControls'),s=cloudHeaderState;
@@ -2659,11 +2664,22 @@ function renderCloudHeader(){
  if(controls.hidden)return;
  const box=$('cloudHeaderPending'),message=$('cloudHeaderMessage');
  message.textContent=cloudHeaderError;message.hidden=!cloudHeaderError;
- if(!s.sync_paired){box.textContent='Primera sincronización pendiente';return;}
- const outgoing=s.upload_pending?'Subida pendiente':'Sin cambios por subir';
- const incoming=cloudIncomingBusy?'Comprobando recepción…':cloudIncomingState===true?'Recepción pendiente':
-  cloudIncomingState===false?'Sin cambios por recibir':'Recepción sin comprobar';
- box.textContent=outgoing+' · '+incoming;
+ box.replaceChildren();
+ const status=(label,pending=false,working=false)=>{
+  const part=document.createElement('span');
+  if(pending||working){
+   part.className='cine-sync-pending'+(working?' cine-sync-working':'');
+   const symbol=document.createElement('span');symbol.className='cine-sync-symbol';
+   symbol.setAttribute('aria-hidden','true');symbol.textContent=working?'⟳':'◷';part.append(symbol);
+  }
+  part.append(document.createTextNode(label));box.append(part);
+ };
+ if(cloudManualBusy){status('Sincronizando…',true,true);return;}
+ if(!s.sync_paired){status('Primera sincronización pendiente',true);return;}
+ status(s.upload_pending?'Subida pendiente':'Sin cambios por subir',s.upload_pending);
+ box.append(document.createTextNode(' · '));
+ status(cloudIncomingBusy?'Comprobando recepción…':cloudIncomingState===true?'Recepción pendiente':
+  cloudIncomingState===false?'Sin cambios por recibir':'Recepción sin comprobar',cloudIncomingBusy||cloudIncomingState!==false,cloudIncomingBusy);
 }
 async function checkCloudIncoming(){
  if(cloudManualBusy||cloudIncomingBusy||!cloudHeaderState?.enabled||cloudHeaderState.provider!=='onedrive-direct'||!cloudHeaderState.sync_paired||Date.now()-cloudIncomingChecked<120000)return;
@@ -2709,7 +2725,7 @@ async function syncCloudNow(){
  if(!cloudHeaderState.sync_paired||cloudHeaderState.needs_review){
   showView('collections');await reviewCloudSync();return;
  }
- cloudManualBusy=true;
+ cloudManualBusy=true;renderCloudHeader();
  globalThis.cineDiagnostic?.('sync_started');
  let review=false;
  openCloudDialog('Guardando los cambios en este equipo…');

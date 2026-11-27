@@ -1,15 +1,15 @@
-name: Escritorio 9.2.20 · macOS y Windows
+name: Escritorio 9.2.22 · macOS y Windows
 on:
   push:
-    branches: [release/desktop-9.2.20]
+    branches: [release/desktop-9.2.22]
 permissions:
   contents: read
 concurrency:
-  group: selector-cine-desktop-9.2.20
+  group: selector-cine-desktop-9.2.22
   cancel-in-progress: true
 jobs:
   windows:
-    if: github.ref == 'refs/heads/release/desktop-9.2.20'
+    if: github.ref == 'refs/heads/release/desktop-9.2.22'
     runs-on: windows-latest
     timeout-minutes: 25
     steps:
@@ -22,16 +22,16 @@ jobs:
       - run: go test -tags lab -count=1 ./...
       - shell: pwsh
         run: |
-          foreach ($f in @(Get-ChildItem scripts/test_lab*.cjs) + @(Get-Item scripts/test_beta14_desktop_dropdowns.cjs,scripts/test_windows_restore.cjs,scripts/test_txt_import_creates_list_beta14.cjs,scripts/test_desktop_save_recovery.cjs,scripts/test_durable_save.cjs)) {
+          foreach ($f in @(Get-ChildItem scripts/test_lab*.cjs) + @(Get-Item scripts/test_beta14_desktop_dropdowns.cjs,scripts/test_windows_restore.cjs,scripts/test_txt_import_creates_list_beta14.cjs,scripts/test_desktop_save_recovery.cjs,scripts/test_durable_save.cjs,scripts/test_sync_header.cjs)) {
             node $f.FullName
             if ($LASTEXITCODE) { exit $LASTEXITCODE }
           }
-      - run: go build -trimpath -ldflags="-H windowsgui -s -w" -o Selector_Cine_365_Windows_9.2.20.exe .
+      - run: go build -trimpath -ldflags="-H windowsgui -s -w" -o Selector_Cine_365_Windows_9.2.22.exe .
         env: { CGO_ENABLED: '0' }
       - uses: actions/upload-artifact@v4
-        with: { name: Windows, path: Selector_Cine_365_Windows_9.2.20.exe, if-no-files-found: error }
+        with: { name: Windows, path: Selector_Cine_365_Windows_9.2.22.exe, if-no-files-found: error }
   mac:
-    if: github.ref == 'refs/heads/release/desktop-9.2.20'
+    if: github.ref == 'refs/heads/release/desktop-9.2.22'
     strategy:
       fail-fast: false
       matrix:
@@ -57,12 +57,12 @@ jobs:
           security list-keychains -d user -s "$kc"
       - run: bash scripts/build_macos_app.sh
         env: { CC: clang }
-      - run: bash scripts/test_macos_package.sh "dist/Selector_Cine_365_Mac_${MAC_LABEL}_9.2.20.zip"
+      - run: bash scripts/test_macos_package.sh "dist/Selector_Cine_365_Mac_${MAC_LABEL}_9.2.22.zip"
         if: matrix.arch == 'amd64'
       - uses: actions/upload-artifact@v4
         with:
           name: Mac_${{ matrix.label }}
-          path: dist/Selector_Cine_365_Mac_*_9.2.20.zip
+          path: dist/Selector_Cine_365_Mac_*_9.2.22.zip
           if-no-files-found: error
   publish:
     needs: [mac, windows]
@@ -73,7 +73,7 @@ jobs:
         with: { merge-multiple: true }
       - env: { GH_TOKEN: "${{ github.token }}", GH_REPO: "${{ github.repository }}" }
         run: |
-          if gh release view v9.2.20-desktop >/dev/null 2>&1; then exit 0; fi
-          test "$(gh api "repos/$GH_REPO/git/ref/heads/release/desktop-9.2.20" --jq .object.sha)" = "$GITHUB_SHA"
+          if gh release view v9.2.22-desktop >/dev/null 2>&1; then exit 0; fi
+          test "$(gh api "repos/$GH_REPO/git/ref/heads/release/desktop-9.2.22" --jq .object.sha)" = "$GITHUB_SHA"
           sha256sum Selector_Cine_365_* > SHA256SUMS.txt
-          gh release create v9.2.20-desktop --target "$GITHUB_SHA" --latest --title "Selector Cine 365 · Mac y Windows 9.2.20" --notes "Versión de robustez del guardado local: borradores persistentes, tiempos límite, recuperación de biblioteca ausente, copias verificadas, protección de cambios externos y revisiones de sincronización junto a la biblioteca. Sin cambios de diseño ni Android. Windows x64 y macOS Intel y Apple Silicon (macOS 12 o posterior). Los paquetes Mac llevan firma ad hoc y carecen de notarización de Apple." Selector_Cine_365_* SHA256SUMS.txt
+          gh release create v9.2.22-desktop --target "$GITHUB_SHA" --latest --title "Selector Cine 365 · Mac y Windows 9.2.22" --notes "Mantiene las protecciones del guardado local e incorpora la corrección de las subidas pendientes al cambiar de lista y los indicadores de sincronización en amarillo. Sin cambios en Android. Windows x64 y macOS Intel y Apple Silicon (macOS 12 o posterior). Los paquetes Mac llevan firma ad hoc y carecen de notarización de Apple." Selector_Cine_365_* SHA256SUMS.txt

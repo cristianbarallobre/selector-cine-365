@@ -361,7 +361,7 @@ func (a *runningApp) publishGraphOperation(op graphOperation) (err error) {
 			a.mu.Lock()
 			if !op.current() {
 				err = errGraphSessionChanged
-			} else if revision == a.libraryRevision {
+			} else if revision == a.libraryRevision || desktopFeatures&&sameShareableLibrary(a.library,snapshot.Library) {
 				err = a.syncStore.acknowledgeGraphUpload(version)
 			}
 			a.mu.Unlock()
@@ -416,6 +416,10 @@ func (a *runningApp) publishGraphOperation(op graphOperation) (err error) {
 			currentSnapshot := snapshot
 			previousSnapshot.UpdatedAt = 0
 			currentSnapshot.UpdatedAt = 0
+			if sameShareableLibrary(previousSnapshot.Library,currentSnapshot.Library) {
+				previousSnapshot.Library=libraryState{}
+				currentSnapshot.Library=libraryState{}
+			}
 			if reflect.DeepEqual(previousSnapshot, currentSnapshot) {
 				return nil
 			}

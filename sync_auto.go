@@ -126,5 +126,5 @@ func (a *runningApp) cloudIncomingPending() (bool, error) {
 	if revision != a.libraryRevision {
 		return false, errors.New("La biblioteca ha cambiado")
 	}
-	return len(plan.Conflicts) != 0 || !reflect.DeepEqual(local, plan.Library), nil
+	return len(plan.Conflicts) != 0 || !sameShareableLibrary(local,plan.Library), nil
 }

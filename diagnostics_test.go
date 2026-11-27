@@ -43,7 +43,7 @@ func TestDiagnosticHTTPAndRotation(t *testing.T){
  diagnosticUIEvent("bad PRIVATE_EVENT")
  body,err:=os.ReadFile(diagnosticPath());if err!=nil{t.Fatal(err)}
  log:=string(body)
- for _,want:=range []string{"inicio id=","fin id=","POST /api/library","status=412","recovery=saved","local_connection_lost","version=9.2.20"}{
+ for _,want:=range []string{"inicio id=","fin id=","POST /api/library","status=412","recovery=saved","local_connection_lost","version=9.2.22"}{
   if !strings.Contains(log,want){t.Fatalf("missing %s",want)}
  }
  for _,secret:=range []string{"PRIVATE_TOKEN","private payload","private library content","PRIVATE_EVENT"}{

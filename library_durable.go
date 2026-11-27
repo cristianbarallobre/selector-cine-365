@@ -99,7 +99,7 @@ func (a *runningApp) commitProtectedLibrary(next libraryState, plan *syncPlan, d
   if e=json.Unmarshal(data,&clone.state);e!=nil{return false,nil,e}
   if plan!=nil{e=clone.accept(*plan,decisions,folder)}else{
    e=clone.observe(a.library,next)
-   if e==nil&&a.cloud!=nil&&(a.cloud.status().Enabled||a.graph!=nil&&a.graph.active()){e=clone.markGraphUploadPending()}
+   if e==nil&&!sameShareableLibrary(a.library,next)&&a.cloud!=nil&&(a.cloud.status().Enabled||a.graph!=nil&&a.graph.active()){e=clone.markGraphUploadPending()}
   }
   if e!=nil{return false,nil,e}
   checkpoint,e:=randomToken();if e!=nil{return false,nil,e}
@@ -148,4 +148,12 @@ func stringsHasPendingSuffix(name string) bool{
 var libraryBackupIssue atomic.Bool
 func recordBackupIssue(operation string,err error){
  if err!=nil{libraryBackupIssue.Store(true);diagnosticError("recuperacion",operation,err)}
+}
+
+// ActiveID is purely local navigation. Serialize with the existing JSON
+// contract so empty optional collections and nil are equivalent as well.
+func sameShareableLibrary(a,b libraryState) bool {
+ a.ActiveID=""; b.ActiveID=""
+ x,e:=json.Marshal(a); y,f:=json.Marshal(b)
+ return e==nil&&f==nil&&bytes.Equal(x,y)
 }
