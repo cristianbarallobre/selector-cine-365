@@ -161,14 +161,16 @@ func TestLabStartupHeadlessBrowser(t *testing.T){
        const navTop=document.querySelector('.top-nav')?.getBoundingClientRect().top;
        const extra=document.createElement('div');extra.style.height='1300px';
        collectionsPanel?.appendChild(extra);
-       if(collectionsView)collectionsView.scrollTop=300;
-       const scrollInfo={top:collectionsView?.scrollTop||0,
-         full:collectionsView?.scrollHeight||0,viewport:collectionsView?.clientHeight||0,
+       const compactWindow=window.innerHeight<=590;
+       const scrolling=compactWindow?document.scrollingElement:collectionsView;
+       if(scrolling)scrolling.scrollTop=300;
+       const scrollInfo={top:scrolling?.scrollTop||0,
+         full:scrolling?.scrollHeight||0,viewport:scrolling?.clientHeight||0,innerHeight:window.innerHeight,
          navBefore:navTop,navAfter:document.querySelector('.top-nav')?.getBoundingClientRect().top||0,
          panelHeight:collectionsPanel?.getBoundingClientRect().height||0};
        const collectionsMoves=!!collectionsView&&scrollInfo.top>50&&
-         Math.abs(scrollInfo.navAfter-scrollInfo.navBefore)<1;
-       extra.remove();
+         (compactWindow||Math.abs(scrollInfo.navAfter-scrollInfo.navBefore)<1);
+       extra.remove();if(scrolling)scrolling.scrollTop=0;
        document.querySelector('[data-view="instructions"]')?.click();
        const instructionsVisible=document.getElementById('view-instructions')?.hidden===false;
        document.querySelector('[data-view="library"]')?.click();

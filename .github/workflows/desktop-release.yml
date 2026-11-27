@@ -29,7 +29,7 @@ jobs:
       - name: Comprobar interfaz Windows en dos tamaños adicionales
         shell: pwsh
         run: |
-          foreach ($size in @("960,680","1600,1000")) {
+          foreach ($size in @("960,820","960,680","1600,1000")) {
             $env:CINE_TEST_VIEWPORT=$size
             go test -count=1 -run '^TestLabStartupHeadlessBrowser$' .
             if ($LASTEXITCODE) { exit $LASTEXITCODE }

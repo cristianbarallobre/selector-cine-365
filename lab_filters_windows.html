@@ -50,7 +50,7 @@
 #view-statistics .stats-hero{grid-template-columns:repeat(5,minmax(0,1fr))}
 #view-statistics .stats-hero .stat-value{font-size:clamp(17px,2vw,24px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #view-statistics .stats-hero .stat-label{font-size:11px}
-.lab-help-nav{min-width:38px;width:38px;box-sizing:border-box;text-align:center;padding:9px 0!important;font-size:13px!important;line-height:normal!important;font-weight:750!important}
+.lab-help-nav{min-width:38px;width:38px;box-sizing:border-box;text-align:center;padding-inline:0!important;font-size:13px!important;line-height:normal!important;font-weight:750!important}
 @media(max-width:850px){
  #view-statistics .stats-hero{grid-template-columns:repeat(3,minmax(0,1fr))}
  #labFiltersDialog .lab-filter-two{grid-template-columns:1fr}
@@ -131,6 +131,10 @@ function labHelpMatchNav(){
 }
 labHelpMatchNav();
 window.addEventListener('resize',labHelpMatchNav);
+if(typeof ResizeObserver==='function'){
+ const navReference=document.querySelector('.top-nav [data-view="library"]');
+ if(navReference)new ResizeObserver(labHelpMatchNav).observe(navReference);
+}
 function labFiltersUpdatePlatformSelection(){
  const all=selectedListPlatforms.size===0;
  $('labFilterAllPlatforms').checked=all;

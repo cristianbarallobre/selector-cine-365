@@ -2672,6 +2672,7 @@ async function finishLibraryStartup(loaded){
  libraryReady=true;
  $('libraryStartup').hidden=true;
  $('libraryApp').hidden=false;
+ if(typeof labHelpMatchNav==='function')labHelpMatchNav();
  update();renderCollectionControls();updatePlatformProgress();
  await initIdentities();
  await initPlatforms();

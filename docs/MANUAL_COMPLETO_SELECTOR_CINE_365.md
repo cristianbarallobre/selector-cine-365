@@ -40,7 +40,7 @@ Si la app ha elegido otra película, abre **Identificar película en TMDB** y pe
 
 ## Guardado y copia adicional
 
-La biblioteca se guarda automáticamente en el equipo. Desde **Mis listas → Copia de seguridad** exporta un JSON para conservar todas las listas, favoritos, valoraciones e identificaciones. Una exportación TXT corresponde a la lista seleccionada.
+La biblioteca se guarda automáticamente en el equipo. Desde **Mis listas → Copia de seguridad** exporta un JSON completo para conservar todas las listas, favoritos, valoraciones, identificaciones e historial. Una exportación TXT corresponde a la lista seleccionada.
 
 1. Abre **Mis listas → Guardado y copia adicional** y pulsa **Elegir carpeta**.
 2. Pulsa **Guardar ubicación**. Cada instalación conserva su propio archivo `colecciones.json` y una versión anterior dentro de `Selector_Cine_365_Copias`. La interfaz muestra la ruta completa. Se guardan hasta 14 copias diarias adicionales, limitadas también por espacio.
