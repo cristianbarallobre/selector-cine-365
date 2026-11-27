@@ -48,7 +48,8 @@ assert.match(ui,/function labQueuePrefetchSoon/,'Programar precarga no bloqueant
 assert.match(windows,/id="labPrefetchPause"/,'Debe haber botón de pausa en la UI Windows inyectada');
 assert.match(windows,/b\.append\(togg,pill,labCreateDetailButton\(f\),fix\);frag\.appendChild\(b\);/,'Fila sin ↗ y con orden correcto');
 const template=fs.readFileSync('plantilla.html','utf8');
-assert.match(template,/await initPlatforms\(\);\s*void checkCloudIncoming\(\);\s*\/\* CINE_DESKTOP_READY \*\//,'El arranque solo comprueba la nube y ofrece el punto de precarga');
+assert.match(template,/await initPlatforms\(\);\s*\/\* CINE_DESKTOP_READY \*\//,'La precarga arranca tras inicializar TMDB, sin consultar cuentas externas');
+assert.doesNotMatch(template,/checkCloudIncoming\(/,'No debe iniciarse una consulta de nube');
 assert.match(windows,/"\/\* CINE_DESKTOP_READY \*\/", "labQueuePrefetchSoon\(\);"/,'Lanzar la precarga en el punto de arranque');
 assert.match(windows,/function scheduleSave\(\)\{labQueuePrefetchSoon\(\)/,'Preparar películas agregadas tras guardar');
 assert.match(core,/\/api\/discover\/prefetch/,'Ruta autenticada para precarga');
