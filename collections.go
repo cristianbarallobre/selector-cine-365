@@ -314,6 +314,7 @@ func (a *runningApp) serveLibraryHTTP(w http.ResponseWriter, r *http.Request) {
 		if err == nil {
 			a.library = state
 			a.libraryRevision++
+			if a.extraBackup!=nil{a.extraBackup.request()}
 			w.Header().Set("ETag", a.libraryETag())
 			if metadataErr!=nil{
 				diagnosticError("sincronizacion","guardar espejo de revisiones",metadataErr)

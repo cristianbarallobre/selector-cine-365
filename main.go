@@ -101,8 +101,8 @@ func makeHTML(initial, token string) (string, error) {
 	out = injectLabMaintenance(out)
 	if desktopFeatures && !appIsLab {
 		out = strings.NewReplacer(
-			"<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.22</title>",
-			"🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.22",
+			"<title>Selector Cine 365 · Beta 14 Preview</title>", "<title>Selector Cine 365 · 9.2.24</title>",
+			"🎞️ SELECTOR CINE 365 · v9 Beta 14 Preview", "🎞️ SELECTOR CINE 365 · 9.2.24",
 			` <span class="lab-nav-tag">LAB</span>`, "",
 			`<span class="lab-smart-caption">LAB</span>`, "",
 			"SELECTOR CINE 365 · LAB WINDOWS", "SELECTOR CINE 365",
@@ -135,6 +135,7 @@ type runningApp struct {
 	libraryRecovered    bool
 	platforms           *availabilityServer
 	discoveryImages     discoveryImageCache
+	extraBackup *extraBackup
 	cloud               *cloudBackups
 	graph               *desktopGraph
 	graphUploadCh       chan struct{}
@@ -165,6 +166,9 @@ func (a *runningApp) auth(r *http.Request) bool {
 }
 func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	a.touch()
+	if a.extraBackup!=nil {
+	 if strings.HasPrefix(r.URL.Path,"/api/cloud/")||strings.HasPrefix(r.URL.Path,"/api/onedrive-desktop/")||(r.URL.Path=="/"&&(r.URL.Query().Has("code")||r.URL.Query().Has("error"))){http.NotFound(w,r);return}
+	}
 	if r.URL.Path == "/" && r.Method == http.MethodGet && (r.URL.Query().Has("code") || r.URL.Query().Has("error")) {
 		a.serveGraphCallback(w, r)
 		return
@@ -214,6 +218,8 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write(data)
 	case "/api/library":
 		a.serveLibraryHTTP(w, r)
+	case "/api/extra-backup/status","/api/extra-backup/config","/api/extra-backup/browse","/api/extra-backup/now":
+		a.serveExtraBackup(w,r)
 	case "/api/library/draft":
 		a.serveUIDraft(w,r)
 	case "/api/sync/history", "/api/sync/revisions", "/api/sync/recovery/list", "/api/sync/recovery/pending", "/api/sync/recovery/preview", "/api/sync/recovery/restore":
@@ -275,6 +281,7 @@ func (a *runningApp) serveHTTP(w http.ResponseWriter, r *http.Request) {
 }
 func (a *runningApp) save(data string) error {
 	page, err := makeHTML(data, a.token)
+	if err == nil&&a.extraBackup!=nil{page,err=localOnlyHTML(page)}
 	if err != nil {
 		return err
 	}
@@ -318,6 +325,7 @@ func serve() error {
 		return err
 	}
 	page, err := makeHTML(state, token)
+	if err==nil{page,err=localOnlyHTML(page)}
 	if err != nil {
 		return err
 	}
@@ -345,19 +353,16 @@ func serve() error {
 		// Un fallo en el estado de sincronización no debe impedir usar datos locales.
 		diagnosticError("sincronizacion", "estado local no disponible", syncErr)
 	}
-	app := &runningApp{libraryDigest:digest,libraryRecovered: recovered, html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath), appCacheRoot(filepath.Dir(savePath))), cloud: newCloudBackups(filepath.Dir(savePath)), graph: newDesktopGraph(filepath.Dir(savePath)), graphUploadCh: make(chan struct{}, 1), syncStore: syncStore, token: token, stopCh: make(chan struct{})}
+	app := &runningApp{libraryDigest:digest,libraryRecovered: recovered, html: []byte(page), savePath: savePath, libraryPath: libPath, library: lib, platforms: newAvailabilityServer(filepath.Dir(savePath), appCacheRoot(filepath.Dir(savePath))), extraBackup: newExtraBackup(filepath.Dir(savePath)), syncStore: syncStore, token: token, stopCh: make(chan struct{})}
 	if desktopFeatures {app.resolvePendingCopies(lib,true)}
 	defer func() { app.stop(); app.flushLabCatalog(); app.platforms.flushProviderCache() }()
 	app.touch()
-	if !desktopFeatures {
-		go app.graphPublisher()
-	}
+	go app.extraBackup.run(app)
 	listener, err := net.Listen("tcp4", "127.0.0.1:0")
 	if err != nil {
 		return fmt.Errorf("no se ha podido iniciar la aplicación local: %w", err)
 	}
-	_, port, _ := net.SplitHostPort(listener.Addr().String())
-	app.graph.setRedirect("http://localhost:" + port + "/")
+
 	server := &http.Server{Handler: diagnosticHTTP(http.HandlerFunc(app.serveHTTP)), ReadHeaderTimeout: 6 * time.Second}
 	go func() {
 		if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {

@@ -17,7 +17,7 @@ import (
  "time"
 )
 
-const diagnosticVersion = "9.2.22"
+const diagnosticVersion = "9.2.24"
 const diagnosticMaxBytes = 2 * 1024 * 1024
 var diagnosticEnabled atomic.Bool
 var diagnosticMu sync.Mutex
@@ -122,6 +122,7 @@ var diagnosticRoutes = map[string]bool{
  "/api/cloud/browse":true,"/api/cloud/preview":true,"/api/cloud/sync":true,"/api/cloud/auto":true,
  "/api/cloud/auto-folder":true,"/api/cloud/mode":true,"/api/onedrive-desktop/status":true,
  "/api/onedrive-desktop/start":true,"/api/onedrive-desktop/disconnect":true,"/api/lab/maintenance":true,
+ "/api/extra-backup/status":true,"/api/extra-backup/config":true,"/api/extra-backup/browse":true,"/api/extra-backup/now":true,
  "/api/platforms/status":true,"/api/platforms/cache":true,"/api/platforms/config":true,
  "/api/platforms/lookup":true,"/api/platforms/match":true,"/api/platforms/overrides":true,
  "/api/platforms/overrides/import":true,"/api/identities":true,"/api/identities/resolve":true,

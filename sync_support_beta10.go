@@ -232,13 +232,14 @@ func (a *runningApp) restoreLocalRecovery(id, etag string) (map[string]any, erro
 	}
 	a.library = restored
 	a.libraryRevision++
+	if a.extraBackup!=nil{a.extraBackup.request()}
 	a.syncPreviewToken = ""
 	var warnings []string
 	if mirrorPending {
 		warnings = append(warnings, "Copia TXT pendiente")
 	}
 	syncReady:=metadataErr==nil
-	if metadataErr!=nil{warnings=append(warnings,"Estado de sincronización pendiente de guardar");diagnosticError("sincronizacion","guardar espejo de revisiones",metadataErr)}
+	if metadataErr!=nil{warnings=append(warnings,"Historial local pendiente de guardar");diagnosticError("sincronizacion","guardar espejo de revisiones",metadataErr)}
 	if !desktopFeatures&&a.syncStore!=nil{
 		if err=a.syncStore.observe(before,restored);err!=nil{syncReady=false;warnings=append(warnings,"Estado de sincronización pendiente de guardar")}
 	}
